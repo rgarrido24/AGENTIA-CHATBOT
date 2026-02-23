@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     const db = await getMongoDb();
     await db.collection('whatsapp_qr').updateOne(
-      { _id: 'current' },
+      { _id: 'current' as any },
       { $set: { qr: qr.trim(), updatedAt: new Date() } },
       { upsert: true }
     );
