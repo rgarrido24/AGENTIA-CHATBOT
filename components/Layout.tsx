@@ -195,7 +195,7 @@ export default function Layout({
                   <span>{item.label}</span>
                 </>
               );
-              if (item.external) {
+              if (item.href.startsWith('http')) {
                 return (
                   <a
                     key={item.href}
