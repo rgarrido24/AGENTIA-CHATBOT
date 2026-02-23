@@ -1,0 +1,11 @@
+{
+  "/api/chat/outbound/route": "app/api/chat/outbound/route.js",
+  "/api/leads/route": "app/api/leads/route.js",
+  "/api/leads/alerts/route": "app/api/leads/alerts/route.js",
+  "/api/leads/pause-global/route": "app/api/leads/pause-global/route.js",
+  "/api/leads/delete/route": "app/api/leads/delete/route.js",
+  "/api/reminders/pending/route": "app/api/reminders/pending/route.js",
+  "/api/chat/route": "app/api/chat/route.js",
+  "/api/alerts/pending/route": "app/api/alerts/pending/route.js",
+  "/dashboard/leads/page": "app/dashboard/leads/page.js"
+}
