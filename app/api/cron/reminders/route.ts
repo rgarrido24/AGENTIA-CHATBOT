@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getMongoDB } from '@/src/lib/db';
+import { getMongoDb } from '@/lib/mongodb';
 import { getAppointmentsForReminder } from '@/src/lib/appointments';
 
 const REMINDER_MINUTES = 120;
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const appointments = await getAppointmentsForReminder(REMINDER_MINUTES, WINDOW_MINUTES);
-    const db = await getMongoDB();
+    const db = await getMongoDb();
 
     for (const apt of appointments) {
       const reminderText = `📅 Recordatorio: Tienes una cita en 2 horas (${apt.slotStart.toLocaleString()})`;
