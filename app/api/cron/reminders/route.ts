@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { getMongoDB } from '@/lib/db';
-import { getAppointmentsForReminder } from '@/lib/appointments';
+import { getMongoDB } from '../../../../src/lib/db';
+import { getAppointmentsForReminder } from '../../../../src/lib/appointments';
 
 const REMINDER_MINUTES = 120;
 const WINDOW_MINUTES = 15;
