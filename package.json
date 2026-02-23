@@ -16,7 +16,8 @@
     "dev:vercel": "node ./node_modules/vercel/dist/index.js dev --listen 3001 --yes",
     "build": "next build",
     "dev": "npx next dev -p 3010",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "start": "next start"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.29",
