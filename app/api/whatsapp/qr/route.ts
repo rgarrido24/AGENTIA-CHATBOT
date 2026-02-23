@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const format = searchParams.get('format') || 'html';
 
     const db = await getMongoDb();
-    const doc = await db.collection<{ qr?: string; updatedAt?: Date }>('whatsapp_qr').findOne({ _id: 'current' });
+    const doc = await db.collection<{ qr?: string; updatedAt?: Date }>('whatsapp_qr').findOne({ _id: 'current' as any });
     const qrData = doc?.qr;
 
     if (!qrData) {
