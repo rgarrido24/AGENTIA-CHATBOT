@@ -1,4 +1,3 @@
-// @ts-expect-error - googleapis no tiene tipos en @types
 import { google } from 'googleapis';
 import { getMongoDb } from '../../lib/mongodb';
 
