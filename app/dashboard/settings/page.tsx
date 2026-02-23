@@ -145,7 +145,7 @@ export default function SettingsPage() {
 
         <div className="grid gap-6 md:grid-cols-2 mb-12">
           <div className="card-glass p-6">
-            <h2 className="text-lg font-semibold mb-4 title-tracking" className="text-white font-heading">
+          <h2 className="text-lg font-semibold mb-4 title-tracking text-white font-heading">
               Duración del Servicio
             </h2>
             <select
