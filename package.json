@@ -17,7 +17,7 @@
     "build": "next build",
     "dev": "npx next dev -p 3010",
     "typecheck": "tsc --noEmit",
-    "start": "next start"
+    "start": "next start & node scripts/whatsapp-bridge.js"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.29",
