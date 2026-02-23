@@ -134,7 +134,6 @@ export default function Layout({
                 href={item.href}
                 label={item.label}
                 icon={item.icon}
-              
               />
             ))}
           </nav>
@@ -184,7 +183,7 @@ export default function Layout({
           <nav className="px-4 py-4 border-t border-forest space-y-1 max-h-[70vh] overflow-y-auto bg-black">
             {navLinks.map((item) => {
               const Icon = item.icon;
-              const isActive = !item.external && (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)));
+              const isActive = (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)));
               const linkClass = `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-300 ${
                 isActive
                   ? 'bg-forest/30 border border-forest text-sage'
