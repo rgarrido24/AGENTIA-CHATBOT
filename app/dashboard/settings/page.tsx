@@ -176,7 +176,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="card-glass p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4 title-tracking" className="text-white font-heading">
+        <h2 className="text-lg font-semibold mb-4 title-tracking text-white font-heading">
             Horarios por día
           </h2>
           <div className="space-y-4">
