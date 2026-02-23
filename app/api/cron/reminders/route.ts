@@ -30,9 +30,10 @@ export async function GET(request: NextRequest) {
       });
 
       await db.collection('appointments').updateOne(
-        { _id: (apt as { _id?: unknown })._id },
+        { _id: (apt as any)._id },
         { $set: { reminderQueuedAt: new Date() } }
       );
+    }
     }
 
     return Response.json({
