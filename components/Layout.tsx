@@ -134,7 +134,7 @@ export default function Layout({
                 href={item.href}
                 label={item.label}
                 icon={item.icon}
-                external={item.external}
+              
               />
             ))}
           </nav>
