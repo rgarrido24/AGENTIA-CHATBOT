@@ -86,7 +86,6 @@ export async function classifyLeadStage(params: {
     const { text } = await generateText({
       model: google('gemini-2.0-flash'),
       prompt: `${CLASSIFY_PROMPT}\n\nMensaje del cliente: "${params.lastUserMessage}"\nRespuesta del bot: "${params.lastBotReply}"\nMensajes en conversación: ${params.messageCount}\n\nEtapa:`,
-      maxTokens: 10,
     });
 
     const raw = (text || '').trim().toLowerCase();
