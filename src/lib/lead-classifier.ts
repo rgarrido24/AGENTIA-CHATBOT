@@ -143,7 +143,7 @@ export async function classifyAndUpdateLead(params: {
     const { text } = await generateText({
       model: google('gemini-2.0-flash'),
       prompt: `${CLASSIFY_PROMPT}\n\nMensaje del cliente: "${params.lastUserMessage}"\nRespuesta del bot: "${params.lastBotReply}"\nMensajes en conversación: ${params.messageCount}\n\nEtapa:`,
-      maxTokens: 30,
+  
     });
     rawText = text || '';
   } catch {
