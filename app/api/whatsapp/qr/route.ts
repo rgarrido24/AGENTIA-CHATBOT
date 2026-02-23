@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     const pngBuffer = await QRCode.toBuffer(qrData, { width: 300, margin: 2 });
 
     if (format === 'png') {
-      return new Response(pngBuffer, {
+      return new Response(pngBuffer as any, {
         headers: { 'Content-Type': 'image/png' },
       });
     }
