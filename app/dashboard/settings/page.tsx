@@ -160,7 +160,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="card-glass p-6">
-            <h2 className="text-lg font-semibold mb-4 title-tracking" className="text-white font-heading">
+          <h2 className="text-lg font-semibold mb-4 title-tracking text-white font-heading">
               Margen de Seguridad (descanso entre citas)
             </h2>
             <select
