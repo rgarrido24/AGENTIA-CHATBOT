@@ -137,7 +137,7 @@ async function main() {
           const title = isDocsConfirmed ? '📋 *CAPTURAR EN IZZI*' : isSaleClosed ? '💰 *Venta cerrada - Capturar*' : '🚨 *Lead urgente*';
           const senderLine = a.senderId ? `📱 ${a.senderId}` : '';
           const body = isDocsConfirmed ? (a.lastMessage || '') : `"${(a.lastMessage || '').slice(0, 200)}${(a.lastMessage || '').length > 200 ? '...' : ''}"`;
-          const msg = `${title}\n${a.senderName || 'Sin nombre'} (${a.clientId})\n${senderLine}\n\n${body}\n\nVer: ${API_URL}/admin/leads`;
+          const msg = `${title}\n${a.senderName || 'Sin nombre'} (${a.clientId})\n${senderLine}\n\n${body}\n\nVer: ${API_URL}/dashboard/leads`;
           await client.sendMessage(chatId, msg);
           sentIds.push(a.id);
           console.log(`[Agentia] Alerta enviada a ${alertNumber}`);
