@@ -14,7 +14,7 @@
     "purge:knowledge": "node scripts/purge-knowledge.js",
     "test:comment": "node scripts/test-comment-webhook.js",
     "dev:vercel": "node ./node_modules/vercel/dist/index.js dev --listen 3001 --yes",
-    "build": "npm install && PUPPETEER_CACHE_DIR=/opt/render/.cache/puppeteer npx puppeteer browsers install chrome && next build"
+    "build": "npm install && PUPPETEER_CACHE_DIR=/opt/render/.cache/puppeteer npx puppeteer browsers install chrome && next build" ,
     "dev": "npx next dev -p 3010",
     "typecheck": "tsc --noEmit",
     "start": "next start & node scripts/whatsapp-bridge.js"
