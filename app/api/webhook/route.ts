@@ -38,6 +38,25 @@ async function getFacebookUserName(
   }
 }
 
+/** Descarga imagen de URL (Facebook suele devolver URL con token) y devuelve base64 + mimeType. */
+async function fetchImageAsBase64(
+  url: string,
+  accessToken: string
+): Promise<{ base64: string; mimeType: string } | null> {
+  try {
+    const urlWithToken = url.includes('?') ? `${url}&access_token=${encodeURIComponent(accessToken)}` : `${url}?access_token=${encodeURIComponent(accessToken)}`;
+    const res = await fetch(urlWithToken);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const buf = await blob.arrayBuffer();
+    const base64 = Buffer.from(buf).toString('base64');
+    const mimeType = blob.type || 'image/jpeg';
+    return { base64, mimeType };
+  } catch {
+    return null;
+  }
+}
+
 async function sendMessengerReply(params: {
   accessToken: string;
   recipientId: string;
@@ -117,6 +136,9 @@ export async function POST(request: NextRequest) {
     const messaging0 = entry0?.messaging?.[0];
     const textDm = pickFirstString(messaging0?.message?.text);
     const senderId = pickFirstString(messaging0?.sender?.id);
+    const attachments = Array.isArray(messaging0?.message?.attachments) ? messaging0.message.attachments : [];
+    const imageAttachment = attachments.find((a: { type?: string }) => a?.type === 'image');
+    const imageUrl = imageAttachment?.payload?.url ? String(imageAttachment.payload.url).trim() : undefined;
 
     const change0 = entry0?.changes?.[0];
     const changeValue = change0?.value;
@@ -128,7 +150,7 @@ export async function POST(request: NextRequest) {
     const commenterId = pickFirstString(changeValue?.from?.id);
 
     const isComment = Boolean(commentId && textComment);
-    const isDm = Boolean(senderId && textDm);
+    const isDm = Boolean(senderId && (textDm || imageUrl));
 
     if (pageId) summary.pageId = pageId;
     if (senderId) summary.senderId = senderId;
@@ -155,7 +177,7 @@ export async function POST(request: NextRequest) {
 
     const platform = inferPlatform(body);
     const dmRecipientId = isComment ? commenterId : senderId;
-    const incomingText = (isComment ? textComment : textDm) ?? '';
+    const incomingText = (isComment ? textComment : textDm) ?? (imageUrl ? '[imagen/documento adjunto]' : '');
 
     if (isComment && !dmRecipientId) {
       console.log('[webhook] Comentario sin commenterId (from.id), no se puede enviar DM');
@@ -174,19 +196,34 @@ export async function POST(request: NextRequest) {
     const proto = request.headers.get('x-forwarded-proto') ?? 'https';
     const baseUrl = host ? `${proto}://${host}` : 'https://agentia-chatbot-ventas.vercel.app';
 
-    const entryTypeForApi = isComment ? 'dm' : 'dm';
+    let mediaBase64: string | undefined;
+    let mimeType: string | undefined;
+    if (imageUrl && cfg.accessToken) {
+      const media = await fetchImageAsBase64(imageUrl, cfg.accessToken);
+      if (media) {
+        mediaBase64 = media.base64;
+        mimeType = media.mimeType;
+      }
+    }
+
+    const chatBody: Record<string, unknown> = {
+      clientId: cfg.clientId,
+      platform,
+      entryType: 'dm',
+      message: (isComment ? textComment : textDm) ?? (mediaBase64 ? '[imagen/documento adjunto]' : ''),
+      senderId: dmRecipientId ?? undefined,
+      senderName: senderName ?? undefined,
+      pageId,
+    };
+    if (mediaBase64 && mimeType) {
+      chatBody.mediaBase64 = mediaBase64;
+      chatBody.mimeType = mimeType;
+    }
+
     const chatRes = await fetch(`${baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        clientId: cfg.clientId,
-        platform,
-        entryType: entryTypeForApi,
-        message: incomingText,
-        senderId: dmRecipientId ?? undefined,
-        senderName: senderName ?? undefined,
-        pageId,
-      }),
+      body: JSON.stringify(chatBody),
     });
 
     const chatJson = await chatRes.json().catch(() => ({}));

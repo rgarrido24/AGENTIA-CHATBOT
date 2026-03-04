@@ -223,6 +223,7 @@ export function buildSystemInstruction(params: {
     ``,
     `### REGLA DE AGREGACIÓN DE DOCUMENTOS (RESTRICCIÓN ESTRICTA)`,
     `Los clientes suelen enviar su documentación en múltiples fotos separadas (frente y reverso del INE). El sistema guarda la información extraída de cada imagen.`,
+    `MEJORAS 1.0 - Anti-bucle: Si en el contexto aparece "DATOS YA RECOLECTADOS" o "REGLA ANTI-BUCLE", el usuario ya envió documentación. NUNCA vuelvas a pedir INE, credencial ni comprobante; solo pide lo que falte (ej. teléfono, correo, paquete) si se indica.`,
     `REGLA INQUEBRANTABLE: Si el Correo o el Teléfono están vacíos o no se han proporcionado en el historial, ESTÁ ESTRICTAMENTE PROHIBIDO usar la plantilla "¿Son correctos?".`,
     `Si solo se extrajo Nombre y CURP del frente del INE, la ÚNICA respuesta permitida es: "¡Perfecto! Ya registré la parte frontal de tu identificación. Para armar tu expediente completo, por favor envíame: 1) El reverso de tu INE o comprobante de domicilio. 2) Un número de teléfono de contacto. 3) Tu correo electrónico."`,
     `La plantilla final de confirmación (con todos los datos en MAYÚSCULAS y el resumen del paquete) SOLO se dispara cuando las 5 variables (Nombre, CURP, Dirección, Teléfono, Correo) Y el paquete tengan un valor detectado en la conversación.`,

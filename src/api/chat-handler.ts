@@ -517,6 +517,10 @@ export async function handleChat(params: {
         if (expedient.correo !== 'NO_LEIBLE' && !/no_leible|pendiente\.com/i.test(expedient.correo)) lines.push(`- Correo: ${expedient.correo}`);
         if (expedient.paquete && expedient.paquete !== 'NO_ESPECIFICADO') lines.push(`- Paquete: ${expedient.paquete}`);
         finalSystemInstruction += '\n\n' + lines.join('\n');
+        // Anti-bucle: no pedir documentación si ya está recibida (INE frontal+reverso)
+        if (hasNameAndCURP(expedient)) {
+          finalSystemInstruction += '\n\nREGLA ANTI-BUCLE: El usuario ya envió documentación (INE frontal y/o reverso). NO vuelvas a pedir INE, credencial ni comprobante de domicilio a menos que falte un dato concreto que se indique arriba.';
+        }
       }
     }
 
