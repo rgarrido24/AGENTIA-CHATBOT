@@ -566,7 +566,6 @@ export default function DemoBarberPage() {
                   </div>
                 </div>
               </div>
-            </div>
             )}
             {activeTab === 'agenda' && (
               <div className={styles.mobileAgendaColumn}>
