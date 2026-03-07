@@ -11,6 +11,17 @@ import HeroPortada from './HeroPortada';
 
 const CalendarDemo = dynamic(() => import('./CalendarDemo'), { ssr: false });
 
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(typeof window !== 'undefined' && window.innerWidth < breakpoint);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 export type CitaData = {
   clienteNombre: string;
   servicio: string;
@@ -228,9 +239,13 @@ export default function DemoBarberPage() {
   const [paidIds, setPaidIds] = useState<Set<string>>(new Set());
   const [showPagarButton, setShowPagarButton] = useState(false);
   const [lastCitaId, setLastCitaId] = useState<string | null>(null);
+  const [lastCitaData, setLastCitaData] = useState<CitaData | null>(null);
+  const [payPhone, setPayPhone] = useState('');
   const [lastAddedEventId, setLastAddedEventId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [apiReady, setApiReady] = useState<boolean | null>(null);
+  const isMobile = useIsMobile(768);
+  const [activeTab, setActiveTab] = useState<'chat' | 'agenda'>('chat');
 
   useEffect(() => {
     let cancelled = false;
@@ -277,6 +292,7 @@ export default function DemoBarberPage() {
       },
     ]);
     setLastCitaId(id);
+    setLastCitaData(cita);
     setLastAddedEventId(id);
     setShowPagarButton(true);
   }, []);
@@ -371,17 +387,192 @@ export default function DemoBarberPage() {
     setTimeout(scrollToBottom, 100);
   };
 
-  const handlePagarAnticipo = () => {
+  const handlePagarAnticipo = async () => {
     if (!lastCitaId) return;
     setPaidIds((prev) => new Set(prev).add(lastCitaId));
     setShowPagarButton(false);
     setLastCitaId(null);
+    const phone = payPhone.trim().replace(/\D/g, '');
+    if (phone.length >= 10) {
+      try {
+        const res = await fetch('/api/demo/whatsapp-bienvenida', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone,
+            link: typeof window !== 'undefined' ? window.location.origin + '/dashboard' : undefined,
+          }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          console.warn('[Demo] WhatsApp bienvenida:', data.error || res.status);
+        }
+      } catch (e) {
+        console.warn('[Demo] Error enviando WhatsApp bienvenida:', e);
+      }
+    }
+    setPayPhone('');
+    setLastCitaData(null);
   };
 
   return (
     <div className={`${styles.page} flex h-screen w-full overflow-hidden`}>
       <div className={styles.meshBg} aria-hidden />
       <div className={`${styles.content} flex flex-1 min-w-0 gap-6 p-6`}>
+        {/* ---------- Móvil: header + tabs + chat o agenda ---------- */}
+        {isMobile && (
+          <>
+            <header className={styles.barberMobileHeader}>
+              <span className={styles.barberMobileHeaderTitle}>
+                {config.businessName || 'Agentia Barber'}
+              </span>
+              <a
+                href={config.mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.barberMobileHeaderBtn}
+              >
+                UBICACIÓN
+              </a>
+              <Link href="/admin/settings" className={styles.barberMobileHeaderBtn}>
+                CONFIGURACIÓN
+              </Link>
+            </header>
+            <div className={styles.barberTabs}>
+              <button
+                type="button"
+                className={`${styles.barberTab} ${activeTab === 'chat' ? styles.barberTabActive : ''}`}
+                onClick={() => setActiveTab('chat')}
+              >
+                🤖 CHAT
+              </button>
+              <button
+                type="button"
+                className={`${styles.barberTab} ${activeTab === 'agenda' ? styles.barberTabActive : ''}`}
+                onClick={() => setActiveTab('agenda')}
+              >
+                📅 AGENDA
+              </button>
+            </div>
+            {activeTab === 'chat' && (
+              <div className={styles.mobileChatColumn}>
+                {apiReady === false && (
+                  <div
+                    className="px-3 py-2 text-xs text-amber-200 bg-amber-900/60 border-b border-amber-700/50"
+                    role="alert"
+                  >
+                    Configura <strong>GEMINI_API_KEY</strong> en tu hosting.
+                  </div>
+                )}
+                <div className={styles.mobileChatViewport} style={{ background: 'rgba(15, 23, 42, 0.92)' }}>
+                  {messages.length === 0 && (
+                    <p className="text-center text-slate-500 text-sm py-4">Escribe para agendar tu cita.</p>
+                  )}
+                  <AnimatePresence initial={false}>
+                    {messages.map((m, i) => (
+                      <motion.div
+                        key={`${i}-${m.content.slice(0, 12)}-${m.cita ? 'ticket' : ''}-${m.isLocation ? 'loc' : ''}`}
+                        variants={bubbleVariants}
+                        initial="initial"
+                        animate="animate"
+                        className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
+                      >
+                        <div
+                          className="max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm break-words"
+                          style={
+                            m.role === 'user'
+                              ? {
+                                  background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                                  marginLeft: 'auto',
+                                  color: '#fff',
+                                }
+                              : {
+                                  background: 'rgba(30, 41, 59, 0.9)',
+                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  color: 'rgba(255,255,255,0.92)',
+                                }
+                          }
+                        >
+                          {m.content ? <span>{m.content}</span> : null}
+                          {m.cita ? <TicketReservacion cita={m.cita} /> : null}
+                          {m.showGallery ? <GalleryPlaceholder /> : null}
+                          {m.isLocation ? <MapPreviewBlock /> : null}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  {loading && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start mb-2">
+                      <div
+                        className="rounded-2xl px-4 py-2.5 text-sm flex items-center gap-1"
+                        style={{
+                          background: 'rgba(30, 41, 59, 0.9)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                        }}
+                      >
+                        <span className="text-slate-400 text-xs mr-1">Escribiendo</span>
+                        <span className={styles.typingDots}><span>.</span><span>.</span><span>.</span></span>
+                      </div>
+                    </motion.div>
+                  )}
+                  {showPagarButton && lastCitaId && (
+                    <div className="pt-2 pb-2">
+                      <p className="text-xs text-slate-400 mb-2">WhatsApp (opcional) para enviarte el acceso:</p>
+                      <input
+                        type="tel"
+                        value={payPhone}
+                        onChange={(e) => setPayPhone(e.target.value)}
+                        placeholder="Ej: 52 55 1234 5678"
+                        className="w-full rounded-xl px-3 py-2.5 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
+                      />
+                      <CheckoutSeguro onPagar={handlePagarAnticipo} />
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+                <div className={styles.mobileChatInputWrap}>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                      placeholder="Escribe un mensaje..."
+                      className="flex-1 rounded-xl px-4 py-3 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSend}
+                      disabled={loading}
+                      className="rounded-full p-3 text-white disabled:opacity-50 transition min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)' }}
+                      aria-label="Enviar"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            {activeTab === 'agenda' && (
+              <div className={styles.mobileAgendaColumn}>
+                <div className={styles.mobileCalendarWrap}>
+                  <CalendarDemo
+                    events={events}
+                    paidIds={paidIds}
+                    lastAddedEventId={lastAddedEventId}
+                  />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ---------- Desktop: iPhone mockup + calendario ---------- */}
+        {!isMobile && (
+          <>
         <div className="flex flex-col items-center flex-shrink-0 w-full max-w-[380px]">
           <div className={styles.iphoneFrame}>
             <div className={`${styles.iphoneInner} ${styles.glassPhone} relative w-full max-w-[340px]`}>
@@ -484,6 +675,16 @@ export default function DemoBarberPage() {
                   className="px-3 py-3 border-t border-white/10"
                   style={{ background: 'rgba(15, 23, 42, 0.95)' }}
                 >
+                  <p className="text-xs text-slate-400 mb-2">
+                    WhatsApp (opcional) para enviarte el acceso a tu barbería:
+                  </p>
+                  <input
+                    type="tel"
+                    value={payPhone}
+                    onChange={(e) => setPayPhone(e.target.value)}
+                    placeholder="Ej: 52 55 1234 5678"
+                    className="w-full rounded-xl px-3 py-2 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-3"
+                  />
                   <CheckoutSeguro onPagar={handlePagarAnticipo} />
                 </div>
               )}
@@ -547,6 +748,8 @@ export default function DemoBarberPage() {
             />
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

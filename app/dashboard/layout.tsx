@@ -1,4 +1,5 @@
 import Layout from '@/components/Layout';
+import DashboardAuthGuard from './DashboardAuthGuard';
 
 export default function DashboardLayout({
   children,
@@ -6,9 +7,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Layout brand={{ logoUrl: '/logo-agentia-2026.png', name: 'Agentia', logoOnly: true }}>
-
-      {children}
-    </Layout>
+    <DashboardAuthGuard>
+      <Layout brand={{ logoUrl: '/logo-agentia-2026.png', name: 'Agentia', logoOnly: true }}>
+        {children}
+      </Layout>
+    </DashboardAuthGuard>
   );
 }

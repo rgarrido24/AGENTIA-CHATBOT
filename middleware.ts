@@ -15,8 +15,10 @@ async function sha256Hex(text: string): Promise<string> {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAdminPage = pathname.startsWith('/admin');
+  const isDashboardPage = pathname.startsWith('/dashboard');
   const isAdminApi = pathname.startsWith('/api/admin');
-  if (!isAdminPage && !isAdminApi) {
+  const isProtected = isAdminPage || isDashboardPage || isAdminApi;
+  if (!isProtected) {
     return NextResponse.next();
   }
   const token = request.cookies.get(COOKIE_NAME)?.value;
@@ -36,5 +38,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: ['/admin/:path*', '/dashboard/:path*', '/api/admin/:path*'],
 };

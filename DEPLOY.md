@@ -30,13 +30,17 @@ Si ves **"Error de conexión"** o el banner amarillo de configuración:
 
 ## Render
 
+**Importante:** En Render **no existe un archivo `.env`** en el servidor. Las variables se configuran solo en el panel:
+
 1. Crea un **Web Service** y conecta tu repo.
 2. Build command: `npm run build`
 3. Start command: `npm start` (o usa el Procfile: `web: npm start`)
-4. En **Environment** añade:
-   - `GEMINI_API_KEY` = tu API key de Google AI Studio
-   - `ADMIN_PASSWORD` = contraseña para el panel admin
-5. Despliega. La demo quedará en `https://tu-app.onrender.com/demo/barber`.
+4. Ve a **Environment** (menú izquierdo del servicio) y añade las variables con **"Add Environment Variable"**:
+   - **Key:** `GEMINI_API_KEY` → **Value:** tu API key de Google AI Studio
+   - **Key:** `ADMIN_PASSWORD` → **Value:** la contraseña con la que quieres entrar a "Acceso Clientes" y al panel
+5. **Redeploy:** Después de añadir o cambiar cualquier variable, haz **"Manual Deploy" → "Deploy latest commit"** (o un nuevo deploy). Si no redepliegas, la app sigue con las variables antiguas.
+
+La demo quedará en `https://tu-app.onrender.com/demo/barber`. El enlace "Acceso Clientes" llevará a `/login` y solo con `ADMIN_PASSWORD` correcta podrás entrar.
 
 ## Otros hostings (Vercel, Railway, etc.)
 

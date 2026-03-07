@@ -1,4 +1,6 @@
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import type { Viewport } from 'next';
+import DemoBarberPWAHead from './DemoBarberPWAHead';
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -6,10 +8,23 @@ const plusJakarta = Plus_Jakarta_Sans({
   variable: '--font-demo',
 });
 
+export const viewport: Viewport = {
+  themeColor: '#0f172a',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function DemoBarberLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <div className={plusJakarta.className}>{children}</div>;
+  return (
+    <div className={plusJakarta.className}>
+      <DemoBarberPWAHead />
+      {children}
+    </div>
+  );
 }

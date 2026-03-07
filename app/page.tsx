@@ -31,7 +31,7 @@ export default function LandingPage() {
               Atención 24/7 sin aumentar tu equipo.
             </p>
             <Link
-              href="/dashboard"
+              href="/login?from=/dashboard"
               className="inline-flex items-center gap-2 btn-cta px-6 py-3 text-base"
             >
               Acceso Clientes
