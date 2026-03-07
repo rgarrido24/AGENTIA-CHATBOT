@@ -286,12 +286,26 @@
   transition: box-shadow 0.4s ease, width 0.4s ease, transform 0.4s ease;
 }
 
-.dynamicIslandActive {
+.chatDynamicIslandMobile {
+  flex-shrink: 0;
+  height: 24px;
+  width: 100px;
+  margin: 8px auto 0;
+  border-radius: 12px;
+  background: #000;
+  transition: box-shadow 0.4s ease;
+}
+
+.dynamicIslandActive,
+.chatDynamicIslandMobile.dynamicIslandActive {
   box-shadow:
     0 0 24px rgba(34, 197, 94, 0.7),
     0 0 48px rgba(34, 197, 94, 0.35);
-  width: 140px;
   animation: islandPulse 1.5s ease-in-out infinite;
+}
+
+.dynamicIslandActive {
+  width: 140px;
 }
 
 @keyframes islandPulse {
@@ -301,6 +315,30 @@
   50% {
     box-shadow: 0 0 32px rgba(34, 197, 94, 0.9), 0 0 64px rgba(34, 197, 94, 0.45);
   }
+}
+
+/* Chat estilo WhatsApp: wallpaper y burbujas */
+.chatWallpaper {
+  background-color: #0b141a;
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.bubbleUser {
+  border-radius: 18px 18px 4px 18px;
+}
+.bubbleAssistant {
+  border-radius: 18px 18px 18px 4px;
+}
+.bubbleMeta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 4px;
+}
+.bubbleTime {
+  font-size: 11px;
+  opacity: 0.75;
 }
 
 /* Typing dots */

@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { CalendarEvent } from './CalendarDemo';
 import { getStoredConfig, getDefaultConfig, getDuracionMinutos } from '@/src/lib/demo-config';
@@ -35,6 +36,7 @@ type ChatMessage = {
   cita?: CitaData | null;
   showGallery?: boolean;
   isLocation?: boolean;
+  createdAt?: number;
 };
 
 function looksLikeTimeRequest(text: string): boolean {
@@ -193,6 +195,59 @@ const bubbleVariants = {
   },
 };
 
+function formatMessageTime(ts?: number): string {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+}
+
+function ChatHeaderWhatsApp({ loading, withIslandPadding }: { loading: boolean; withIslandPadding?: boolean }) {
+  const [logoError, setLogoError] = useState(false);
+  return (
+    <div
+      className={`flex items-center gap-3 px-4 py-3 text-white shrink-0 ${withIslandPadding ? 'pt-12' : ''}`}
+      style={{ background: 'linear-gradient(180deg, #075e54 0%, #128c7e 100%)' }}
+    >
+      <div className="relative w-10 h-10 rounded-full overflow-hidden bg-white/20 shrink-0 flex items-center justify-center">
+        {!logoError ? (
+          <Image
+            src="/logo-agentia-2026.png"
+            alt="Agentia"
+            width={40}
+            height={40}
+            className="object-cover w-full h-full"
+            onError={() => setLogoError(true)}
+          />
+        ) : (
+          <span className="text-lg font-semibold text-white">A</span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold truncate text-[15px]">Agentia</p>
+        <p className="text-xs text-white/80 truncate">
+          {loading ? (
+            <span className="inline-flex items-center gap-0.5">
+              Escribiendo
+              <span className={styles.typingDots}><span>.</span><span>.</span><span>.</span></span>
+            </span>
+          ) : (
+            'Resolutivo 24/7'
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function DoubleCheckBlue() {
+  return (
+    <svg className="w-3.5 h-3.5 shrink-0 text-[#53bdeb]" viewBox="0 0 16 11" fill="currentColor" aria-hidden>
+      <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.88a.32.32 0 0 1-.484.032l-.358-.325a.32.32 0 0 0-.484.032l-.378.48a.418.418 0 0 0 .036.54l1.32 1.266c.162.156.373.241.601.241.23 0 .44-.085.601-.241l3.172-3.044a.365.365 0 0 0 .063-.51z" />
+      <path d="M6.864 8.66a.32.32 0 0 0 .484-.032l.358-.325a.32.32 0 0 1 .484-.032l.378.48a.418.418 0 0 1-.036.54l-1.32 1.266a.877.877 0 0 1-.601.241.877.877 0 0 1-.601-.241L2.92 7.36a.365.365 0 0 1-.063-.51l.478-.372a.365.365 0 0 1 .51.063L6.864 8.66z" />
+    </svg>
+  );
+}
+
 function CheckoutSeguro({ onPagar, disabled }: { onPagar: () => void; disabled?: boolean }) {
   return (
     <motion.div
@@ -301,7 +356,7 @@ export default function DemoBarberPage() {
     const text = input.trim();
     if (!text || loading) return;
     setInput('');
-    setMessages((prev) => [...prev, { role: 'user', content: text }]);
+    setMessages((prev) => [...prev, { role: 'user', content: text, createdAt: Date.now() }]);
     setLoading(true);
     try {
       const isFirstAppointmentRequest =
@@ -323,7 +378,10 @@ export default function DemoBarberPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const errMsg = data?.error ?? `Error ${res.status}. Intenta de nuevo.`;
-        setMessages((prev) => [...prev, { role: 'assistant', content: errMsg }]);
+        setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: errMsg, createdAt: Date.now() },
+      ]);
         return;
       }
       const reply = data?.reply ?? 'No pude procesar tu mensaje.';
@@ -357,6 +415,7 @@ export default function DemoBarberPage() {
             content: displayContent,
             cita: cita || undefined,
             showGallery: showGallery || undefined,
+            createdAt: Date.now(),
           },
         ];
         if (cita) {
@@ -364,6 +423,7 @@ export default function DemoBarberPage() {
             role: 'assistant',
             content: '¡TE ESPERAMOS! AQUÍ TIENES NUESTRA UBICACIÓN:',
             isLocation: true,
+            createdAt: Date.now(),
           });
         }
         return next;
@@ -379,7 +439,7 @@ export default function DemoBarberPage() {
             : 'Error de conexión. Comprueba que el servidor esté en marcha (npm run dev) y que GEMINI_API_KEY esté en .env.local. Si ya está configurado, puede ser un fallo temporal; intenta de nuevo.';
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: msg },
+        { role: 'assistant', content: msg, createdAt: Date.now() },
       ]);
     } finally {
       setLoading(false);
@@ -466,6 +526,11 @@ export default function DemoBarberPage() {
             {activeTab === 'chat' && (
               <div className={styles.phoneFrameMinimal}>
                 <div className={styles.phoneFrameMinimalInner}>
+                <div
+                  className={`${styles.chatDynamicIslandMobile} ${loading ? styles.dynamicIslandActive : ''}`}
+                  aria-hidden
+                />
+                <ChatHeaderWhatsApp loading={loading} />
                 {apiReady === false && (
                   <div
                     className="px-3 py-2 text-xs text-amber-200 bg-amber-900/60 border-b border-amber-700/50"
@@ -474,7 +539,7 @@ export default function DemoBarberPage() {
                     Configura <strong>GEMINI_API_KEY</strong> en tu hosting.
                   </div>
                 )}
-                <div className={styles.mobileChatViewport} style={{ background: 'rgba(15, 23, 42, 0.92)' }}>
+                <div className={`${styles.mobileChatViewport} ${styles.chatWallpaper}`}>
                   {messages.length === 0 && (
                     <p className="text-center text-slate-500 text-sm py-4">Escribe para agendar tu cita.</p>
                   )}
@@ -488,7 +553,7 @@ export default function DemoBarberPage() {
                         className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
                       >
                         <div
-                          className="max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm break-words"
+                          className={`${m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant} max-w-[85%] px-3 py-2 text-sm shadow-sm break-words`}
                           style={
                             m.role === 'user'
                               ? {
@@ -497,7 +562,7 @@ export default function DemoBarberPage() {
                                   color: '#fff',
                                 }
                               : {
-                                  background: 'rgba(30, 41, 59, 0.9)',
+                                  background: 'rgba(30, 41, 59, 0.95)',
                                   border: '1px solid rgba(255,255,255,0.08)',
                                   color: 'rgba(255,255,255,0.92)',
                                 }
@@ -507,19 +572,19 @@ export default function DemoBarberPage() {
                           {m.cita ? <TicketReservacion cita={m.cita} /> : null}
                           {m.showGallery ? <GalleryPlaceholder /> : null}
                           {m.isLocation ? <MapPreviewBlock /> : null}
+                          {m.role === 'assistant' && (m.content || m.cita || m.showGallery || m.isLocation) && (
+                            <div className={styles.bubbleMeta}>
+                              <span className={styles.bubbleTime}>{formatMessageTime(m.createdAt)}</span>
+                              <DoubleCheckBlue />
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     ))}
                   </AnimatePresence>
                   {loading && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start mb-2">
-                      <div
-                        className="rounded-2xl px-4 py-2.5 text-sm flex items-center gap-1"
-                        style={{
-                          background: 'rgba(30, 41, 59, 0.9)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                        }}
-                      >
+                      <div className={`${styles.bubbleAssistant} rounded-[22px] rounded-bl-md px-4 py-2.5 text-sm flex items-center gap-1 max-w-[85%]`} style={{ background: 'rgba(30, 41, 59, 0.95)', border: '1px solid rgba(255,255,255,0.08)' }}>
                         <span className="text-slate-400 text-xs mr-1">Escribiendo</span>
                         <span className={styles.typingDots}><span>.</span><span>.</span><span>.</span></span>
                       </div>
@@ -595,18 +660,7 @@ export default function DemoBarberPage() {
                   <span className="text-[10px] text-emerald-400 font-medium">Procesando...</span>
                 )}
               </div>
-              <div
-                className="flex items-center gap-3 px-4 pt-12 pb-3 text-white"
-                style={{ background: 'linear-gradient(180deg, #0d9488 0%, #0f766e 100%)' }}
-              >
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-semibold">
-                  A
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">Agentia</p>
-                  <p className="text-xs opacity-90">Resolutivo 24/7</p>
-                </div>
-              </div>
+              <ChatHeaderWhatsApp loading={loading} withIslandPadding />
               {apiReady === false && (
                 <div
                   className="px-3 py-2 text-xs text-amber-200 bg-amber-900/60 border-b border-amber-700/50"
@@ -616,8 +670,7 @@ export default function DemoBarberPage() {
                 </div>
               )}
               <div
-                className="h-[380px] overflow-y-auto px-3 py-4 space-y-2"
-                style={{ background: 'rgba(15, 23, 42, 0.92)' }}
+                className={`h-[380px] overflow-y-auto px-3 py-4 space-y-2 ${styles.chatWallpaper}`}
               >
                 {messages.length === 0 && (
                   <p className="text-center text-slate-500 text-sm py-4">
@@ -634,7 +687,7 @@ export default function DemoBarberPage() {
                       className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className="max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm break-words"
+                        className={`${m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant} max-w-[85%] px-3 py-2 text-sm shadow-sm break-words`}
                         style={
                           m.role === 'user'
                             ? {
@@ -643,7 +696,7 @@ export default function DemoBarberPage() {
                                 color: '#fff',
                               }
                             : {
-                                background: 'rgba(30, 41, 59, 0.9)',
+                                background: 'rgba(30, 41, 59, 0.95)',
                                 border: '1px solid rgba(255,255,255,0.08)',
                                 color: 'rgba(255,255,255,0.92)',
                               }
@@ -653,6 +706,12 @@ export default function DemoBarberPage() {
                         {m.cita ? <TicketReservacion cita={m.cita} /> : null}
                         {m.showGallery ? <GalleryPlaceholder /> : null}
                         {m.isLocation ? <MapPreviewBlock /> : null}
+                        {m.role === 'assistant' && (m.content || m.cita || m.showGallery || m.isLocation) && (
+                          <div className={styles.bubbleMeta}>
+                            <span className={styles.bubbleTime}>{formatMessageTime(m.createdAt)}</span>
+                            <DoubleCheckBlue />
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   ))}
@@ -663,13 +722,7 @@ export default function DemoBarberPage() {
                     animate={{ opacity: 1 }}
                     className="flex justify-start"
                   >
-                    <div
-                      className="rounded-2xl px-4 py-2.5 text-sm flex items-center gap-1"
-                      style={{
-                        background: 'rgba(30, 41, 59, 0.9)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                      }}
-                    >
+                    <div className={`${styles.bubbleAssistant} rounded-[22px] rounded-bl-md px-4 py-2.5 text-sm flex items-center gap-1`} style={{ background: 'rgba(30, 41, 59, 0.95)', border: '1px solid rgba(255,255,255,0.08)' }}>
                       <span className="text-slate-400 text-xs mr-1">Escribiendo</span>
                       <span className={styles.typingDots}>
                         <span>.</span>
