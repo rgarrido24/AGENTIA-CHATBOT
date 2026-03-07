@@ -1,33 +1,55 @@
-# Agentia - Demo Barber (copia en E:)
+# Agentia ManyChat Clone (API)
 
-Proyecto recuperado en **E:\AGENTIA-CHATBOT-LIMPIO**. Incluye la demo de barberías con glassmorphism, animaciones y checkout seguro.
+API serverless en Vercel con Node.js + TypeScript que expone `POST /api/chat` y responde usando Gemini vía `@google/generative-ai`.
 
-## Cómo arrancar
+> Nota: El modelo se selecciona por `GEMINI_MODEL` (default `gemini-flash-latest`) o por `business_configs.model`.
 
-1. Abre esta carpeta en Cursor (o en terminal):
-   ```
-   E:\AGENTIA-CHATBOT-LIMPIO
-   ```
+## Requisitos
 
-2. Crea el archivo de variables de entorno:
-   - Copia `.env.local.example` a `.env.local`
-   - Pon tu API key de Gemini (obtén una en https://aistudio.google.com/apikey):
-   ```
-   GEMINI_API_KEY=tu_api_key_aqui
-   ```
+- Node.js 20+
+- Cuenta en Vercel (para desplegar)
+- API Key de Gemini
 
-3. Instala y ejecuta:
-   ```bash
-   npm install
-   npx next dev -p 3010
-   ```
+## Variables de entorno
 
-4. Abre en el navegador: **http://localhost:3010/demo-barber**
+Copia `.env.example` a `.env` y completa:
 
-## Contenido
+- `GEMINI_API_KEY`
+- `GEMINI_SYSTEM_PROMPT` (pega aquí el System Prompt de Sales Closer)
 
-- **Demo barber:** chat tipo WhatsApp + calendario, estilo iPhone 16 Pro, Dynamic Island, checkout seguro.
-- **API:** `/api/chat-demo` usa Gemini para agendar citas.
-- **Ruta principal:** `/` enlaza a la demo.
+En Vercel: Project Settings → Environment Variables.
 
-Si tenías el proyecto en GitHub/GitLab, puedes clonar de nuevo desde ahí para tener también el dashboard y el resto de rutas.
+## Desarrollo local
+
+```bash
+npm install
+npm run dev:vercel
+```
+
+## Probar el endpoint
+
+```bash
+curl -X POST http://localhost:3000/api/chat ^
+  -H "Content-Type: application/json" ^
+  -d "{\"clientId\":\"izzi\",\"message\":\"Hola, ¿qué paquetes tienes?\"}"
+```
+
+Respuesta:
+
+```json
+{ "clientId": "izzi", "reply": "..." }
+```
+
+## Multi-negocio (clientId → MongoDB)
+
+El endpoint busca configuración dinámica por `clientId` en MongoDB:
+
+- **Colección**: `business_configs`
+- **Campos**: `clientId`, `systemPrompt`, `knowledge`, `model`
+
+Semilla rápida:
+
+```bash
+node ./scripts/seed-business-configs.js
+```
+

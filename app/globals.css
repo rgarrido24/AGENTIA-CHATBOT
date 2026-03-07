@@ -2,4 +2,121 @@
 @tailwind components;
 @tailwind utilities;
 
-body { font-family: system-ui, sans-serif; }
+/* Luxury Tech - Flat Luxury Design */
+
+@layer base {
+  :root {
+    --luxury: #000000;
+    --forest: #173814;
+    --sage: #4f9d74;
+    --brand-primary: #4f9d74;
+    --brand-accent: #173814;
+  }
+}
+
+body {
+  @apply antialiased font-sans;
+  min-height: 100vh;
+}
+
+@layer components {
+  /* Tarjetas - Flat Luxury: Negro con borde forest */
+  .card-glass {
+    @apply rounded-xl transition-all duration-300 font-heading;
+    background: #000000;
+    border: 1px solid #173814;
+  }
+  .card-glass:hover {
+    border-color: #4f9d74;
+  }
+
+  /* Botón principal - Sage con texto negro */
+  .btn-cta {
+    @apply px-5 py-2.5 rounded-lg font-bold transition-all duration-300 font-heading;
+    background: #4f9d74;
+    color: #000000;
+  }
+  .btn-cta:hover {
+    background: #173814;
+    color: #ffffff;
+  }
+
+  /* Botón secundario */
+  .btn-glass {
+    @apply px-4 py-2 rounded-lg border transition-all duration-300 font-heading;
+    background: transparent;
+    border-color: #173814;
+    color: #4f9d74;
+  }
+  .btn-glass:hover {
+    background: #173814;
+    color: #ffffff;
+  }
+
+  .title-tracking {
+    letter-spacing: 0.05em;
+  }
+  .subtitle-tracking {
+    letter-spacing: 0.03em;
+  }
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes neonPulse {
+  0%, 100% { filter: drop-shadow(0 0 4px #4f9d74); }
+  50% { filter: drop-shadow(0 0 12px #4f9d74); }
+}
+@keyframes neonGlow {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes barGrow {
+  from { transform: scaleX(0); transform-origin: left; }
+  to { transform: scaleX(1); transform-origin: left; }
+}
+@keyframes speedoFill {
+  from { stroke-dashoffset: 283; }
+  to { stroke-dashoffset: var(--dash-offset); }
+}
+
+@keyframes slideInLogro {
+  0% {
+    opacity: 0.6;
+    transform: translateX(-24px) scale(0.97);
+  }
+  50% {
+    box-shadow: 0 0 24px 4px rgba(79, 157, 116, 0.2);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+.animate-slide-in-logro {
+  animation: slideInLogro 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #0a0a0a;
+  border-radius: 4px;
+}
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #173814;
+  border-radius: 4px;
+}
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #4f9d74;
+}

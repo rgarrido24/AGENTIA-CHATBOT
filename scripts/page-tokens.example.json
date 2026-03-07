@@ -1,0 +1,25 @@
+{
+  "pages": [
+    {
+      "clientId": "izzi-1",
+      "pageId": "REEMPLAZA_CON_TU_PAGE_ID_1",
+      "accessToken": "PEGA_AQUI_TU_PAGE_ACCESS_TOKEN_1"
+    },
+    {
+      "clientId": "izzi-2",
+      "pageId": "REEMPLAZA_CON_TU_PAGE_ID_2",
+      "accessToken": "PEGA_AQUI_TU_PAGE_ACCESS_TOKEN_2"
+    },
+    {
+      "clientId": "izzi-3",
+      "pageId": "REEMPLAZA_CON_TU_PAGE_ID_3",
+      "accessToken": "PEGA_AQUI_TU_PAGE_ACCESS_TOKEN_3"
+    },
+    {
+      "clientId": "agentia",
+      "pageId": "REEMPLAZA_CON_TU_PAGE_ID_AGENTIA",
+      "accessToken": "PEGA_AQUI_TU_PAGE_ACCESS_TOKEN_AGENTIA"
+    }
+  ]
+}
+
