@@ -42,6 +42,23 @@ Si ves **"Error de conexión"** o el banner amarillo de configuración:
 
 La demo quedará en `https://tu-app.onrender.com/demo/barber`. El enlace "Acceso Clientes" llevará a `/login` y solo con `ADMIN_PASSWORD` correcta podrás entrar.
 
+### WhatsApp Bridge (Izzi / mensajes al Pipeline)
+
+El **Bridge de WhatsApp** (`scripts/whatsapp-bridge.js`) es un **proceso independiente**: no se inicia con el servidor Next.js. Conecta un número por QR y reenvía los mensajes a `POST /api/chat`; la app crea/actualiza leads en MongoDB y responde con la IA.
+
+- **Local:** En una segunda terminal ejecuta `npm run whatsapp`. Lee variables de `.env.local` y `.env`. La URL del API por defecto es `http://localhost:3010`.
+- **Render:** Para que los mensajes de Izzi entren al Pipeline en producción:
+  1. Crea un **segundo servicio** en Render: **Background Worker** (no Web Service).
+  2. Mismo repo y branch que la app.
+  3. **Build command:** `npm install` (o `npm run build` si quieres comprobar que compila).
+  4. **Start command:** `npm run whatsapp`
+  5. **Environment:** Añade al menos:
+     - `AGENTIA_CHATBOT_API_URL` = URL de tu Web Service (ej. `https://agentia-chatbot-ventas.onrender.com`)
+     - Si las rutas `/api/chat/outbound`, `/api/reminders/pending` o `/api/alerts/pending` exigen `CRON_SECRET`, añade también `CRON_SECRET` con el mismo valor que en la app.
+  6. Despliega el Worker. La primera vez mostrará un QR en los logs; escanéalo con WhatsApp. La sesión se guarda y en los siguientes deploys suele reconectar sin QR (salvo que borres datos del servicio).
+
+Si el bridge se detuvo o dejó de recibir mensajes, revisa los **Logs** del Background Worker en Render y comprueba que `AGENTIA_CHATBOT_API_URL` apunte a la app desplegada y que la app tenga `MONGODB_URI` y `GEMINI_API_KEY` configurados.
+
 ## Otros hostings (Vercel, Railway, etc.)
 
 - Añade las mismas variables de entorno en el panel.

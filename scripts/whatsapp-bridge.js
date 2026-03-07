@@ -19,15 +19,18 @@ const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
 function getEnv(key, def) {
-  const envPath = path.join(__dirname, '..', '.env');
-  if (fs.existsSync(envPath)) {
-    const text = fs.readFileSync(envPath, 'utf8');
-    const re = new RegExp(`^${key}=(.+)$`, 'm');
-    const m = text.match(re);
-    if (m) {
-      let v = m[1].trim();
-      if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
-      return v || def;
+  const envDir = path.join(__dirname, '..');
+  for (const file of ['.env.local', '.env']) {
+    const envPath = path.join(envDir, file);
+    if (fs.existsSync(envPath)) {
+      const text = fs.readFileSync(envPath, 'utf8');
+      const re = new RegExp(`^${key}=(.+)$`, 'm');
+      const m = text.match(re);
+      if (m) {
+        let v = m[1].trim();
+        if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
+        if (v) return v;
+      }
     }
   }
   return process.env[key] || def;

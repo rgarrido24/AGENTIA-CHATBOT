@@ -11,6 +11,7 @@
     "seed": "node scripts/seed-business-configs.js",
     "purge:knowledge": "node scripts/purge-knowledge.js",
     "test:comment": "node scripts/test-comment-webhook.js",
+    "debug:export": "node scripts/generate-agentia-debug.js",
     "dev": "npx next dev -p 3010",
     "build": "npm install && next build",
     "start": "next start -p ${PORT:-3010}",

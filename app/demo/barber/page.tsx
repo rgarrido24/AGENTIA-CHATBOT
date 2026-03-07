@@ -438,24 +438,34 @@ export default function DemoBarberPage() {
                 CONFIGURACIÓN
               </Link>
             </header>
+            <div className={styles.heroMobileWrap}>
+              <HeroPortada />
+            </div>
             <div className={styles.barberTabs}>
               <button
                 type="button"
                 className={`${styles.barberTab} ${activeTab === 'chat' ? styles.barberTabActive : ''}`}
                 onClick={() => setActiveTab('chat')}
               >
-                🤖 CHAT
+                <svg className={styles.barberTabIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                CHAT
               </button>
               <button
                 type="button"
                 className={`${styles.barberTab} ${activeTab === 'agenda' ? styles.barberTabActive : ''}`}
                 onClick={() => setActiveTab('agenda')}
               >
-                📅 AGENDA
+                <svg className={styles.barberTabIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                AGENDA
               </button>
             </div>
             {activeTab === 'chat' && (
-              <div className={styles.mobileChatColumn}>
+              <div className={styles.phoneFrameMinimal}>
+                <div className={styles.phoneFrameMinimalInner}>
                 {apiReady === false && (
                   <div
                     className="px-3 py-2 text-xs text-amber-200 bg-amber-900/60 border-b border-amber-700/50"
@@ -553,8 +563,10 @@ export default function DemoBarberPage() {
                       </svg>
                     </button>
                   </div>
+                  </div>
                 </div>
               </div>
+            </div>
             )}
             {activeTab === 'agenda' && (
               <div className={styles.mobileAgendaColumn}>
