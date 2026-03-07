@@ -41,6 +41,7 @@ function looksLikeTimeRequest(text: string): boolean {
 const COLOR_ESTETICA = '#8b5cf6';
 const COLOR_UÑAS = '#06b6d4';
 const COLOR_INFANTIL = '#f97316';
+const COLOR_BARBERIA = '#0d9488';
 
 function getEventColor(tipoNegocio: string): string {
   const t = (tipoNegocio || '').toLowerCase();
