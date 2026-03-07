@@ -1,0 +1,33 @@
+{
+  "name": "agentia-manychat-clone",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentia ManyChat Clone - API serverless con Gemini",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "npx next dev -p 3010",
+    "build": "next build",
+    "start": "next start -p ${PORT:-3010}",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "next": "14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@fullcalendar/core": "^6.1.10",
+    "@fullcalendar/react": "^6.1.10",
+    "@fullcalendar/daygrid": "^6.1.10",
+    "@fullcalendar/timegrid": "^6.1.10",
+    "@fullcalendar/interaction": "^6.1.10",
+    "framer-motion": "^11.11.17"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "@types/react": "19.2.14",
+    "typescript": "^5.7.3",
+    "tailwindcss": "^3.4.19",
+    "postcss": "^8.5.6",
+    "autoprefixer": "^10.4.24"
+  }
+}

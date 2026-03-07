@@ -1,0 +1,35 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+
+const COOKIE_NAME = 'admin_auth';
+const COOKIE_MAX_AGE = 60 * 60 * 24; // 24h
+const AUTH_SALT = 'agentia_admin_salt';
+
+function getAuthTokenHash(): string {
+  const secret = process.env.ADMIN_PASSWORD;
+  if (!secret) return '';
+  const crypto = require('crypto');
+  return crypto.createHash('sha256').update(secret + AUTH_SALT).digest('hex');
+}
+
+export async function POST(request: NextRequest) {
+  const secret = process.env.ADMIN_PASSWORD;
+  if (!secret) {
+    return NextResponse.json({ error: 'Auth no configurado' }, { status: 500 });
+  }
+  const body = await request.json().catch(() => ({}));
+  const password = typeof body?.password === 'string' ? body.password : '';
+  if (password !== secret) {
+    return NextResponse.json({ error: 'Contraseña incorrecta' }, { status: 401 });
+  }
+  const token = getAuthTokenHash();
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: COOKIE_MAX_AGE,
+    path: '/',
+  });
+  return NextResponse.json({ ok: true, redirect: '/admin/dashboard' });
+}
