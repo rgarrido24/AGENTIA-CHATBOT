@@ -41,6 +41,15 @@ import {
   hasNameAndCURP,
   type ExtractedDocData,
 } from '../lib/document-ocr';
+// Izzi: base de conocimiento comercial y flujo de cierre de venta
+// (archivos JS generados por Claude y ubicados en src/lib).
+// Se importan como any para no romper el tipado TS existente.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const knowledgeBaseIzzi: any = require('../lib/knowledge-base-izzi.js').default ??
+  require('../lib/knowledge-base-izzi.js');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const saleClosureFlow: any = require('../lib/sale-closure-flow.js');
+const { orchestrateSaleClosure } = saleClosureFlow;
 
 export type ChatRequestBody = {
   clientId?: unknown;
@@ -309,6 +318,19 @@ export async function handleChat(params: {
             })
           : Promise.resolve(),
       ]).catch(() => {});
+
+      // Orquestador de cierre (izzi): mover lead a Cerrado en pipeline externo y enviar alertas.
+      if (clientId === 'izzi') {
+        orchestrateSaleClosure({
+          tipo: 'confirmacion',
+          leadId,
+          respuestaCliente: userMessage,
+          leadData: {
+            nombre: existingLead?.senderName ?? senderName,
+            telefono: senderId?.replace(/@.*$/, '').replace(/\D/g, '') || undefined,
+          },
+        }).catch(() => {});
+      }
       return { status: 200, json: { clientId, reply: CONFIRMATION_SUCCESS_REPLY } };
     }
   }
@@ -499,6 +521,21 @@ export async function handleChat(params: {
     if (session) {
       finalSystemInstruction += `\n\n## Estado: ${session.currentStep}`;
       finalSystemInstruction += getFollowUpInstruction(session, clientId);
+    }
+
+    // Para izzi, inyectar la base de conocimiento estructurada (precios, promociones, reglas).
+    if (clientId === 'izzi' && knowledgeBaseIzzi) {
+      try {
+        const kbJson = JSON.stringify(knowledgeBaseIzzi, null, 2);
+        const fallback =
+          (knowledgeBaseIzzi.META && knowledgeBaseIzzi.META.fallbackMessage) ||
+          (knowledgeBaseIzzi.REGLAS_BOT && knowledgeBaseIzzi.REGLAS_BOT.fallbackResponse) ||
+          'Déjame consultar para darte la información exacta.';
+        finalSystemInstruction += `\n\n## BASE_DE_CONOCIMIENTO_IZZI (NO INVENTES DATOS FUERA DE ESTO)\n${kbJson}\n\n` +
+          `REGLA CRITICA: Si el cliente pregunta algo que NO esté explícitamente cubierto en esta base de conocimiento, responde exactamente: \"${fallback}\".`;
+      } catch {
+        // Si por alguna razón no se puede serializar, continuamos sin bloquear el flujo.
+      }
     }
 
     const existingLead = leadId ? await getLeadById(leadId) : null;
