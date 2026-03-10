@@ -304,7 +304,15 @@ export async function handleChat(params: {
       console.log('[chat-handler] 📋 Documentos confirmados - Datos para Izzi:', JSON.stringify(data, null, 2));
       const tags = inferTags(effectiveMessage);
       Promise.allSettled([
-        saveLead({ clientId, platform, entryType, message: effectiveMessage, reply: CONFIRMATION_SUCCESS_REPLY, tags, headers }),
+        saveLead({
+          clientId,
+          platform,
+          entryType,
+          message: effectiveMessage,
+          reply: CONFIRMATION_SUCCESS_REPLY,
+          tags,
+          headers,
+        }),
         senderId && pageId
           ? upsertLead({
               senderId,
@@ -317,20 +325,22 @@ export async function handleChat(params: {
               tags,
             })
           : Promise.resolve(),
-      ]).catch(() => {});
-
-      // Orquestador de cierre (izzi): mover lead a Cerrado en pipeline externo y enviar alertas.
-      if (clientId === 'izzi') {
-        orchestrateSaleClosure({
-          tipo: 'confirmacion',
-          leadId,
-          respuestaCliente: userMessage,
-          leadData: {
-            nombre: existingLead?.senderName ?? senderName,
-            telefono: senderId?.replace(/@.*$/, '').replace(/\D/g, '') || undefined,
-          },
-        }).catch(() => {});
-      }
+      ])
+        .then(() => {
+          // Orquestador de cierre (izzi): mover lead a Cerrado en pipeline externo y enviar alertas.
+          if (clientId === 'izzi') {
+            orchestrateSaleClosure({
+              tipo: 'confirmacion',
+              leadId,
+              respuestaCliente: userMessage,
+              leadData: {
+                nombre: senderName,
+                telefono: senderId?.replace(/@.*$/, '').replace(/\D/g, '') || undefined,
+              },
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
       return { status: 200, json: { clientId, reply: CONFIRMATION_SUCCESS_REPLY } };
     }
   }
