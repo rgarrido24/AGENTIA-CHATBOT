@@ -16,6 +16,18 @@ function isYesNo(text: string): boolean {
   );
 }
 
+function hasHireIntent(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  return /\bcontratar\b/.test(t)
+    || /\bme\s+interesa\b/.test(t)
+    || /\bquiero\b/.test(t)
+    || /\bs[ií]\s+quiero\b/.test(t)
+    || /\bacepto\b/.test(t)
+    || /\bvamos\b/.test(t)
+    || /\blisto\b/.test(t);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -30,16 +42,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'leadId requerido' }, { status: 400 });
     }
 
-    let tipo: 'solicitar_documento' | 'imagen_recibida' | 'no_comprobante' | 'confirmacion' =
-      'solicitar_documento';
+    let tipo: 'solicitar_documento' | 'imagen_recibida' | 'no_comprobante' | 'confirmacion' | null =
+      null;
 
     if (mediaBase64) {
       tipo = 'imagen_recibida';
-    } else if (typeof mensaje === 'string' && isYesNo(mensaje)) {
-      // Si no está en confirmación, el flow devuelve "no_aplica"
+    } else if (mensaje && isYesNo(mensaje)) {
       tipo = 'confirmacion';
-    } else if (typeof mensaje === 'string' && /no tengo|no cuento|sin comprobante/i.test(mensaje)) {
+    } else if (mensaje && /no tengo|no cuento|sin comprobante/i.test(mensaje)) {
       tipo = 'no_comprobante';
+    } else if (mensaje && hasHireIntent(mensaje)) {
+      tipo = 'solicitar_documento';
+    }
+
+    // Si no hay tipo de evento de cierre, delegar al chatbot principal (Gemini) vía /api/chat
+    if (!tipo) {
+      const baseUrl = request.nextUrl.origin;
+      const chatRes = await fetch(`${baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: 'izzi',
+          platform: 'whatsapp',
+          entryType: 'dm',
+          message: mensaje,
+          senderId: leadId,
+          senderName: (leadData as any)?.nombre,
+          pageId: 'whatsapp-bridge',
+        }),
+      });
+
+      const chatJson = await chatRes.json().catch(() => ({}));
+      return NextResponse.json(chatJson, { status: chatRes.status });
     }
 
     const tipoDocumento =
