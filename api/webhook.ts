@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { resolveBusinessConfigByPageId } from "../src/lib/business-config";
 
 function getEnv(name: string): string | undefined {
@@ -12,14 +12,14 @@ function getEnv(name: string): string | undefined {
   return trimmed;
 }
 
-function getSingleQuery(req: VercelRequest, key: string): string | undefined {
+function getSingleQuery(req: NextApiRequest, key: string): string | undefined {
   const v = req.query?.[key];
   if (Array.isArray(v)) return v[0];
   if (typeof v === "string") return v;
   return undefined;
 }
 
-async function safeReadJson(req: VercelRequest): Promise<any | undefined> {
+async function safeReadJson(req: NextApiRequest): Promise<any | undefined> {
   // Vercel puede parsear JSON automáticamente, pero en dev puede variar.
   try {
     const b: any = (req as any).body;
@@ -42,7 +42,7 @@ async function safeReadJson(req: VercelRequest): Promise<any | undefined> {
   }
 }
 
-function getBaseUrl(req: VercelRequest): string {
+function getBaseUrl(req: NextApiRequest): string {
   const host = req.headers["x-forwarded-host"] ?? req.headers["host"];
   const proto = (req.headers["x-forwarded-proto"] as string | undefined) ?? "https";
   const h = Array.isArray(host) ? host[0] : host;
@@ -120,7 +120,7 @@ async function replyToComment(params: { accessToken: string; commentId: string; 
   }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     // Meta recomienda responder rápido.
     if (req.method === "GET") {

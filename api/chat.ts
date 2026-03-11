@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { NextApiRequest, NextApiResponse } from "next";
 import { generateGeminiReply } from "../src/lib/gemini";
 import { getMongoDb } from "../lib/mongodb";
 import {
@@ -22,7 +22,7 @@ type ChatRequestBody = {
   pageId?: unknown;
 };
 
-async function parseJsonBody(req: VercelRequest): Promise<unknown> {
+async function parseJsonBody(req: NextApiRequest): Promise<unknown> {
   // Vercel suele parsear JSON automáticamente, pero por seguridad
   // manejamos el caso donde venga como string.
   let body: unknown;
@@ -80,7 +80,7 @@ async function saveLead(params: {
   message: string;
   reply: string;
   tags: string[];
-  req: VercelRequest;
+  req: NextApiRequest;
 }) {
   const db = await getMongoDb();
   const collection = db.collection("leads_agentia");
@@ -199,7 +199,7 @@ function formatCommentReply(rawReply: string): string {
   return `${first.replace(/\s+$/g, "")} ${second}`.trim();
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
 
   // CORS básico (útil si lo llamas desde frontend en otro dominio)
