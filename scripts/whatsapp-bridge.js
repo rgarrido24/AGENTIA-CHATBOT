@@ -16,7 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const qrcode = require('qrcode');
 const http = require('http');
 
 function getEnv(key, def) {
@@ -87,6 +87,7 @@ async function main() {
   let client = null;
   let whatsappReady = false;
   let lastQr = null;
+  let lastQrDataURL = null;
   let lastState = 'boot';
   let reconnectAttempt = 0;
 
@@ -112,8 +113,12 @@ async function main() {
     }
     if (req.url.startsWith('/qr')) {
       res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.end(JSON.stringify({ ok: true, qr: lastQr, timestamp: new Date().toISOString() }));
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      if (!lastQrDataURL) {
+        res.end('<html><body style="background:#000;color:#fff;padding:24px">Esperando QR... recarga en 10 segundos</body></html>');
+        return;
+      }
+      res.end('<html><body style="background:#000"><img src="' + lastQrDataURL + '" style="width:300px"/></body></html>');
       return;
     }
     res.statusCode = 404;
@@ -135,8 +140,12 @@ async function main() {
     nextClient.on('qr', async (qr) => {
       lastState = 'qr';
       lastQr = qr;
+      try {
+        lastQrDataURL = await qrcode.toDataURL(qr);
+      } catch (e) {
+        lastQrDataURL = null;
+      }
       console.log('\n[Agentia] Escanea el QR con WhatsApp:\n');
-      qrcode.generate(qr, { small: true });
 
       // Envía el QR al API (reintentos por si el Web Service está arrancando en cold start)
       const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
