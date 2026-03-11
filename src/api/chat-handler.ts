@@ -459,7 +459,12 @@ export async function handleChat(params: {
 
     const cfg = await resolveBusinessConfigByClientId(clientId);
     if (!cfg) {
-      return { status: 404, json: { error: `No existe config para clientId='${clientId}'` } };
+      return {
+        status: 404,
+        json: {
+          error: `No existe config para clientId='${clientId}'. Crea un documento en MongoDB (business_configs) con clientId "${clientId}" o ejecuta: node scripts/seed-business-configs.js`,
+        },
+      };
     }
 
     if (senderId && pageId) {

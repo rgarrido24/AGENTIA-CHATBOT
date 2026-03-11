@@ -91,7 +91,7 @@ async function main() {
     console.log('\n[Agentia] Escanea el QR con WhatsApp:\n');
     qrcode.generate(qr, { small: true });
 
-    // Envía el QR al API para que /api/whatsapp/qr lo sirva (vincular desde dashboard.agentia.io)
+    // Envía el QR al API para que /api/whatsapp/qr lo sirva (vincular desde dashboard)
     const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
     try {
       const res = await fetch(`${API_URL}/api/whatsapp/qr-store`, {
@@ -102,10 +102,16 @@ async function main() {
         },
         body: JSON.stringify({ qr }),
       });
-      if (res.ok) console.log('[Agentia] QR enviado al API para vincular desde la web.');
-      else console.log('[Agentia] QR no enviado al API:', res.status);
+      if (res.ok) {
+        console.log('[Agentia] QR enviado al API para vincular desde la web.');
+        console.log('[Agentia] En tu celular abre esta URL para ver el QR:', `${API_URL}/api/whatsapp/qr`);
+      } else {
+        console.log('[Agentia] QR no enviado al API:', res.status);
+        console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
+      }
     } catch (e) {
       console.log('[Agentia] No se pudo enviar QR al API:', e.message);
+      console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
     }
   });
 

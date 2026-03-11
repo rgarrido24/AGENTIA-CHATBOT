@@ -8,7 +8,8 @@ import { getMongoDb } from '@/lib/mongodb';
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const secret = process.env.WHATSAPP_QR_SECRET;
-  if (secret && authHeader !== `Bearer ${secret}`) {
+  // Si el servidor NO tiene WHATSAPP_QR_SECRET, aceptamos el POST sin auth (para que el puente en Render funcione sin config extra).
+  if (secret && secret.trim() !== '' && authHeader !== `Bearer ${secret.trim()}`) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -28,7 +29,8 @@ export async function POST(request: NextRequest) {
 
     return Response.json({ ok: true });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Error';
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[qr-store] Error:', msg);
     return Response.json({ error: msg }, { status: 500 });
   }
 }

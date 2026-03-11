@@ -12,11 +12,16 @@ function getEnvValue(envText, key) {
 }
 
 async function main() {
-  const envPath = path.join(__dirname, "..", ".env");
-  const envText = fs.readFileSync(envPath, "utf8");
-  const uri = getEnvValue(envText, "MONGODB_URI");
-  const dbName = getEnvValue(envText, "MONGODB_DB") || undefined;
-  if (!uri) throw new Error("No se encontró MONGODB_URI en .env");
+  const root = path.join(__dirname, "..");
+  const readEnv = (f) => {
+    const p = path.join(root, f);
+    return fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "";
+  };
+  const envLocal = readEnv(".env.local");
+  const envEnv = readEnv(".env");
+  const uri = getEnvValue(envLocal, "MONGODB_URI") || getEnvValue(envEnv, "MONGODB_URI");
+  const dbName = getEnvValue(envLocal, "MONGODB_DB") || getEnvValue(envEnv, "MONGODB_DB") || undefined;
+  if (!uri) throw new Error("No se encontró MONGODB_URI en .env o .env.local");
 
   const client = new MongoClient(uri, { maxPoolSize: 5, serverSelectionTimeoutMS: 5000 });
   await client.connect();

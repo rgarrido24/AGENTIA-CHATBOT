@@ -143,9 +143,45 @@ export async function POST(request: NextRequest) {
     }
 
     const modelId = process.env.GEMINI_MODEL?.trim() || 'gemini-2.5-flash';
+
+    // Contexto dinámico de fecha para que Gemini entienda "hoy", "mañana", "pasado", días de la semana, etc.
+    const now = new Date();
+    const mxNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
+    const year = mxNow.getFullYear();
+    const weekdayToday = mxNow.toLocaleDateString('es-MX', { weekday: 'long' });
+    const dayToday = mxNow.getDate();
+    const monthToday = mxNow.toLocaleDateString('es-MX', { month: 'long' });
+
+    const mxTomorrow = new Date(mxNow.getTime());
+    mxTomorrow.setDate(mxNow.getDate() + 1);
+    const weekdayTomorrow = mxTomorrow.toLocaleDateString('es-MX', { weekday: 'long' });
+    const dayTomorrow = mxTomorrow.getDate();
+    const monthTomorrow = mxTomorrow.toLocaleDateString('es-MX', { month: 'long' });
+
+    const mxDayAfter = new Date(mxNow.getTime());
+    mxDayAfter.setDate(mxNow.getDate() + 2);
+    const weekdayDayAfter = mxDayAfter.toLocaleDateString('es-MX', { weekday: 'long' });
+    const dayDayAfter = mxDayAfter.getDate();
+    const monthDayAfter = mxDayAfter.toLocaleDateString('es-MX', { month: 'long' });
+
+    const todayContext = [
+      `HOY ES ${weekdayToday.toUpperCase()} ${dayToday} DE ${monthToday.toUpperCase()} DE ${year}.`,
+      `MAÑANA ES ${weekdayTomorrow.toUpperCase()} ${dayTomorrow} DE ${monthTomorrow.toUpperCase()} DE ${year}.`,
+      `PASADO MAÑANA ES ${weekdayDayAfter.toUpperCase()} ${dayDayAfter} DE ${monthDayAfter.toUpperCase()} DE ${year}.`,
+      `Cuando el cliente diga SOLO \"HOY\", \"MAÑANA\" o \"PASADO MAÑANA\" sin escribir fecha completa, ` +
+        `ASUME SIEMPRE estas fechas concretas y genera fechaHora en el año ${year}.`,
+      `Si menciona un día de la semana (ej. \"el jueves\") sin fecha, elije el siguiente ${year} inmediato a partir de HOY.`,
+      `USA SIEMPRE EL AÑO ${year} salvo que el cliente escriba explícitamente otro año en el texto.`
+    ].join(' ');
+
+    const systemInstruction = `${DEMO_SYSTEM_INSTRUCTION}
+
+--- CONTEXTO DE FECHA ACTUAL ---
+${todayContext}`;
+
     let reply = await generateGeminiReply({
       userMessage: message,
-      systemInstruction: DEMO_SYSTEM_INSTRUCTION,
+      systemInstruction,
       modelId,
       messages: messages as { role: 'user' | 'assistant'; content: string }[] | undefined,
     });
@@ -190,7 +226,7 @@ export async function POST(request: NextRequest) {
         const promptOcupado = `SISTEMA: El horario solicitado (${formatSlotForGemini(startIso)}) está OCUPADO. Las próximas horas disponibles son: ${slotLabels.join(' y ')}. Responde al cliente en MAYÚSCULAS que ese horario ya está ocupado y ofrécele estas dos alternativas, pidiendo que elija una. No generes CONFIRMACION_CITA.`;
         const replyOcupado = await generateGeminiReply({
           userMessage: promptOcupado,
-          systemInstruction: DEMO_SYSTEM_INSTRUCTION,
+          systemInstruction,
           modelId,
           messages: [
             ...(messages as { role: 'user' | 'assistant'; content: string }[]),
