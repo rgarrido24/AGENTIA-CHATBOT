@@ -12,6 +12,9 @@ function getEnvValue(envText, key) {
 }
 
 async function main() {
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MONGODB_URI no está en process.env');
+  }
   const root = path.join(__dirname, "..");
   const readEnv = (f) => {
     const p = path.join(root, f);
@@ -19,7 +22,8 @@ async function main() {
   };
   const envLocal = readEnv(".env.local");
   const envEnv = readEnv(".env");
-  const uri = getEnvValue(envLocal, "MONGODB_URI") || getEnvValue(envEnv, "MONGODB_URI");
+  const uri =
+    process.env.MONGODB_URI || getEnvValue(envLocal, 'MONGODB_URI') || getEnvValue(envEnv, 'MONGODB_URI');
   const dbName = getEnvValue(envLocal, "MONGODB_DB") || getEnvValue(envEnv, "MONGODB_DB") || undefined;
   if (!uri) throw new Error("No se encontró MONGODB_URI en .env o .env.local");
 
