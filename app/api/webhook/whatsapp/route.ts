@@ -57,7 +57,8 @@ export async function POST(request: NextRequest) {
 
     // Si no hay tipo de evento de cierre, delegar al chatbot principal (Gemini) vía /api/chat
     if (!tipo) {
-      const baseUrl = request.nextUrl.origin;
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') 
+        || request.nextUrl.origin;
       const chatRes = await fetch(`${baseUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
