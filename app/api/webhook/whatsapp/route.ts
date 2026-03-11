@@ -57,8 +57,12 @@ export async function POST(request: NextRequest) {
 
     // Si no hay tipo de evento de cierre, delegar al chatbot principal (Gemini) vía /api/chat
     if (!tipo) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') 
-        || request.nextUrl.origin;
+      const baseUrl =
+        process.env.ANGENTIA_CHATBOT_API_URL?.replace(/\/$/, '') ||
+        process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ||
+        process.env.LEADS_API_BASE_URL?.replace(/\/$/, '') ||
+        'https://agentia-chatbot-ventas.onrender.com';
+      console.log('[webhook/whatsapp] baseUrl:', baseUrl, 'mensaje:', mensaje);
       const chatRes = await fetch(`${baseUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
