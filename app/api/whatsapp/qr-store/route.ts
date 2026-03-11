@@ -20,10 +20,18 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'qr requerido (string)' }, { status: 400 });
     }
 
-    const db = await getMongoDb();
+    const qrTrimmed = qr.trim();
+    // Reintento una vez si MongoDB no está listo (cold start)
+    let db;
+    try {
+      db = await getMongoDb();
+    } catch (firstErr) {
+      await new Promise((r) => setTimeout(r, 2000));
+      db = await getMongoDb();
+    }
     await db.collection('whatsapp_qr').updateOne(
       { _id: 'current' as any },
-      { $set: { qr: qr.trim(), updatedAt: new Date() } },
+      { $set: { qr: qrTrimmed, updatedAt: new Date() } },
       { upsert: true }
     );
 

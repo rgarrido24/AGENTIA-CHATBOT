@@ -91,27 +91,49 @@ async function main() {
     console.log('\n[Agentia] Escanea el QR con WhatsApp:\n');
     qrcode.generate(qr, { small: true });
 
-    // Envía el QR al API para que /api/whatsapp/qr lo sirva (vincular desde dashboard)
+    // Envía el QR al API (reintentos por si el Web Service está arrancando en cold start)
     const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
-    try {
-      const res = await fetch(`${API_URL}/api/whatsapp/qr-store`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}),
-        },
-        body: JSON.stringify({ qr }),
-      });
-      if (res.ok) {
-        console.log('[Agentia] QR enviado al API para vincular desde la web.');
-        console.log('[Agentia] En tu celular abre esta URL para ver el QR:', `${API_URL}/api/whatsapp/qr`);
-      } else {
-        console.log('[Agentia] QR no enviado al API:', res.status);
-        console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
+    const url = `${API_URL}/api/whatsapp/qr-store`;
+    const payload = JSON.stringify({ qr });
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}),
+    };
+    let lastStatus = 0;
+    let lastError = '';
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const res = await fetch(url, { method: 'POST', headers, body: payload });
+        lastStatus = res.status;
+        if (res.ok) {
+          console.log('[Agentia] QR enviado al API para vincular desde la web.');
+          console.log('[Agentia] En tu celular abre esta URL para ver el QR:', `${API_URL}/api/whatsapp/qr`);
+          break;
+        }
+        const text = await res.text();
+        try {
+          const data = JSON.parse(text);
+          lastError = data.error || text;
+        } catch {
+          lastError = text.slice(0, 200);
+        }
+        if (attempt < 3) {
+          console.log('[Agentia] QR no enviado al API:', res.status, '- reintento en 8s...');
+          await new Promise((r) => setTimeout(r, 8000));
+        } else {
+          console.log('[Agentia] QR no enviado al API:', res.status, lastError ? `- ${lastError}` : '');
+          console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
+        }
+      } catch (e) {
+        lastError = e.message || String(e);
+        if (attempt < 3) {
+          console.log('[Agentia] No se pudo enviar QR al API:', lastError, '- reintento en 8s...');
+          await new Promise((r) => setTimeout(r, 8000));
+        } else {
+          console.log('[Agentia] No se pudo enviar QR al API:', lastError);
+          console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
+        }
       }
-    } catch (e) {
-      console.log('[Agentia] No se pudo enviar QR al API:', e.message);
-      console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
     }
   });
 
