@@ -1,18 +1,11 @@
 import { NextResponse } from 'next/server';
+import { getMongoDb } from '@/lib/mongodb';
 
 export async function GET() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    return NextResponse.json({ contacts: [], error: null });
-  }
   try {
-    const { MongoClient } = await import('mongodb');
-    const client = new MongoClient(uri);
-    await client.connect();
-    const db = client.db();
+    const db = await getMongoDb();
     const collection = db.collection('contacts');
     const contacts = await collection.find({}).limit(500).toArray();
-    await client.close();
     const normalized = contacts.map((c: Record<string, unknown>) => ({
       _id: String(c._id),
       nombre: c.nombre ?? c.name ?? '',

@@ -14,6 +14,7 @@ dist
 
 # Tokens privados (NO comitear)
 scripts/page-tokens.json
+env-local-restore.txt
 
 # WhatsApp session (whatsapp-web.js)
 .wwebjs_auth
@@ -25,3 +26,6 @@ scripts/page-tokens.json
 *.db
 *.sqlite
 *.sqlite3
+
+# Artefactos TypeScript
+*.tsbuildinfo

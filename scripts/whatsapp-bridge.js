@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const http = require('http');
 
 function getEnv(key, def) {
   const envDir = path.join(__dirname, '..');
@@ -40,21 +41,25 @@ const API_URL = (getEnv('AGENTIA_CHATBOT_API_URL', '') || 'http://localhost:3010
 const CLIENT_ID = getEnv('AGENTIA_WHATSAPP_CLIENT_ID', 'agentia').trim().toLowerCase();
 const PAGE_ID = 'whatsapp-bridge';
 
+function normalizeLeadId(senderId) {
+  const raw = typeof senderId === 'string' ? senderId : '';
+  const digits = raw.replace(/\D/g, '');
+  return digits || raw;
+}
+
 async function callChatApi(message, senderId, senderName, mediaBase64, mimeType) {
-  const url = `${API_URL}/api/chat`;
+  const webhookUrl = (getEnv('CHATBOT_WEBHOOK_URL', '') || `${API_URL}/api/webhook/whatsapp`).replace(/\/$/, '');
+  const url = webhookUrl;
   const payload = {
-    clientId: CLIENT_ID,
-    platform: 'whatsapp',
-    entryType: 'dm',
-    message: message || '[imagen/documento adjunto]',
-    senderId,
-    senderName: senderName || undefined,
-    pageId: PAGE_ID,
+    leadId: normalizeLeadId(senderId),
+    mensaje: message || (mediaBase64 ? '[imagen/documento adjunto]' : ''),
+    mediaBase64: mediaBase64 || undefined,
+    mediaType: mimeType || undefined,
+    leadData: {
+      telefono: normalizeLeadId(senderId),
+      nombre: senderName || undefined,
+    },
   };
-  if (mediaBase64 && mimeType) {
-    payload.mediaBase64 = mediaBase64;
-    payload.mimeType = mimeType;
-  }
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -66,11 +71,8 @@ async function callChatApi(message, senderId, senderName, mediaBase64, mimeType)
     console.error('[Agentia] API error:', res.status, json);
     throw new Error(errMsg);
   }
-  const mediaUrl = typeof json.mediaUrl === 'string' && json.mediaUrl.trim() ? json.mediaUrl.trim() : null;
-  if (mediaUrl) console.log('[Agentia] API devolvió mediaUrl:', mediaUrl);
-  const botPaused = json.botPaused === true;
-  if (botPaused) console.log('[Agentia] Bot pausado - no se envía respuesta.');
-  return { reply: String(json.reply || '').trim(), mediaUrl, botPaused };
+  const reply = typeof json.mensaje === 'string' ? json.mensaje : (typeof json.reply === 'string' ? json.reply : '');
+  return { reply: String(reply || '').trim(), mediaUrl: null, botPaused: false };
 }
 
 async function main() {
@@ -82,72 +84,138 @@ async function main() {
 
   // Carpeta de sesión por cliente (evita conflicto con navegador bloqueado)
   const sessionDir = path.join(__dirname, '..', `.wwebjs_auth_${CLIENT_ID}`);
-  const client = new Client({
-    authStrategy: new LocalAuth({ dataPath: sessionDir }),
-    puppeteer: { headless: true, args: ['--no-sandbox'] },
+  let client = null;
+  let whatsappReady = false;
+  let lastQr = null;
+  let lastState = 'boot';
+  let reconnectAttempt = 0;
+
+  const bridgePort = Number(getEnv('PORT', process.env.PORT || '10000')) || 10000;
+  const server = http.createServer((req, res) => {
+    if (!req.url) {
+      res.statusCode = 404;
+      res.end('not found');
+      return;
+    }
+    if (req.url.startsWith('/health')) {
+      const body = JSON.stringify({
+        ok: whatsappReady,
+        whatsapp: whatsappReady ? 'connected' : 'disconnected',
+        state: lastState,
+        hasQr: !!lastQr,
+        timestamp: new Date().toISOString(),
+      });
+      res.statusCode = whatsappReady ? 200 : 503;
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.end(body);
+      return;
+    }
+    if (req.url.startsWith('/qr')) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.end(JSON.stringify({ ok: true, qr: lastQr, timestamp: new Date().toISOString() }));
+      return;
+    }
+    res.statusCode = 404;
+    res.end('not found');
+  });
+  server.listen(bridgePort, () => {
+    console.log(`[Agentia] Bridge /health escuchando en :${bridgePort}`);
   });
 
-  client.on('qr', async (qr) => {
-    console.log('\n[Agentia] Escanea el QR con WhatsApp:\n');
-    qrcode.generate(qr, { small: true });
+  function initClient() {
+    lastState = 'initializing';
+    whatsappReady = false;
+    const nextClient = new Client({
+      authStrategy: new LocalAuth({ dataPath: sessionDir }),
+      puppeteer: { headless: true, args: ['--no-sandbox'] },
+    });
+    client = nextClient;
 
-    // Envía el QR al API (reintentos por si el Web Service está arrancando en cold start)
-    const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
-    const url = `${API_URL}/api/whatsapp/qr-store`;
-    const payload = JSON.stringify({ qr });
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}),
-    };
-    let lastStatus = 0;
-    let lastError = '';
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        const res = await fetch(url, { method: 'POST', headers, body: payload });
-        lastStatus = res.status;
-        if (res.ok) {
-          console.log('[Agentia] QR enviado al API para vincular desde la web.');
-          console.log('[Agentia] En tu celular abre esta URL para ver el QR:', `${API_URL}/api/whatsapp/qr`);
-          break;
-        }
-        const text = await res.text();
+    nextClient.on('qr', async (qr) => {
+      lastState = 'qr';
+      lastQr = qr;
+      console.log('\n[Agentia] Escanea el QR con WhatsApp:\n');
+      qrcode.generate(qr, { small: true });
+
+      // Envía el QR al API (reintentos por si el Web Service está arrancando en cold start)
+      const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
+      const url = `${API_URL}/api/whatsapp/qr-store`;
+      const payload = JSON.stringify({ qr });
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}),
+      };
+      let lastError = '';
+      for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          const data = JSON.parse(text);
-          lastError = data.error || text;
-        } catch {
-          lastError = text.slice(0, 200);
-        }
-        if (attempt < 3) {
-          console.log('[Agentia] QR no enviado al API:', res.status, '- reintento en 8s...');
-          await new Promise((r) => setTimeout(r, 8000));
-        } else {
-          console.log('[Agentia] QR no enviado al API:', res.status, lastError ? `- ${lastError}` : '');
-          console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
-        }
-      } catch (e) {
-        lastError = e.message || String(e);
-        if (attempt < 3) {
-          console.log('[Agentia] No se pudo enviar QR al API:', lastError, '- reintento en 8s...');
-          await new Promise((r) => setTimeout(r, 8000));
-        } else {
-          console.log('[Agentia] No se pudo enviar QR al API:', lastError);
-          console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
+          const res = await fetch(url, { method: 'POST', headers, body: payload });
+          if (res.ok) {
+            console.log('[Agentia] QR enviado al API para vincular desde la web.');
+            console.log('[Agentia] En tu celular abre esta URL para ver el QR:', `${API_URL}/api/whatsapp/qr`);
+            break;
+          }
+          const text = await res.text();
+          try {
+            const data = JSON.parse(text);
+            lastError = data.error || text;
+          } catch {
+            lastError = text.slice(0, 200);
+          }
+          if (attempt < 3) {
+            console.log('[Agentia] QR no enviado al API:', res.status, '- reintento en 8s...');
+            await new Promise((r) => setTimeout(r, 8000));
+          } else {
+            console.log('[Agentia] QR no enviado al API:', res.status, lastError ? `- ${lastError}` : '');
+            console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
+          }
+        } catch (e) {
+          lastError = e.message || String(e);
+          if (attempt < 3) {
+            console.log('[Agentia] No se pudo enviar QR al API:', lastError, '- reintento en 8s...');
+            await new Promise((r) => setTimeout(r, 8000));
+          } else {
+            console.log('[Agentia] No se pudo enviar QR al API:', lastError);
+            console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
+          }
         }
       }
-    }
-  });
+    });
 
-  client.on('ready', () => {
-    console.log('[Agentia] WhatsApp conectado correctamente.');
-  });
+    nextClient.on('ready', () => {
+      lastState = 'ready';
+      reconnectAttempt = 0;
+      whatsappReady = true;
+      console.log('[Agentia] WhatsApp conectado correctamente.');
+    });
 
-  client.on('authenticated', () => {
-    console.log('[Agentia] Autenticado.');
-  });
+    nextClient.on('authenticated', () => {
+      lastState = 'authenticated';
+      console.log('[Agentia] Autenticado.');
+    });
 
-  client.on('auth_failure', (msg) => {
-    console.error('[Agentia] Error de autenticación:', msg);
-  });
+    nextClient.on('auth_failure', (msg) => {
+      lastState = 'auth_failure';
+      whatsappReady = false;
+      console.error('[Agentia] Error de autenticación:', msg);
+      // En auth_failure normalmente se requiere borrar sesión y re-escanear
+    });
+
+    nextClient.on('disconnected', (reason) => {
+      lastState = 'disconnected';
+      whatsappReady = false;
+      console.warn('[Agentia] WhatsApp desconectado:', reason);
+      const delay = Math.min(30_000, 3_000 * Math.max(1, reconnectAttempt + 1));
+      reconnectAttempt += 1;
+      console.log(`[Agentia] Reintentando conexión en ${Math.round(delay / 1000)}s...`);
+      setTimeout(() => {
+        try {
+          initClient();
+        } catch (e) {
+          console.error('[Agentia] Error reintentando init:', e?.message || String(e));
+        }
+      }, delay);
+    });
 
   async function pollAndSendAlerts() {
     const alertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER;
@@ -229,6 +297,7 @@ async function main() {
 
   async function pollAndSendOutboundMessages() {
     try {
+      if (!client.info) return;
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
       const res = await fetch(`${API_URL}/api/chat/outbound`, {
         headers: secret ? { Authorization: `Bearer ${secret}` } : {},
@@ -237,8 +306,10 @@ async function main() {
       const items = data.messages || [];
       for (const m of items) {
         try {
-          const chatId = m.senderId && m.senderId.includes('@') ? m.senderId : `${(m.senderId || '').replace(/\D/g, '')}@c.us`;
-          if (!chatId || chatId === '@c.us') continue;
+          const raw = (m.senderId && typeof m.senderId === 'string') ? m.senderId.trim() : '';
+          const chatId = raw.includes('@') ? raw : `${raw.replace(/\D/g, '')}@c.us`;
+          if (!chatId || chatId === '@c.us' || chatId.length < 15) continue;
+          if (typeof client.sendMessage !== 'function') break;
           await client.sendMessage(chatId, m.message);
           const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
           await fetch(`${API_URL}/api/chat/outbound`, {
@@ -251,7 +322,7 @@ async function main() {
           });
           console.log('[Agentia] Mensaje CRM enviado a', m.senderId);
         } catch (e) {
-          console.error('[Agentia] Error enviando mensaje CRM:', e.message);
+          console.error('[Agentia] Error enviando mensaje CRM:', e.message, 'id=', m._id, 'senderId=', m.senderId);
         }
       }
     } catch (e) {
@@ -285,8 +356,14 @@ async function main() {
     if (msg.fromMe) return;
     if (msg.from === 'status@broadcast' || msg.isStatus || (msg.id && msg.id.remote === 'status@broadcast')) return;
 
-    const chat = await msg.getChat();
-    if (chat.isGroup) return;
+    let chat;
+    try {
+      chat = await msg.getChat();
+    } catch (e) {
+      console.error('[Agentia] Error obteniendo chat:', e?.message || String(e));
+      return;
+    }
+    if (chat && chat.isGroup) return;
 
     const contact = await msg.getContact();
     const body = msg.body?.trim() || '';
@@ -356,10 +433,17 @@ async function main() {
     }
   });
 
-  client.initialize().catch((err) => {
-    console.error('[Agentia] Error al inicializar:', err);
-    process.exit(1);
-  });
+    nextClient.initialize().catch((err) => {
+      lastState = 'init_error';
+      whatsappReady = false;
+      console.error('[Agentia] Error al inicializar:', err);
+      const delay = Math.min(30_000, 3_000 * Math.max(1, reconnectAttempt + 1));
+      reconnectAttempt += 1;
+      setTimeout(() => initClient(), delay);
+    });
+  }
+
+  initClient();
 }
 
 main();

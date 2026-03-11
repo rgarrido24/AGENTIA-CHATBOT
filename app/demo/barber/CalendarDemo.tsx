@@ -6,6 +6,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { motion } from 'framer-motion';
 import styles from './demo-barber.module.css';
+import type { EventContentArg } from '@fullcalendar/core';
 
 export type CalendarEvent = {
   id: string;
@@ -57,7 +58,7 @@ export default function CalendarDemo({
             classNames: isPaid ? ['paid'] : [],
           };
         })}
-        eventContent={(arg) => {
+        eventContent={(arg: EventContentArg) => {
           const isPaid = paidIds.has(arg.event.id);
           const isNew = lastAddedEventId === arg.event.id;
           const bg = arg.event.backgroundColor;
