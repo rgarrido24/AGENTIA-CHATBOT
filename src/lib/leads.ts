@@ -80,37 +80,43 @@ export async function upsertLead(params: {
   reply: string;
   tags: string[];
 }): Promise<void> {
-  const db = await getMongoDb();
-  const coll = db.collection<Lead>("leads");
   const leadId = makeLeadId(params.senderId, params.pageId, params.clientId);
-  const now = new Date();
+  try {
+    const db = await getMongoDb();
+    const coll = db.collection<Lead>("leads");
+    const now = new Date();
 
-  await coll.updateOne(
-    { leadId },
-    {
-      $set: {
-        senderName: params.senderName ?? undefined,
-        platform: params.platform,
-        source: normalizeSource(params.platform),
-        lastMessage: params.message,
-        lastReply: params.reply,
-        lastMessageAt: now,
-        tags: params.tags,
-        updatedAt: now
+    await coll.updateOne(
+      { leadId },
+      {
+        $set: {
+          senderName: params.senderName ?? undefined,
+          platform: params.platform,
+          source: normalizeSource(params.platform),
+          lastMessage: params.message,
+          lastReply: params.reply,
+          lastMessageAt: now,
+          tags: params.tags,
+          updatedAt: now
+        },
+        $setOnInsert: {
+          leadId,
+          clientId: params.clientId,
+          pageId: params.pageId,
+          senderId: params.senderId,
+          status: "nuevos",
+          bot_status: "active",
+          createdAt: now
+        },
+        $inc: { messageCount: 1 }
       },
-      $setOnInsert: {
-        leadId,
-        clientId: params.clientId,
-        pageId: params.pageId,
-        senderId: params.senderId,
-        status: "nuevos",
-        bot_status: "active",
-        createdAt: now
-      },
-      $inc: { messageCount: 1 }
-    },
-    { upsert: true }
-  );
+      { upsert: true }
+    );
+    console.log('[leads] Lead guardado correctamente:', leadId, 'clientId:', params.clientId);
+  } catch (err) {
+    console.error('[leads] Error al guardar lead:', leadId, err instanceof Error ? err.message : err);
+    throw err;
+  }
 }
 
 export function makeLeadIdFromParams(senderId: string, pageId: string, clientId: string): string {
