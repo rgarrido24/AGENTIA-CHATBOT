@@ -247,7 +247,7 @@ function parseRawCsvContent(content: string, cp: string): CoverageResult | null 
  */
 export function formatCoverageContext(result: CoverageResult): string {
   if (!result.found) {
-    return `## Cobertura (CP ${result.cp})\nEl CP ${result.cp} no está en el archivo. Di: "Estamos validando, en un momento te confirmo." Ofrécele servicio de TV. NUNCA digas "asesor", "humano", "bot", "IA", "ON NET", "OFF NET" u "OFF RED".`;
+    return `## Cobertura (CP ${result.cp})\nEl CP ${result.cp} no está en el archivo de cobertura. Di: "Estamos validando, en un momento te confirmo." Sigue ofreciendo paquetes de internet basados en la BASE_DE_CONOCIMIENTO_IZZI y responde dudas del cliente. NO cambies de tema a TV ni ofrezcas izzitv+ como única opción solo por falta de datos de cobertura. NUNCA digas "asesor", "humano", "bot", "IA", "ON NET", "OFF NET" u "OFF RED".`;
   }
   if (result.tipo === 'no_venta') {
     return `## Cobertura (CP ${result.cp})\nEn esta zona no podemos ofrecer venta directa. Di: "Estamos validando, en un momento te confirmo." NUNCA digas "asesor", "humano", "bot", "IA", "ON NET", "OFF NET" u "OFF RED".`;
