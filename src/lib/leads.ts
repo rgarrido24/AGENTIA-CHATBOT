@@ -86,6 +86,13 @@ export async function upsertLead(params: {
     const coll = db.collection<Lead>("leads");
     const now = new Date();
 
+    // Si el lead está marcado como eliminado (deleted: true), no lo re-creamos ni actualizamos.
+    const deletedDoc = await coll.findOne({ leadId, deleted: true as any });
+    if (deletedDoc) {
+      console.log('[leads] Lead marcado como deleted, no se actualiza:', leadId);
+      return;
+    }
+
     await coll.updateOne(
       { leadId },
       {
