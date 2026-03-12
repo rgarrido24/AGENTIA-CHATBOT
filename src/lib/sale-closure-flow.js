@@ -5,18 +5,19 @@
  *
  * Dependencias esperadas en variables de entorno (.env):
  *   LEADS_API_BASE_URL       → Base URL de tu API de leads  (ej: https://api.tuapp.com)
- *   GEMINI_API_ENDPOINT      → Endpoint OCR Gemini          (ej: /api/health/gemini)
  *   ALERT_WHATSAPP_NUMBER    → Número WA para alertas       (ej: 521XXXXXXXXXX)
  *   WHATSAPP_SEND_URL        → URL para enviar mensajes WA  (ej: https://…/api/messages/send)
  *   WHATSAPP_API_TOKEN       → Token de autorización WA
+ *   GEMINI_API_KEY           → API key de Google Gemini (visión)
  */
+
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // ─────────────────────────────────────────────
 // 0. CONFIGURACIÓN DESDE ENV
 // ─────────────────────────────────────────────
 const CONFIG = {
   leadsApiBase:        process.env.LEADS_API_BASE_URL      ?? "",
-  geminiEndpoint:      process.env.GEMINI_API_ENDPOINT     ?? "/api/health/gemini",
   alertWhatsapp:       process.env.ALERT_WHATSAPP_NUMBER   ?? "",
   whatsappSendUrl:     process.env.WHATSAPP_SEND_URL       ?? "",
   whatsappToken:       process.env.WHATSAPP_API_TOKEN      ?? "",
@@ -147,11 +148,21 @@ export async function updateLead(leadId, payload) {
 
 /**
  * Extrae datos del documento usando Gemini OCR.
- * @param {string} imageBase64   Imagen en base64
+ * @param {string} imageBase64   Imagen en base64 (data URL o base64 crudo)
  * @param {"ine"|"comprobante"}  tipoDocumento
  * @returns {Promise<{nombre:string, direccion:string, rfc:string}|null>}
  */
 export async function extractDocumentData(imageBase64, tipoDocumento = "ine") {
+  const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || "").trim();
+  if (!apiKey) {
+    console.error("[extractDocumentData] Falta GEMINI_API_KEY en el entorno.");
+    return null;
+  }
+
+  // Limpia posible prefijo data:mime;base64,
+  const base64Match = String(imageBase64 || "").match(/^data:[^;]+;base64,(.+)$/);
+  const base64 = (base64Match ? base64Match[1] : imageBase64 || "").trim();
+
   const prompt =
     tipoDocumento === "ine"
       ? `Analiza esta imagen de una INE mexicana y extrae exclusivamente los siguientes campos en formato JSON sin texto adicional:
@@ -170,32 +181,32 @@ Si algún campo no está visible, usa null.`
 Si algún campo no está visible, usa null.`;
 
   try {
-    const res = await fetch(`${CONFIG.leadsApiBase}${CONFIG.geminiEndpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image: imageBase64,
-        prompt,
-        response_format: "json",
-      }),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const raw = await res.json();
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const modelId = (process.env.GEMINI_MODEL || 'gemini-2.0-flash').trim();
+    const model = genAI.getGenerativeModel({ model: modelId });
 
-    // Normalizar respuesta — Gemini puede devolver el JSON en distintos campos
-    const texto =
-      raw?.candidates?.[0]?.content?.parts?.[0]?.text ??
-      raw?.text ??
-      raw?.result ??
-      null;
+    const result = await model.generateContent([
+      { text: prompt },
+      {
+        inlineData: {
+          mimeType: 'image/jpeg',
+          data: base64,
+        },
+      },
+    ]);
 
+    const response = result.response;
+    const texto = response?.text?.()?.trim() || "";
     if (!texto) return null;
 
     // Limpiar posibles backticks de markdown
     const limpio = texto.replace(/```json|```/g, "").trim();
     return JSON.parse(limpio);
   } catch (err) {
-    console.error("[extractDocumentData] Error OCR:", err.message);
+    console.error(
+      "[extractDocumentData] Error OCR:",
+      err instanceof Error ? err.message : String(err)
+    );
     return null;
   }
 }
