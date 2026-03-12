@@ -48,6 +48,8 @@ export async function extractDocDataFromImage(
   const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
   const base64 = cleanBase64(mediaBase64);
 
+  console.log('[OCR] imageBase64 length:', mediaBase64?.length, 'mimeType:', mimeType);
+
   const result = await model.generateContent([
     {
       text: `${OCR_PROMPT}\n\nSi el telefono NO aparece en la imagen, usa "NO_LEIBLE". No inventes numeros.`,
@@ -62,6 +64,8 @@ export async function extractDocDataFromImage(
 
   const response = result.response;
   const text = response.text?.()?.trim() || '';
+
+  console.log('[OCR] respuesta Gemini (primeros 500 chars):', text.slice(0, 500));
 
   const raw = text.replace(/```json\n?|\n?```/g, '').trim();
   try {
