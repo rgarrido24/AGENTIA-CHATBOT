@@ -72,7 +72,7 @@ async function callChatApi(message, senderId, senderName, mediaBase64, mimeType)
     throw new Error(errMsg);
   }
   const reply = typeof json.mensaje === 'string' ? json.mensaje : (typeof json.reply === 'string' ? json.reply : '');
-  return { reply: String(reply || '').trim(), mediaUrl: null, botPaused: false };
+  return { reply: String(reply || '').trim(), mediaUrl: json.mediaUrl || null, botPaused: !!json.botPaused };
 }
 
 async function main() {
@@ -400,8 +400,8 @@ async function main() {
     console.log(`[Agentia] Mensaje de ${senderName || senderId}: ${displayMsg.slice(0, 50)}...`);
 
     const processMessage = async () => {
-      const { reply, mediaUrl } = await callChatApi(body || '[imagen adjunta]', senderId, senderName, mediaBase64, mimeType);
-      return { reply, mediaUrl };
+      const { reply, mediaUrl, botPaused } = await callChatApi(body || '[imagen adjunta]', senderId, senderName, mediaBase64, mimeType);
+      return { reply, mediaUrl, botPaused };
     };
 
     try {
