@@ -69,7 +69,16 @@ export async function extractDocDataFromImage(
 
   const raw = text.replace(/```json\n?|\n?```/g, '').trim();
   try {
-    const parsed = JSON.parse(raw) as Record<string, string>;
+    let parsed: Record<string, string>;
+    try {
+      // Intento directo
+      parsed = JSON.parse(raw) as Record<string, string>;
+    } catch (e) {
+      // Gemini a veces devuelve texto extra alrededor del JSON; intentamos extraer solo el bloque { ... }
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) throw e;
+      parsed = JSON.parse(match[0]) as Record<string, string>;
+    }
     const toUpper = (s: string) => (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const telefonoRaw = (parsed.telefono || '').trim();
     const telefono = telefonoRaw && telefonoRaw !== 'NO_LEIBLE'

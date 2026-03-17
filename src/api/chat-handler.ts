@@ -10,7 +10,7 @@ import {
   getFollowUpInstruction,
   type ChatSession,
 } from '../lib/chat-sessions';
-import { upsertLead, getLeadById, makeLeadIdFromParams, isBotPaused, updateLeadDocumentExpedient } from '../lib/leads';
+import { upsertLead, getLeadById, makeLeadIdFromParams, isBotPaused, updateLeadDocumentExpedient, updateLeadStatus } from '../lib/leads';
 import { getBotGlobalPaused } from '../lib/bot-settings';
 import { createAlertIfUrgent, createAlertForSaleClosed, createAlertForCPValidation, createAlertForLocationVerification, createAlertForDocumentsConfirmed, containsGoogleMapsLink, looksLikeSaleClosed } from '../lib/alerts';
 import { classifyAndUpdateLead } from '../lib/lead-classifier';
@@ -41,15 +41,12 @@ import {
   hasNameAndCURP,
   type ExtractedDocData,
 } from '../lib/document-ocr';
-// Izzi: base de conocimiento comercial y flujo de cierre de venta
-// (archivos JS generados por Claude y ubicados en src/lib).
-// Se importan como any para no romper el tipado TS existente.
+// Izzi: base de conocimiento comercial
+// (archivo JS generado por Claude y ubicado en src/lib).
+// Se importa como any para no romper el tipado TS existente.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const knowledgeBaseIzzi: any = require('../lib/knowledge-base-izzi.js').default ??
   require('../lib/knowledge-base-izzi.js');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const saleClosureFlow: any = require('../lib/sale-closure-flow.js');
-const { orchestrateSaleClosure } = saleClosureFlow;
 
 export type ChatRequestBody = {
   clientId?: unknown;
@@ -327,17 +324,9 @@ export async function handleChat(params: {
           : Promise.resolve(),
       ])
         .then(() => {
-          // Orquestador de cierre (izzi): mover lead a Cerrado en pipeline externo y enviar alertas.
-          if (clientId === 'izzi') {
-            orchestrateSaleClosure({
-              tipo: 'confirmacion',
-              leadId,
-              respuestaCliente: userMessage,
-              leadData: {
-                nombre: senderName,
-                telefono: senderId?.replace(/@.*$/, '').replace(/\D/g, '') || undefined,
-              },
-            }).catch(() => {});
+          // Mover lead a Cierres en el pipeline al confirmar documentos.
+          if (clientId === 'izzi' && leadId) {
+            updateLeadStatus(leadId, 'cierres', { clientId }).catch(() => {});
           }
         })
         .catch(() => {});

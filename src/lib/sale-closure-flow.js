@@ -360,13 +360,12 @@ export async function handleImageReceived(leadId, imageBase64, tipoDocumento = "
       rfc_ocr:       session.datosOCR.rfc,
     });
 
-    // Ofrecer comprobante de domicilio (opcional)
-    session.comprobantePendiente = true;
-    return {
-      accion:  "pedir_comprobante",
-      mensaje: MESSAGES.pedirComprobante(),
-      procesando,
-    };
+    // Nuevo flujo simplificado:
+    // Ya NO pedimos comprobante en automático para evitar bucles.
+    // Pasamos directo a confirmación de datos con lo extraído del INE
+    // y los datos que tengamos del lead (teléfono/correo).
+    session.comprobantePendiente = false;
+    return await requestConfirmation(leadId, leadData);
   }
 
   if (tipoDocumento === "comprobante") {
