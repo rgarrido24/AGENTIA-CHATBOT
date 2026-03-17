@@ -8,6 +8,7 @@ import { getKnowledgeDocsForClient } from '../lib/knowledge-docs';
 import {
   getOrCreateSession,
   getFollowUpInstruction,
+  appendMessageToSession,
   type ChatSession,
 } from '../lib/chat-sessions';
 import { upsertLead, getLeadById, makeLeadIdFromParams, isBotPaused, updateLeadDocumentExpedient, updateLeadStatus } from '../lib/leads';
@@ -441,7 +442,9 @@ export async function handleChat(params: {
       ]).catch(() => {});
       return { status: 200, json: { clientId, reply } };
     } catch (ocrErr) {
-      console.error('[chat-handler] Error OCR:', ocrErr);
+      console.error('[chat-handler] Error OCR modelo:', ocrErr instanceof Error ? ocrErr.message : ocrErr);
+      console.error('[chat-handler] Error OCR stack:', ocrErr instanceof Error ? ocrErr.stack : '(no stack)');
+      console.error('[chat-handler] mediaBase64 length:', mediaBase64?.length, '| mimeType:', mimeType);
       return { status: 200, json: { clientId, reply: RECOLLECTION_INCOMPLETE_REPLY } };
     }
   }
@@ -565,11 +568,16 @@ export async function handleChat(params: {
       }
     }
 
-    const conversationMessages: { role: 'user' | 'assistant'; content: string }[] = [];
-    if (existingLead?.lastMessage && existingLead?.lastReply) {
-      conversationMessages.push({ role: 'user', content: existingLead.lastMessage });
-      conversationMessages.push({ role: 'assistant', content: existingLead.lastReply });
-    }
+    // Historial completo de la sesión (hasta 10 pares) para que Gemini no olvide
+    const conversationMessages: { role: 'user' | 'assistant'; content: string }[] =
+      session?.recentMessages && session.recentMessages.length > 0
+        ? session.recentMessages
+        : existingLead?.lastMessage && existingLead?.lastReply
+          ? [
+              { role: 'user', content: existingLead.lastMessage },
+              { role: 'assistant', content: existingLead.lastReply },
+            ]
+          : [];
 
     let cpFromConversation: string | null = extractCPFromText(userMessage);
     if (!cpFromConversation && existingLead?.lastMessage) {
@@ -643,6 +651,11 @@ El usuario acaba de enviar una imagen o documento. DEBES:
     }
     const finalReply = entryType === 'comment' ? formatCommentReply(reply) : reply;
     const tags = inferTags(message);
+
+    // Persistir el turno en el historial de la sesión para la próxima llamada
+    if (session?.sessionId) {
+      appendMessageToSession(session.sessionId, userMessage, finalReply).catch(() => {});
+    }
 
     const inputTokensEstimated =
       estimateTokens(finalSystemInstruction) + estimateTokens(message);

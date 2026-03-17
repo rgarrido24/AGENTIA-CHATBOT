@@ -45,7 +45,7 @@ export async function extractDocDataFromImage(
 ): Promise<ExtractedDocData> {
   const apiKey = getApiKey();
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   const base64 = cleanBase64(mediaBase64);
 
   console.log('[OCR] imageBase64 length:', mediaBase64?.length, 'mimeType:', mimeType);

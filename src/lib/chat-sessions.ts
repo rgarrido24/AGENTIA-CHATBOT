@@ -7,6 +7,8 @@ export type SalesStep =
   | "interesado_demo"
   | "cerrado";
 
+export type ConversationTurn = { role: 'user' | 'assistant'; content: string };
+
 export type ChatSession = {
   sessionId: string;
   clientId: string;
@@ -18,6 +20,7 @@ export type ChatSession = {
   lastBotMessageAt?: Date;
   messageCount: number;
   followUpSent?: boolean;
+  recentMessages?: ConversationTurn[];
   createdAt: Date;
   updatedAt: Date;
 };
@@ -107,6 +110,33 @@ export async function getOrCreateSession(params: {
 
   await coll.insertOne(newSession);
   return newSession;
+}
+
+const MAX_HISTORY_PAIRS = 10;
+
+/** Agrega un par usuario/bot al historial de la sesión (máx MAX_HISTORY_PAIRS). */
+export async function appendMessageToSession(
+  sessionId: string,
+  userMessage: string,
+  botReply: string
+): Promise<void> {
+  const db = await getMongoDb();
+  const coll = db.collection<ChatSession>("chat_sessions");
+  const turn: ConversationTurn[] = [
+    { role: 'user', content: userMessage },
+    { role: 'assistant', content: botReply },
+  ];
+  await coll.updateOne(
+    { sessionId },
+    {
+      $push: {
+        recentMessages: {
+          $each: turn,
+          $slice: -(MAX_HISTORY_PAIRS * 2), // guarda los últimos N pares
+        },
+      } as any,
+    }
+  );
 }
 
 export function getFollowUpInstruction(
