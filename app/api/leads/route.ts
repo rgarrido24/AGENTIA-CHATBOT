@@ -36,6 +36,8 @@ export async function GET() {
         cancelReason: l.cancelReason ?? null,
         messageCount: l.messageCount ?? 0,
         platform: l.platform ?? '',
+        documentExpedient: l.documentExpedient ?? null,
+        createdAt: l.createdAt ?? null,
       })),
       messages: (messages || []).map((m: Record<string, unknown>) => ({
         clientId: m.clientId,

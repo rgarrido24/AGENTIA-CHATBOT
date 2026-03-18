@@ -2,9 +2,24 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { MessageCircle, Pause, Play, Calendar, X, User, Trash2, Send } from 'lucide-react';
+import {
+  MessageCircle, Pause, Play, X, User, Trash2, Send,
+  Search, Phone, Mail, MapPin, Package, FileText, Clock,
+  ChevronRight, AlertTriangle, CheckCircle2, Circle,
+  Copy, RefreshCw,
+} from 'lucide-react';
 import { SourceIcon } from '@/components/SourceIcon';
 import { playAlertSound } from '@/src/lib/sounds';
+
+type DocumentExpedient = {
+  nombre: string;
+  curp: string;
+  direccion: string;
+  telefono: string;
+  correo: string;
+  paquete: string;
+  promocion: string;
+};
 
 type Lead = {
   leadId: string;
@@ -24,6 +39,8 @@ type Lead = {
   cancelReason?: string | null;
   messageCount: number;
   platform: string;
+  documentExpedient?: DocumentExpedient | null;
+  createdAt?: string | null;
 };
 
 type Alert = {
@@ -40,21 +57,99 @@ type Alert = {
 };
 
 const PIPELINE = [
-  { id: 'nuevos', label: 'Nuevos', color: 'text-slate-400', badge: 'bg-slate-500/20 border-slate-500/40' },
-  { id: 'preguntones', label: 'Preguntones (Frío)', color: 'text-blue-400', badge: 'bg-blue-500/25 border-blue-500/50' },
-  { id: 'seguimiento', label: 'En Seguimiento (Tibio)', color: 'text-amber-400', badge: 'bg-amber-500/25 border-amber-500/50' },
-  { id: 'interesado', label: 'Interesado (Caliente)', color: 'text-emerald-500', badge: 'bg-emerald-500/25 border-emerald-500/50' },
-  { id: 'cierres', label: 'Cierres', color: 'text-emerald-400', badge: 'bg-emerald-500/30 border-emerald-400/60' },
-  { id: 'cancelados', label: 'Cancelados', color: 'text-red-400', badge: 'bg-red-500/20 border-red-500/40' },
+  {
+    id: 'nuevos',
+    label: 'Nuevos',
+    icon: '👋',
+    color: 'text-slate-300',
+    headerBg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    dot: 'bg-slate-400',
+    dropBg: 'ring-slate-400/50 bg-slate-500/10',
+  },
+  {
+    id: 'preguntones',
+    label: 'Preguntones',
+    icon: '❄️',
+    color: 'text-blue-300',
+    headerBg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    dot: 'bg-blue-400',
+    dropBg: 'ring-blue-400/50 bg-blue-500/10',
+  },
+  {
+    id: 'seguimiento',
+    label: 'Seguimiento',
+    icon: '🌤️',
+    color: 'text-amber-300',
+    headerBg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    dot: 'bg-amber-400',
+    dropBg: 'ring-amber-400/50 bg-amber-500/10',
+  },
+  {
+    id: 'interesado',
+    label: 'Interesado',
+    icon: '🔥',
+    color: 'text-orange-300',
+    headerBg: 'bg-orange-500/10',
+    border: 'border-orange-500/30',
+    dot: 'bg-orange-400',
+    dropBg: 'ring-orange-400/50 bg-orange-500/10',
+  },
+  {
+    id: 'cierres',
+    label: 'Cierres',
+    icon: '✅',
+    color: 'text-emerald-300',
+    headerBg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    dot: 'bg-emerald-400',
+    dropBg: 'ring-emerald-400/50 bg-emerald-500/10',
+  },
+  {
+    id: 'cancelados',
+    label: 'Cancelados',
+    icon: '❌',
+    color: 'text-red-300',
+    headerBg: 'bg-red-500/10',
+    border: 'border-red-500/30',
+    dot: 'bg-red-400',
+    dropBg: 'ring-red-400/50 bg-red-500/10',
+  },
 ] as const;
 
 const VENDEDORES = ['Rodolfo', 'Daniela'];
 const DEFAULT_CLIENT_ID = 'izzi';
 const CURRENT_USER_KEY = 'agentia_crm_user';
 
-function getBadgeClass(status: string): string {
-  const col = PIPELINE.find((p) => p.id === status);
-  return col?.badge ?? 'bg-slate-500/20 border-slate-500/40';
+// ─── Urgency helpers ─────────────────────────────────────
+function getUrgencyBorder(lastMessageAt: string | null): string {
+  if (!lastMessageAt) return 'border-l-2 border-l-slate-700';
+  const diff = Date.now() - new Date(lastMessageAt).getTime();
+  if (diff < 5 * 60_000)        return 'border-l-2 border-l-emerald-400';
+  if (diff < 60 * 60_000)       return 'border-l-2 border-l-amber-400';
+  if (diff < 24 * 60 * 60_000)  return 'border-l-2 border-l-orange-500';
+  return                               'border-l-2 border-l-slate-700';
+}
+
+function getUrgencyDot(lastMessageAt: string | null): string {
+  if (!lastMessageAt) return 'bg-slate-600';
+  const diff = Date.now() - new Date(lastMessageAt).getTime();
+  if (diff < 5 * 60_000)        return 'bg-emerald-400 animate-pulse';
+  if (diff < 60 * 60_000)       return 'bg-amber-400';
+  if (diff < 24 * 60 * 60_000)  return 'bg-orange-500';
+  return                               'bg-slate-600';
+}
+
+function getUrgencyLabel(lastMessageAt: string | null): string {
+  if (!lastMessageAt) return '';
+  const diff = Date.now() - new Date(lastMessageAt).getTime();
+  if (diff < 5 * 60_000)       return 'Ahora';
+  if (diff < 60 * 60_000)      return `${Math.floor(diff / 60_000)}m`;
+  if (diff < 24 * 60 * 60_000) return `${Math.floor(diff / 3_600_000)}h`;
+  const days = Math.floor(diff / 86_400_000);
+  return `${days}d`;
 }
 
 function getWhatsAppUrl(senderId: string | undefined): string {
@@ -63,10 +158,47 @@ function getWhatsAppUrl(senderId: string | undefined): string {
   return `https://wa.me/${num}`;
 }
 
-function getCalendarUrl(lead: Lead): string {
-  const title = encodeURIComponent(`Cita: ${lead.senderName || 'Lead'} - ${lead.clientId}`);
-  const details = encodeURIComponent(`Lead: ${lead.senderName}\nCliente: ${lead.clientId}\nÚltimo: ${lead.lastMessage?.slice(0, 100) || ''}`);
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`;
+function copyToClipboard(text: string) {
+  navigator.clipboard.writeText(text).catch(() => {});
+}
+
+// ─── CancelModal component ────────────────────────────────
+function CancelModal({
+  onConfirm,
+  onClose,
+}: {
+  onConfirm: (reason: string) => void;
+  onClose: () => void;
+}) {
+  const [reason, setReason] = useState('');
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-slate-900 border border-red-500/30 rounded-2xl p-6 w-80 shadow-2xl">
+        <h3 className="text-white font-semibold mb-3">¿Por qué se cancela?</h3>
+        <input
+          autoFocus
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && reason.trim() && onConfirm(reason.trim())}
+          placeholder="Ej: Sin cobertura, No contesta..."
+          className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 mb-4"
+        />
+        <div className="flex gap-2">
+          <button onClick={onClose} className="flex-1 px-3 py-2 rounded-lg bg-slate-700 text-slate-300 text-sm hover:bg-slate-600 transition">
+            Cancelar
+          </button>
+          <button
+            onClick={() => reason.trim() && onConfirm(reason.trim())}
+            disabled={!reason.trim()}
+            className="flex-1 px-3 py-2 rounded-lg bg-red-500/80 text-white text-sm font-medium hover:bg-red-500 transition disabled:opacity-40"
+          >
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function LeadsPage() {
@@ -84,6 +216,10 @@ export default function LeadsPage() {
   const [replyText, setReplyText] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
   const [deletingLeadId, setDeletingLeadId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [filterAssignee, setFilterAssignee] = useState('');
+  const [cancelModal, setCancelModal] = useState<{ leadId: string } | null>(null);
+  const [copied, setCopied] = useState('');
   const prevLeadsRef = useRef<Lead[]>([]);
 
   useEffect(() => {
@@ -102,19 +238,13 @@ export default function LeadsPage() {
     return Promise.all([
       fetch('/api/leads').then(async (r) => {
         const text = await r.text();
-        try {
-          return JSON.parse(text);
-        } catch {
-          throw new Error(r.ok ? 'Respuesta inválida' : `Error ${r.status}: ${text.slice(0, 100)}`);
-        }
+        try { return JSON.parse(text); }
+        catch { throw new Error(r.ok ? 'Respuesta inválida' : `Error ${r.status}: ${text.slice(0, 100)}`); }
       }),
       fetch('/api/leads/alerts').then(async (r) => {
         const text = await r.text();
-        try {
-          return JSON.parse(text);
-        } catch {
-          return { alerts: [] };
-        }
+        try { return JSON.parse(text); }
+        catch { return { alerts: [] }; }
       }),
     ]).then(([leadsData, alertsData]) => {
       if (leadsData?.error) throw new Error(leadsData.error);
@@ -133,8 +263,7 @@ export default function LeadsPage() {
         );
         const aiMovedLeads = statusChangedLeads.filter((l: Lead) => {
           const classifiedAt = l.lastClassifiedByAI ? new Date(l.lastClassifiedByAI).getTime() : 0;
-          const now = Date.now();
-          return classifiedAt > 0 && now - classifiedAt < 120000; // últimos 2 min
+          return classifiedAt > 0 && Date.now() - classifiedAt < 120000;
         });
         if (newInInteresado.length > 0) playAlertSound('message');
         if (aiMovedLeads.length > 0) {
@@ -148,11 +277,14 @@ export default function LeadsPage() {
       prevLeadsRef.current = newLeads;
       if (leadsData.leads) setLeads(leadsData.leads);
       if (alertsData.alerts) setAlerts(alertsData.alerts);
+      // Sync selected lead if open
+      setSelectedLead((prev) => {
+        if (!prev) return null;
+        return newLeads.find((l: Lead) => l.leadId === prev.leadId) ?? prev;
+      });
     }).catch((err) => {
       const msg = err instanceof Error ? err.message : 'Error al cargar leads';
       setFetchError(msg);
-      setLeads([]);
-      setAlerts([]);
     });
   }, []);
 
@@ -171,6 +303,10 @@ export default function LeadsPage() {
   const handleStatusChange = async (leadId: string, newStatus: string, cancelReason?: string) => {
     const prev = leads.find((l) => l.leadId === leadId);
     if (!prev || prev.status === newStatus) return;
+    if (newStatus === 'cancelados' && !cancelReason) {
+      setCancelModal({ leadId });
+      return;
+    }
     setLeads((prevLeads) =>
       prevLeads.map((l) =>
         l.leadId === leadId ? { ...l, status: newStatus, cancelReason: cancelReason ?? l.cancelReason ?? null } : l
@@ -178,43 +314,26 @@ export default function LeadsPage() {
     );
     try {
       const body: Record<string, string> = { leadId, status: newStatus };
-      if (newStatus === 'cierres' && currentUser) {
-        body.closedBy = currentUser;
-        body.clientId = prev.clientId || '';
-      }
-      if (newStatus === 'cancelados' && cancelReason) {
-        body.cancelReason = cancelReason;
-      }
-      const res = await fetch('/api/leads/status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+      if (newStatus === 'cierres' && currentUser) { body.closedBy = currentUser; body.clientId = prev.clientId || ''; }
+      if (newStatus === 'cancelados' && cancelReason) body.cancelReason = cancelReason;
+      const res = await fetch('/api/leads/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!data.ok) fetchLeads();
-    } catch {
-      fetchLeads();
-    }
+    } catch { fetchLeads(); }
   };
 
   const handleLeadClick = async (lead: Lead) => {
     if (!currentUser) return;
     setSelectedLead(lead);
+    setReplyText('');
     try {
       await fetch('/api/leads/handle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          leadId: lead.leadId,
-          handlerId: currentUser,
-          clientId: lead.clientId,
-          status: lead.status,
-        }),
+        body: JSON.stringify({ leadId: lead.leadId, handlerId: currentUser, clientId: lead.clientId, status: lead.status }),
       });
       fetchLeads();
-    } catch {
-      //
-    }
+    } catch { /**/ }
   };
 
   const releaseLead = async () => {
@@ -225,23 +344,17 @@ export default function LeadsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ leadId: selectedLead.leadId, handlerId: null }),
       });
-      setSelectedLead(null);
-      fetchLeads();
-    } catch {
-      setSelectedLead(null);
-    }
+    } catch { /**/ }
+    setSelectedLead(null);
+    fetchLeads();
   };
 
   const handleDeleteLead = async (leadId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('¿Eliminar este lead? Se borrará del tablero.')) return;
+    if (!confirm('¿Eliminar este lead y reiniciar su sesión de chat?')) return;
     setDeletingLeadId(leadId);
     try {
-      const res = await fetch('/api/leads/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId }),
-      });
+      const res = await fetch('/api/leads/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId }) });
       const data = await res.json();
       if (data.ok) {
         setLeads((prev) => prev.filter((l) => l.leadId !== leadId));
@@ -249,69 +362,34 @@ export default function LeadsPage() {
       } else {
         alert(data.error || 'Error al eliminar');
       }
-    } catch {
-      alert('Error al eliminar');
-    } finally {
-      setDeletingLeadId(null);
-    }
+    } catch { alert('Error al eliminar'); }
+    finally { setDeletingLeadId(null); }
   };
 
   const handleSendReply = async () => {
     if (!selectedLead || !replyText.trim()) return;
     setSendingReply(true);
     try {
-      const res = await fetch('/api/chat/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId: selectedLead.leadId, message: replyText.trim() }),
-      });
+      const res = await fetch('/api/chat/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId: selectedLead.leadId, message: replyText.trim() }) });
       const data = await res.json();
       if (data.ok) {
         setReplyText('');
-        setSelectedLead((prev) =>
-          prev ? { ...prev, lastReply: replyText.trim(), lastMessageAt: new Date().toISOString() } : null
-        );
         fetchLeads();
-      } else {
-        alert(data.error || 'Error al enviar');
-      }
-    } catch {
-      alert('Error al enviar');
-    } finally {
-      setSendingReply(false);
-    }
+      } else { alert(data.error || 'Error al enviar'); }
+    } catch { alert('Error al enviar'); }
+    finally { setSendingReply(false); }
   };
 
   const handleAssign = async (leadId: string, vendedor: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    try {
-      const res = await fetch('/api/leads/assign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId, assignedTo: vendedor || null }),
-      });
-      const data = await res.json();
-      if (data.ok) fetchLeads();
-    } catch {
-      //
-    }
+    e.stopPropagation(); e.preventDefault();
+    await fetch('/api/leads/assign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId, assignedTo: vendedor || null }) }).catch(() => {});
+    fetchLeads();
   };
 
   const handlePause = async (leadId: string, paused: boolean, e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    try {
-      const res = await fetch('/api/leads/pause', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId, paused }),
-      });
-      const data = await res.json();
-      if (data.ok) fetchLeads();
-    } catch {
-      //
-    }
+    e.stopPropagation(); e.preventDefault();
+    await fetch('/api/leads/pause', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId, paused }) }).catch(() => {});
+    fetchLeads();
   };
 
   const fetchGlobalPause = useCallback(async () => {
@@ -319,384 +397,656 @@ export default function LeadsPage() {
       const res = await fetch(`/api/leads/pause-global?clientId=${DEFAULT_CLIENT_ID}`);
       const data = await res.json();
       if (data.paused !== undefined) setGlobalPaused(data.paused);
-    } catch {
-      setGlobalPaused(false);
-    }
+    } catch { setGlobalPaused(false); }
   }, []);
 
   const handleGlobalPause = async (paused: boolean) => {
-    try {
-      const res = await fetch('/api/leads/pause-global', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId: DEFAULT_CLIENT_ID, paused }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setGlobalPaused(paused);
-        fetchLeads();
-      }
-    } catch {
-      //
-    }
+    await fetch('/api/leads/pause-global', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: DEFAULT_CLIENT_ID, paused }) }).catch(() => {});
+    setGlobalPaused(paused);
+    fetchLeads();
   };
 
-  useEffect(() => {
-    fetchGlobalPause();
-  }, [fetchGlobalPause]);
+  useEffect(() => { fetchGlobalPause(); }, [fetchGlobalPause]);
 
-  const formatTime = (d: string | null) => {
-    if (!d) return '';
-    const dt = new Date(d);
-    const now = new Date();
-    const diff = now.getTime() - dt.getTime();
-    if (diff < 60000) return 'Ahora';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`;
-    return dt.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+  const handleCopy = (text: string, key: string) => {
+    copyToClipboard(text);
+    setCopied(key);
+    setTimeout(() => setCopied(''), 1500);
   };
 
+  // Drag & drop
   const onDragStart = (e: React.DragEvent, leadId: string) => {
-    setDragging(leadId);
-    e.dataTransfer.setData('text/plain', leadId);
-    e.dataTransfer.effectAllowed = 'move';
+    setDragging(leadId); e.dataTransfer.setData('text/plain', leadId); e.dataTransfer.effectAllowed = 'move';
   };
-
-  const onDragEnd = () => {
-    setDragging(null);
-    setDragOver(null);
-  };
-
-  const onDragOver = (e: React.DragEvent, columnId: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOver(columnId);
-  };
-
+  const onDragEnd = () => { setDragging(null); setDragOver(null); };
+  const onDragOver = (e: React.DragEvent, columnId: string) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOver(columnId); };
   const onDragLeave = () => setDragOver(null);
-
   const onDrop = (e: React.DragEvent, columnId: string) => {
     e.preventDefault();
     const leadId = e.dataTransfer.getData('text/plain');
-    setDragOver(null);
-    setDragging(null);
+    setDragOver(null); setDragging(null);
     if (leadId) handleStatusChange(leadId, columnId);
   };
 
+  // Filtered leads
   const norm = (s: string) => (s || 'nuevos').toLowerCase().trim();
+  const filteredLeads = leads.filter((l) => {
+    const q = search.toLowerCase();
+    const matchSearch = !q || (l.senderName || '').toLowerCase().includes(q) ||
+      (l.senderId || '').replace(/@.*$/, '').includes(q) ||
+      (l.lastMessage || '').toLowerCase().includes(q);
+    const matchAssignee = !filterAssignee || l.assignedTo === filterAssignee;
+    return matchSearch && matchAssignee;
+  });
+
   const leadsByStatus = PIPELINE.reduce(
-    (acc, col) => ({
-      ...acc,
-      [col.id]: leads.filter((l) => norm(l.status) === col.id),
-    }),
+    (acc, col) => ({ ...acc, [col.id]: filteredLeads.filter((l) => norm(l.status) === col.id) }),
     {} as Record<string, Lead[]>
   );
-  const unknownLeads = leads.filter((l) => !PIPELINE.some((p) => norm(l.status) === p.id));
-  if (unknownLeads.length > 0) {
-    leadsByStatus.nuevos = [...(leadsByStatus.nuevos ?? []), ...unknownLeads];
-  }
+  const unknownLeads = filteredLeads.filter((l) => !PIPELINE.some((p) => norm(l.status) === p.id));
+  if (unknownLeads.length > 0) leadsByStatus.nuevos = [...(leadsByStatus.nuevos ?? []), ...unknownLeads];
+
+  const totalLeads = leads.length;
+  const pendingAlerts = alerts.filter((a) => !a.sentAt && a.reason === 'documents_confirmed');
 
   return (
-    <main className="min-h-screen p-6 bg-[#0a1209]">
-      <div className="max-w-[1800px] mx-auto">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div>
-            <Link href="/dashboard" className="text-slate-400 hover:text-sage inline-flex items-center gap-2 transition">
-              ← Volver
-            </Link>
-            <h1 className="text-2xl font-bold mt-2 tracking-tight text-white font-heading">
-              Pipeline de Leads
-            </h1>
-            <p className="text-slate-400 text-sm mt-1">Arrastra las tarjetas · Haz clic para abrir chat</p>
-            <p className="text-slate-400 text-xs mt-1">Bot sin respuesta: ejecuta <code className="bg-slate-800/60 px-1 rounded border border-forest">node scripts/whatsapp-bridge.js</code> y revisa que el lead no tenga &quot;Bot pausado&quot;</p>
+    <main className="min-h-screen bg-[#070d06] text-white">
+      {/* ── Header ──────────────────────────────────────── */}
+      <div className="sticky top-0 z-30 bg-[#070d06]/95 backdrop-blur-xl border-b border-forest/50 px-4 sm:px-6 py-3">
+        <div className="max-w-[1900px] mx-auto flex flex-wrap items-center gap-3 justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard" className="text-slate-500 hover:text-sage transition text-sm">← Dashboard</Link>
+            <span className="text-forest/60">|</span>
+            <h1 className="font-bold text-white tracking-tight">Pipeline CRM</h1>
+            <span className="px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-400 text-xs border border-forest/30">
+              {totalLeads} leads
+            </span>
+            {loading && <RefreshCw className="w-3.5 h-3.5 text-slate-500 animate-spin" />}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Kill switch */}
             <button
               onClick={() => handleGlobalPause(globalPaused !== true)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition ${
                 globalPaused
-                  ? 'border-amber-500/50 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                  : 'border-forest bg-slate-500/20 text-slate-400 hover:bg-slate-500/30'
+                  ? 'border-amber-500/60 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30'
+                  : 'border-forest bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
               }`}
-              title={globalPaused ? 'Reanudar bot globalmente' : 'PAUSA GLOBAL - Detener todo el bot'}
             >
-              <Pause className="w-4 h-4" />
-              {globalPaused ? 'Bot pausado (clic para reanudar)' : 'Kill Switch'}
+              {globalPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+              {globalPaused ? 'Bot pausado — Reanudar' : 'Kill Switch'}
             </button>
-            <User className="w-4 h-4 text-slate-500" />
-            <span className="text-slate-400 text-sm">Estoy como:</span>
-            <select
-              value={currentUser}
-              onChange={(e) => setUser(e.target.value)}
-              className="rounded-lg border border-forest bg-slate-900/60 backdrop-blur-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sage focus:border-sage"
-            >
-              {VENDEDORES.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
+            {/* User selector */}
+            <div className="flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-slate-500" />
+              <select
+                value={currentUser}
+                onChange={(e) => setUser(e.target.value)}
+                className="rounded-lg border border-forest bg-slate-800/60 px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-sage"
+              >
+                {VENDEDORES.map((v) => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
           </div>
         </div>
+      </div>
 
-        {alerts.filter((a) => !a.sentAt).length > 0 && (
-          <section className="mb-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 backdrop-blur-sm">
-            <h2 className="text-sm font-medium text-amber-400 mb-2">Leads que requieren atención</h2>
-            <div className="flex flex-wrap gap-2">
-              {alerts.filter((a) => !a.sentAt).map((a) => (
-                <div key={a.id} className="flex flex-col gap-1 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-white">{a.senderName || 'Sin nombre'}</span>
-                    <span className="text-slate-400">({a.clientId})</span>
-                    {a.senderId && <span className="text-sage text-xs">📱 {a.senderId}</span>}
-                    <span className="text-amber-400/80 text-xs">
-                      {a.reason === 'sale_closed' ? '💰 Venta cerrada - Validar y capturar' : a.reason === 'documents_confirmed' ? '📋 Documentos confirmados - Copiar a Izzi' : '🚨 Urgente'}
-                    </span>
+      <div className="max-w-[1900px] mx-auto px-4 sm:px-6 py-4">
+
+        {/* ── Alerta documentos confirmados ─────────────── */}
+        {pendingAlerts.length > 0 && (
+          <section className="mb-4 rounded-xl border border-emerald-500/40 bg-emerald-500/5 overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-emerald-500/20 bg-emerald-500/10">
+              <AlertTriangle className="w-4 h-4 text-emerald-400" />
+              <span className="text-emerald-300 text-sm font-semibold">
+                {pendingAlerts.length} venta{pendingAlerts.length > 1 ? 's' : ''} para capturar en IZZI
+              </span>
+            </div>
+            <div className="divide-y divide-emerald-500/10">
+              {pendingAlerts.map((a) => (
+                <div key={a.id} className="px-4 py-3 flex flex-col sm:flex-row sm:items-start gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-white text-sm">{a.senderName || 'Sin nombre'}</span>
+                      {a.senderId && (
+                        <button
+                          onClick={() => handleCopy(a.senderId!.replace(/@.*$/, '').replace(/\D/g, ''), `alert-${a.id}`)}
+                          className="flex items-center gap-1 text-xs text-sage hover:text-white transition"
+                        >
+                          <Phone className="w-3 h-3" />
+                          {a.senderId.replace(/@.*$/, '').replace(/\D/g, '')}
+                          {copied === `alert-${a.id}` ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 opacity-50" />}
+                        </button>
+                      )}
+                    </div>
+                    {a.lastMessage && (
+                      <pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono p-2.5 rounded-lg bg-black/30 border border-forest/20 max-h-40 overflow-y-auto">
+                        {a.lastMessage}
+                      </pre>
+                    )}
                   </div>
-                  {a.reason === 'documents_confirmed' && a.lastMessage && (
-                    <pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono mt-1 p-2 rounded bg-black/30 max-h-32 overflow-y-auto">{a.lastMessage}</pre>
-                  )}
+                  <button
+                    onClick={() => handleCopy(a.lastMessage || '', `alert-copy-${a.id}`)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs hover:bg-emerald-500/30 transition shrink-0"
+                  >
+                    {copied === `alert-copy-${a.id}` ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    Copiar datos
+                  </button>
                 </div>
               ))}
             </div>
           </section>
         )}
 
-        {loading ? (
-          <p className="text-slate-400">Cargando...</p>
-        ) : fetchError ? (
-          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-red-300">
-            <p className="font-medium">Error al cargar leads</p>
-            <p className="text-sm mt-1">{fetchError}</p>
-            <p className="text-xs mt-2 text-slate-400">Revisa que la app esté corriendo y MongoDB configurado.</p>
-            <button onClick={() => { setLoading(true); fetchLeads().finally(() => setLoading(false)); }} className="mt-3 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-sm transition">
+        {/* ── Stats bar ─────────────────────────────────── */}
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+          {PIPELINE.map((col) => {
+            const count = leads.filter((l) => norm(l.status) === col.id).length;
+            return (
+              <div key={col.id} className={`rounded-xl p-3 border ${col.border} ${col.headerBg} text-center`}>
+                <div className="text-lg font-bold text-white">{count}</div>
+                <div className={`text-[10px] font-medium ${col.color} truncate`}>{col.icon} {col.label}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Search & Filter bar ───────────────────────── */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <div className="relative flex-1 min-w-[180px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre, teléfono o mensaje..."
+              className="w-full pl-8 pr-3 py-2 rounded-lg border border-forest bg-slate-900/60 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sage/50 focus:border-sage/50"
+            />
+          </div>
+          <select
+            value={filterAssignee}
+            onChange={(e) => setFilterAssignee(e.target.value)}
+            className="rounded-lg border border-forest bg-slate-900/60 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sage/50"
+          >
+            <option value="">Todos los asesores</option>
+            {VENDEDORES.map((v) => <option key={v} value={v}>{v}</option>)}
+            <option value="__unassigned__">Sin asignar</option>
+          </select>
+          {(search || filterAssignee) && (
+            <button
+              onClick={() => { setSearch(''); setFilterAssignee(''); }}
+              className="px-3 py-2 rounded-lg border border-forest text-slate-400 text-sm hover:text-white hover:border-slate-500 transition"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+
+        {/* ── Error state ───────────────────────────────── */}
+        {fetchError && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-300 mb-4 flex items-center justify-between">
+            <span className="text-sm">{fetchError}</span>
+            <button onClick={() => { setLoading(true); fetchLeads().finally(() => setLoading(false)); }} className="px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-xs transition">
               Reintentar
             </button>
           </div>
+        )}
+
+        {/* ── Loading / Empty states ─────────────────────── */}
+        {loading ? (
+          <div className="flex items-center gap-2 text-slate-400 py-8 justify-center">
+            <RefreshCw className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Cargando pipeline...</span>
+          </div>
         ) : leads.length === 0 ? (
-          <div className="rounded-xl border border-forest bg-forest/10 p-8 text-center">
-            <p className="text-sage font-medium">No hay leads aún</p>
-            <p className="text-slate-400 text-sm mt-1">Los leads aparecerán aquí cuando alguien escriba por WhatsApp.</p>
-            <p className="text-slate-500 text-xs mt-2">Asegúrate de que el WhatsApp Bridge esté corriendo: <code className="bg-black/40 px-1 rounded">npm run whatsapp</code></p>
+          <div className="rounded-xl border border-forest bg-forest/5 p-10 text-center">
+            <p className="text-sage font-semibold text-lg mb-1">Pipeline vacío</p>
+            <p className="text-slate-400 text-sm">Los leads aparecerán aquí en tiempo real cuando alguien escriba.</p>
+            <code className="mt-2 inline-block text-xs text-slate-500 bg-black/40 px-2 py-1 rounded">npm run whatsapp</code>
           </div>
         ) : (
-          <div className="relative w-full">
-            <div className="overflow-x-auto overflow-y-visible pb-6 min-h-[400px] scroll-smooth -mx-2 px-2">
-              <div className="flex gap-2 min-w-max">
-            {PIPELINE.map((col) => (
-              <div
-                key={col.id}
-                onDragOver={(e) => onDragOver(e, col.id)}
-                onDragLeave={onDragLeave}
-                onDrop={(e) => onDrop(e, col.id)}
-                className={`
-                  flex-shrink-0 w-[170px] sm:w-[185px] rounded-xl p-2.5 sm:p-3 transition-all duration-200
-                  ${dragOver === col.id ? 'ring-2 ring-sage bg-forest/20' : ''}
-                  bg-slate-900/60 backdrop-blur-xl border border-forest
-                  hover:border-sage
-                `}
-              >
-                <div className="flex items-center justify-between mb-2 gap-1 min-w-0">
-                  <h3 className={`font-semibold text-xs truncate ${col.color}`} title={col.label}>{col.label}</h3>
-                  <span className="text-slate-400 text-xs shrink-0">{leadsByStatus[col.id]?.length ?? 0}</span>
-                </div>
-                <div className="space-y-2">
-                  {(leadsByStatus[col.id] ?? []).map((lead) => (
-                    <div
-                      key={lead.leadId}
-                      draggable
-                      onClick={() => handleLeadClick(lead)}
-                      onDragStart={(e) => onDragStart(e, lead.leadId)}
-                      onDragEnd={onDragEnd}
-                      className={`
-                        group rounded-lg p-2.5 cursor-grab active:cursor-grabbing
-                        bg-slate-900/60 backdrop-blur-xl border border-forest
-                        transition-all duration-300
-                        ${dragging === lead.leadId ? 'opacity-50 scale-95' : 'opacity-100'}
-                        ${selectedLead?.leadId === lead.leadId ? 'ring-2 ring-sage' : ''}
-                        ${recentlyMovedByAI.has(lead.leadId) ? 'animate-slide-in-logro' : ''}
-                        hover:border-sage
-                      `}
-                    >
-                      <div className="flex items-start justify-between gap-1 mb-1">
-                        <div className="flex items-center gap-1 min-w-0">
-                          <SourceIcon source={lead.source || lead.platform || 'whatsapp'} />
-                          <span className="font-bold text-white text-xs truncate">{lead.senderName || 'Sin nombre'}</span>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {lead.is_being_handled_by && (
-                            <span className="px-1 py-0.5 rounded text-[8px] bg-amber-500/25 text-amber-400 border border-amber-500/40" title={`Atendiendo: ${lead.is_being_handled_by}`}>
-                              👤
-                            </span>
-                          )}
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium border ${getBadgeClass(lead.status)}`}>
-                            {lead.clientId}
-                          </span>
-                        </div>
+          /* ── Kanban board ─────────────────────────────── */
+          <div className="overflow-x-auto overflow-y-visible pb-6 -mx-2 px-2">
+            <div className="flex gap-3 min-w-max">
+              {PIPELINE.map((col) => {
+                const colLeads = leadsByStatus[col.id] ?? [];
+                return (
+                  <div
+                    key={col.id}
+                    onDragOver={(e) => onDragOver(e, col.id)}
+                    onDragLeave={onDragLeave}
+                    onDrop={(e) => onDrop(e, col.id)}
+                    className={`
+                      flex-shrink-0 w-[210px] rounded-2xl
+                      bg-slate-900/50 backdrop-blur-xl border
+                      transition-all duration-200
+                      ${dragOver === col.id ? `ring-2 ${col.dropBg} border-transparent` : `${col.border}`}
+                    `}
+                  >
+                    {/* Column header */}
+                    <div className={`flex items-center justify-between px-3 py-2.5 rounded-t-2xl ${col.headerBg} border-b ${col.border}`}>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${col.dot}`} />
+                        <span className={`font-semibold text-xs ${col.color}`}>{col.icon} {col.label}</span>
                       </div>
-                      <p className="text-slate-400 text-[11px] line-clamp-2 mb-1 min-h-[28px]">
-                        {lead.lastMessage || 'Sin mensaje'}
-                      </p>
-                      {lead.status?.toLowerCase() === 'cancelados' && (
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[8px] bg-red-500/20 text-red-300 border border-red-500/40 mb-1">
-                          {lead.cancelReason || 'Sin especificar'}
-                        </span>
-                      )}
-                      <p className="text-slate-400 text-[9px] mb-2">{formatTime(lead.lastMessageAt)}</p>
-
-                      <div className="flex items-center gap-1">
-                        {lead.platform === 'whatsapp' && lead.senderId && (
-                          <a
-                            href={getWhatsAppUrl(lead.senderId)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="p-1 rounded bg-forest/30 hover:bg-forest/50 text-sage transition"
-                            title="Abrir WhatsApp"
-                          >
-                            <MessageCircle className="w-3 h-3" />
-                          </a>
-                        )}
-                        <div className="relative inline-block">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const isPaused = lead.assignedTo || lead.bot_status === 'paused';
-                              if (isPaused) handleAssign(lead.leadId, '', e);
-                            }}
-                            onMouseEnter={() => !(lead.assignedTo || lead.bot_status === 'paused') && setAssignMenu(lead.leadId)}
-                            onMouseLeave={() => setAssignMenu(null)}
-                            className={`p-1 rounded transition ${
-                              lead.assignedTo || lead.bot_status === 'paused'
-                                ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400'
-                                : 'bg-slate-500/20 hover:bg-slate-500/30 text-slate-400'
-                            }`}
-                            title={lead.assignedTo || lead.bot_status === 'paused' ? 'Reanudar bot' : 'Pausar bot'}
-                          >
-                            {lead.assignedTo || lead.bot_status === 'paused' ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
-                          </button>
-                          {!(lead.assignedTo || lead.bot_status === 'paused') && assignMenu === lead.leadId && (
-                            <div
-                              className="absolute left-0 top-full mt-1 z-20 rounded-lg border border-forest bg-slate-900/95 backdrop-blur-xl p-1"
-                              onMouseEnter={() => setAssignMenu(lead.leadId)}
-                              onMouseLeave={() => setAssignMenu(null)}
-                            >
-                              <button
-                                onClick={(e) => handlePause(lead.leadId, true, e)}
-                                className="block w-full text-left px-2 py-1 text-xs hover:bg-primary/20 rounded text-sage font-medium"
-                              >
-                                Pausar bot
-                              </button>
-                              <p className="px-2 py-1 text-[10px] text-slate-400">Asignar a →</p>
-                              {VENDEDORES.map((v) => (
-                                <button
-                                  key={v}
-                                  onClick={(e) => handleAssign(lead.leadId, v, e)}
-                                  className="block w-full text-left px-2 py-1 text-xs hover:bg-primary/20 rounded text-sage"
-                                >
-                                  {v}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <a
-                          href={getCalendarUrl(lead)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-1 rounded bg-slate-500/20 hover:bg-slate-500/30 text-slate-400 transition"
-                          title="Agendar cita"
-                        >
-                          <Calendar className="w-3 h-3" />
-                        </a>
-                        <button
-                          onClick={(e) => handleDeleteLead(lead.leadId, e)}
-                          disabled={deletingLeadId === lead.leadId}
-                          className="p-1 rounded bg-red-500/20 hover:bg-red-500/30 text-red-400 transition disabled:opacity-50"
-                          title="Eliminar lead"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                      {(lead.assignedTo || lead.bot_status === 'paused') && (
-                        <p className="text-[9px] text-amber-400/80 mt-0.5">Bot pausado{lead.assignedTo ? ` · ${lead.assignedTo}` : ''}</p>
-                      )}
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full bg-black/20 ${col.color}`}>
+                        {colLeads.length}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-              </div>
+
+                    {/* Cards */}
+                    <div className="p-2 space-y-2 max-h-[calc(100vh-320px)] overflow-y-auto">
+                      {colLeads.length === 0 && (
+                        <div className="py-6 text-center text-slate-600 text-[11px]">Sin leads</div>
+                      )}
+                      {colLeads.map((lead) => (
+                        <div
+                          key={lead.leadId}
+                          draggable
+                          onClick={() => handleLeadClick(lead)}
+                          onDragStart={(e) => onDragStart(e, lead.leadId)}
+                          onDragEnd={onDragEnd}
+                          className={`
+                            group rounded-xl cursor-grab active:cursor-grabbing
+                            bg-slate-800/70 backdrop-blur-sm pl-0 overflow-hidden
+                            border border-slate-700/50 hover:border-slate-500/80
+                            transition-all duration-200
+                            ${dragging === lead.leadId ? 'opacity-40 scale-95' : 'opacity-100'}
+                            ${selectedLead?.leadId === lead.leadId ? 'ring-2 ring-sage/70 border-sage/40' : ''}
+                            ${recentlyMovedByAI.has(lead.leadId) ? 'animate-slide-in-logro' : ''}
+                            flex
+                          `}
+                        >
+                          {/* Urgency bar */}
+                          <div className={`w-1 shrink-0 rounded-l-xl ${
+                            (() => {
+                              if (!lead.lastMessageAt) return 'bg-slate-700';
+                              const diff = Date.now() - new Date(lead.lastMessageAt).getTime();
+                              if (diff < 5 * 60_000)       return 'bg-emerald-400';
+                              if (diff < 60 * 60_000)      return 'bg-amber-400';
+                              if (diff < 24 * 60 * 60_000) return 'bg-orange-500';
+                              return 'bg-slate-700';
+                            })()
+                          }`} />
+
+                          <div className="flex-1 p-2.5 min-w-0">
+                            {/* Name row */}
+                            <div className="flex items-start justify-between gap-1 mb-1">
+                              <div className="flex items-center gap-1 min-w-0">
+                                <SourceIcon source={lead.source || lead.platform || 'whatsapp'} />
+                                <span className="font-semibold text-white text-xs truncate" title={lead.senderName}>
+                                  {lead.senderName || 'Sin nombre'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {lead.is_being_handled_by && (
+                                  <span className="text-[9px] text-amber-400" title={`Viendo: ${lead.is_being_handled_by}`}>👤</span>
+                                )}
+                                {lead.messageCount > 0 && (
+                                  <span className="px-1 py-0.5 rounded text-[9px] bg-slate-700/60 text-slate-400 border border-slate-600/50">
+                                    {lead.messageCount}💬
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Last message */}
+                            <p className="text-slate-400 text-[11px] line-clamp-2 mb-1.5 leading-relaxed">
+                              {lead.lastMessage || '—'}
+                            </p>
+
+                            {/* Doc expedient badge */}
+                            {lead.documentExpedient?.nombre && lead.documentExpedient.nombre !== 'NO_LEIBLE' && (
+                              <div className="flex items-center gap-1 mb-1.5">
+                                <FileText className="w-2.5 h-2.5 text-emerald-400" />
+                                <span className="text-[9px] text-emerald-400 truncate">{lead.documentExpedient.nombre}</span>
+                              </div>
+                            )}
+
+                            {/* Cancel reason */}
+                            {lead.status === 'cancelados' && lead.cancelReason && (
+                              <span className="inline-block px-1.5 py-0.5 rounded text-[9px] bg-red-500/15 text-red-300 border border-red-500/30 mb-1.5 truncate max-w-full">
+                                {lead.cancelReason}
+                              </span>
+                            )}
+
+                            {/* Time + status row */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1">
+                                <div className={`w-1.5 h-1.5 rounded-full ${getUrgencyDot(lead.lastMessageAt)}`} />
+                                <span className="text-[10px] text-slate-500">{getUrgencyLabel(lead.lastMessageAt)}</span>
+                              </div>
+                              {(lead.assignedTo || lead.bot_status === 'paused') && (
+                                <span className="text-[9px] text-amber-400/80 truncate max-w-[80px]">
+                                  {lead.assignedTo ? `⏸ ${lead.assignedTo}` : '⏸ Pausado'}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Actions row */}
+                            <div className="flex items-center gap-1 mt-2 pt-2 border-t border-slate-700/40">
+                              {lead.platform === 'whatsapp' && lead.senderId && (
+                                <a
+                                  href={getWhatsAppUrl(lead.senderId)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="p-1 rounded-lg bg-forest/20 hover:bg-forest/40 text-sage transition"
+                                  title="Abrir WhatsApp"
+                                >
+                                  <MessageCircle className="w-3 h-3" />
+                                </a>
+                              )}
+
+                              {/* Pause / assign dropdown */}
+                              <div className="relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (lead.assignedTo || lead.bot_status === 'paused') handleAssign(lead.leadId, '', e);
+                                  }}
+                                  onMouseEnter={() => !(lead.assignedTo || lead.bot_status === 'paused') && setAssignMenu(lead.leadId)}
+                                  onMouseLeave={() => setAssignMenu(null)}
+                                  className={`p-1 rounded-lg transition ${
+                                    lead.assignedTo || lead.bot_status === 'paused'
+                                      ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-400'
+                                      : 'bg-slate-700/30 hover:bg-slate-700/60 text-slate-400'
+                                  }`}
+                                  title={lead.assignedTo || lead.bot_status === 'paused' ? 'Reanudar bot' : 'Pausar / Asignar'}
+                                >
+                                  {lead.assignedTo || lead.bot_status === 'paused' ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                                </button>
+                                {!(lead.assignedTo || lead.bot_status === 'paused') && assignMenu === lead.leadId && (
+                                  <div
+                                    className="absolute left-0 top-full mt-1 z-20 rounded-xl border border-forest bg-slate-900/98 backdrop-blur-xl p-1 min-w-[120px] shadow-xl"
+                                    onMouseEnter={() => setAssignMenu(lead.leadId)}
+                                    onMouseLeave={() => setAssignMenu(null)}
+                                  >
+                                    <button onClick={(e) => handlePause(lead.leadId, true, e)} className="block w-full text-left px-2.5 py-1.5 text-xs hover:bg-sage/10 rounded-lg text-sage font-medium">
+                                      ⏸ Pausar bot
+                                    </button>
+                                    <div className="border-t border-forest/30 mt-1 pt-1">
+                                      <p className="px-2.5 py-1 text-[10px] text-slate-500">Asignar a →</p>
+                                      {VENDEDORES.map((v) => (
+                                        <button key={v} onClick={(e) => handleAssign(lead.leadId, v, e)} className="block w-full text-left px-2.5 py-1.5 text-xs hover:bg-sage/10 rounded-lg text-slate-300">
+                                          👤 {v}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <button
+                                onClick={(e) => handleDeleteLead(lead.leadId, e)}
+                                disabled={deletingLeadId === lead.leadId}
+                                className="p-1 rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400 transition ml-auto"
+                                title="Eliminar lead y reiniciar chat"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <p className="text-slate-400 text-xs mt-1 text-center sm:text-left">← Desliza para ver todas las columnas →</p>
           </div>
         )}
 
-        {selectedLead && (
-          <div className="fixed inset-0 z-50 flex justify-end">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={releaseLead} />
-            <div className="relative w-full max-w-md bg-slate-900/95 backdrop-blur-xl border-l border-forest flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-forest">
-                <div className="flex items-center gap-2">
-                  <SourceIcon source={selectedLead.source || selectedLead.platform || 'whatsapp'} />
-                  <span className="font-bold text-white">{selectedLead.senderName || 'Sin nombre'}</span>
-                  <span className="text-xs text-amber-400">· Atendiendo: {currentUser}</span>
-                </div>
-                <button
-                  onClick={releaseLead}
-                  className="p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-white transition"
-                  title="Soltar chat"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex-1 p-4 overflow-y-auto">
-                {selectedLead.status?.toLowerCase() === 'cancelados' && (
-                  <p className="text-red-400 text-xs mb-3">
-                    Motivo: {selectedLead.cancelReason || 'Sin especificar'}
-                  </p>
-                )}
-                <p className="text-slate-400 text-sm mb-2">Último mensaje:</p>
-                <p className="text-white text-sm mb-4">{selectedLead.lastMessage || '—'}</p>
-                <p className="text-slate-400 text-xs mb-4">Respuesta: {selectedLead.lastReply || '—'}</p>
-                {selectedLead.platform === 'whatsapp' && selectedLead.senderId && (
-                  <>
-                    <a
-                      href={getWhatsAppUrl(selectedLead.senderId)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-forest/30 text-sage hover:bg-forest/50 transition mb-4"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      Abrir en WhatsApp
-                    </a>
-                    <div className="mt-4 pt-4 border-t border-forest">
-                      <p className="text-slate-400 text-xs mb-2">Responder desde el CRM:</p>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}
-                          placeholder="Escribe tu mensaje..."
-                          className="flex-1 rounded-lg border border-forest bg-slate-900/80 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sage focus:border-sage"
-                        />
-                        <button
-                          onClick={handleSendReply}
-                          disabled={!replyText.trim() || sendingReply}
-                          className="px-4 py-2 rounded-lg bg-sage text-slate-900 font-medium hover:bg-sage/90 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
-                        >
-                          <Send className="w-4 h-4" />
-                          Enviar
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+        {/* ── Urgency legend ────────────────────────────── */}
+        {!loading && leads.length > 0 && (
+          <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-500">
+            <span className="font-medium">Actividad:</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Ahora (−5m)</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Reciente (−1h)</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /> Hoy (−24h)</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-600" /> Inactivo</span>
           </div>
         )}
       </div>
+
+      {/* ── Detail Panel ──────────────────────────────────── */}
+      {selectedLead && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={releaseLead} />
+          <div className="relative w-full max-w-lg bg-[#0a1209]/98 backdrop-blur-xl border-l border-forest/60 flex flex-col shadow-2xl">
+
+            {/* Panel header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-forest/40">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <SourceIcon source={selectedLead.source || selectedLead.platform || 'whatsapp'} />
+                <div className="min-w-0">
+                  <p className="font-bold text-white text-sm truncate">{selectedLead.senderName || 'Sin nombre'}</p>
+                  {selectedLead.senderId && (
+                    <button
+                      onClick={() => handleCopy(selectedLead.senderId!.replace(/@.*$/, '').replace(/\D/g, ''), 'phone-header')}
+                      className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-sage transition"
+                    >
+                      <Phone className="w-2.5 h-2.5" />
+                      {selectedLead.senderId.replace(/@.*$/, '').replace(/\D/g, '')}
+                      {copied === 'phone-header' && <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />}
+                    </button>
+                  )}
+                </div>
+                <span className={`ml-1 text-[10px] px-2 py-0.5 rounded-full border font-medium ${
+                  PIPELINE.find(p => p.id === norm(selectedLead.status))?.color ?? 'text-slate-400'
+                } bg-slate-800/50 border-slate-600/40`}>
+                  {PIPELINE.find(p => p.id === norm(selectedLead.status))?.icon} {PIPELINE.find(p => p.id === norm(selectedLead.status))?.label ?? selectedLead.status}
+                </span>
+              </div>
+              <button onClick={releaseLead} className="p-2 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {/* ── Quick stats ── */}
+              <div className="grid grid-cols-3 gap-2 px-5 py-3 border-b border-forest/20">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-white">{selectedLead.messageCount}</div>
+                  <div className="text-[10px] text-slate-500">Mensajes</div>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <div className={`w-2 h-2 rounded-full ${getUrgencyDot(selectedLead.lastMessageAt)}`} />
+                    <span className="text-sm font-bold text-white">{getUrgencyLabel(selectedLead.lastMessageAt)}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500">Último msg</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm font-bold text-white">{selectedLead.createdAt ? new Date(selectedLead.createdAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) : '—'}</div>
+                  <div className="text-[10px] text-slate-500">Ingresó</div>
+                </div>
+              </div>
+
+              {/* ── Document expedient ── */}
+              {selectedLead.documentExpedient && (
+                <div className="px-5 py-4 border-b border-forest/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-4 h-4 text-emerald-400" />
+                    <span className="text-sm font-semibold text-emerald-300">Expediente OCR</span>
+                    <button
+                      onClick={() => {
+                        const exp = selectedLead.documentExpedient!;
+                        const txt = `NOMBRE: ${exp.nombre}\nCURP: ${exp.curp}\nDIRECCIÓN: ${exp.direccion}\nTELÉFONO: ${exp.telefono}\nCORREO: ${exp.correo}\nPAQUETE: ${exp.paquete}\nPROMOCIÓN: ${exp.promocion}`;
+                        handleCopy(txt, 'expedient-all');
+                      }}
+                      className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] hover:bg-emerald-500/25 transition"
+                    >
+                      {copied === 'expedient-all' ? <CheckCircle2 className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      Copiar todo
+                    </button>
+                  </div>
+                  <div className="space-y-1.5">
+                    {[
+                      { icon: <User className="w-3 h-3" />, label: 'Nombre', value: selectedLead.documentExpedient.nombre, key: 'exp-nombre' },
+                      { icon: <FileText className="w-3 h-3" />, label: 'CURP', value: selectedLead.documentExpedient.curp, key: 'exp-curp' },
+                      { icon: <MapPin className="w-3 h-3" />, label: 'Dirección', value: selectedLead.documentExpedient.direccion, key: 'exp-dir' },
+                      { icon: <Phone className="w-3 h-3" />, label: 'Teléfono', value: selectedLead.documentExpedient.telefono, key: 'exp-tel' },
+                      { icon: <Mail className="w-3 h-3" />, label: 'Correo', value: selectedLead.documentExpedient.correo, key: 'exp-email' },
+                      { icon: <Package className="w-3 h-3" />, label: 'Paquete', value: selectedLead.documentExpedient.paquete, key: 'exp-pkg' },
+                    ].filter(row => row.value && row.value !== 'NO_LEIBLE' && row.value !== 'NO_ESPECIFICADO').map(row => (
+                      <div key={row.key} className="flex items-start gap-2 group/row">
+                        <div className="flex items-center gap-1.5 shrink-0 w-20 mt-0.5">
+                          <span className="text-slate-500">{row.icon}</span>
+                          <span className="text-[10px] text-slate-500">{row.label}</span>
+                        </div>
+                        <span className="text-xs text-slate-200 flex-1 break-all">{row.value}</span>
+                        <button
+                          onClick={() => handleCopy(row.value, row.key)}
+                          className="opacity-0 group-hover/row:opacity-100 transition p-0.5 text-slate-500 hover:text-sage"
+                        >
+                          {copied === row.key ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Last conversation ── */}
+              <div className="px-5 py-4 border-b border-forest/20">
+                <p className="text-xs font-semibold text-slate-400 mb-2">Última conversación</p>
+                {selectedLead.lastMessage && (
+                  <div className="flex justify-start mb-2">
+                    <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-tl-sm bg-slate-700/60 text-sm text-slate-200">
+                      {selectedLead.lastMessage}
+                    </div>
+                  </div>
+                )}
+                {selectedLead.lastReply && (
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-tr-sm bg-forest/40 text-sm text-sage border border-forest/30">
+                      {selectedLead.lastReply}
+                    </div>
+                  </div>
+                )}
+                {selectedLead.status === 'cancelados' && selectedLead.cancelReason && (
+                  <p className="mt-2 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                    Cancelado: {selectedLead.cancelReason}
+                  </p>
+                )}
+              </div>
+
+              {/* ── Move to stage ── */}
+              <div className="px-5 py-4 border-b border-forest/20">
+                <p className="text-xs font-semibold text-slate-400 mb-2">Mover a etapa</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PIPELINE.filter(p => p.id !== norm(selectedLead.status)).map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        if (p.id === 'cancelados') {
+                          setCancelModal({ leadId: selectedLead.leadId });
+                        } else {
+                          handleStatusChange(selectedLead.leadId, p.id);
+                        }
+                      }}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] transition ${p.border} ${p.headerBg} ${p.color} hover:opacity-80`}
+                    >
+                      {p.icon} {p.label} <ChevronRight className="w-2.5 h-2.5 opacity-50" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Assign / Pause ── */}
+              <div className="px-5 py-4 border-b border-forest/20">
+                <p className="text-xs font-semibold text-slate-400 mb-2">Asignación y Bot</p>
+                <div className="flex flex-wrap gap-2">
+                  {VENDEDORES.map(v => (
+                    <button
+                      key={v}
+                      onClick={() => handleAssign(selectedLead.leadId, selectedLead.assignedTo === v ? '' : v, { stopPropagation: () => {}, preventDefault: () => {} } as React.MouseEvent)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs transition ${
+                        selectedLead.assignedTo === v
+                          ? 'bg-amber-500/25 border-amber-500/50 text-amber-300'
+                          : 'bg-slate-800/50 border-forest text-slate-400 hover:border-slate-500'
+                      }`}
+                    >
+                      👤 {v} {selectedLead.assignedTo === v && '✓'}
+                    </button>
+                  ))}
+                  <button
+                    onClick={(e) => handlePause(selectedLead.leadId, selectedLead.bot_status !== 'paused', e)}
+                    className={`px-3 py-1.5 rounded-lg border text-xs transition flex items-center gap-1.5 ${
+                      selectedLead.bot_status === 'paused'
+                        ? 'bg-amber-500/25 border-amber-500/50 text-amber-300'
+                        : 'bg-slate-800/50 border-forest text-slate-400 hover:border-slate-500'
+                    }`}
+                  >
+                    {selectedLead.bot_status === 'paused' ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                    {selectedLead.bot_status === 'paused' ? 'Reanudar bot' : 'Pausar bot'}
+                  </button>
+                </div>
+              </div>
+
+              {/* ── WhatsApp reply ── */}
+              {selectedLead.platform === 'whatsapp' && selectedLead.senderId && (
+                <div className="px-5 py-4">
+                  <a
+                    href={getWhatsAppUrl(selectedLead.senderId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-forest/20 text-sage hover:bg-forest/35 transition text-sm mb-3 border border-forest/30 w-fit"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Abrir en WhatsApp
+                  </a>
+                  <p className="text-xs font-semibold text-slate-400 mb-2">Responder desde CRM</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendReply()}
+                      placeholder="Escribe tu mensaje..."
+                      className="flex-1 rounded-xl border border-forest bg-slate-900/80 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sage/50"
+                    />
+                    <button
+                      onClick={handleSendReply}
+                      disabled={!replyText.trim() || sendingReply}
+                      className="px-4 py-2 rounded-xl bg-sage text-slate-900 font-medium hover:bg-sage/90 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2 text-sm"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Panel footer — delete */}
+            <div className="px-5 py-3 border-t border-forest/30 flex items-center justify-between">
+              <span className="text-[10px] text-slate-600">
+                {selectedLead.assignedTo ? `⏸ ${selectedLead.assignedTo}` : `🤖 Bot activo · ${currentUser} viendo`}
+              </span>
+              <button
+                onClick={(e) => { handleDeleteLead(selectedLead.leadId, e); }}
+                disabled={deletingLeadId === selectedLead.leadId}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs hover:bg-red-500/20 transition disabled:opacity-40"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Eliminar y reiniciar chat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cancel modal ────────────────────────────────── */}
+      {cancelModal && (
+        <CancelModal
+          onConfirm={(reason) => {
+            handleStatusChange(cancelModal.leadId, 'cancelados', reason);
+            setCancelModal(null);
+          }}
+          onClose={() => setCancelModal(null)}
+        />
+      )}
     </main>
   );
 }

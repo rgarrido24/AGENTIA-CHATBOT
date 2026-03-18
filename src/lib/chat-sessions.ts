@@ -139,6 +139,12 @@ export async function appendMessageToSession(
   );
 }
 
+/** Elimina la sesión de un lead (al borrar el lead, para reset limpio). */
+export async function deleteSession(leadId: string): Promise<void> {
+  const db = await getMongoDb();
+  await db.collection<ChatSession>('chat_sessions').deleteOne({ sessionId: leadId });
+}
+
 export function getFollowUpInstruction(
   session: ChatSession & { _isReturningUser?: boolean },
   clientId: string
