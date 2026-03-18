@@ -153,29 +153,58 @@ export const REQUEST_CONTACT_REPLY =
 export const REQUEST_PACKAGE_REPLY =
   '¡Excelente! Ya tengo tus datos. ¿Qué paquete deseas contratar? Indica el nombre y megas/canales (ej: Turbo 100, Turbo 200).';
 
-/** Combina datos extraídos de múltiples imágenes. Prefiere valores válidos. */
+/** Combina datos extraídos de múltiples imágenes. Prefiere valores válidos.
+ *
+ * Reglas de merge:
+ * - nombre y curp: se protegen una vez que hay un valor válido del INE (existente).
+ *   El comprobante de domicilio suele estar a nombre de otra persona; NUNCA pisamos el nombre del INE.
+ * - direccion: el dato ENTRANTE (comprobante) tiene prioridad sobre el INE si es válido.
+ * - telefono, correo, paquete, promocion: prefiere el dato entrante si es válido.
+ */
 export function mergeExtractedData(
   existing: ExtractedDocData | null,
   incoming: ExtractedDocData
 ): ExtractedDocData {
   const docPlaceholders = ['NO_LEIBLE', ''];
   const pkgPlaceholders = ['NO_ESPECIFICADO', 'N/A', ''];
+  const isPh = (s: string, placeholders: string[]) =>
+    !s || placeholders.some((p) => s === p || s.toUpperCase() === p);
+
+  // Campos de identidad (INE): se protegen — el existente tiene prioridad
+  const pickProtected = (a: string, b: string) => {
+    const av = (a || '').trim();
+    const bv = (b || '').trim();
+    if (av && !isPh(av, docPlaceholders)) return av;
+    if (bv && !isPh(bv, docPlaceholders)) return bv;
+    return av || bv || docPlaceholders[0];
+  };
+
+  // Dirección: el entrante (comprobante) tiene prioridad sobre el INE
+  const pickAddress = (a: string, b: string) => {
+    const av = (a || '').trim();
+    const bv = (b || '').trim();
+    if (bv && !isPh(bv, docPlaceholders)) return bv;
+    if (av && !isPh(av, docPlaceholders)) return av;
+    return bv || av || docPlaceholders[0];
+  };
+
+  // Campos de contacto/paquete: prefiere el entrante
   const pick = (a: string, b: string, placeholders: string[]) => {
     const av = (a || '').trim();
     const bv = (b || '').trim();
-    const isPh = (s: string) => !s || placeholders.some((p) => s === p || s.toUpperCase() === p);
-    if (bv && !isPh(bv)) return bv;
-    if (av && !isPh(av)) return av;
+    if (bv && !isPh(bv, placeholders)) return bv;
+    if (av && !isPh(av, placeholders)) return av;
     return bv || av || (placeholders[0] ?? '');
   };
+
   const base = existing ?? incoming;
   return {
-    nombre: pick(base.nombre, incoming.nombre, docPlaceholders),
-    curp: pick(base.curp, incoming.curp, docPlaceholders),
-    direccion: pick(base.direccion, incoming.direccion, docPlaceholders),
+    nombre:   pickProtected(base.nombre, incoming.nombre),
+    curp:     pickProtected(base.curp, incoming.curp),
+    direccion: pickAddress(base.direccion, incoming.direccion),
     telefono: pick(base.telefono, incoming.telefono, docPlaceholders),
-    correo: pick(base.correo, incoming.correo, docPlaceholders),
-    paquete: pick(base.paquete ?? 'NO_ESPECIFICADO', incoming.paquete ?? 'NO_ESPECIFICADO', pkgPlaceholders),
+    correo:   pick(base.correo, incoming.correo, docPlaceholders),
+    paquete:  pick(base.paquete ?? 'NO_ESPECIFICADO', incoming.paquete ?? 'NO_ESPECIFICADO', pkgPlaceholders),
     promocion: pick(base.promocion ?? 'N/A', incoming.promocion ?? 'N/A', pkgPlaceholders),
   };
 }

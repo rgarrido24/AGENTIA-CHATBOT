@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npm run:*)",
-      "Bash(node -e \"require\\(''@google/generative-ai''\\)\")"
+      "Bash(node -e \"require\\(''@google/generative-ai''\\)\")",
+      "Bash(grep -l \"sendAlert\\\\|ALERT_WHATSAPP\\\\|lead_alerts\\\\|pending_alerts\" E:/AGENTIA-CHATBOT-LIMPIO/scripts/*.js)"
     ]
   }
 }

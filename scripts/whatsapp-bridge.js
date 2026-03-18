@@ -227,28 +227,32 @@ async function main() {
     });
 
   async function pollAndSendAlerts() {
+    // Solo enviar alertas cuando WhatsApp está conectado
+    if (!whatsappReady || !client) return;
     const alertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER;
-    if (!alertNumber) return;
+    if (!alertNumber) {
+      console.warn('[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas desactivadas.');
+      return;
+    }
     try {
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
       const res = await fetch(`${API_URL}/api/alerts/pending`, {
         headers: secret ? { Authorization: `Bearer ${secret}` } : {},
       });
       const data = await res.json().catch(() => ({}));
-      const alerts = data.alerts || [];
+      const allAlerts = data.alerts || [];
+      // Solo enviar alertas de captura manual (documents_confirmed).
+      // Las demás (urgent_keyword, high_activity, sale_closed) son visibles en el dashboard.
+      const alerts = allAlerts.filter((a) => a.reason === 'documents_confirmed');
       const sentIds = [];
       for (const a of alerts) {
         try {
           const chatId = alertNumber.includes('@') ? alertNumber : `${alertNumber.replace(/\D/g, '')}@c.us`;
-          const isSaleClosed = a.reason === 'sale_closed';
-          const isDocsConfirmed = a.reason === 'documents_confirmed';
-          const title = isDocsConfirmed ? '📋 *CAPTURAR EN IZZI*' : isSaleClosed ? '💰 *Venta cerrada - Capturar*' : '🚨 *Lead urgente*';
-          const senderLine = a.senderId ? `📱 ${a.senderId}` : '';
-          const body = isDocsConfirmed ? (a.lastMessage || '') : `"${(a.lastMessage || '').slice(0, 200)}${(a.lastMessage || '').length > 200 ? '...' : ''}"`;
-          const msg = `${title}\n${a.senderName || 'Sin nombre'} (${a.clientId})\n${senderLine}\n\n${body}\n\nVer: ${API_URL}/dashboard/leads`;
+          const senderLine = a.senderId ? `📱 ${a.senderId.replace(/@.*$/, '')}` : '';
+          const msg = `📋 *CAPTURAR EN IZZI – VENTA LISTA*\n${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\nVer pipeline: ${API_URL}/dashboard/leads`;
           await client.sendMessage(chatId, msg);
           sentIds.push(a.id);
-          console.log(`[Agentia] Alerta enviada a ${alertNumber}`);
+          console.log(`[Agentia] Alerta documents_confirmed enviada a ${alertNumber}`);
         } catch (e) {
           console.error('[Agentia] Error enviando alerta:', e.message);
         }
@@ -341,8 +345,8 @@ async function main() {
 
   setInterval(pollAndSendReminders, 60 * 1000);
   setTimeout(pollAndSendReminders, 30 * 1000);
-  setInterval(pollAndSendAlerts, 60 * 1000);
-  setTimeout(pollAndSendAlerts, 45 * 1000);
+  setInterval(pollAndSendAlerts, 20 * 1000);
+  setTimeout(pollAndSendAlerts, 15 * 1000);
   setInterval(pollAndSendOutboundMessages, 5 * 1000);
   setTimeout(pollAndSendOutboundMessages, 3 * 1000);
 
