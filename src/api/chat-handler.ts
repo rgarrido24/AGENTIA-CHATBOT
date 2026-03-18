@@ -92,15 +92,45 @@ function normalizeExtractedData(raw: Record<string, string>): ExtractedDocData {
   };
 }
 
-/** Extrae mención de paquete (ej: Turbo 100, 200 megas) del texto. */
+/** Extrae mención de paquete del texto con prioridad de intención.
+ *
+ * Prioridades:
+ * 1. Intención explícita: "quiero el de 80 megas", "ese de 60", "el que dijiste de 80 megas"
+ * 2. Paquete izzi con nombre real: "izzi 80", "izzi 60 + TV"
+ * 3. Megas mencionadas que NO estén seguidas de "?" (no son una pregunta)
+ * 4. Último recurso: turbo/paquete + número (puede ser pregunta — menos confiable)
+ */
 function extractPackageFromText(text: string): string | undefined {
   const t = text.trim();
   if (t.length < 3) return undefined;
-  const turboMatch = t.match(/(?:turbo|paquete)\s*(?:de\s*)?(\d+)\s*(?:megas?|mb)?/i);
-  if (turboMatch) return `Turbo ${turboMatch[1]} megas`;
-  const megasMatch = t.match(/(\d+)\s*(?:megas?|mb)/i);
-  if (megasMatch) return `${megasMatch[1]} megas`;
-  if (/\d+\s*(?:megas?|canales?|mb)/i.test(t) || /turbo|paquete|internet/i.test(t)) return t.slice(0, 80);
+
+  // 1. Intención explícita de selección: permite hasta 6 palabras entre el verbo y el número
+  const intentMatch = t.match(
+    /(?:quiero|deseo|el\s+de|dame|contrat(?:a|ar)|ese\s+de|mismo\s+de|el\s+que|dijiste\s+de)(?:\s+\w+){0,6}\s+(?:de\s+)?(\d+)\s*megas?/i
+  );
+  if (intentMatch) {
+    const hasTV = /\+\s*(?:izzitv|tv|televisi[oó]n)/i.test(t);
+    return hasTV ? `izzi ${intentMatch[1]} + TV` : `${intentMatch[1]} megas`;
+  }
+
+  // 2. Paquete izzi con nombre real ("izzi 80", "izzi 60")
+  const izziMatch = t.match(/\bizzi\s+(\d+)/i);
+  if (izziMatch) {
+    const hasTV = /\+\s*(?:izzitv|tv|televisi[oó]n)/i.test(t);
+    return hasTV ? `izzi ${izziMatch[1]} + TV` : `izzi ${izziMatch[1]}`;
+  }
+
+  // 3. Megas que NO estén en contexto de pregunta (no seguidas de "?")
+  const megasAll = [...t.matchAll(/(\d+)\s*megas?/gi)];
+  for (const m of megasAll) {
+    const after = t.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 3);
+    if (!after.includes('?')) return `${m[1]} megas`;
+  }
+
+  // 4. Último recurso: turbo/paquete + número SIN "?" inmediato
+  const turboMatch = t.match(/(?:turbo|paquete)\s*(?:de\s*)?(\d+)(?!\?)/i);
+  if (turboMatch) return `${turboMatch[1]} megas`;
+
   return undefined;
 }
 

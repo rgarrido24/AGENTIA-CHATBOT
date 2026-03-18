@@ -151,7 +151,7 @@ export const REQUEST_CONTACT_REPLY =
   '¡Perfecto! Ya leí tus datos de la credencial. Para terminar de armar tu expediente, ¿me compartes tu número de contacto y correo electrónico?';
 
 export const REQUEST_PACKAGE_REPLY =
-  '¡Excelente! Ya tengo tus datos. ¿Qué paquete deseas contratar? Indica el nombre y megas/canales (ej: Turbo 100, Turbo 200).';
+  '¡Excelente! Ya tengo tus datos. ¿Qué paquete deseas contratar? (ej: izzi 60, izzi 80, izzi 80 + TV)';
 
 /** Combina datos extraídos de múltiples imágenes. Prefiere valores válidos.
  *
