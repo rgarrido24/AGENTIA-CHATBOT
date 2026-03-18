@@ -131,6 +131,22 @@ export const PARTIAL_DOCUMENT_REPLY =
 export const RECOLLECTION_INCOMPLETE_REPLY =
   '¡Perfecto! Ya registré la parte frontal de tu identificación. Para armar tu expediente completo, por favor envíame: 1) El reverso de tu INE o comprobante de domicilio. 2) Un número de teléfono de contacto. 3) Tu correo electrónico.';
 
+/** Genera mensaje mostrando datos extraídos del INE y pidiendo lo que falta (teléfono/correo). */
+export function formatContactRequestMessage(data: ExtractedDocData): string {
+  const ok = (s: string) => s && s !== 'NO_LEIBLE';
+  const lines: string[] = ['✅ Leí los siguientes datos de tu credencial:\n'];
+  if (ok(data.nombre))    lines.push(`• NOMBRE: ${data.nombre}`);
+  if (ok(data.curp))      lines.push(`• CURP: ${data.curp}`);
+  if (ok(data.direccion)) lines.push(`• DIRECCIÓN: ${data.direccion}`);
+  const needsTel    = !ok(data.telefono);
+  const needsCorreo = !ok(data.correo) || /no_leible|pendiente\.com/i.test(data.correo);
+  const missing: string[] = [];
+  if (needsTel)    missing.push('número de teléfono de contacto');
+  if (needsCorreo) missing.push('correo electrónico');
+  lines.push(`\nPara completar tu expediente, ¿me compartes tu ${missing.join(' y ')}?`);
+  return lines.join('\n');
+}
+
 export const REQUEST_CONTACT_REPLY =
   '¡Perfecto! Ya leí tus datos de la credencial. Para terminar de armar tu expediente, ¿me compartes tu número de contacto y correo electrónico?';
 

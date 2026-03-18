@@ -183,34 +183,59 @@ function parseCoverageContent(content: string, cp: string): CoverageResult | nul
   return null;
 }
 
-/** Delimitadores: coma, punto y coma. Soporta CSV exportado de Excel. */
-const CSV_DELIMITERS = /[;,]/;
+/** Detecta el delimitador dominante de una línea CSV (tab, punto y coma, coma). */
+function detectDelimiter(line: string): string {
+  const counts: Record<string, number> = {
+    '\t': (line.match(/\t/g) ?? []).length,
+    ';': (line.match(/;/g) ?? []).length,
+    ',': (line.match(/,/g) ?? []).length,
+  };
+  const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return best[1] > 0 ? best[0] : ',';
+}
 
 function parseRawCsvContent(content: string, cp: string): CoverageResult | null {
   const cleanContent = content.replace(/^\uFEFF/, '').trim();
-  const lines = cleanContent.split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) return null;
+  const allLines = cleanContent.split(/\r?\n/).filter(Boolean);
+  if (allLines.length < 2) return null;
 
-  const headerLine = lines[0];
-  const headers = headerLine.split(CSV_DELIMITERS).map((h) => sanitizeCell(h));
+  // Auto-detectar delimitador usando la primera línea con varios tokens
+  const delimChar = detectDelimiter(allLines.slice(0, 5).join('\n'));
+  const delimRe = new RegExp(delimChar === '\t' ? '\t' : delimChar === ';' ? ';' : ',');
+
+  // Buscar la fila de encabezados: la primera que tenga al menos 2 columnas
+  let headerIdx = 0;
+  let headers: string[] = [];
+  for (let i = 0; i < Math.min(5, allLines.length); i++) {
+    const cols = allLines[i].split(delimRe).map((h) => sanitizeCell(h));
+    if (cols.length >= 2) { headers = cols; headerIdx = i; break; }
+  }
+  if (headers.length === 0) {
+    // Una sola columna - puede ser CSV con delimitador diferente; loguear y salir
+    console.log(`🔍 [coverage-lookup] CSV raw: no columna CP. Headers(sanit)=[${allLines[0].split(delimRe).map(sanitizeCell).join(', ')}] delim="${delimChar === '\t' ? '\\t' : delimChar}"`);
+    return null;
+  }
+
+  const lines = allLines.slice(headerIdx + 1);
+
   const cpIdx = headers.findIndex(isCPHeader);
   const tipoPlazaIdx = headers.findIndex(isTipoPlazaHeader);
   const tipoInstalacIdx = headers.findIndex(isTipoInstalacHeader);
 
   if (cpIdx < 0) {
-    console.log(`🔍 [coverage-lookup] CSV raw: no columna CP. Headers(sanit)=[${headers.join(', ')}]`);
+    console.log(`🔍 [coverage-lookup] CSV raw: no columna CP. Headers(sanit)=[${headers.join(', ')}] delim="${delimChar === '\t' ? '\\t' : delimChar}"`);
     return null;
   }
 
-  console.log(`🔍 [coverage-lookup] CSV raw: cpIdx=${cpIdx} tipoPlazaIdx=${tipoPlazaIdx} instalacIdx=${tipoInstalacIdx} filas=${lines.length - 1}`);
+  console.log(`🔍 [coverage-lookup] CSV raw: cpIdx=${cpIdx} tipoPlazaIdx=${tipoPlazaIdx} instalacIdx=${tipoInstalacIdx} filas=${lines.length} delim="${delimChar === '\t' ? '\\t' : delimChar}"`);
 
   const tipoCol = tipoPlazaIdx >= 0 ? tipoPlazaIdx : cpIdx + 1;
   const instalacCol = tipoInstalacIdx >= 0 ? tipoInstalacIdx : cpIdx + 2;
 
   const cpSanitized = normalizeCP(cp);
-  for (let i = 1; i < lines.length; i++) {
+  for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
-    const cols = rawLine.split(CSV_DELIMITERS).map((c) => String(c ?? '').replace(/\u00A0/g, ' ').trim());
+    const cols = rawLine.split(delimRe).map((c) => String(c ?? '').replace(/\u00A0/g, ' ').trim());
     const rowCp = normalizeCP(cols[cpIdx]);
     if (rowCp !== cpSanitized) continue;
 

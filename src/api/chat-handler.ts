@@ -30,6 +30,7 @@ import { isPromptInjectionAttempt, getSafeReply } from '../lib/input-sanitizatio
 import {
   extractDocDataFromImage,
   formatConfirmationMessage,
+  formatContactRequestMessage,
   CONFIRMATION_SUCCESS_REPLY,
   PARTIAL_DOCUMENT_REPLY,
   RECOLLECTION_INCOMPLETE_REPLY,
@@ -108,11 +109,33 @@ function extractContactFromText(text: string): { correo?: string; telefono?: str
   const result: { correo?: string; telefono?: string } = {};
   const emailMatch = text.match(/[\w.-]+@[\w.-]+\.\w+/i);
   if (emailMatch) result.correo = emailMatch[0].toLowerCase().trim();
-  const phoneMatch = text.match(/(?:\+52\s?)?(\d{3}[\s.-]?\d{3}[\s.-]?\d{4})|(\d{10})/);
-  if (phoneMatch) {
-    const raw = (phoneMatch[1] || phoneMatch[2] || '').replace(/\D/g, '');
-    if (raw.length >= 10) result.telefono = `+52${raw.slice(-10)}`;
+
+  // Eliminar emails y combinaciones letra+dígito para no contaminar la búsqueda de teléfono
+  const cleaned = text
+    .replace(/[\w.-]+@[\w.-]+\.\w+/gi, ' ')
+    .replace(/[a-zA-Z]\d+/g, ' ')
+    .replace(/\d+[a-zA-Z]/g, ' ');
+
+  // Buscar primero por segmento (cada línea/frase separada por coma/punto y coma)
+  for (const seg of cleaned.split(/[\n,;]+/)) {
+    const digits = seg.replace(/\D/g, '');
+    if (digits.length >= 10 && digits.length <= 12) {
+      result.telefono = `+52${digits.slice(-10)}`;
+      break;
+    }
   }
+
+  // Fallback: patrón flexible de 10 dígitos con separadores opcionales (2-4-4, 3-3-4, etc.)
+  if (!result.telefono) {
+    const m = cleaned.match(/\d[\d\s.-]{6,14}\d/g);
+    if (m) {
+      for (const candidate of m) {
+        const digits = candidate.replace(/\D/g, '');
+        if (digits.length >= 10) { result.telefono = `+52${digits.slice(-10)}`; break; }
+      }
+    }
+  }
+
   return result;
 }
 
@@ -419,7 +442,7 @@ export async function handleChat(params: {
       } else if (hasAllFiveDocData(mergedData)) {
         reply = REQUEST_PACKAGE_REPLY;
       } else if (hasCompleteDocData(mergedData)) {
-        reply = REQUEST_CONTACT_REPLY;
+        reply = formatContactRequestMessage(mergedData); // muestra datos extraídos + pide lo que falta
       } else if (hasNameAndCURP(mergedData)) {
         reply = RECOLLECTION_INCOMPLETE_REPLY;
       } else {
