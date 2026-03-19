@@ -847,6 +847,8 @@ export const REGLAS_BOT = {
  "Máximo 3 extensiones de TV por cuenta residencial o negocios.",
  "Para izzitv+ Premium Off Net: SIEMPRE verificar velocidad de internet antes de confirmar instalación (mínimo 20 Mbps).",
  "izzitv+ Premium NO puede coexistir con otro servicio de video activo en el mismo domicilio.",
+ "CLIENTES ACTIVOS: Si el cliente ya tiene servicio izzi activo y pide aplicar una nueva promoción, reportar un problema, una queja o pagar su recibo, responder: 'Este número es exclusivo para contrataciones nuevas. Para cualquier gestión en tu servicio actual, comunícate al 800-120-5000.' NO tramitar nada para clientes con servicio activo EXCEPTO: ofrecerles una línea izzi móvil adicional si no la tienen.",
+ "ÚNICO UPSELL PARA CLIENTES ACTIVOS: La única gestión permitida con clientes que ya tienen izzi es ofrecerles izzi móvil. Cualquier otra solicitud (cambio de paquete, queja, pago, promo nueva sobre servicio existente) debe redirigirse al 800-120-5000.",
  "MUNDIAL 2026: Si el cliente menciona fútbol, deportes, selección o Mundial, ofrecer el complemento ViX Premium Mundial 2026 como gancho de cierre.",
  "AC 1165 (18 mar – 12 abr 2026, CC Outbound Digital): En 80MB HBO Max básico incluido 12 meses; en 100MB Disney+ estándar incluido 12 meses.",
  "AC 1165 paquetes 3P (CC Outbound Digital): izzi 60+TV $479 y izzi 80+TV $579 con descuento desde el mes 1.",

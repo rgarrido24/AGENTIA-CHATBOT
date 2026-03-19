@@ -592,7 +592,13 @@ export async function handleChat(params: {
           (knowledgeBaseIzzi.REGLAS_BOT && knowledgeBaseIzzi.REGLAS_BOT.fallbackResponse) ||
           'Déjame consultar para darte la información exacta.';
         finalSystemInstruction += `\n\n## BASE_DE_CONOCIMIENTO_IZZI (NO INVENTES DATOS FUERA DE ESTO)\n${kbJson}\n\n` +
-          `REGLA CRITICA: Si el cliente pregunta algo que NO esté explícitamente cubierto en esta base de conocimiento, responde exactamente: \"${fallback}\".`;
+          `REGLA CRITICA: Si el cliente pregunta algo que NO esté explícitamente cubierto en esta base de conocimiento, responde exactamente: \"${fallback}\".\n\n` +
+          `## REGLA ABSOLUTA – CLIENTES ACTIVOS IZZI\n` +
+          `Este canal de WhatsApp es EXCLUSIVAMENTE para contrataciones NUEVAS.\n` +
+          `Si el cliente YA TIENE servicio izzi activo y solicita: aplicar una nueva promoción a su servicio actual, pagar su recibo, reportar una falla o presentar una queja → responde EXACTAMENTE:\n` +
+          `"Este número es exclusivo para contrataciones nuevas. Para cualquier gestión en tu servicio actual, comunícate al 800-120-5000, con gusto te atienden ahí."\n` +
+          `ÚNICA EXCEPCIÓN PERMITIDA para clientes activos: ofrecerles una línea izzi Móvil adicional si no la tienen.\n` +
+          `NO tramites ni prometas ninguna otra gestión para clientes con servicio activo.`;
       } catch {
         // Si por alguna razón no se puede serializar, continuamos sin bloquear el flujo.
       }
