@@ -248,39 +248,13 @@ export default function LeadsPage() {
       }),
     ]).then(([leadsData, alertsData]) => {
       if (leadsData?.error) throw new Error(leadsData.error);
-      const newLeads = leadsData.leads ?? [];
-      const prev = prevLeadsRef.current;
-
-      if (prev?.length) {
-        const prevMap = new Map(prev.map((l) => [l.leadId, l]));
-        const newInInteresado = newLeads.filter(
-          (l: Lead) =>
-            (l.status || '').toLowerCase() === 'interesado' &&
-            (prevMap.get(l.leadId)?.lastMessageAt !== l.lastMessageAt || !prevMap.has(l.leadId))
-        );
-        const statusChangedLeads = newLeads.filter(
-          (l: Lead) => (prevMap.get(l.leadId)?.status || '') !== (l.status || '')
-        );
-        const aiMovedLeads = statusChangedLeads.filter((l: Lead) => {
-          const classifiedAt = l.lastClassifiedByAI ? new Date(l.lastClassifiedByAI).getTime() : 0;
-          return classifiedAt > 0 && Date.now() - classifiedAt < 120000;
-        });
-        if (newInInteresado.length > 0) playAlertSound('message');
-        if (aiMovedLeads.length > 0) {
-          playAlertSound('logro');
-          setRecentlyMovedByAI((s) => new Set([...s, ...aiMovedLeads.map((l: Lead) => l.leadId)]));
-        } else if (statusChangedLeads.length > 0) {
-          playAlertSound('moved');
-        }
-      }
-
+      const newLeads: Lead[] = leadsData.leads ?? [];
       prevLeadsRef.current = newLeads;
-      if (leadsData.leads) setLeads(leadsData.leads);
+      if (leadsData.leads) setLeads(newLeads);
       if (alertsData.alerts) setAlerts(alertsData.alerts);
-      // Sync selected lead if open
       setSelectedLead((prev) => {
         if (!prev) return null;
-        return newLeads.find((l: Lead) => l.leadId === prev.leadId) ?? prev;
+        return newLeads.find((l) => l.leadId === prev.leadId) ?? prev;
       });
     }).catch((err) => {
       const msg = err instanceof Error ? err.message : 'Error al cargar leads';
@@ -288,11 +262,81 @@ export default function LeadsPage() {
     });
   }, []);
 
+  // SSE real-time updates – falls back to polling on error
   useEffect(() => {
     fetchLeads().finally(() => setLoading(false));
-    const t = setInterval(fetchLeads, 8000);
-    return () => clearInterval(t);
-  }, [fetchLeads]);
+
+    let es: EventSource | null = null;
+    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+
+    const processLeadsPayload = (newLeads: Lead[]) => {
+      const prev = prevLeadsRef.current;
+      if (prev?.length) {
+        const prevMap = new Map(prev.map((l) => [l.leadId, l]));
+        const newInInteresado = newLeads.filter(
+          (l) =>
+            (l.status || '').toLowerCase() === 'interesado' &&
+            (prevMap.get(l.leadId)?.lastMessageAt !== l.lastMessageAt || !prevMap.has(l.leadId))
+        );
+        const statusChangedLeads = newLeads.filter(
+          (l) => (prevMap.get(l.leadId)?.status || '') !== (l.status || '')
+        );
+        const aiMovedLeads = statusChangedLeads.filter((l) => {
+          const classifiedAt = l.lastClassifiedByAI ? new Date(l.lastClassifiedByAI).getTime() : 0;
+          return classifiedAt > 0 && Date.now() - classifiedAt < 120000;
+        });
+        if (newInInteresado.length > 0) playAlertSound('message');
+        if (aiMovedLeads.length > 0) {
+          playAlertSound('logro');
+          setRecentlyMovedByAI((s) => new Set([...s, ...aiMovedLeads.map((l) => l.leadId)]));
+        } else if (statusChangedLeads.length > 0) {
+          playAlertSound('moved');
+        }
+      }
+      prevLeadsRef.current = newLeads;
+      setLeads(newLeads);
+      setSelectedLead((prev) => {
+        if (!prev) return null;
+        return newLeads.find((l) => l.leadId === prev.leadId) ?? prev;
+      });
+    };
+
+    const connect = () => {
+      es = new EventSource('/api/leads/stream');
+
+      es.addEventListener('leads', (e) => {
+        try {
+          const { leads: newLeads } = JSON.parse(e.data) as { leads: Lead[] };
+          processLeadsPayload(newLeads);
+        } catch { /* ignore parse errors */ }
+      });
+
+      es.addEventListener('alerts', (e) => {
+        try {
+          const { alerts: newAlerts } = JSON.parse(e.data) as { alerts: Alert[] };
+          setAlerts(newAlerts);
+        } catch { /* ignore */ }
+      });
+
+      es.onerror = () => {
+        es?.close();
+        es = null;
+        // Reconnect after 5s; also start polling as safety net
+        if (!fallbackTimer) {
+          fallbackTimer = setInterval(fetchLeads, 15000);
+        }
+        setTimeout(connect, 5000);
+      };
+    };
+
+    connect();
+
+    return () => {
+      es?.close();
+      if (fallbackTimer) clearInterval(fallbackTimer);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (recentlyMovedByAI.size === 0) return;

@@ -77,8 +77,18 @@ export const PAQUETES_FIJOS = {
 export const COMPLEMENTOS_INCLUIDOS = {
  streaming12Meses: {
  vixPremium: { desde: 80, hasta: 1000, nota: "Incluido 12 meses, baja automática mes 13" },
- hboMaxBasico: { desde: 100, hasta: 1000, nota: "Incluido 12 meses, baja automática mes 13" },
- disneyPlusEstandar: { desde: 150, hasta: 1000, nota: "Incluido 12 meses con Apple TV, baja mes 13" },
+ hboMaxBasico: {
+  desde: 80,
+  hasta: 1000,
+  nota: "Incluido 12 meses. En 80MB y 100MB vía CC Outbound Digital (AC 1165); en 100MB+ aplica en todos los canales. Baja automática mes 13.",
+  promoCC_Outbound_AC1165: "Incluido desde 80MB (CC Outbound Digital)",
+ },
+ disneyPlusEstandar: {
+  desde: 100,
+  hasta: 1000,
+  nota: "Incluido 12 meses. En 100MB vía CC Outbound Digital (AC 1165); en 150MB+ aplica en todos los canales con Apple TV. Baja mes 13.",
+  promoCC_Outbound_AC1165: "Incluido desde 100MB (CC Outbound Digital)",
+ },
  appleTV: { desde: 150, hasta: 1000, nota: "Incluido 12 meses, baja automática mes 13" },
  },
  skeelo: {
@@ -550,6 +560,112 @@ export const PROMO_PLAZAS_ESPECIALES = {
 };
 
 // ─────────────────────────────────────────────
+// 13A. COMPLEMENTO VIX PREMIUM MUNDIAL 2026
+// Fuente: Lanzamiento ViX Premium Mundial
+// Disponibilidad: Desde 7 de enero 2026
+// ─────────────────────────────────────────────
+export const PROMO_VIX_MUNDIAL_2026 = {
+ nombre: "Complemento ViX Premium Mundial 2026",
+ descripcion: "Acceso a TODOS los partidos del Mundial (48 selecciones) en México, EUA y Canadá.",
+ disponibleDesde: "7 de enero 2026",
+ clientesTipo: ["Nuevos", "Existentes"],
+ segmentos: ["Residencial", "Negocios", "wizz"],
+ tipo: "Complemento OTT – no incluye canales de TV",
+ requiereVixPremiumActivo: true,
+ sinPlazoForzoso: true,
+ vigencias: [
+  { periodo: "Enero–Febrero 2026",    pagos: 4, montoPorPago: 99.99,  total: 399.99 },
+  { periodo: "Marzo–Abril 2026",      pagos: 3, montoPorPago: 199.99, total: 599.99 },
+  { periodo: "Mayo–Junio 2026",       pagos: 1, montoPorPago: 799,    total: 799    },
+ ],
+ reglasCriticas: [
+  "Es un complemento OTT: no incluye canales lineales de televisión.",
+  "El cliente DEBE tener ViX Premium activo para poder adquirir este complemento.",
+  "No tiene plazo forzoso — el cliente puede cancelar en cualquier momento.",
+  "Disponible para clientes nuevos y existentes de Residencial, Negocios y wizz.",
+  "El precio cambia según el mes de contratación (ver tabla de vigencias).",
+ ],
+ gancho_ventas: "Si el cliente menciona fútbol, deportes o el Mundial, usar este complemento como gancho de cierre. Ejemplo: '¿Sabes que con tu paquete puedes ver TODOS los partidos del Mundial 2026 desde el primer día?'",
+};
+
+// ─────────────────────────────────────────────
+// 13B. PROMOCIONES ESPECIALES AC 1165
+// Vigencia: 18 de marzo al 12 de abril 2026
+// Canal: CC Outbound Digital (salvo indicación)
+// ─────────────────────────────────────────────
+export const PROMO_AC1165 = {
+ ac: "AC 1165",
+ vigencia: "18 de marzo al 12 de abril de 2026",
+ estado: "VIGENTE",
+ canal: "CC Outbound Digital",
+
+ // ── Paquete 2P 80MB ───────────────────────────────────────────────
+ paquete2P_80MB: {
+  nombre: "izzi 80 (2P) – Promo CC Outbound Digital",
+  precioLista: 480,
+  descuentoMeses1a3: 51,
+  precioMeses1a3: 429,
+  descuentoMes4enAdelante: 31,
+  precioMes4enAdelante: 449,
+  nota: "Aplica SOLO para CC Outbound Digital.",
+ },
+
+ // ── Streaming de regalo (12 meses) ─────────────────────────────────
+ streamingRegalo: {
+  nota: "Streaming incluido sin costo por 12 meses al contratar o migrar. Baja automática mes 13.",
+  hboMaxBasico: {
+   incluido: true,
+   velocidadRequerida: "80 MB",
+   play: ["Residencial 2P", "Negocios 2P"],
+   canal: "CC Outbound Digital",
+   descripcion: "HBO Max Básico (con anuncios) incluido 12 meses al contratar/migrar a 80MB.",
+  },
+  disneyPlusEstandar: {
+   incluido: true,
+   velocidadRequerida: "100 MB",
+   play: ["Residencial 2P", "Negocios 2P"],
+   canal: "CC Outbound Digital",
+   descripcion: "Disney+ Estándar (con anuncios) incluido 12 meses al contratar/migrar a 100MB.",
+  },
+ },
+
+ // ── Paquetes 3P con descuento desde mes 1 ──────────────────────────
+ paquetes3P: [
+  {
+   nombre: "izzi 60 + izzitv HD",
+   precioLista: 539,
+   descuento: 60,
+   precioPromo: 479,
+   aplicaDesde: "Mes 1",
+   canalesTV: 100,
+  },
+  {
+   nombre: "izzi 80 + izzitv HD",
+   precioLista: 630,
+   descuento: 51,
+   precioPromo: 579,
+   aplicaDesde: "Mes 1",
+   canalesTV: 100,
+  },
+ ],
+
+ reglasCriticas: [
+  "Las promociones de AC 1165 aplican SOLO para el canal CC Outbound Digital.",
+  "El streaming de HBO Max y Disney+ se otorga automáticamente — NO seleccionar manualmente en el configurador.",
+  "80MB: HBO Max Básico incluido 12 meses sin costo.",
+  "100MB: Disney+ Estándar incluido 12 meses sin costo.",
+  "Los paquetes 3P de 60MB y 80MB tienen descuento desde el mes 1 (no solo 3 o 6 meses).",
+  "Vigencia estricta: 18 de marzo al 12 de abril 2026.",
+ ],
+
+ guion_ventas: {
+  para80MB: "Con tu paquete izzi 80 tienes HBO Max incluido gratis por un año entero — series, películas, todo en alta definición. Solo pagarías $429 los primeros 3 meses y $449 después.",
+  para100MB: "Con izzi 100MB llevas Disney+ incluido gratis por 12 meses además de tu internet de alta velocidad.",
+  para3P: "Además del internet, con TV incluida desde $479 en 60MB y $579 en 80MB — precio especial desde el primer mes.",
+ },
+};
+
+// ─────────────────────────────────────────────
 // 13. COBERTURA Y REDES
 // ─────────────────────────────────────────────
 export const COBERTURA_REDES = {
@@ -731,6 +847,10 @@ export const REGLAS_BOT = {
  "Máximo 3 extensiones de TV por cuenta residencial o negocios.",
  "Para izzitv+ Premium Off Net: SIEMPRE verificar velocidad de internet antes de confirmar instalación (mínimo 20 Mbps).",
  "izzitv+ Premium NO puede coexistir con otro servicio de video activo en el mismo domicilio.",
+ "MUNDIAL 2026: Si el cliente menciona fútbol, deportes, selección o Mundial, ofrecer el complemento ViX Premium Mundial 2026 como gancho de cierre.",
+ "AC 1165 (18 mar – 12 abr 2026, CC Outbound Digital): En 80MB HBO Max básico incluido 12 meses; en 100MB Disney+ estándar incluido 12 meses.",
+ "AC 1165 paquetes 3P (CC Outbound Digital): izzi 60+TV $479 y izzi 80+TV $579 con descuento desde el mes 1.",
+ "En paquetes de 80MB y 100MB por CC Outbound Digital (AC 1165): el streaming YA VIENE INCLUIDO sin costo adicional por un año.",
  ],
  vigenciasActivas: {
  ofertaFija: "31 de marzo 2026",
@@ -742,6 +862,8 @@ export const REGLAS_BOT = {
  promo100MB: "31 de marzo 2026",
  plazasEspeciales1016: "31 de marzo 2026",
  izzitv_plus_1058: "31 de marzo 2026",
+ vixMundial2026: "Enero–Junio 2026 (precio escalonado por mes)",
+ ac1165_OutboundDigital: "18 de marzo al 12 de abril 2026",
  },
  vigenciasExpiradas: {},
 };
@@ -809,6 +931,8 @@ export default {
  COMPLEMENTOS_VIDEO,
  PAQUETES_STREAMING,
  LINEA_ADICIONAL_TELEFONIA,
+ PROMO_VIX_MUNDIAL_2026,
+ PROMO_AC1165,
  REGLAS_BOT,
  getPrecioPaquete,
  getPromosMovilPorCanal,
