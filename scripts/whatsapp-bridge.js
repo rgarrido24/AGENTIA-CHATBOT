@@ -128,6 +128,132 @@ async function main() {
     console.log(`[Agentia] Bridge /health escuchando en :${bridgePort}`);
   });
 
+  // ─── Funciones de polling (definidas en main() para que setInterval las vea) ───
+
+  async function pollAndSendAlerts() {
+    if (!whatsappReady || !client) return;
+    const alertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER;
+    if (!alertNumber) {
+      console.warn('[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas desactivadas.');
+      return;
+    }
+    try {
+      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+      const res = await fetch(`${API_URL}/api/alerts/pending`, {
+        headers: secret ? { Authorization: `Bearer ${secret}` } : {},
+      });
+      const data = await res.json().catch(() => ({}));
+      const alerts = data.alerts || [];
+      const sentIds = [];
+      for (const a of alerts) {
+        try {
+          const chatId = alertNumber.includes('@') ? alertNumber : `${alertNumber.replace(/\D/g, '')}@c.us`;
+          const senderLine = a.senderId ? `📱 ${a.senderId.replace(/@.*$/, '')}` : '';
+          let msg = '';
+          switch (a.reason) {
+            case 'documents_confirmed':
+              msg = `📋 *CAPTURAR EN IZZI – VENTA LISTA*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+              break;
+            case 'sale_closed':
+              msg = `✅ *VENTA CERRADA*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+              break;
+            case 'urgent_keyword':
+              msg = `🚨 *LEAD URGENTE*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+              break;
+            case 'high_activity':
+              msg = `🔥 *LEAD MUY ACTIVO*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+              break;
+            default:
+              msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+          }
+          await client.sendMessage(chatId, msg);
+          sentIds.push(a.id);
+          console.log(`[Agentia] Alerta [${a.reason}] enviada a ${alertNumber}`);
+        } catch (e) {
+          console.error('[Agentia] Error enviando alerta:', e.message);
+        }
+      }
+      if (sentIds.length > 0) {
+        const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+        await fetch(`${API_URL}/api/alerts/sent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}) },
+          body: JSON.stringify({ ids: sentIds }),
+        });
+      }
+    } catch (e) {
+      console.error('[Agentia] Error en poll alerts:', e.message);
+    }
+  }
+
+  async function pollAndSendReminders() {
+    if (!whatsappReady || !client) return;
+    try {
+      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+      const res = await fetch(`${API_URL}/api/reminders/pending`, {
+        headers: secret ? { Authorization: `Bearer ${secret}` } : {},
+      });
+      const data = await res.json().catch(() => ({}));
+      const reminders = data.reminders || [];
+      const sentIds = [];
+      for (const r of reminders) {
+        try {
+          const chatId = r.senderId.includes('@') ? r.senderId : `${r.senderId}@c.us`;
+          await client.sendMessage(chatId, r.message);
+          sentIds.push(r._id);
+          console.log(`[Agentia] Recordatorio enviado a ${r.senderId}`);
+        } catch (e) {
+          console.error('[Agentia] Error enviando recordatorio:', e.message);
+        }
+      }
+      if (sentIds.length > 0) {
+        const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+        await fetch(`${API_URL}/api/reminders/sent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}) },
+          body: JSON.stringify({ ids: sentIds }),
+        });
+      }
+    } catch (e) {
+      console.error('[Agentia] Error en poll reminders:', e.message);
+    }
+  }
+
+  async function pollAndSendOutboundMessages() {
+    if (!whatsappReady || !client) return;
+    try {
+      if (!client.info) return;
+      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+      const res = await fetch(`${API_URL}/api/chat/outbound`, {
+        headers: secret ? { Authorization: `Bearer ${secret}` } : {},
+      });
+      const data = await res.json().catch(() => ({}));
+      const items = data.messages || [];
+      for (const m of items) {
+        try {
+          const raw = (m.senderId && typeof m.senderId === 'string') ? m.senderId.trim() : '';
+          const chatId = raw.includes('@') ? raw : `${raw.replace(/\D/g, '')}@c.us`;
+          if (!chatId || chatId === '@c.us' || chatId.length < 15) continue;
+          if (typeof client.sendMessage !== 'function') break;
+          await client.sendMessage(chatId, m.message);
+          const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+          await fetch(`${API_URL}/api/chat/outbound`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}) },
+            body: JSON.stringify({ id: m._id }),
+          });
+          console.log('[Agentia] Mensaje CRM enviado a', m.senderId);
+        } catch (e) {
+          console.error('[Agentia] Error enviando mensaje CRM:', e.message, 'id=', m._id, 'senderId=', m.senderId);
+        }
+      }
+    } catch (e) {
+      console.error('[Agentia] Error poll outbound:', e.message);
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────
+
   function initClient() {
     lastState = 'initializing';
     whatsappReady = false;
@@ -225,130 +351,6 @@ async function main() {
         }
       }, delay);
     });
-
-  async function pollAndSendAlerts() {
-    // Solo enviar alertas cuando WhatsApp está conectado
-    if (!whatsappReady || !client) return;
-    const alertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER;
-    if (!alertNumber) {
-      console.warn('[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas desactivadas.');
-      return;
-    }
-    try {
-      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-      const res = await fetch(`${API_URL}/api/alerts/pending`, {
-        headers: secret ? { Authorization: `Bearer ${secret}` } : {},
-      });
-      const data = await res.json().catch(() => ({}));
-      const allAlerts = data.alerts || [];
-      // Solo enviar alertas de captura manual (documents_confirmed).
-      // Las demás (urgent_keyword, high_activity, sale_closed) son visibles en el dashboard.
-      const alerts = allAlerts.filter((a) => a.reason === 'documents_confirmed');
-      const sentIds = [];
-      for (const a of alerts) {
-        try {
-          const chatId = alertNumber.includes('@') ? alertNumber : `${alertNumber.replace(/\D/g, '')}@c.us`;
-          const senderLine = a.senderId ? `📱 ${a.senderId.replace(/@.*$/, '')}` : '';
-          const msg = `📋 *CAPTURAR EN IZZI – VENTA LISTA*\n${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\nVer pipeline: ${API_URL}/dashboard/leads`;
-          await client.sendMessage(chatId, msg);
-          sentIds.push(a.id);
-          console.log(`[Agentia] Alerta documents_confirmed enviada a ${alertNumber}`);
-        } catch (e) {
-          console.error('[Agentia] Error enviando alerta:', e.message);
-        }
-      }
-      if (sentIds.length > 0) {
-        const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-        await fetch(`${API_URL}/api/alerts/sent`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}),
-          },
-          body: JSON.stringify({ ids: sentIds }),
-        });
-      }
-    } catch (e) {
-      console.error('[Agentia] Error en poll alerts:', e.message);
-    }
-  }
-
-  async function pollAndSendReminders() {
-    try {
-      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-      const res = await fetch(`${API_URL}/api/reminders/pending`, {
-        headers: secret ? { Authorization: `Bearer ${secret}` } : {},
-      });
-      const data = await res.json().catch(() => ({}));
-      const reminders = data.reminders || [];
-      const sentIds = [];
-      for (const r of reminders) {
-        try {
-          const chatId = r.senderId.includes('@') ? r.senderId : `${r.senderId}@c.us`;
-          await client.sendMessage(chatId, r.message);
-          sentIds.push(r._id);
-          console.log(`[Agentia] Recordatorio enviado a ${r.senderId}`);
-        } catch (e) {
-          console.error('[Agentia] Error enviando recordatorio:', e.message);
-        }
-      }
-      if (sentIds.length > 0) {
-        const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-        await fetch(`${API_URL}/api/reminders/sent`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
-          },
-          body: JSON.stringify({ ids: sentIds }),
-        });
-      }
-    } catch (e) {
-      console.error('[Agentia] Error en poll reminders:', e.message);
-    }
-  }
-
-  async function pollAndSendOutboundMessages() {
-    try {
-      if (!client.info) return;
-      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-      const res = await fetch(`${API_URL}/api/chat/outbound`, {
-        headers: secret ? { Authorization: `Bearer ${secret}` } : {},
-      });
-      const data = await res.json().catch(() => ({}));
-      const items = data.messages || [];
-      for (const m of items) {
-        try {
-          const raw = (m.senderId && typeof m.senderId === 'string') ? m.senderId.trim() : '';
-          const chatId = raw.includes('@') ? raw : `${raw.replace(/\D/g, '')}@c.us`;
-          if (!chatId || chatId === '@c.us' || chatId.length < 15) continue;
-          if (typeof client.sendMessage !== 'function') break;
-          await client.sendMessage(chatId, m.message);
-          const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-          await fetch(`${API_URL}/api/chat/outbound`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}),
-            },
-            body: JSON.stringify({ id: m._id }),
-          });
-          console.log('[Agentia] Mensaje CRM enviado a', m.senderId);
-        } catch (e) {
-          console.error('[Agentia] Error enviando mensaje CRM:', e.message, 'id=', m._id, 'senderId=', m.senderId);
-        }
-      }
-    } catch (e) {
-      console.error('[Agentia] Error poll outbound:', e.message);
-    }
-  }
-
-  setInterval(pollAndSendReminders, 60 * 1000);
-  setTimeout(pollAndSendReminders, 30 * 1000);
-  setInterval(pollAndSendAlerts, 20 * 1000);
-  setTimeout(pollAndSendAlerts, 15 * 1000);
-  setInterval(pollAndSendOutboundMessages, 5 * 1000);
-  setTimeout(pollAndSendOutboundMessages, 3 * 1000);
 
   // Cola por remitente: evita race condition cuando envían 2+ imágenes seguidas (frente/reverso INE)
   const senderQueue = new Map();
@@ -457,6 +459,16 @@ async function main() {
   }
 
   initClient();
+
+  // Registrar intervalos UNA SOLA VEZ — fuera de initClient para evitar duplicados en cada reconexión
+  setTimeout(pollAndSendAlerts, 15 * 1000);
+  setInterval(pollAndSendAlerts, 20 * 1000);
+
+  setTimeout(pollAndSendReminders, 30 * 1000);
+  setInterval(pollAndSendReminders, 60 * 1000);
+
+  setTimeout(pollAndSendOutboundMessages, 3 * 1000);
+  setInterval(pollAndSendOutboundMessages, 5 * 1000);
 }
 
 main();
