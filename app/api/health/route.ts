@@ -26,6 +26,8 @@ export async function GET() {
     {
       ok,
       timestamp: new Date().toISOString(),
+      /** Compat: la demo barbería (versiones antiguas) leía esto; sin él el banner GEMINI salía siempre. */
+      hasGeminiKey,
       gemini: hasGeminiKey ? 'configured' : 'missing',
       mongodb,
     },
