@@ -293,6 +293,32 @@ export default function ProspectosPage() {
     fetchProspectos();
   };
 
+  const handleBulkDelete = async () => {
+    if (!selected.size) return;
+    if (!confirm(`¿Eliminar ${selected.size} prospecto(s) seleccionados? Esta acción no se puede deshacer.`)) return;
+    await fetch('/api/prospectos/status', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: Array.from(selected) }),
+    });
+    setSelected(new Set());
+    fetchProspectos();
+  };
+
+  const handleDeleteAll = async () => {
+    const confirmText = prompt(
+      `⚠️ Esto borrará ${filterLote ? `todos los prospectos del lote "${filterLote}"` : `los ${stats.total} prospectos`}.\n\nEscribe BORRAR TODO para confirmar:`
+    );
+    if (confirmText !== 'BORRAR TODO') { alert('Cancelado.'); return; }
+    await fetch('/api/prospectos/status', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deleteAll: true, ...(filterLote ? { lote: filterLote } : {}) }),
+    });
+    setSelected(new Set());
+    fetchProspectos();
+  };
+
   // ─── Add single ───────────────────────────────────────────────────────────
 
   const handleAdd = async () => {
@@ -367,6 +393,9 @@ export default function ProspectosPage() {
           <button onClick={() => fetchProspectos()} className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition">
             <RefreshCw className="w-4 h-4" />
           </button>
+          <button onClick={handleDeleteAll} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-900/40 hover:bg-red-700/60 border border-red-700/40 text-red-400 hover:text-red-200 text-sm transition" title={filterLote ? `Borrar lote "${filterLote}"` : 'Borrar todos'}>
+            <Trash2 className="w-4 h-4" /> {filterLote ? `Borrar lote` : 'Borrar todo'}
+          </button>
         </div>
       </div>
 
@@ -425,12 +454,20 @@ export default function ProspectosPage() {
         </select>
 
         {selected.size > 0 && (
-          <button
-            onClick={() => setMessageModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition"
-          >
-            <Send className="w-4 h-4" /> Enviar WhatsApp ({selected.size})
-          </button>
+          <>
+            <button
+              onClick={() => setMessageModal(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition"
+            >
+              <Send className="w-4 h-4" /> Enviar WhatsApp ({selected.size})
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-900/40 hover:bg-red-700/60 border border-red-700/40 text-red-400 hover:text-red-200 text-sm transition"
+            >
+              <Trash2 className="w-4 h-4" /> Borrar ({selected.size})
+            </button>
+          </>
         )}
       </div>
 

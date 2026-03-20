@@ -28,8 +28,8 @@ const PLANTILLAS: Record<string, (nombre: string, vendedor: string, link: string
     `Hola ${nombre}, soy ${vendedor} 👋\n\n¿Qué te pareció la demo del chatbot? 🤖\n\nEsta semana tenemos disponibilidad para hacer la instalación personalizada para tu negocio — sin compromisos, en menos de una hora queda funcionando.\n\n¿Platicamos esta semana? 📅`,
 };
 
-// Nombres visibles en la UI
-export const PLANTILLAS_INFO = [
+// Nombres visibles en la UI (devueltos vía GET, no exportados directamente)
+const PLANTILLAS_INFO = [
   { value: 'intro_a',    label: '👋 Intro A — El Dolor (identifica el problema)' },
   { value: 'intro_b',    label: '🎣 Intro B — El Gancho (curiosidad + humor)' },
   { value: 'intro_c',    label: '🚀 Intro C — La Solución (valor directo)' },
