@@ -72,8 +72,8 @@ export default function Layout({
     const baseClass =
       'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-300';
     const activeClass = isActive
-      ? 'bg-forest/30 border border-forest text-sage'
-      : 'text-slate-400 hover:border-forest hover:text-sage border border-transparent hover:bg-black/50';
+      ? 'bg-forest/20 border border-forest text-sage'
+      : 'text-slate-400 hover:border-forest/50 hover:text-sage border border-transparent hover:bg-forest/10';
 
     const content = (
       <>
@@ -102,9 +102,9 @@ export default function Layout({
   };
 
   return (
-    <div className="min-h-screen flex bg-[#0a1209]">
-      {/* Sidebar - Negro con borde forest */}
-      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-40 w-64 bg-luxury border-r border-forest">
+    <div className="min-h-screen flex bg-luxury">
+      {/* Sidebar */}
+      <aside className="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:z-40 w-64 bg-luxury border-r border-forest/40" style={{ backdropFilter: 'blur(12px)' }}>
           <div className="flex flex-col flex-1 pt-6 pb-4">
           <div className={`flex items-center px-4 mb-8 ${brand.logoOnly ? 'justify-center' : 'gap-3'}`}>
             {brand.logoUrl ? (
@@ -113,7 +113,7 @@ export default function Layout({
                 alt={brand.logoAlt ?? brand.name ?? 'Logo'}
                 width={64}
                 height={64}
-                className="rounded-lg object-contain w-16 h-16 shrink-0 mix-blend-multiply"
+                className="rounded-lg object-contain w-16 h-16 shrink-0 mix-blend-normal"
               />
             ) : (
               <div className="w-16 h-16 rounded-lg flex items-center justify-center bg-forest border border-forest">
@@ -141,7 +141,7 @@ export default function Layout({
           </nav>
         </div>
 
-        <div className="px-4 py-4 border-t border-forest">
+        <div className="px-4 py-4 border-t border-forest/30">
           <p className="text-xs text-slate-500">
             © {new Date().getFullYear()} {brand.name ?? 'Agentia'}
           </p>
@@ -149,7 +149,7 @@ export default function Layout({
       </aside>
 
       {/* Mobile header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-luxury border-b border-forest">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-luxury border-b border-forest/40" style={{ backdropFilter: 'blur(12px)' }}>
         <div className="flex items-center justify-between h-14 px-4">
           <Link href="/dashboard" className={`flex items-center ${brand.logoOnly ? '' : 'gap-2'}`}>
             {brand.logoUrl ? (
@@ -158,7 +158,7 @@ export default function Layout({
                 alt={brand.logoAlt ?? brand.name ?? 'Logo'}
                 width={44}
                 height={44}
-                className="rounded-lg object-contain w-11 h-11 shrink-0 mix-blend-multiply"
+                className="rounded-lg object-contain w-11 h-11 shrink-0 mix-blend-normal"
               />
             ) : (
               <div className="w-11 h-11 rounded-lg flex items-center justify-center bg-forest">
@@ -182,14 +182,14 @@ export default function Layout({
         </div>
 
         {mobileMenuOpen && (
-          <nav className="px-4 py-4 border-t border-forest space-y-1 max-h-[70vh] overflow-y-auto bg-black">
+          <nav className="px-4 py-4 border-t border-forest/40 space-y-1 max-h-[70vh] overflow-y-auto bg-luxury">
             {navLinks.map((item) => {
               const Icon = item.icon;
               const isActive = (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)));
               const linkClass = `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-300 ${
                 isActive
-                  ? 'bg-forest/30 border border-forest text-sage'
-                  : 'text-slate-400 hover:border-forest hover:text-sage border border-transparent'
+                  ? 'bg-forest/20 border border-forest text-sage'
+                  : 'text-slate-400 hover:border-forest/50 hover:text-sage border border-transparent hover:bg-forest/10'
               }`;
               const content = (
                 <>
@@ -226,8 +226,8 @@ export default function Layout({
         )}
       </div>
 
-      {/* Main content - Verde profundo */}
-      <div className="flex-1 flex flex-col min-h-screen lg:pl-64 bg-[#0a1209]">
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-h-screen lg:pl-64 bg-luxury">
         <main className="flex-1 pt-14 lg:pt-0">{children}</main>
       </div>
     </div>

@@ -1,120 +1,249 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
-import { Building2, UtensilsCrossed, ArrowRight, Scissors } from 'lucide-react';
+import { Building2, UtensilsCrossed, ArrowRight, Scissors, Zap, Clock, BarChart3 } from 'lucide-react';
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-luxury text-white">
-      <div className="container mx-auto px-4 py-16">
+    <main
+      className="min-h-screen text-white relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #0a0f1a 0%, #0f172a 55%, #1e293b 100%)' }}
+    >
+      {/* Background grid */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(13,148,136,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(13,148,136,0.04) 1px, transparent 1px)',
+          backgroundSize: '64px 64px',
+        }}
+      />
+      {/* Ambient glows */}
+      <div
+        className="absolute top-[-200px] left-[-100px] w-[600px] h-[600px] rounded-full pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(13,148,136,0.12) 0%, transparent 70%)' }}
+      />
+      <div
+        className="absolute bottom-[-200px] right-[-100px] w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)' }}
+      />
+
+      <div className="relative container mx-auto px-4 py-16">
         <div className="max-w-5xl mx-auto">
-          {/* Hero */}
+
+          {/* Header / Logo */}
           <header className="flex items-center justify-between mb-20">
-            <div className="flex items-center justify-center">
-              <Image
-                src="/logo-agentia-2026.png"
-                alt="Agentia"
-                width={72}
-                height={72}
-                className="rounded-lg object-contain w-[72px] h-[72px] mix-blend-multiply"
-              />
+            <div className="flex items-center gap-3">
+              <div
+                className="rounded-xl p-1 animate-glow-pulse"
+                style={{ boxShadow: '0 0 20px rgba(13,148,136,0.3)' }}
+              >
+                <Image
+                  src="/logo-agentia-2026.png"
+                  alt="Agentia"
+                  width={56}
+                  height={56}
+                  className="rounded-lg object-contain w-14 h-14"
+                />
+              </div>
+              <span className="text-xl font-bold tracking-wide text-white hidden sm:block">Agentia</span>
             </div>
+            <Link
+              href="/login?from=/dashboard"
+              className="text-sm font-medium px-4 py-2 rounded-lg transition-all duration-300"
+              style={{
+                background: 'rgba(13,148,136,0.12)',
+                border: '1px solid rgba(13,148,136,0.35)',
+                color: '#5eead4',
+              }}
+            >
+              Acceso Clientes
+            </Link>
           </header>
 
+          {/* Hero */}
           <section className="mb-24">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4 title-tracking font-heading">
+            <div
+              className="inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full mb-6"
+              style={{
+                background: 'rgba(13,148,136,0.1)',
+                border: '1px solid rgba(13,148,136,0.25)',
+                color: '#5eead4',
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+              Impulsado por Gemini 2.5 Flash
+            </div>
+            <h1 className="text-4xl sm:text-6xl font-extrabold mb-5 leading-tight tracking-tight">
               Automatización inteligente
               <br />
-              <span className="text-sage">para tu negocio</span>
+              <span
+                style={{
+                  background: 'linear-gradient(90deg, #5eead4, #0d9488, #3b82f6)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                para tu negocio
+              </span>
             </h1>
-            <p className="text-slate-400 text-lg max-w-xl mb-12 font-sans">
+            <p className="text-slate-400 text-lg max-w-xl mb-10 leading-relaxed">
               Chatbots con IA, CRM integrado y flujos de venta automatizados.
               Atención 24/7 sin aumentar tu equipo.
             </p>
             <Link
               href="/login?from=/dashboard"
-              className="inline-flex items-center gap-2 btn-cta px-6 py-3 text-base"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-base font-bold transition-all duration-300 btn-cta"
             >
               Acceso Clientes
               <ArrowRight className="w-5 h-5" />
             </Link>
           </section>
 
+          {/* Stats */}
+          <section className="grid grid-cols-3 gap-4 mb-24">
+            {[
+              { icon: Clock,    value: '24/7', label: 'Atención sin horarios' },
+              { icon: Zap,      value: 'IA',   label: 'Gemini 2.5 Flash' },
+              { icon: BarChart3, value: 'CRM', label: 'Pipeline integrado' },
+            ].map(({ icon: Icon, value, label }) => (
+              <div
+                key={value}
+                className="rounded-xl p-5 text-center transition-all duration-300 group"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  backdropFilter: 'blur(12px)',
+                }}
+              >
+                <Icon className="w-5 h-5 mx-auto mb-2 text-teal-400 opacity-70" />
+                <p
+                  className="font-extrabold text-2xl mb-1"
+                  style={{ color: '#5eead4' }}
+                >
+                  {value}
+                </p>
+                <p className="text-slate-400 text-xs">{label}</p>
+              </div>
+            ))}
+          </section>
+
           {/* Portafolio de Demos */}
           <section className="mb-24">
-            <h2 className="text-2xl font-bold mb-8 title-tracking font-heading">
-              Portafolio de Demos
-            </h2>
-            <div className="grid gap-6 md:grid-cols-3">
-              <article className="rounded-xl border border-forest bg-black p-8 transition-colors hover:border-sage">
-                <div className="w-14 h-14 rounded-xl bg-forest/30 border border-forest flex items-center justify-center mb-6">
-                  <Building2 className="w-7 h-7 text-sage" />
+            <h2 className="text-2xl font-bold mb-2 tracking-wide">Portafolio de Demos</h2>
+            <p className="text-slate-400 text-sm mb-8">Explora casos de uso reales con IA conversacional</p>
+            <div className="grid gap-5 md:grid-cols-3">
+
+              {/* Inmobiliaria */}
+              <article
+                className="rounded-xl p-7 transition-all duration-300 cursor-default group"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  backdropFilter: 'blur(12px)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(13,148,136,0.45)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = '0 0 24px rgba(13,148,136,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                }}
+              >
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                  style={{ background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)' }}
+                >
+                  <Building2 className="w-6 h-6 text-teal-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 title-tracking">
-                  Inmobiliaria
-                </h3>
-                <p className="text-slate-400 text-sm leading-relaxed font-sans">
-                  Catálogo de propiedades, calificación de leads, agendamiento de visitas.
-                  Integración con Century 21 y agencias locales.
+                <h3 className="text-lg font-semibold mb-2 tracking-wide">Inmobiliaria</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Catálogo de propiedades, calificación de leads y agendamiento de visitas. Integración con agencias locales.
                 </p>
+                <span className="inline-block mt-4 text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>
+                  Próximamente
+                </span>
               </article>
 
-              <article className="rounded-xl border border-forest bg-black p-8 transition-colors hover:border-sage">
-                <div className="w-14 h-14 rounded-xl bg-forest/30 border border-forest flex items-center justify-center mb-6">
-                  <UtensilsCrossed className="w-7 h-7 text-sage" />
+              {/* Restaurantes */}
+              <article
+                className="rounded-xl p-7 transition-all duration-300 cursor-default"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  backdropFilter: 'blur(12px)',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(13,148,136,0.45)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = '0 0 24px rgba(13,148,136,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
+                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                }}
+              >
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                  style={{ background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)' }}
+                >
+                  <UtensilsCrossed className="w-6 h-6 text-teal-400" />
                 </div>
-                <h3 className="text-xl font-semibold mb-3 title-tracking">
-                  Restaurantes
-                </h3>
-                <p className="text-slate-400 text-sm leading-relaxed font-sans">
-                  Reservas, menú digital, pedidos y recordatorios. Reduce no-shows
-                  y aumenta la ocupación.
+                <h3 className="text-lg font-semibold mb-2 tracking-wide">Restaurantes</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Reservas, menú digital, pedidos y recordatorios automáticos. Reduce no-shows y aumenta la ocupación.
                 </p>
+                <span className="inline-block mt-4 text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>
+                  Próximamente
+                </span>
               </article>
 
-              <Link href="/demo/barber" className="block">
-                <article className="rounded-xl border border-forest bg-black p-8 transition-colors hover:border-sage h-full">
-                  <div className="w-14 h-14 rounded-xl bg-forest/30 border border-forest flex items-center justify-center mb-6">
-                    <Scissors className="w-7 h-7 text-sage" />
+              {/* Barbería — demo activa */}
+              <Link href="/demo/barber" className="block group">
+                <article
+                  className="rounded-xl p-7 transition-all duration-300 h-full"
+                  style={{
+                    background: 'rgba(13,148,136,0.07)',
+                    border: '1px solid rgba(13,148,136,0.3)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 0 32px rgba(13,148,136,0.08)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(13,148,136,0.6)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(13,148,136,0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(13,148,136,0.3)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(13,148,136,0.08)';
+                  }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                    style={{ background: 'rgba(13,148,136,0.2)', border: '1px solid rgba(13,148,136,0.4)' }}
+                  >
+                    <Scissors className="w-6 h-6 text-teal-300" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-3 title-tracking">
-                    Barbería
-                  </h3>
-                  <p className="text-slate-400 text-sm leading-relaxed font-sans">
-                    Reservas con IA, calendario en vivo y conflicto de horarios. Demo
-                    Agentia Lite con Gemini.
+                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Barbería</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Reservas con IA, calendario en vivo y detección de conflictos de horarios. Demo completa disponible.
                   </p>
-                  <span className="inline-flex items-center gap-1 text-sage text-sm font-medium mt-4">
-                    Ver demo <ArrowRight className="w-4 h-4" />
+                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm" style={{ color: '#5eead4' }}>
+                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </span>
                 </article>
               </Link>
             </div>
           </section>
 
-          {/* Propuesta de valor */}
-          <section className="border-t border-forest pt-16">
-            <h2 className="text-2xl font-bold mb-8 title-tracking font-heading">
-              ¿Por qué Agentia?
-            </h2>
-            <div className="grid gap-6 sm:grid-cols-3">
-              <div className="border border-forest rounded-xl p-6">
-                <p className="text-sage font-bold text-2xl mb-2">24/7</p>
-                <p className="text-slate-400 text-sm font-sans">Atención automática sin horarios</p>
-              </div>
-              <div className="border border-forest rounded-xl p-6">
-                <p className="text-sage font-bold text-2xl mb-2">IA</p>
-                <p className="text-slate-400 text-sm font-sans">Respuestas inteligentes con Gemini</p>
-              </div>
-              <div className="border border-forest rounded-xl p-6">
-                <p className="text-sage font-bold text-2xl mb-2">CRM</p>
-                <p className="text-slate-400 text-sm font-sans">Pipeline y seguimiento integrado</p>
-              </div>
-            </div>
-          </section>
-
-          <footer className="mt-24 pt-8 border-t border-forest text-center text-slate-500 text-sm">
-            © {new Date().getFullYear()} Agentia. CRM & Chatbot.
+          {/* Footer */}
+          <footer
+            className="pt-8 text-center text-slate-500 text-sm"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            © {new Date().getFullYear()} Agentia · CRM & Chatbot con IA
           </footer>
+
         </div>
       </div>
     </main>

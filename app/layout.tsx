@@ -1,6 +1,12 @@
 import type { Metadata } from 'next';
-import { Montserrat, Roboto } from 'next/font/google';
+import { Montserrat, Roboto, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
+});
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -25,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${montserrat.variable} ${roboto.variable}`}>
-      <body className="min-h-screen antialiased font-sans">
+    <html lang="es" className={`${jakarta.variable} ${montserrat.variable} ${roboto.variable}`}>
+      <body className="min-h-screen antialiased font-sans bg-luxury text-white">
         {children}
       </body>
     </html>
