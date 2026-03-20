@@ -268,14 +268,14 @@ export default function MenuOrdenPage() {
           <button
             type="button"
             onClick={() => setVista('mesero')}
-            className={`px-3 py-1.5 rounded-md text-sm ${vista === 'mesero' ? 'bg-red-600 text-white' : 'text-slate-400'}`}
+            className="px-3 py-1.5 rounded-md text-sm bg-red-600 text-white"
           >
             👨‍💼 Vista Mesero
           </button>
           <button
             type="button"
             onClick={() => setVista('cliente')}
-            className={`px-3 py-1.5 rounded-md text-sm ${vista === 'cliente' ? 'bg-red-600 text-white' : 'text-slate-400'}`}
+            className="px-3 py-1.5 rounded-md text-sm text-slate-400"
           >
             📱 Vista Cliente QR
           </button>
