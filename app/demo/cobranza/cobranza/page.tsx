@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Copy, MessageCircle, X } from 'lucide-react';
 import {
@@ -64,7 +65,8 @@ function ScoreBar({ score }: { score: number }) {
   );
 }
 
-export default function CobranzaTablaPage() {
+function CobranzaTablaInner() {
+  const searchParams = useSearchParams();
   const [asesor, setAsesor] = useState<string>('Todos');
   const [ciclo, setCiclo] = useState<string>('Todos');
   const [status, setStatus] = useState<string>('Todos');
@@ -73,6 +75,22 @@ export default function CobranzaTablaPage() {
   const [drawer, setDrawer] = useState<Alumno | null>(null);
   const [tab, setTab] = useState<'msg' | 'pdf' | 'score'>('msg');
   const [toast, setToast] = useState(false);
+
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (!id) return;
+    const decoded = decodeURIComponent(id);
+    const a = MOCK_ALUMNOS.find((x) => x.id === decoded);
+    if (a) {
+      setAsesor('Todos');
+      setCiclo('Todos');
+      setStatus('Todos');
+      setCarrera('Todos');
+      setQ('');
+      setDrawer(a);
+      setTab('msg');
+    }
+  }, [searchParams]);
 
   const filtered = useMemo(() => {
     return MOCK_ALUMNOS.filter((a) => {
@@ -396,5 +414,15 @@ export default function CobranzaTablaPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function CobranzaTablaPage() {
+  return (
+    <Suspense
+      fallback={<div className="text-slate-500 text-sm max-w-7xl mx-auto py-8">Cargando cobranza…</div>}
+    >
+      <CobranzaTablaInner />
+    </Suspense>
   );
 }

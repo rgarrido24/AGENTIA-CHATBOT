@@ -11,6 +11,8 @@ import {
   LayoutDashboard,
   Menu,
   MessageSquare,
+  Receipt,
+  RefreshCw,
   Users,
   X,
 } from 'lucide-react';
@@ -19,6 +21,8 @@ const NAV = [
   { href: '/demo/cobranza', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/demo/cobranza/alumnos', label: 'Alumnos', icon: Users },
   { href: '/demo/cobranza/cobranza', label: 'Cobranza', icon: MessageSquare },
+  { href: '/demo/cobranza/facturacion', label: 'Facturación', icon: Receipt },
+  { href: '/demo/cobranza/conciliacion', label: 'Conciliación', icon: RefreshCw },
   { href: '/demo/cobranza/secuencias', label: 'Secuencias', icon: GitBranch },
   { href: '/demo/cobranza/asistente', label: 'Asistente IA', icon: Bot },
 ] as const;
@@ -27,6 +31,8 @@ const TITLE_MAP: Record<string, string> = {
   '/demo/cobranza': 'Dashboard',
   '/demo/cobranza/alumnos': 'Alumnos',
   '/demo/cobranza/cobranza': 'Cobranza',
+  '/demo/cobranza/facturacion': 'Facturación',
+  '/demo/cobranza/conciliacion': 'Conciliación',
   '/demo/cobranza/secuencias': 'Secuencias',
   '/demo/cobranza/asistente': 'Asistente IA',
 };
