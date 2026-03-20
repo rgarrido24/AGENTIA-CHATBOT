@@ -190,6 +190,12 @@ async function main() {
     if (!whatsappReady || !client) return;
     try {
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+      const headers = { 'Content-Type': 'application/json', ...(secret ? { Authorization: `Bearer ${secret}` } : {}) };
+
+      // 1. Generar recordatorios de seguimiento para leads sin respuesta 2h+
+      await fetch(`${API_URL}/api/reminders/generate`, { method: 'POST', headers }).catch(() => {});
+
+      // 2. Enviar los recordatorios pendientes
       const res = await fetch(`${API_URL}/api/reminders/pending`, {
         headers: secret ? { Authorization: `Bearer ${secret}` } : {},
       });
@@ -198,19 +204,24 @@ async function main() {
       const sentIds = [];
       for (const r of reminders) {
         try {
-          const chatId = r.senderId.includes('@') ? r.senderId : `${r.senderId}@c.us`;
+          const digits = (r.senderId || '').replace(/\D/g, '');
+          if (!digits || digits.length < 10) {
+            console.warn('[Agentia] Recordatorio sin senderId válido, omitiendo:', r._id);
+            sentIds.push(r._id); // marcar como enviado para no reintentar
+            continue;
+          }
+          const chatId = r.senderId.includes('@') ? r.senderId : `${digits}@c.us`;
           await client.sendMessage(chatId, r.message);
           sentIds.push(r._id);
-          console.log(`[Agentia] Recordatorio enviado a ${r.senderId}`);
+          console.log(`[Agentia] Recordatorio de seguimiento enviado a ${digits}`);
         } catch (e) {
           console.error('[Agentia] Error enviando recordatorio:', e.message);
         }
       }
       if (sentIds.length > 0) {
-        const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
         await fetch(`${API_URL}/api/reminders/sent`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}) },
+          headers,
           body: JSON.stringify({ ids: sentIds }),
         });
       }
@@ -464,8 +475,10 @@ async function main() {
   setTimeout(pollAndSendAlerts, 15 * 1000);
   setInterval(pollAndSendAlerts, 20 * 1000);
 
-  setTimeout(pollAndSendReminders, 30 * 1000);
-  setInterval(pollAndSendReminders, 60 * 1000);
+  // Recordatorios: primera ejecución a los 5 min (da tiempo al bridge de conectarse),
+  // luego cada 30 min (ventana de detección es 2h, no necesita revisión más frecuente)
+  setTimeout(pollAndSendReminders, 5 * 60 * 1000);
+  setInterval(pollAndSendReminders, 30 * 60 * 1000);
 
   setTimeout(pollAndSendOutboundMessages, 3 * 1000);
   setInterval(pollAndSendOutboundMessages, 5 * 1000);
