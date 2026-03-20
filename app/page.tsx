@@ -275,32 +275,51 @@ export default function LandingPage() {
                 </article>
               </a>
 
-              {/* 4 — Restaurantes próximamente */}
-              <article
-                className="rounded-xl p-7 transition-all duration-300 cursor-default h-full"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  backdropFilter: 'blur(12px)',
-                }}
-              >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+              {/* 4 — Restaurantes */}
+              <Link href="/demo/restaurante" className="block group">
+                <article
+                  className="rounded-xl p-7 transition-all duration-300 h-full"
+                  style={{
+                    background: 'rgba(220, 38, 38, 0.1)',
+                    border: '1px solid rgba(220, 38, 38, 0.4)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 0 32px rgba(220, 38, 38, 0.1)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(248, 113, 113, 0.65)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(220, 38, 38, 0.22)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220, 38, 38, 0.4)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(220, 38, 38, 0.1)';
+                  }}
                 >
-                  <UtensilsCrossed className="w-6 h-6 text-slate-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Restaurantes</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  Reservas con IA, menú digital, recordatorios automáticos y gestión de mesas en tiempo real.
-                </p>
-                <span
-                  className="inline-block mt-4 text-xs px-2.5 py-1 rounded-full"
-                  style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}
-                >
-                  Próximamente
-                </span>
-              </article>
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                    style={{ background: 'rgba(220, 38, 38, 0.22)', border: '1px solid rgba(248, 113, 113, 0.45)' }}
+                  >
+                    <UtensilsCrossed className="w-6 h-6 text-red-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Restaurantes</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Sistema completo para bar-restaurante: menú QR, panel de cocina, delivery con CRM, inventario y caja
+                    con IA.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {['📱 Menú QR', '🍳 Cocina', '🛵 Delivery', '🤖 Chat IA'].map((chip) => (
+                      <span
+                        key={chip}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-red-300">
+                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </article>
+              </Link>
             </div>
           </section>
 
