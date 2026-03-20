@@ -15,6 +15,7 @@ import {
   BarChart3,
   Smartphone,
   LayoutDashboard,
+  Target,
 } from 'lucide-react';
 
 export type BrandConfig = {
@@ -37,6 +38,7 @@ const defaultBrand: BrandConfig = {
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/leads', label: 'Leads', icon: Users },
+  { href: '/dashboard/prospectos', label: 'Prospectos', icon: Target },
   { href: '/dashboard/knowledge', label: 'Conocimiento', icon: BookOpen },
   { href: '/dashboard/campaigns', label: 'Campañas', icon: Megaphone },
   { href: '/dashboard/calendar', label: 'Calendario', icon: Calendar },
