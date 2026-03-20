@@ -2,7 +2,16 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Building2, UtensilsCrossed, ArrowRight, Scissors, Zap, Clock, BarChart3 } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart3,
+  Building2,
+  Clock,
+  GraduationCap,
+  Scissors,
+  UtensilsCrossed,
+  Zap,
+} from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -133,73 +142,8 @@ export default function LandingPage() {
           <section className="mb-24">
             <h2 className="text-2xl font-bold mb-2 tracking-wide">Portafolio de Demos</h2>
             <p className="text-slate-400 text-sm mb-8">Explora casos de uso reales con IA conversacional</p>
-            <div className="grid gap-5 md:grid-cols-3">
-
-              {/* Inmobiliaria */}
-              <article
-                className="rounded-xl p-7 transition-all duration-300 cursor-default group"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  backdropFilter: 'blur(12px)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(13,148,136,0.45)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = '0 0 24px rgba(13,148,136,0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                }}
-              >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                  style={{ background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)' }}
-                >
-                  <Building2 className="w-6 h-6 text-teal-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2 tracking-wide">Inmobiliaria</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  Catálogo de propiedades, calificación de leads y agendamiento de visitas. Integración con agencias locales.
-                </p>
-                <span className="inline-block mt-4 text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>
-                  Próximamente
-                </span>
-              </article>
-
-              {/* Restaurantes */}
-              <article
-                className="rounded-xl p-7 transition-all duration-300 cursor-default"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  backdropFilter: 'blur(12px)',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(13,148,136,0.45)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = '0 0 24px rgba(13,148,136,0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
-                  (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                }}
-              >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                  style={{ background: 'rgba(13,148,136,0.12)', border: '1px solid rgba(13,148,136,0.25)' }}
-                >
-                  <UtensilsCrossed className="w-6 h-6 text-teal-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2 tracking-wide">Restaurantes</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  Reservas, menú digital, pedidos y recordatorios automáticos. Reduce no-shows y aumenta la ocupación.
-                </p>
-                <span className="inline-block mt-4 text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>
-                  Próximamente
-                </span>
-              </article>
-
-              {/* Barbería — demo activa */}
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {/* 1 — Barbería */}
               <Link href="/demo/barber" className="block group">
                 <article
                   className="rounded-xl p-7 transition-all duration-300 h-full"
@@ -233,6 +177,130 @@ export default function LandingPage() {
                   </span>
                 </article>
               </Link>
+
+              {/* 2 — Cobranza & Cartera */}
+              <Link href="/demo/cobranza" className="block group">
+                <article
+                  className="rounded-xl p-7 transition-all duration-300 h-full"
+                  style={{
+                    background: 'rgba(30,64,175,0.12)',
+                    border: '1px solid rgba(30,64,175,0.45)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 0 32px rgba(30,64,175,0.12)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(59,130,246,0.7)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(30,64,175,0.25)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(30,64,175,0.45)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(30,64,175,0.12)';
+                  }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                    style={{ background: 'rgba(30,64,175,0.25)', border: '1px solid rgba(59,130,246,0.5)' }}
+                  >
+                    <GraduationCap className="w-6 h-6 text-blue-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Cobranza &amp; Cartera</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Dashboard de morosidad, secuencias automáticas, estado de cuenta PDF y score de riesgo con IA para
+                    instituciones y empresas.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {['📊 Score IA', '🧾 PDF', '🤖 Secuencias', '💬 WhatsApp'].map((chip) => (
+                      <span
+                        key={chip}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-blue-300">
+                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </article>
+              </Link>
+
+              {/* 3 — Inmobiliaria (externo) */}
+              <a
+                href="https://inmobiliaria-agentia.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block group"
+              >
+                <article
+                  className="rounded-xl p-7 transition-all duration-300 h-full"
+                  style={{
+                    background: 'rgba(5,150,105,0.1)',
+                    border: '1px solid rgba(5,150,105,0.35)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 0 32px rgba(5,150,105,0.08)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,185,129,0.65)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(5,150,105,0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(5,150,105,0.35)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(5,150,105,0.08)';
+                  }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                    style={{ background: 'rgba(5,150,105,0.2)', border: '1px solid rgba(16,185,129,0.45)' }}
+                  >
+                    <Building2 className="w-6 h-6 text-emerald-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Inmobiliaria IA</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Portal de propiedades con IA, calificación de leads automática, análisis de plusvalía y ROI por
+                    propiedad.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {['🏠 Portal', '📈 ROI', '🤖 Leads IA', '📍 Mapa'].map((chip) => (
+                      <span
+                        key={chip}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-emerald-300">
+                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </article>
+              </a>
+
+              {/* 4 — Restaurantes próximamente */}
+              <article
+                className="rounded-xl p-7 transition-all duration-300 cursor-default h-full"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  backdropFilter: 'blur(12px)',
+                }}
+              >
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                >
+                  <UtensilsCrossed className="w-6 h-6 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Restaurantes</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Reservas con IA, menú digital, recordatorios automáticos y gestión de mesas en tiempo real.
+                </p>
+                <span
+                  className="inline-block mt-4 text-xs px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}
+                >
+                  Próximamente
+                </span>
+              </article>
             </div>
           </section>
 
