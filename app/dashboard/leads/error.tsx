@@ -10,7 +10,7 @@ export default function LeadsError({
   reset: () => void;
 }) {
   return (
-    <div className="min-h-screen p-6 bg-[#0a1209] flex flex-col items-center justify-center">
+    <div className="min-h-screen p-6 bg-luxury flex flex-col items-center justify-center">
       <div className="max-w-md rounded-xl border border-red-500/30 bg-red-500/10 p-8 text-center">
         <h1 className="text-xl font-bold text-red-300 mb-2">Error al cargar Leads</h1>
         <p className="text-slate-400 text-sm mb-4">{error.message}</p>

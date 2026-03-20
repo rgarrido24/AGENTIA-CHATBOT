@@ -51,10 +51,25 @@ const STATUS_OPTIONS = [
 ];
 
 const PLANTILLAS = [
-  { value: 'intro',       label: '👋 Introducción (primer contacto)' },
+  { value: 'intro_a',    label: '👋 Intro A — El Dolor (identifica el problema)' },
+  { value: 'intro_b',    label: '🎣 Intro B — El Gancho (curiosidad + humor)' },
+  { value: 'intro_c',    label: '🚀 Intro C — La Solución (valor directo)' },
   { value: 'seguimiento', label: '🔄 Seguimiento (no respondió)' },
-  { value: 'cierre',      label: '🎯 Cierre (negociación)' },
+  { value: 'cierre',     label: '🎯 Cierre (ya vio la demo)' },
 ];
+
+// Preview de cada plantilla (con placeholders visibles)
+const PLANTILLA_PREVIEW: Record<string, string> = {
+  intro_a: `Hola [Negocio] 👋\n\n¿Cuántas veces se te quedan mensajes sin contestar cuando estás con un cliente o ya cerraste?\n\nEso son ventas que se van solas 😔\n\nNosotros lo resolvemos: un asistente de IA que agenda, cotiza y responde por WhatsApp las 24 hrs, aunque estés dormido.\n\nMira cómo funcionaría en tu negocio 👇\n[link de seguimiento]\n\n— [Vendedor], Agentia AI`,
+
+  intro_b: `Hola [Negocio] 👋, soy [Vendedor].\n\nUna pregunta rápida — si tuvieras un empleado que:\n• Contesta WhatsApp a las 2am ✅\n• Agenda citas solo ✅\n• Nunca se enferma ni pide aumento 😄\n\n¿Lo contratarías?\n\nEso es exactamente lo que hacemos. Mira la demo:\n[link de seguimiento]\n\n¿Platicamos? 🚀`,
+
+  intro_c: `Hola [Negocio] 🙌\n\n¿Ya viste lo que hacen los negocios que más crecen?\n\nEstán usando IA en WhatsApp para:\n✅ Agendar citas automático\n✅ Responder dudas a cualquier hora\n✅ No dejar a ningún cliente en visto\n\nTe armé una demo para que lo veas en acción:\n[link de seguimiento]\n\n— [Vendedor]`,
+
+  seguimiento: `Hola [Negocio] 😊\n\n¿Tuviste oportunidad de ver la demo del chatbot que te compartí?\n\nSi tienes alguna duda o quieres que te explique cómo funcionaría específicamente en tu negocio, con gusto lo hacemos.\n\n— [Vendedor]`,
+
+  cierre: `Hola [Negocio], soy [Vendedor] 👋\n\n¿Qué te pareció la demo del chatbot? 🤖\n\nEsta semana tenemos disponibilidad para hacer la instalación personalizada para tu negocio — sin compromisos, en menos de una hora queda funcionando.\n\n¿Platicamos esta semana? 📅`,
+};
 
 const statusInfo = (s: string) => STATUS_OPTIONS.find((o) => o.value === s) ?? STATUS_OPTIONS[0];
 
@@ -144,8 +159,11 @@ export default function ProspectosPage() {
   const [importing, setImporting] = useState(false);
 
   // Message state
-  const [plantilla, setPlantilla] = useState('intro');
+  const [plantilla, setPlantilla] = useState('intro_a');
+  const [batchSize, setBatchSize] = useState(10);
+  const [mediaUrl, setMediaUrl] = useState('');
   const [sending, setSending] = useState(false);
+  const [sentResult, setSentResult] = useState<{ queued: number; minutes: number } | null>(null);
 
   // Edit state
   const [editStatus, setEditStatus] = useState('');
@@ -222,6 +240,7 @@ export default function ProspectosPage() {
   const handleSendMessages = async () => {
     if (!selected.size) return;
     setSending(true);
+    setSentResult(null);
     try {
       const res = await fetch('/api/prospectos/message', {
         method: 'POST',
@@ -231,14 +250,15 @@ export default function ProspectosPage() {
           plantilla,
           vendedor: currentVendedor,
           baseUrl: typeof window !== 'undefined' ? window.location.origin : '',
+          batchSize,
+          mediaUrl: mediaUrl.trim() || undefined,
         }),
       });
       const data = await res.json();
       if (data.ok) {
-        setMessageModal(false);
+        setSentResult({ queued: data.queued, minutes: data.minutesTotal ?? 0 });
         setSelected(new Set());
         fetchProspectos();
-        alert(`✅ ${data.queued} mensaje(s) en cola. El bridge los enviará en segundos.`);
       } else { alert(data.error || 'Error al enviar'); }
     } finally { setSending(false); }
   };
@@ -319,7 +339,7 @@ export default function ProspectosPage() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#0a1209] p-4 lg:p-6">
+    <div className="min-h-screen bg-luxury p-4 lg:p-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
@@ -511,7 +531,7 @@ export default function ProspectosPage() {
       {/* ─── MODAL: Import ─────────────────────────────────────────────────── */}
       {importModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-[#0f1a0f] border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#0f172a] border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-slate-700">
               <h2 className="text-lg font-semibold text-white">Importar Prospectos</h2>
               <button onClick={() => setImportModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
@@ -588,41 +608,126 @@ export default function ProspectosPage() {
       {/* ─── MODAL: Send Message ───────────────────────────────────────────── */}
       {messageModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-[#0f1a0f] border border-slate-700 rounded-2xl w-full max-w-md">
+          <div className="bg-[#0f172a] border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[95vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-slate-700">
               <h2 className="text-lg font-semibold text-white">Enviar WhatsApp</h2>
-              <button onClick={() => setMessageModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={() => { setMessageModal(false); setSentResult(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-5 space-y-4">
-              <div className="rounded-lg bg-slate-800/60 border border-slate-700 p-3 text-sm text-slate-300">
-                Se enviará a <strong className="text-white">{selected.size} prospecto(s)</strong> como <strong className="text-emerald-400">{currentVendedor}</strong>
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-2">Selecciona la plantilla</label>
-                <div className="space-y-2">
-                  {PLANTILLAS.map((pl) => (
-                    <button key={pl.value} onClick={() => setPlantilla(pl.value)}
-                      className={`w-full text-left px-4 py-3 rounded-lg border text-sm transition ${
-                        plantilla === pl.value
-                          ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-300'
-                          : 'border-slate-700 text-slate-400 hover:border-slate-600'
-                      }`}>
-                      {pl.label}
-                    </button>
-                  ))}
+
+            {sentResult ? (
+              /* ── Resultado exitoso ── */
+              <div className="p-8 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto">
+                  <Check className="w-8 h-8 text-emerald-400" />
                 </div>
+                <h3 className="text-xl font-bold text-white">{sentResult.queued} mensaje(s) en cola</h3>
+                <p className="text-slate-400 text-sm">
+                  El bridge los enviará escalonados cada ~45 segundos para evitar bloqueos.
+                  {sentResult.minutes > 0 && <><br />Tiempo estimado: <strong className="text-white">~{sentResult.minutes} min</strong></>}
+                </p>
+                <div className="rounded-lg bg-amber-500/10 border border-amber-500/25 p-3 text-xs text-amber-300 text-left">
+                  💡 <strong>Siguiente lote:</strong> espera al menos 30 min antes de enviar otro batch, y usa una plantilla diferente para variar el mensaje.
+                </div>
+                <button onClick={() => { setMessageModal(false); setSentResult(null); }}
+                  className="px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition">
+                  Listo
+                </button>
               </div>
-              <p className="text-xs text-slate-500">
-                El mensaje incluirá un link de seguimiento único por prospecto para detectar quién abre la demo.
-              </p>
-            </div>
-            <div className="flex gap-3 p-5 border-t border-slate-700">
-              <button onClick={() => setMessageModal(false)} className="flex-1 py-2 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 transition text-sm">Cancelar</button>
-              <button onClick={handleSendMessages} disabled={sending}
-                className="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium transition text-sm flex items-center justify-center gap-2">
-                <Send className="w-4 h-4" />{sending ? 'Enviando...' : 'Enviar'}
-              </button>
-            </div>
+            ) : (
+              <>
+                <div className="p-5 space-y-5">
+                  {/* Info */}
+                  <div className="rounded-lg bg-slate-800/60 border border-slate-700 p-3 text-sm text-slate-300">
+                    Enviando como <strong className="text-white">{currentVendedor}</strong> · {selected.size} seleccionado(s)
+                  </div>
+
+                  {/* Batch size */}
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-2">¿Cuántos enviar ahora? <span className="text-amber-400">(recomendado: 10-15 por sesión)</span></label>
+                    <div className="flex gap-2 flex-wrap">
+                      {[5, 10, 15, 25, selected.size].filter((v, i, a) => a.indexOf(v) === i && v <= selected.size).map((n) => (
+                        <button key={n} onClick={() => setBatchSize(n)}
+                          className={`px-3 py-1.5 rounded-lg text-sm border transition ${
+                            batchSize === n
+                              ? 'border-emerald-500/60 bg-emerald-500/15 text-emerald-300'
+                              : 'border-slate-700 text-slate-400 hover:border-slate-500'
+                          }`}>
+                          {n === selected.size ? `Todos (${n})` : n}
+                        </button>
+                      ))}
+                    </div>
+                    {batchSize > 0 && (
+                      <p className="text-xs text-slate-500 mt-1.5">
+                        Se enviarán {Math.min(batchSize, selected.size)} mensajes · tiempo estimado: ~{Math.ceil((Math.min(batchSize, selected.size) - 1) * 45 / 60)} min
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Plantillas */}
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-2">Selecciona la plantilla</label>
+                    <div className="space-y-1.5">
+                      {PLANTILLAS.map((pl) => (
+                        <button key={pl.value} onClick={() => setPlantilla(pl.value)}
+                          className={`w-full text-left px-3 py-2.5 rounded-lg border text-sm transition ${
+                            plantilla === pl.value
+                              ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-300'
+                              : 'border-slate-700 text-slate-400 hover:border-slate-600'
+                          }`}>
+                          {pl.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Preview del mensaje */}
+                  {plantilla && PLANTILLA_PREVIEW[plantilla] && (
+                    <div>
+                      <label className="block text-xs text-slate-400 mb-2">Vista previa del mensaje</label>
+                      <div className="rounded-xl bg-[#075e54]/20 border border-[#128c7e]/30 p-4">
+                        <div className="bg-[#dcf8c6]/10 rounded-lg p-3 max-w-[85%] ml-auto">
+                          <pre className="text-xs text-slate-200 whitespace-pre-wrap font-sans leading-relaxed">
+                            {PLANTILLA_PREVIEW[plantilla]}
+                          </pre>
+                          <p className="text-[10px] text-slate-500 mt-1 text-right">✓✓</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Media URL opcional */}
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">
+                      Video / GIF adjunto <span className="text-slate-600">(opcional — URL pública de tu video o GIF)</span>
+                    </label>
+                    <input
+                      value={mediaUrl}
+                      onChange={(e) => setMediaUrl(e.target.value)}
+                      placeholder="https://ejemplo.com/demo-agentia.mp4"
+                      className="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm placeholder-slate-600"
+                    />
+                    {mediaUrl && (
+                      <p className="text-xs text-emerald-400 mt-1">✓ El video se enviará junto con el mensaje como adjunto</p>
+                    )}
+                  </div>
+
+                  {/* Tip anti-bloqueo */}
+                  <div className="rounded-lg bg-slate-800/40 border border-slate-700/50 p-3 text-xs text-slate-400 space-y-1">
+                    <p className="font-medium text-slate-300">🛡️ Anti-bloqueo activado</p>
+                    <p>Los mensajes se envían con 45 seg de espacio entre cada uno. Usa plantillas diferentes en cada lote y espera 30 min entre sesiones.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 p-5 border-t border-slate-700">
+                  <button onClick={() => setMessageModal(false)} className="flex-1 py-2 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 transition text-sm">Cancelar</button>
+                  <button onClick={handleSendMessages} disabled={sending}
+                    className="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium transition text-sm flex items-center justify-center gap-2">
+                    <Send className="w-4 h-4" />
+                    {sending ? 'Programando...' : `Enviar ${Math.min(batchSize, selected.size)} mensajes`}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -630,7 +735,7 @@ export default function ProspectosPage() {
       {/* ─── MODAL: Edit Prospecto ─────────────────────────────────────────── */}
       {editModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-[#0f1a0f] border border-slate-700 rounded-2xl w-full max-w-md">
+          <div className="bg-[#0f172a] border border-slate-700 rounded-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-5 border-b border-slate-700">
               <div>
                 <h2 className="text-lg font-semibold text-white">{editModal.nombre}</h2>
@@ -697,7 +802,7 @@ export default function ProspectosPage() {
       {/* ─── MODAL: Add single ────────────────────────────────────────────── */}
       {addModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="bg-[#0f1a0f] border border-slate-700 rounded-2xl w-full max-w-md">
+          <div className="bg-[#0f172a] border border-slate-700 rounded-2xl w-full max-w-md">
             <div className="flex items-center justify-between p-5 border-b border-slate-700">
               <h2 className="text-lg font-semibold text-white">Agregar Prospecto</h2>
               <button onClick={() => setAddModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>

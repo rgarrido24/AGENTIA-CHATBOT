@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function CampaignsPage() {
   return (
-    <main className="min-h-screen p-8 bg-[#0a1209]">
+    <main className="min-h-screen p-8 bg-luxury">
       <div className="max-w-2xl mx-auto">
         <Link href="/dashboard" className="text-slate-400 hover:text-emerald-400 mb-6 inline-block transition">
           ← Volver

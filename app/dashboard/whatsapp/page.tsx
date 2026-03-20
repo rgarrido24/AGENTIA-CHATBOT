@@ -20,7 +20,7 @@ export default function WhatsAppLinkPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#0a1209]">
+    <main className="min-h-screen bg-luxury">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           <Link

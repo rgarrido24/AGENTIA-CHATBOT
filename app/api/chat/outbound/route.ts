@@ -4,11 +4,19 @@ import { getMongoDb } from '@/lib/mongodb';
 export async function GET() {
   try {
     const db = await getMongoDb();
+    const now = new Date();
     const messages = await db
       .collection('outbound_messages')
-      .find({ sentAt: { $exists: false } })
-      .sort({ createdAt: 1 })
-      .limit(20)
+      .find({
+        sentAt: { $exists: false },
+        // Solo mensajes que ya son hora de enviar (anti-bloqueo: scheduledFor escalonado)
+        $or: [
+          { scheduledFor: { $exists: false } },
+          { scheduledFor: { $lte: now } },
+        ],
+      })
+      .sort({ scheduledFor: 1, createdAt: 1 })
+      .limit(5)
       .toArray();
     return NextResponse.json({
       messages: messages.map((m) => ({
@@ -17,6 +25,7 @@ export async function GET() {
         senderId: m.senderId,
         message: m.message,
         clientId: m.clientId,
+        mediaUrl: m.mediaUrl || null,
       })),
     });
   } catch (err) {

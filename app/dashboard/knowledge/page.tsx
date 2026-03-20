@@ -76,7 +76,7 @@ export default function KnowledgePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0a1209]">
+    <main className="min-h-screen bg-luxury">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
           <Link
@@ -149,7 +149,7 @@ export default function KnowledgePage() {
                   {docs.map((d) => (
                     <li
                       key={String(d._id)}
-                      className="flex items-center justify-between px-4 py-3 rounded-lg bg-[#0a1f16] border border-white/10"
+                      className="flex items-center justify-between px-4 py-3 rounded-lg bg-[#0f172a] border border-white/10"
                     >
                       <span
                         className="font-medium truncate text-slate-200"

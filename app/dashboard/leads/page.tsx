@@ -866,7 +866,7 @@ export default function LeadsPage() {
       {selectedLead && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={releaseLead} />
-          <div className="relative w-full max-w-lg bg-[#0a1209]/98 backdrop-blur-xl border-l border-forest/60 flex flex-col shadow-2xl">
+          <div className="relative w-full max-w-lg bg-luxury/98 backdrop-blur-xl border-l border-forest/60 flex flex-col shadow-2xl">
 
             {/* Panel header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-forest/40">

@@ -246,16 +246,30 @@ async function main() {
           const chatId = raw.includes('@') ? raw : `${raw.replace(/\D/g, '')}@c.us`;
           if (!chatId || chatId === '@c.us' || chatId.length < 15) continue;
           if (typeof client.sendMessage !== 'function') break;
-          await client.sendMessage(chatId, m.message);
+
+          if (m.mediaUrl) {
+            // Enviar con media (video/GIF/imagen) + texto como caption
+            try {
+              const media = await MessageMedia.fromUrl(m.mediaUrl, { unsafeMime: true });
+              await client.sendMessage(chatId, media, { caption: m.message });
+            } catch (mediaErr) {
+              // Si falla el media, enviar solo texto
+              console.warn('[Agentia] Media falló, enviando solo texto:', mediaErr.message);
+              await client.sendMessage(chatId, m.message);
+            }
+          } else {
+            await client.sendMessage(chatId, m.message);
+          }
+
           const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
           await fetch(`${API_URL}/api/chat/outbound`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}) },
             body: JSON.stringify({ id: m._id }),
           });
-          console.log('[Agentia] Mensaje CRM enviado a', m.senderId);
+          console.log('[Agentia] Outbound enviado a', m.senderId, m.mediaUrl ? '(con media)' : '');
         } catch (e) {
-          console.error('[Agentia] Error enviando mensaje CRM:', e.message, 'id=', m._id, 'senderId=', m.senderId);
+          console.error('[Agentia] Error enviando outbound:', e.message, 'id=', m._id, 'senderId=', m.senderId);
         }
       }
     } catch (e) {

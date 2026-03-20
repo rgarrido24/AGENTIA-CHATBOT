@@ -51,7 +51,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-8 bg-[#0a1209]">
+      <main className="min-h-screen p-8 bg-luxury">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -73,7 +73,7 @@ export default function AnalyticsPage() {
   const speedPercent = Math.min(100, ((d.tasaRespuesta.targetSeconds - d.tasaRespuesta.avgSeconds) / d.tasaRespuesta.targetSeconds) * 100 + 20);
 
   return (
-    <main className="min-h-screen p-8 bg-[#0a1209]">
+    <main className="min-h-screen p-8 bg-luxury">
       <div className="max-w-6xl mx-auto">
         <Link href="/dashboard" className="text-slate-400 hover:text-emerald-400 mb-6 inline-block transition">
           ← Volver
