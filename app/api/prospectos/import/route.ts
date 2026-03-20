@@ -3,7 +3,10 @@ import { getMongoDb } from '@/lib/mongodb';
 import { randomUUID } from 'crypto';
 
 function normalizePhone(raw: string): string {
-  const digits = (raw || '').replace(/\D/g, '');
+  const s = (raw || '').trim();
+  // Extrae número de links wa.me/52XXXXXXXXXX
+  const waMatch = s.match(/wa\.me\/(\d+)/i);
+  const digits = waMatch ? waMatch[1] : s.replace(/\D/g, '');
   if (digits.length === 10) return `52${digits}`;
   if (digits.length === 12 && digits.startsWith('52')) return digits;
   if (digits.length === 13 && digits.startsWith('521')) return digits;

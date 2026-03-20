@@ -65,13 +65,29 @@ function fmtDate(d: string | null) {
 
 // ─── CSV Parser ──────────────────────────────────────────────────────────────
 
+function normalizeHeader(h: string) {
+  return h.trim().toLowerCase()
+    .replace(/[áà]/g, 'a').replace(/[éè]/g, 'e').replace(/[íì]/g, 'i')
+    .replace(/[óò]/g, 'o').replace(/[úù]/g, 'u')
+    .replace(/\s*\([^)]*\)/g, '')   // quita "(WhatsApp)", "(Mérida)", etc.
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_').replace(/^_|_$/g, '');
+}
+
+function normalizePhone(raw: string): string {
+  // Extrae número de links wa.me/52XXXXXXXXXX
+  const waMatch = raw.match(/wa\.me\/(\d+)/i);
+  if (waMatch) return waMatch[1];
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 10) return `52${digits}`;
+  return digits;
+}
+
 function parseCSV(text: string): Array<Record<string, string>> {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
   if (lines.length < 2) return [];
   const sep = lines[0].includes('\t') ? '\t' : ',';
-  const headers = lines[0].split(sep).map((h) => h.trim().toLowerCase()
-    .replace(/[áà]/g, 'a').replace(/[éè]/g, 'e').replace(/[íì]/g, 'i')
-    .replace(/[óò]/g, 'o').replace(/[úù]/g, 'u').replace(/\s+/g, '_'));
+  const headers = lines[0].split(sep).map(normalizeHeader);
   return lines.slice(1).map((line) => {
     const vals = line.split(sep);
     const row: Record<string, string> = {};
@@ -81,13 +97,22 @@ function parseCSV(text: string): Array<Record<string, string>> {
 }
 
 function mapRow(row: Record<string, string>) {
-  const get = (...keys: string[]) => keys.map((k) => row[k]).find((v) => v) || '';
+  const keys = Object.keys(row);
+  // Busca coincidencia exacta primero, luego parcial (el header contiene la palabra clave)
+  const fuzzy = (...candidates: string[]) => {
+    for (const c of candidates) { if (row[c]) return row[c]; }
+    for (const c of candidates) {
+      const found = keys.find((k) => k.includes(c));
+      if (found && row[found]) return row[found];
+    }
+    return '';
+  };
   return {
-    nombre:      get('nombre', 'estetica', 'negocio', 'name', 'empresa'),
-    propietario: get('propietario', 'dueno', 'owner', 'contacto'),
-    ubicacion:   get('ubicacion', 'direccion', 'location', 'ciudad', 'municipio'),
-    telefono:    get('telefono', 'tel', 'phone', 'celular', 'movil'),
-    correo:      get('correo', 'email', 'mail'),
+    nombre:      fuzzy('nombre', 'negocio', 'estetica', 'empresa', 'name'),
+    propietario: fuzzy('propietario', 'dueno', 'owner', 'contacto', 'giro'),
+    ubicacion:   fuzzy('ubicacion', 'direccion', 'location', 'ciudad', 'municipio'),
+    telefono:    normalizePhone(fuzzy('telefono', 'tel', 'phone', 'celular', 'movil', 'whatsapp')),
+    correo:      fuzzy('correo', 'email', 'mail'),
   };
 }
 
