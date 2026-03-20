@@ -298,26 +298,8 @@ export default function DemoBarberPage() {
   const [payPhone, setPayPhone] = useState('');
   const [lastAddedEventId, setLastAddedEventId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [apiReady, setApiReady] = useState<boolean | null>(null);
   const isMobile = useIsMobile(768);
   const [activeTab, setActiveTab] = useState<'chat' | 'agenda'>('chat');
-
-  useEffect(() => {
-    let cancelled = false;
-    const ac = new AbortController();
-    fetch('/api/health', { signal: ac.signal })
-      .then((r) => r.json())
-      .then((d) => {
-        if (!cancelled) setApiReady(!!d?.hasGeminiKey);
-      })
-      .catch(() => {
-        if (!cancelled) setApiReady(false);
-      });
-    return () => {
-      cancelled = true;
-      ac.abort();
-    };
-  }, []);
 
   useEffect(() => {
     if (!lastAddedEventId) return;
@@ -431,12 +413,9 @@ export default function DemoBarberPage() {
       if (cita) addEvent(cita);
     } catch (e) {
       const isAbort = e instanceof Error && e.name === 'AbortError';
-      const msg =
-        apiReady === false
-          ? 'Servicio no configurado. Añade GEMINI_API_KEY en .env.local (local) o en las variables de entorno de tu hosting y reinicia el servidor.'
-          : isAbort
-            ? 'La respuesta tardó demasiado. Intenta de nuevo.'
-            : 'Error de conexión. Comprueba que el servidor esté en marcha (npm run dev) y que GEMINI_API_KEY esté en .env.local. Si ya está configurado, puede ser un fallo temporal; intenta de nuevo.';
+      const msg = isAbort
+        ? 'La respuesta tardó demasiado. Intenta de nuevo.'
+        : 'No pudimos conectar en este momento. Intenta de nuevo en unos segundos.';
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: msg, createdAt: Date.now() },
@@ -531,14 +510,6 @@ export default function DemoBarberPage() {
                   aria-hidden
                 />
                 <ChatHeaderWhatsApp loading={loading} />
-                {apiReady === false && (
-                  <div
-                    className="px-3 py-2 text-xs text-amber-200 bg-amber-900/60 border-b border-amber-700/50"
-                    role="alert"
-                  >
-                    Configura <strong>GEMINI_API_KEY</strong> en tu hosting.
-                  </div>
-                )}
                 <div className={`${styles.mobileChatViewport} ${styles.chatWallpaper}`}>
                   {messages.length === 0 && (
                     <p className="text-center text-slate-500 text-sm py-4">Escribe para agendar tu cita.</p>
@@ -661,14 +632,6 @@ export default function DemoBarberPage() {
                 )}
               </div>
               <ChatHeaderWhatsApp loading={loading} withIslandPadding />
-              {apiReady === false && (
-                <div
-                  className="px-3 py-2 text-xs text-amber-200 bg-amber-900/60 border-b border-amber-700/50"
-                  role="alert"
-                >
-                  Para que el chat funcione, configura <strong>GEMINI_API_KEY</strong> en .env.local (local) o en las variables de entorno de tu hosting y reinicia el servidor.
-                </div>
-              )}
               <div
                 className={`h-[380px] overflow-y-auto px-3 py-4 space-y-2 ${styles.chatWallpaper}`}
               >

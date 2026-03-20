@@ -262,79 +262,88 @@ export default function LeadsPage() {
     });
   }, []);
 
-  // SSE real-time updates – falls back to polling on error
+  // Procesa un nuevo array de leads: detecta cambios y dispara sonidos
+  const processLeadsPayload = useCallback((newLeads: Lead[]) => {
+    const prev = prevLeadsRef.current;
+    if (prev?.length) {
+      const prevMap = new Map(prev.map((l) => [l.leadId, l]));
+      const newInInteresado = newLeads.filter(
+        (l) =>
+          (l.status || '').toLowerCase() === 'interesado' &&
+          (prevMap.get(l.leadId)?.lastMessageAt !== l.lastMessageAt || !prevMap.has(l.leadId))
+      );
+      const statusChangedLeads = newLeads.filter(
+        (l) => (prevMap.get(l.leadId)?.status || '') !== (l.status || '')
+      );
+      const aiMovedLeads = statusChangedLeads.filter((l) => {
+        const classifiedAt = l.lastClassifiedByAI ? new Date(l.lastClassifiedByAI).getTime() : 0;
+        return classifiedAt > 0 && Date.now() - classifiedAt < 120000;
+      });
+      if (newInInteresado.length > 0) playAlertSound('message');
+      if (aiMovedLeads.length > 0) {
+        playAlertSound('logro');
+        setRecentlyMovedByAI((s) => new Set([...s, ...aiMovedLeads.map((l) => l.leadId)]));
+      } else if (statusChangedLeads.length > 0) {
+        playAlertSound('moved');
+      }
+    }
+    prevLeadsRef.current = newLeads;
+    setLeads(newLeads);
+    setSelectedLead((prev) => {
+      if (!prev) return null;
+      return newLeads.find((l) => l.leadId === prev.leadId) ?? prev;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Polling garantizado cada 6s — siempre activo independientemente de SSE
   useEffect(() => {
     fetchLeads().finally(() => setLoading(false));
+    const poll = setInterval(() => {
+      fetch('/api/leads')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.leads) processLeadsPayload(data.leads as Lead[]);
+        })
+        .catch(() => { /* silencioso — el error de red ya se maneja en fetchLeads */ });
+    }, 6000);
+    return () => clearInterval(poll);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // SSE como capa adicional de velocidad (actualiza en ~3s cuando funciona)
+  useEffect(() => {
     let es: EventSource | null = null;
-    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
-
-    const processLeadsPayload = (newLeads: Lead[]) => {
-      const prev = prevLeadsRef.current;
-      if (prev?.length) {
-        const prevMap = new Map(prev.map((l) => [l.leadId, l]));
-        const newInInteresado = newLeads.filter(
-          (l) =>
-            (l.status || '').toLowerCase() === 'interesado' &&
-            (prevMap.get(l.leadId)?.lastMessageAt !== l.lastMessageAt || !prevMap.has(l.leadId))
-        );
-        const statusChangedLeads = newLeads.filter(
-          (l) => (prevMap.get(l.leadId)?.status || '') !== (l.status || '')
-        );
-        const aiMovedLeads = statusChangedLeads.filter((l) => {
-          const classifiedAt = l.lastClassifiedByAI ? new Date(l.lastClassifiedByAI).getTime() : 0;
-          return classifiedAt > 0 && Date.now() - classifiedAt < 120000;
-        });
-        if (newInInteresado.length > 0) playAlertSound('message');
-        if (aiMovedLeads.length > 0) {
-          playAlertSound('logro');
-          setRecentlyMovedByAI((s) => new Set([...s, ...aiMovedLeads.map((l) => l.leadId)]));
-        } else if (statusChangedLeads.length > 0) {
-          playAlertSound('moved');
-        }
-      }
-      prevLeadsRef.current = newLeads;
-      setLeads(newLeads);
-      setSelectedLead((prev) => {
-        if (!prev) return null;
-        return newLeads.find((l) => l.leadId === prev.leadId) ?? prev;
-      });
-    };
 
     const connect = () => {
-      es = new EventSource('/api/leads/stream');
+      try {
+        es = new EventSource('/api/leads/stream');
 
-      es.addEventListener('leads', (e) => {
-        try {
-          const { leads: newLeads } = JSON.parse(e.data) as { leads: Lead[] };
-          processLeadsPayload(newLeads);
-        } catch { /* ignore parse errors */ }
-      });
+        es.addEventListener('leads', (e) => {
+          try {
+            const { leads: newLeads } = JSON.parse(e.data) as { leads: Lead[] };
+            processLeadsPayload(newLeads);
+          } catch { /* ignore */ }
+        });
 
-      es.addEventListener('alerts', (e) => {
-        try {
-          const { alerts: newAlerts } = JSON.parse(e.data) as { alerts: Alert[] };
-          setAlerts(newAlerts);
-        } catch { /* ignore */ }
-      });
+        es.addEventListener('alerts', (e) => {
+          try {
+            const { alerts: newAlerts } = JSON.parse(e.data) as { alerts: Alert[] };
+            setAlerts(newAlerts);
+          } catch { /* ignore */ }
+        });
 
-      es.onerror = () => {
-        es?.close();
-        es = null;
-        // Reconnect after 5s; also start polling as safety net
-        if (!fallbackTimer) {
-          fallbackTimer = setInterval(fetchLeads, 15000);
-        }
-        setTimeout(connect, 5000);
-      };
+        es.onerror = () => {
+          es?.close();
+          es = null;
+          // Reconectar en 10s; el polling garantizado sigue corriendo de todas formas
+          setTimeout(connect, 10000);
+        };
+      } catch { /* SSE no soportado — el polling cubre */ }
     };
 
     connect();
-
-    return () => {
-      es?.close();
-      if (fallbackTimer) clearInterval(fallbackTimer);
-    };
+    return () => { es?.close(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
