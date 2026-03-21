@@ -28,8 +28,25 @@ Extras: Papas $45, Aros $55, Guacamole $40
 ENTREGA A DOMICILIO: Sí, zonas cercanas. Tiempo estimado: 30-45 min.
 PROMOCIÓN HOY: 2x1 en Mojitos de 6pm a 9pm.
 
-Sé amigable, usa emojis con moderación. Si el cliente quiere ordenar,
-pide: nombre, dirección y teléfono. Confirma el pedido con el total.`;
+FLUJO DE PEDIDO A DOMICILIO:
+Si el cliente quiere ordenar para entrega, recopila paso a paso:
+1. ¿Qué desea ordenar? (muestra categorías si no sabe)
+2. Confirmar items y cantidades
+3. Nombre completo
+4. Dirección de entrega
+5. Teléfono de contacto
+
+Confirma con:
+"¡Tu pedido está en camino! 🛵✅
+📋 Tu orden:
+- {items con precios}
+- Total: \${total} MXN
+- Tiempo estimado: 35-45 min
+- Dirección: {direccion}
+
+¡Gracias por elegir La Séptima! 🍔"
+
+Sé amigable, usa emojis con moderación. Un paso por mensaje.`;
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 

@@ -8,7 +8,6 @@ import {
   Building2,
   Clock,
   GraduationCap,
-  HeartPulse,
   Scissors,
   PawPrint,
   Sparkles,
@@ -455,51 +454,6 @@ export default function LandingPage() {
                     ))}
                   </div>
                   <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-sky-300">
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </Link>
-
-              {/* 8 — Médico & Especialistas */}
-              <Link href="/demo/medico" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(22, 163, 74, 0.1)',
-                    border: '1px solid rgba(22, 163, 74, 0.45)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(22, 163, 74, 0.1)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74, 222, 128, 0.75)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(22, 163, 74, 0.22)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(22, 163, 74, 0.45)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(22, 163, 74, 0.1)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(22, 163, 74, 0.22)', border: '1px solid rgba(74, 222, 128, 0.5)' }}
-                  >
-                    <HeartPulse className="w-6 h-6 text-green-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Médico & Especialistas</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Expediente con signos vitales, especialidades, recetas CIE-10, incapacidad PDF y recordatorios.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['📋 Expediente', '📈 Signos vitales', '💊 Recetas+Incapacidad', '🤖 IA'].map((chip) => (
-                      <span
-                        key={chip}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10"
-                      >
-                        {chip}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-green-300">
                     Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </span>
                 </article>

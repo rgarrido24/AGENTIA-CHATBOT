@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import PhoneMockup from '@/components/PhoneMockup';
 import Link from 'next/link';
 import { Coffee, DollarSign, ShoppingBag, Trophy } from 'lucide-react';
 import {
@@ -57,7 +58,38 @@ export default function RestauranteDashboardPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <>
+      {/* Hero: PhoneMockup */}
+      <section className="max-w-7xl mx-auto mb-12 flex flex-col lg:flex-row items-center gap-10 px-2">
+        <div className="flex-1 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-red-400">Demo en vivo · Restaurante</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+            Pedidos y reservas<br />
+            <span className="text-red-400">por WhatsApp automático</span>
+          </h2>
+          <p className="text-slate-400 text-base max-w-md">
+            El bot toma pedidos a domicilio, informa el menú y promos, y confirma órdenes — sin que nadie conteste.
+          </p>
+          <ul className="space-y-2 text-sm text-slate-300">
+            {['Pedidos a domicilio paso a paso', 'Menú completo con precios', 'Promos del día en tiempo real'].map(t => (
+              <li key={t} className="flex items-center gap-2"><span className="text-red-400">✓</span>{t}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex-shrink-0">
+          <PhoneMockup
+            businessName="La Séptima Bar & Kitchen"
+            businessEmoji="🍔"
+            accentColor="#ef4444"
+            apiRoute="/api/demo/restaurante/chat"
+            initialMessage="¡Hola! 🍔 Bienvenido a La Séptima. ¿Quieres ver el menú, hacer un pedido o conocer nuestras promos del día?"
+            suggestedChips={['🍔 Ver menú', '🛵 Pedir a domicilio', '🍹 Promos del día', '⏰ Horarios']}
+          />
+        </div>
+      </section>
+
+      {/* Dashboard */}
+      <div id="panel-admin" className="space-y-8 max-w-7xl mx-auto">
       <p className="text-slate-500 text-sm dark:text-slate-400">
         Panel del día — {BRAND.corto} · {ordenes.filter((o) => ['nueva', 'en_preparacion', 'lista'].includes(o.status)).length}{' '}
         órdenes activas en cocina/bar
@@ -210,6 +242,7 @@ export default function RestauranteDashboardPage() {
           </tbody>
         </table>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

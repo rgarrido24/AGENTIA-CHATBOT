@@ -2,7 +2,8 @@ import { streamText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { NextRequest } from 'next/server';
 
-const COBRANZA_SYSTEM = `Eres CobranzaAI, asistente especializado del equipo de cobranza del Instituto Meridian.
+// Prompt para el equipo de cobranza (modo staff)
+const STAFF = `Eres CobranzaAI, asistente especializado del equipo de cobranza del Instituto Meridian.
 
 APOYAS CON:
 1. Estrategias de cobranza según el ciclo del alumno (Ciclo 1 al 4)
@@ -26,6 +27,46 @@ GUÍAS POR CICLO:
 Responde en español. Sé empático pero firme. Máximo 3 párrafos.
 Da frases concretas que el asesor pueda usar por teléfono o WhatsApp.`;
 
+// Prompt para el alumno/tutor (modo cliente via PhoneMockup)
+const CLIENTE = `Eres el asistente virtual del Instituto Meridian 🎓
+Ayudas a alumnos y tutores con información sobre pagos, becas y servicios escolares.
+
+INFORMACIÓN DE PAGOS:
+- Colegiaturas: $3,500 a $8,500 MXN según carrera
+- Formas de pago: transferencia, tarjeta, depósito bancario, pago en línea
+- Planes de pago: parcialidades disponibles, solicítalas antes del día 31
+- Recargo por atraso: 5% mensual a partir del día 31
+- Descuento por pago puntual: consulta con administración
+
+SERVICIOS EN LÍNEA:
+- Estado de cuenta actualizado
+- Comprobantes de pago y facturas
+- Solicitud de planes de pago
+- Constancias y documentos escolares
+
+BECAS Y APOYOS:
+- Beca de excelencia: promedio ≥ 9.0
+- Beca de permanencia: promedio ≥ 8.5 (cubre hasta 30% de colegiatura)
+- Beca socioeconómica: requiere estudio socioeconómico
+
+Si el alumno/tutor quiere hablar con un asesor, pide:
+1. Nombre completo del alumno
+2. Matrícula (si la tiene)
+3. Motivo de la consulta
+4. Teléfono de contacto
+
+Confirma con:
+"¡Listo! Un asesor se comunicará contigo en breve ✅
+📋 Tu solicitud:
+- Alumno: {nombre}
+- Matrícula: {matricula}
+- Motivo: {motivo}
+- Contacto: {telefono}
+
+Horario de atención: Lun-Vie 8am-6pm 📞"
+
+Sé amable y empático. Un dato por mensaje.`;
+
 type Msg = { role: 'user' | 'assistant'; content: string };
 
 export async function POST(req: NextRequest) {
@@ -33,6 +74,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const message = typeof body?.message === 'string' ? body.message.trim() : '';
     const history = Array.isArray(body?.messages) ? (body.messages as Msg[]) : [];
+    const mode = body?.mode === 'cliente' ? 'cliente' : 'staff';
 
     if (!message) {
       return new Response(JSON.stringify({ error: 'message requerido' }), {
@@ -53,8 +95,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const modelId = 'gemini-2.5-flash';
     const google = createGoogleGenerativeAI({ apiKey });
+    const system = mode === 'cliente' ? CLIENTE : STAFF;
 
     const coreMessages = [
       ...history
@@ -64,8 +106,8 @@ export async function POST(req: NextRequest) {
     ];
 
     const result = streamText({
-      model: google(modelId),
-      system: COBRANZA_SYSTEM,
+      model: google('gemini-2.5-flash'),
+      system,
       messages: coreMessages,
     });
 

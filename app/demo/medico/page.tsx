@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import PhoneMockup from '@/components/PhoneMockup';
 import {
   Bar,
   BarChart,
@@ -58,7 +59,38 @@ export default function MedicoDashboardPage() {
   const alertasPend = citas.filter((c) => c.status === 'pendiente' && c.fecha >= HOY_MED);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <>
+      {/* Hero: PhoneMockup */}
+      <section className="max-w-7xl mx-auto mb-12 flex flex-col lg:flex-row items-center gap-10 px-2">
+        <div className="flex-1 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Demo en vivo · Centro Médico</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+            Consultas médicas<br />
+            <span className="text-emerald-400">agendadas sin llamadas</span>
+          </h2>
+          <p className="text-slate-400 text-base max-w-md">
+            El asistente agenda consultas, informa especialidades y horarios, y envía recordatorios — automáticamente.
+          </p>
+          <ul className="space-y-2 text-sm text-slate-300">
+            {['Agendamiento por especialidad', 'Precios orientativos incluidos', 'Nunca da diagnósticos — siempre remite al médico'].map(t => (
+              <li key={t} className="flex items-center gap-2"><span className="text-emerald-400">✓</span>{t}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex-shrink-0">
+          <PhoneMockup
+            businessName="Centro Médico Salud+"
+            businessEmoji="🏥"
+            accentColor="#10b981"
+            apiRoute="/api/demo/medico/chat"
+            initialMessage="¡Hola! 🏥 Soy el asistente del Centro Médico Salud+. ¿Quieres agendar una consulta o tienes alguna pregunta?"
+            suggestedChips={['📅 Agendar consulta', '🩺 Ver especialidades', '💰 Precios', '🚨 Urgencias']}
+          />
+        </div>
+      </section>
+
+      {/* Dashboard */}
+      <div id="panel-admin" className="space-y-8 max-w-7xl mx-auto">
       <p className="text-slate-500 text-sm">{BRAND_MEDICO.nombre}</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -160,6 +192,7 @@ export default function MedicoDashboardPage() {
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

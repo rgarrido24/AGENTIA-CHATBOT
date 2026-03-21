@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import PhoneMockup from '@/components/PhoneMockup';
 import {
   AlertCircle,
   AlertTriangle,
@@ -43,7 +44,38 @@ export default function CobranzaDashboardPage() {
   }));
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <>
+      {/* Hero: PhoneMockup */}
+      <section className="max-w-7xl mx-auto mb-12 flex flex-col lg:flex-row items-center gap-10 px-2">
+        <div className="flex-1 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-blue-400">Demo en vivo · Cobranza Escolar</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+            Gestión de pagos<br />
+            <span className="text-blue-400">sin desgastar al equipo</span>
+          </h2>
+          <p className="text-slate-400 text-base max-w-md">
+            El bot atiende dudas de tutores sobre colegiaturas, planes de pago y becas — antes de que llegue al asesor.
+          </p>
+          <ul className="space-y-2 text-sm text-slate-300">
+            {['Información de saldos y recargos', 'Solicitud de planes de pago', 'Captación de datos antes del asesor'].map(t => (
+              <li key={t} className="flex items-center gap-2"><span className="text-blue-400">✓</span>{t}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex-shrink-0">
+          <PhoneMockup
+            businessName="Instituto Meridian"
+            businessEmoji="🎓"
+            accentColor="#3b82f6"
+            apiRoute="/api/demo/cobranza/chat"
+            initialMessage="¡Hola! 🎓 Soy el asistente del Instituto Meridian. ¿Tienes dudas sobre tu colegiatura, becas o planes de pago?"
+            suggestedChips={['💳 Mi saldo', '📅 Plan de pagos', '🎓 Becas disponibles', '📞 Hablar con asesor']}
+          />
+        </div>
+      </section>
+
+      {/* Dashboard */}
+      <div id="panel-admin" className="space-y-8 max-w-7xl mx-auto">
       <p className="text-slate-400 text-sm">
         Vista consolidada de cartera — Instituto Meridian (demo)
       </p>
@@ -218,6 +250,7 @@ export default function CobranzaDashboardPage() {
           </table>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

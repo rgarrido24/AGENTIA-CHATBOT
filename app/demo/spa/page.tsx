@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import PhoneMockup from '@/components/PhoneMockup';
 import {
   Bar,
   BarChart,
@@ -65,7 +66,38 @@ export default function SpaDashboardPage() {
   const donut = ingresosPorCategoria(citas);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <>
+      {/* Hero: PhoneMockup */}
+      <section className="max-w-7xl mx-auto mb-12 flex flex-col lg:flex-row items-center gap-10 px-2">
+        <div className="flex-1 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-purple-400">Demo en vivo · Lumina Spa</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+            Tu asistente de spa<br />
+            <span className="text-purple-400">disponible 24/7</span>
+          </h2>
+          <p className="text-slate-400 text-base max-w-md">
+            Agenda citas, consulta precios y resuelve dudas automáticamente. Prueba el chat en vivo — es el bot real.
+          </p>
+          <ul className="space-y-2 text-sm text-slate-300">
+            {['Agendamiento paso a paso', 'Catálogo de servicios y precios', 'Respuestas en segundos, 24/7'].map(t => (
+              <li key={t} className="flex items-center gap-2"><span className="text-purple-400">✓</span>{t}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex-shrink-0">
+          <PhoneMockup
+            businessName="Lumina Spa & Estética"
+            businessEmoji="💜"
+            accentColor="#9333ea"
+            apiRoute="/api/demo/spa/chat"
+            initialMessage="¡Hola! 💜 Soy la asistente de Lumina Spa. ¿Te gustaría conocer nuestros servicios o agendar una cita?"
+            suggestedChips={['💆 Ver servicios', '📅 Agendar cita', '💰 Ver precios', '🎁 Promociones del mes']}
+          />
+        </div>
+      </section>
+
+      {/* Dashboard */}
+      <div id="panel-admin" className="space-y-8 max-w-7xl mx-auto">
       <p className="text-slate-500 text-sm">{BRAND_SPA.nombre} — resumen del día</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -182,6 +214,7 @@ export default function SpaDashboardPage() {
           </ResponsiveContainer>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

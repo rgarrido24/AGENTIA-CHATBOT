@@ -10,7 +10,13 @@
       "Bash(node_modules/.bin/tsc --noEmit --skipLibCheck)",
       "Bash(xargs grep:*)",
       "Bash(node --check scripts/whatsapp-bridge.js)",
-      "Bash(powershell -Command \":*)"
+      "Bash(powershell -Command \":*)",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(echo \"=== $f ===\")",
+      "Read(//e/AGENTIA-CHATBOT-LIMPIO/app/demo/$f/**)",
+      "Bash(done)",
+      "Bash(echo \"=== $f lines ===\")"
     ]
   }
 }

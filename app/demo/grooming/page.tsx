@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import PhoneMockup from '@/components/PhoneMockup';
 import {
   Bar,
   BarChart,
@@ -70,7 +71,38 @@ export default function GroomingDashboardPage() {
   const donut = ingresosPorTamaño(citas);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <>
+      {/* Hero: PhoneMockup */}
+      <section className="max-w-7xl mx-auto mb-12 flex flex-col lg:flex-row items-center gap-10 px-2">
+        <div className="flex-1 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-orange-400">Demo en vivo · Grooming</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+            Agenda y atiende a<br />
+            <span className="text-orange-400">tus clientes peludos</span>
+          </h2>
+          <p className="text-slate-400 text-base max-w-md">
+            El bot recibe citas, informa precios por tamaño y raza, y confirma domicilios — sin que tú contestes.
+          </p>
+          <ul className="space-y-2 text-sm text-slate-300">
+            {['Agendamiento por tamaño de mascota', 'Servicio a domicilio automatizado', 'Disponible 24/7 en WhatsApp'].map(t => (
+              <li key={t} className="flex items-center gap-2"><span className="text-orange-400">✓</span>{t}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex-shrink-0">
+          <PhoneMockup
+            businessName="K9 Elite Grooming"
+            businessEmoji="🐾"
+            accentColor="#f97316"
+            apiRoute="/api/demo/grooming/chat"
+            initialMessage="¡Hola! 🐾 Soy el asistente de K9 Elite Grooming. ¿Quieres agendar una cita o conocer nuestros servicios?"
+            suggestedChips={['📅 Agendar cita', '🐕 Servicios y precios', '🚗 Servicio a domicilio', '📍 Ubicación']}
+          />
+        </div>
+      </section>
+
+      {/* Dashboard */}
+      <div id="panel-admin" className="space-y-8 max-w-7xl mx-auto">
       <p className="text-slate-500 text-sm">{BRAND_GROOMING.nombre} — resumen del día</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -191,6 +223,7 @@ export default function GroomingDashboardPage() {
           </ResponsiveContainer>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
