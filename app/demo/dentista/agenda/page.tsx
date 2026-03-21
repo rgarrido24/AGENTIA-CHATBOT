@@ -30,6 +30,17 @@ const TIPOS: TipoCita[] = [
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
+type AgendaForm = {
+  pacienteId: string;
+  dentista: string;
+  fecha: string;
+  hora: string;
+  duracion: number;
+  tipo: TipoCita;
+  costo: number;
+  notas: string;
+};
+
 export default function DentistaAgendaPage() {
   const { citas, addCita, pacientes } = useDentista();
   const getP = (id: string) => pacientes.find((x) => x.id === id);
@@ -43,13 +54,13 @@ export default function DentistaAgendaPage() {
     [weekStart]
   );
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<AgendaForm>({
     pacienteId: 'p1',
     dentista: DENTISTAS[0]!.nombre,
     fecha: HOY_DENT,
     hora: '10:00',
     duracion: 45,
-    tipo: 'Revisión' as TipoCita,
+    tipo: 'Revisión',
     costo: 350,
     notas: '',
   });

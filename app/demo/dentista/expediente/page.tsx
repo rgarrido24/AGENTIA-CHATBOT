@@ -19,6 +19,18 @@ import Odontograma from '../components/Odontograma';
 
 const ACCENT = '#0284c7';
 
+type NuevaConsultaForm = {
+  dentista: string;
+  motivo: string;
+  diagnostico: string;
+  tratamientoRealizado: string;
+  tratamientoPendiente: string;
+  notasEvolucion: string;
+  proximaCita: string;
+  costo: number;
+  pagado: number;
+};
+
 function ExpedienteInner() {
   const sp = useSearchParams();
   const { pacientes, consultas, addConsulta } = useDentista();
@@ -43,7 +55,7 @@ function ExpedienteInner() {
   const odo = selId ? MOCK_ODONTOGRAMAS[selId] : undefined;
   const hist = selId ? consultasDePaciente(consultas, selId) : [];
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<NuevaConsultaForm>({
     dentista: DENTISTAS[0]!.nombre,
     motivo: '',
     diagnostico: '',

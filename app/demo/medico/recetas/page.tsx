@@ -10,8 +10,8 @@ export default function MedicoRecetasPage() {
   const { pacientes, recetasHistorial, addReceta } = useMedico();
   const [pacId, setPacId] = useState('pm1');
   const [fecha, setFecha] = useState(HOY_MED);
-  const [medico, setMedico] = useState(MEDICOS[0]!.nombre);
-  const [cieCode, setCieCode] = useState(CIE10_COMUNES[0]!.code);
+  const [medico, setMedico] = useState<string>(MEDICOS[0]!.nombre);
+  const [cieCode, setCieCode] = useState<string>(CIE10_COMUNES[0]!.code);
   const [diagnostico, setDiagnostico] = useState('Control de hipertensión arterial');
   const [indicaciones, setIndicaciones] = useState('Dieta baja en sodio. Actividad física moderada.');
   const [diasReposo, setDiasReposo] = useState(0);

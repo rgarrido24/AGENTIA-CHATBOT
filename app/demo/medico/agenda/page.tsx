@@ -30,6 +30,17 @@ const TIPOS: TipoCitaMed[] = [
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
+type MedicoAgendaForm = {
+  pacienteId: string;
+  medico: string;
+  fecha: string;
+  hora: string;
+  duracion: number;
+  tipo: TipoCitaMed;
+  costo: number;
+  notas: string;
+};
+
 export default function MedicoAgendaPage() {
   const { citas, addCita, pacientes } = useMedico();
   const getP = (id: string) => pacientes.find((x) => x.id === id);
@@ -43,13 +54,13 @@ export default function MedicoAgendaPage() {
     [weekStart]
   );
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<MedicoAgendaForm>({
     pacienteId: 'pm1',
     medico: MEDICOS[0]!.nombre,
     fecha: HOY_MED,
     hora: '10:00',
     duracion: 30,
-    tipo: 'Consulta' as TipoCitaMed,
+    tipo: 'Consulta',
     costo: 500,
     notas: '',
   });

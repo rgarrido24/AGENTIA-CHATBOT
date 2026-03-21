@@ -76,6 +76,26 @@ function VitalsTable({ sv }: { sv: SignosVitales }) {
   );
 }
 
+type NuevaConsultaMedicaForm = {
+  medico: string;
+  motivo: string;
+  diagnostico: string;
+  tratamientoRealizado: string;
+  tratamientoPendiente: string;
+  notasEvolucion: string;
+  proximaCita: string;
+  costo: number;
+  pagado: number;
+  pesoKg: number;
+  tallaCm: number;
+  pas: number;
+  pad: number;
+  fc: number;
+  temp: number;
+  spo2: number;
+  glucosa: number;
+};
+
 function buildSignos(partial: {
   pesoKg: number;
   tallaCm: number;
@@ -146,7 +166,7 @@ function ExpedienteInner() {
     }));
   }, [hist]);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<NuevaConsultaMedicaForm>({
     medico: MEDICOS[0]!.nombre,
     motivo: '',
     diagnostico: '',

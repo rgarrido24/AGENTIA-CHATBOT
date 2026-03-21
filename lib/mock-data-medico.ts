@@ -240,10 +240,10 @@ const nombres: string[] = [
 ];
 
 const especialidadesPorPaciente: EspecialidadDemo[] = [
-  ...Array.from<EspecialidadDemo>({ length: 8 }, () => 'general'),
-  ...Array.from<EspecialidadDemo>({ length: 5 }, () => 'ginecologia'),
-  ...Array.from<EspecialidadDemo>({ length: 4 }, () => 'cardiologia'),
-  ...Array.from<EspecialidadDemo>({ length: 3 }, () => 'pediatria'),
+  ...Array.from({ length: 8 }, (): EspecialidadDemo => 'general'),
+  ...Array.from({ length: 5 }, (): EspecialidadDemo => 'ginecologia'),
+  ...Array.from({ length: 4 }, (): EspecialidadDemo => 'cardiologia'),
+  ...Array.from({ length: 3 }, (): EspecialidadDemo => 'pediatria'),
 ];
 
 const medicoPorEsp: Record<EspecialidadDemo, string> = {

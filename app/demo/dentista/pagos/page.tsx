@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type MouseEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { HOY_DENT } from '@/lib/mock-data-dentista';
@@ -144,7 +144,10 @@ export default function PagosPage() {
       <AnimatePresence>
         {modal && (
           <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setModal(false)}>
-            <motion.div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0f1624] p-6" onClick={(e) => e.stopPropagation()}>
+            <motion.div
+              className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0f1624] p-6"
+              onClick={(e: MouseEvent) => e.stopPropagation()}
+            >
               <div className="flex justify-between mb-4">
                 <h2 className="font-semibold">Registrar pago</h2>
                 <button type="button" onClick={() => setModal(false)}>

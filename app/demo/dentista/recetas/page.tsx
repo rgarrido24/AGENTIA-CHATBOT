@@ -10,7 +10,7 @@ export default function RecetasPage() {
   const { pacientes, recetasHistorial, addReceta } = useDentista();
   const [pacId, setPacId] = useState('p1');
   const [fecha, setFecha] = useState(HOY_DENT);
-  const [dentista, setDentista] = useState(DENTISTAS[0]!.nombre);
+  const [dentista, setDentista] = useState<string>(DENTISTAS[0]!.nombre);
   const [diagnostico, setDiagnostico] = useState('Control post-tratamiento');
   const [indicaciones, setIndicaciones] = useState('Tomar con alimentos. Reposo 24h.');
   const [meds, setMeds] = useState([
