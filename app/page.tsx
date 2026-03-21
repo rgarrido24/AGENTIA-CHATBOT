@@ -9,6 +9,7 @@ import {
   Clock,
   GraduationCap,
   Scissors,
+  Sparkles,
   UtensilsCrossed,
   Zap,
 } from 'lucide-react';
@@ -142,7 +143,7 @@ export default function LandingPage() {
           <section className="mb-24">
             <h2 className="text-2xl font-bold mb-2 tracking-wide">Portafolio de Demos</h2>
             <p className="text-slate-400 text-sm mb-8">Explora casos de uso reales con IA conversacional</p>
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {/* 1 — Barbería */}
               <Link href="/demo/barber" className="block group">
                 <article
@@ -316,6 +317,51 @@ export default function LandingPage() {
                     ))}
                   </div>
                   <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-red-300">
+                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </article>
+              </Link>
+
+              {/* 5 — Spa & Estética */}
+              <Link href="/demo/spa" className="block group">
+                <article
+                  className="rounded-xl p-7 transition-all duration-300 h-full"
+                  style={{
+                    background: 'rgba(147, 51, 234, 0.1)',
+                    border: '1px solid rgba(147, 51, 234, 0.4)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 0 32px rgba(147, 51, 234, 0.1)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(236, 72, 153, 0.55)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(147, 51, 234, 0.22)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(147, 51, 234, 0.4)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(147, 51, 234, 0.1)';
+                  }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                    style={{ background: 'rgba(147, 51, 234, 0.22)', border: '1px solid rgba(236, 72, 153, 0.45)' }}
+                  >
+                    <Sparkles className="w-6 h-6 text-fuchsia-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Spa &amp; Estética</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Agenda semanal, clientes VIP, servicios y recordatorios; dashboard con KPIs y chat IA para recepción.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {['📅 Agenda', '💜 KPIs', '✨ Servicios', '🤖 Chat IA'].map((chip) => (
+                      <span
+                        key={chip}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-fuchsia-300">
                     Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </span>
                 </article>
