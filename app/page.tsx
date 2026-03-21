@@ -11,6 +11,7 @@ import {
   Scissors,
   PawPrint,
   Sparkles,
+  Stethoscope,
   UtensilsCrossed,
   Zap,
 } from 'lucide-react';
@@ -408,6 +409,51 @@ export default function LandingPage() {
                     ))}
                   </div>
                   <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-orange-300">
+                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </article>
+              </Link>
+
+              {/* 7 — Clínica Dental */}
+              <Link href="/demo/dentista" className="block group">
+                <article
+                  className="rounded-xl p-7 transition-all duration-300 h-full"
+                  style={{
+                    background: 'rgba(2, 132, 199, 0.1)',
+                    border: '1px solid rgba(2, 132, 199, 0.45)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 0 32px rgba(2, 132, 199, 0.1)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(56, 189, 248, 0.75)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(2, 132, 199, 0.22)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(2, 132, 199, 0.45)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(2, 132, 199, 0.1)';
+                  }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                    style={{ background: 'rgba(2, 132, 199, 0.22)', border: '1px solid rgba(56, 189, 248, 0.5)' }}
+                  >
+                    <Stethoscope className="w-6 h-6 text-sky-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Clínica Dental</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Expediente clínico con odontograma, recetas PDF, agenda por dentista y cobranza.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {['🦷 Expediente', '💊 Recetas PDF', '📅 Agenda', '💰 Pagos'].map((chip) => (
+                      <span
+                        key={chip}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-sky-300">
                     Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </span>
                 </article>
