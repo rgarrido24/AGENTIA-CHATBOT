@@ -15,6 +15,7 @@ import {
   MessageCircle,
   Moon,
   Pill,
+  Settings,
   Sun,
   Users,
   X,
@@ -33,6 +34,7 @@ const NAV = [
   { href: '/demo/medico/recordatorios', label: 'Recordatorios', icon: Bell },
   { href: '/demo/medico/pagos', label: 'Honorarios', icon: CreditCard },
   { href: '/demo/medico/chat', label: 'Asistente IA', icon: MessageCircle },
+  { href: '/demo/medico/configuracion', label: 'Configuración', icon: Settings },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {
@@ -44,6 +46,7 @@ const TITLE_MAP: Record<string, string> = {
   '/demo/medico/recordatorios': 'Recordatorios',
   '/demo/medico/pagos': 'Honorarios',
   '/demo/medico/chat': 'Asistente IA',
+  '/demo/medico/configuracion': 'Configuración',
 };
 
 function ShellInner({ children }: { children: React.ReactNode }) {

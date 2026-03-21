@@ -13,6 +13,7 @@ import {
   MessageCircle,
   Moon,
   Pill,
+  Settings,
   Stethoscope,
   Sun,
   Users,
@@ -31,6 +32,7 @@ const NAV = [
   { href: '/demo/dentista/recetas', label: 'Recetas', icon: Pill },
   { href: '/demo/dentista/pagos', label: 'Pagos', icon: CreditCard },
   { href: '/demo/dentista/chat', label: 'Asistente IA', icon: MessageCircle },
+  { href: '/demo/dentista/configuracion', label: 'Configuración', icon: Settings },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {
@@ -41,6 +43,7 @@ const TITLE_MAP: Record<string, string> = {
   '/demo/dentista/recetas': 'Recetas',
   '/demo/dentista/pagos': 'Pagos',
   '/demo/dentista/chat': 'Asistente IA',
+  '/demo/dentista/configuracion': 'Configuración',
 };
 
 function ShellInner({ children }: { children: React.ReactNode }) {
