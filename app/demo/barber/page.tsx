@@ -284,6 +284,13 @@ function CheckoutSeguro({ onPagar, disabled }: { onPagar: () => void; disabled?:
   );
 }
 
+const STATS_BARBER = [
+  { label: 'Citas hoy', value: 8, suffix: '', icon: '📅', color: '#0d9488' },
+  { label: 'Próxima cita', value: '11:30am', suffix: '', icon: '⏰', color: '#3b82f6' },
+  { label: 'Ingresos del día', value: 1240, suffix: '$', icon: '💰', color: '#22c55e' },
+  { label: 'Clientes nuevos', value: 3, suffix: '', icon: '⭐', color: '#a855f7' },
+];
+
 export default function DemoBarberPage() {
   const config = getStoredConfig() || getDefaultConfig();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -476,7 +483,88 @@ export default function DemoBarberPage() {
   };
 
   return (
-    <div className={`${styles.page} flex h-screen w-full overflow-hidden`}>
+    <div className={`${styles.page} flex flex-col w-full min-h-screen overflow-y-auto`}>
+      {/* ── HERO SECTION ── */}
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center px-4 py-10 min-h-[70vh]">
+        {/* Columna izquierda */}
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <span className="text-green-400 text-sm font-medium">IA activa — Responde en segundos</span>
+          </div>
+
+          <h1 className="text-4xl font-bold text-white leading-tight">
+            Prueba el asistente de
+            <br />
+            <span style={{ color: '#0d9488' }}>Barbería El Estilo</span>
+          </h1>
+
+          <p className="text-slate-400 text-lg">
+            Escríbele algo al chat — intenta agendar una cita y ve cómo el sistema detecta disponibilidad en tiempo
+            real y ofrece alternativas automáticamente.
+          </p>
+
+          <ul className="flex flex-col gap-3">
+            {[
+              'Detecta horarios ocupados automáticamente',
+              'Ofrece alternativas cuando no hay disponibilidad',
+              'La cita aparece en el calendario al instante',
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-3 text-slate-300">
+                <span className="text-green-400 font-bold">✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <button
+            type="button"
+            onClick={() => document.getElementById('panel-barber')?.scrollIntoView({ behavior: 'smooth' })}
+            className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 w-fit text-sm"
+          >
+            Ver calendario en vivo ↓
+          </button>
+        </div>
+
+        {/* Columna derecha — chat existente adaptado */}
+        <div className="flex justify-center items-center">
+          {/* AQUÍ NO TOCAR — el chat existente se mueve aquí solo si está suelto, si no déjalo donde está */}
+        </div>
+      </div>
+
+      {/* ── SEPARADOR ── */}
+      <div id="panel-barber" className="relative z-10 border-t border-white/10 px-6 py-6 mt-4">
+        <div className="flex items-center gap-3 mb-1">
+          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          <h2 className="text-xl font-semibold text-white">Calendario en vivo</h2>
+          <span className="text-xs px-2 py-0.5 rounded-full border bg-teal-500/20 text-teal-400 border-teal-500/30">
+            Actualización en tiempo real
+          </span>
+        </div>
+        <p className="text-slate-400 text-sm">
+          Cuando el chat agenda una cita, aparece aquí automáticamente. Pruébalo desde el teléfono de arriba.
+        </p>
+      </div>
+
+      {/* ── 4 KPI CARDS ── */}
+      <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4 px-6 pb-6">
+        {STATS_BARBER.map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-xl border border-white/10 bg-white/5 backdrop-blur p-4 flex flex-col gap-1 border-l-4"
+            style={{ borderLeftColor: stat.color }}
+          >
+            <span className="text-2xl">{stat.icon}</span>
+            <span className="text-2xl font-bold text-white">
+              {stat.suffix}
+              {stat.value}
+            </span>
+            <span className="text-xs text-slate-400">{stat.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── CONTENIDO EXISTENTE DESDE AQUÍ — NO TOCAR ── */}
       <div className={styles.meshBg} aria-hidden />
       <div className={`${styles.content} flex flex-1 min-w-0 gap-6 p-6`}>
         {/* ---------- Móvil: header + tabs + chat o agenda ---------- */}
