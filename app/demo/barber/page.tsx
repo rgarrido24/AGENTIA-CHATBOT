@@ -1,14 +1,17 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { CalendarEvent } from './CalendarDemo';
+import PhoneMockup from '@/components/PhoneMockup';
 import { getStoredConfig, getDefaultConfig, getDuracionMinutos } from '@/src/lib/demo-config';
+import type { DemoBusinessConfig } from '@/src/lib/demo-config';
 import styles from './demo-barber.module.css';
 import HeroPortada from './HeroPortada';
+import { AnimatedNumber } from '@/app/demo/cobranza/components/AnimatedNumber';
+import { useBarber } from './barber-context';
 
 const CalendarDemo = dynamic(() => import('./CalendarDemo'), { ssr: false });
 
@@ -167,7 +170,7 @@ function GalleryPlaceholder() {
 }
 
 function MapPreviewBlock() {
-  const [config, setConfig] = useState<ReturnType<typeof getStoredConfig>>(null);
+  const [config, setConfig] = useState<DemoBusinessConfig | null>(null);
   useEffect(() => {
     setConfig(getStoredConfig() || getDefaultConfig());
   }, []);
@@ -228,7 +231,11 @@ function ChatHeaderWhatsApp({ loading, withIslandPadding }: { loading: boolean; 
           {loading ? (
             <span className="inline-flex items-center gap-0.5">
               Escribiendo
-              <span className={styles.typingDots}><span>.</span><span>.</span><span>.</span></span>
+              <span className={styles.typingDots}>
+                <span>.</span>
+                <span>.</span>
+                <span>.</span>
+              </span>
             </span>
           ) : (
             'Resolutivo 24/7'
@@ -284,19 +291,41 @@ function CheckoutSeguro({ onPagar, disabled }: { onPagar: () => void; disabled?:
   );
 }
 
-const STATS_BARBER = [
-  { label: 'Citas hoy', value: 8, suffix: '', icon: '📅', color: '#0d9488' },
-  { label: 'Próxima cita', value: '11:30am', suffix: '', icon: '⏰', color: '#3b82f6' },
-  { label: 'Ingresos del día', value: 1240, suffix: '$', icon: '💰', color: '#22c55e' },
-  { label: 'Clientes nuevos', value: 3, suffix: '', icon: '⭐', color: '#a855f7' },
-];
+function isTodayIso(iso: string): boolean {
+  const d = new Date(iso);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
+
+function nombreClienteDeTitulo(title: string): string {
+  const idx = title.indexOf(' - ');
+  return idx >= 0 ? title.slice(0, idx).trim() : title;
+}
+
+function servicioDeTitulo(title: string): string {
+  const idx = title.lastIndexOf(' - ');
+  return idx >= 0 ? title.slice(idx + 3).trim() : title;
+}
+
+function precioServicio(servicio: string, cfg: DemoBusinessConfig): number {
+  const s = cfg.services.find((x) => x.name.toLowerCase() === servicio.toLowerCase());
+  if (!s) return 0;
+  const n = parseInt(String(s.price).replace(/\D/g, ''), 10);
+  return Number.isFinite(n) ? n : 0;
+}
 
 export default function DemoBarberPage() {
-  const config = getStoredConfig() || getDefaultConfig();
+  const cfgStatic = getStoredConfig() || getDefaultConfig();
+  const [config, setConfig] = useState<DemoBusinessConfig>(cfgStatic);
+  useEffect(() => {
+    setConfig(getStoredConfig() || getDefaultConfig());
+  }, []);
+
+  const { events, setEvents, paidIds, setPaidIds, lastAddedEventId, setLastAddedEventId } = useBarber();
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [events, setEvents] = useState<CalendarEvent[]>(() => []);
   const hasSimulatedConflict = useRef(false);
   const pendingCitaDraftRef = useRef<{
     clienteNombre: string;
@@ -304,12 +333,10 @@ export default function DemoBarberPage() {
     tipoNegocio: string;
   } | null>(null);
   const offeredSlotsRef = useRef<{ start: string; end: string }[] | null>(null);
-  const [paidIds, setPaidIds] = useState<Set<string>>(new Set());
   const [showPagarButton, setShowPagarButton] = useState(false);
   const [lastCitaId, setLastCitaId] = useState<string | null>(null);
   const [lastCitaData, setLastCitaData] = useState<CitaData | null>(null);
   const [payPhone, setPayPhone] = useState('');
-  const [lastAddedEventId, setLastAddedEventId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile(768);
   const [activeTab, setActiveTab] = useState<'chat' | 'agenda'>('chat');
@@ -318,34 +345,37 @@ export default function DemoBarberPage() {
     if (!lastAddedEventId) return;
     const t = setTimeout(() => setLastAddedEventId(null), 2500);
     return () => clearTimeout(t);
-  }, [lastAddedEventId]);
+  }, [lastAddedEventId, setLastAddedEventId]);
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-  const addEvent = useCallback((cita: CitaData) => {
-    const cfg = getStoredConfig() || getDefaultConfig();
-    const durationMin = getDuracionMinutos(cita.servicio, cfg);
-    const start = new Date(cita.fechaHora);
-    const end = new Date(start.getTime() + durationMin * 60 * 1000);
-    const id = `cita-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    const color = getEventColor(cita.tipoNegocio);
-    setEvents((prev) => [
-      ...prev,
-      {
-        id,
-        title: `${cita.clienteNombre} - ${cita.servicio}`,
-        start: start.toISOString(),
-        end: end.toISOString(),
-        backgroundColor: color,
-        borderColor: color,
-        extendedProps: { tipoNegocio: cita.tipoNegocio, statusPago: 'pendiente', citaId: id },
-      },
-    ]);
-    setLastCitaId(id);
-    setLastCitaData(cita);
-    setLastAddedEventId(id);
-    setShowPagarButton(true);
-  }, []);
+  const addEvent = useCallback(
+    (cita: CitaData) => {
+      const cfg = getStoredConfig() || getDefaultConfig();
+      const durationMin = getDuracionMinutos(cita.servicio, cfg);
+      const start = new Date(cita.fechaHora);
+      const end = new Date(start.getTime() + durationMin * 60 * 1000);
+      const id = `cita-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const color = getEventColor(cita.tipoNegocio);
+      setEvents((prev) => [
+        ...prev,
+        {
+          id,
+          title: `${cita.clienteNombre} - ${cita.servicio}`,
+          start: start.toISOString(),
+          end: end.toISOString(),
+          backgroundColor: color,
+          borderColor: color,
+          extendedProps: { tipoNegocio: cita.tipoNegocio, statusPago: 'pendiente', citaId: id },
+        },
+      ]);
+      setLastCitaId(id);
+      setLastCitaData(cita);
+      setLastAddedEventId(id);
+      setShowPagarButton(true);
+    },
+    [setEvents, setLastAddedEventId]
+  );
 
   const handleSend = async () => {
     const text = input.trim();
@@ -375,10 +405,7 @@ export default function DemoBarberPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const errMsg = data?.error ?? `Error ${res.status}. Intenta de nuevo.`;
-        setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: errMsg, createdAt: Date.now() },
-      ]);
+        setMessages((prev) => [...prev, { role: 'assistant', content: errMsg, createdAt: Date.now() }]);
         return;
       }
       const reply = data?.reply ?? 'No pude procesar tu mensaje.';
@@ -444,10 +471,7 @@ export default function DemoBarberPage() {
       const msg = isAbort
         ? 'La respuesta tardó demasiado. Intenta de nuevo.'
         : 'No pudimos conectar en este momento. Intenta de nuevo en unos segundos.';
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: msg, createdAt: Date.now() },
-      ]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: msg, createdAt: Date.now() }]);
     } finally {
       setLoading(false);
     }
@@ -482,11 +506,109 @@ export default function DemoBarberPage() {
     setLastCitaData(null);
   };
 
+  const kpi = useMemo(() => {
+    const cfg = config;
+    const now = new Date();
+    const todayEv = events.filter((e) => isTodayIso(e.start) && !e.title.includes('OCUPADO'));
+    const hasData = events.some((e) => !e.title.includes('OCUPADO'));
+
+    const citasHoy = hasData ? todayEv.length : 8;
+
+    const futuras = events
+      .filter((e) => new Date(e.start) > now && !e.title.includes('OCUPADO'))
+      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+    const prox = futuras[0];
+    let proximaLabel = '11:30am · Carlos';
+    if (hasData) {
+      if (prox) {
+        const t = new Date(prox.start).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        proximaLabel = `${t} · ${nombreClienteDeTitulo(prox.title)}`;
+      } else {
+        proximaLabel = '—';
+      }
+    }
+
+    let ingresos = 1240;
+    if (hasData) {
+      ingresos = todayEv.reduce((acc, e) => {
+        const srv = servicioDeTitulo(e.title);
+        return acc + precioServicio(srv, cfg);
+      }, 0);
+    }
+
+    const confirmadas = hasData ? todayEv.filter((e) => paidIds.has(e.id)).length : 3;
+
+    return { citasHoy, proximaLabel, ingresos, confirmadas };
+  }, [events, paidIds, config]);
+
+  const chatBubbles = (
+    <>
+      {messages.length === 0 && (
+        <p className="text-center text-slate-500 text-sm py-4">Escribe para agendar tu cita.</p>
+      )}
+      <AnimatePresence initial={false}>
+        {messages.map((m, i) => (
+          <motion.div
+            key={`${i}-${m.content.slice(0, 12)}-${m.cita ? 'ticket' : ''}-${m.isLocation ? 'loc' : ''}`}
+            variants={bubbleVariants}
+            initial="initial"
+            animate="animate"
+            className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
+          >
+            <div
+              className={`${m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant} max-w-[85%] px-3 py-2 text-sm shadow-sm break-words`}
+              style={
+                m.role === 'user'
+                  ? {
+                      background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+                      marginLeft: 'auto',
+                      color: '#fff',
+                    }
+                  : {
+                      background: 'rgba(30, 41, 59, 0.95)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: 'rgba(255,255,255,0.92)',
+                    }
+              }
+            >
+              {m.content ? <span>{m.content}</span> : null}
+              {m.cita ? <TicketReservacion cita={m.cita} /> : null}
+              {m.showGallery ? <GalleryPlaceholder /> : null}
+              {m.isLocation ? <MapPreviewBlock /> : null}
+              {m.role === 'assistant' && (m.content || m.cita || m.showGallery || m.isLocation) && (
+                <div className={styles.bubbleMeta}>
+                  <span className={styles.bubbleTime}>{formatMessageTime(m.createdAt)}</span>
+                  <DoubleCheckBlue />
+                </div>
+              )}
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+      {loading && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start mb-2">
+          <div
+            className={`${styles.bubbleAssistant} rounded-[22px] rounded-bl-md px-4 py-2.5 text-sm flex items-center gap-1 max-w-[85%]`}
+            style={{ background: 'rgba(30, 41, 59, 0.95)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <span className="text-slate-400 text-xs mr-1">Escribiendo</span>
+            <span className={styles.typingDots}>
+              <span>.</span>
+              <span>.</span>
+              <span>.</span>
+            </span>
+          </div>
+        </motion.div>
+      )}
+      <div ref={messagesEndRef} />
+    </>
+  );
+
   return (
-    <div className={`${styles.page} flex flex-col w-full min-h-screen overflow-y-auto`}>
-      {/* ── HERO SECTION ── */}
-      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center px-4 py-10 min-h-[70vh]">
-        {/* Columna izquierda */}
+    <div className={`${styles.page} flex flex-col w-full min-h-screen overflow-y-auto relative`}>
+      <div className={styles.meshBg} aria-hidden />
+
+      <section className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh] px-2 md:px-6 py-12">
         <div className="flex flex-col gap-6">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
@@ -496,12 +618,12 @@ export default function DemoBarberPage() {
           <h1 className="text-4xl font-bold text-white leading-tight">
             Prueba el asistente de
             <br />
-            <span style={{ color: '#0d9488' }}>Barbería El Estilo</span>
+            <span className="text-teal-400">Barbería El Estilo</span>
           </h1>
 
           <p className="text-slate-400 text-lg">
-            Escríbele algo al chat — intenta agendar una cita y ve cómo el sistema detecta disponibilidad en tiempo
-            real y ofrece alternativas automáticamente.
+            Intenta agendar una cita — el sistema detecta horarios ocupados en tiempo real y ofrece alternativas
+            automáticamente. Pruébalo ahora.
           </p>
 
           <ul className="flex flex-col gap-3">
@@ -509,6 +631,7 @@ export default function DemoBarberPage() {
               'Detecta horarios ocupados automáticamente',
               'Ofrece alternativas cuando no hay disponibilidad',
               'La cita aparece en el calendario al instante',
+              'Confirmación automática por WhatsApp',
             ].map((item) => (
               <li key={item} className="flex items-center gap-3 text-slate-300">
                 <span className="text-green-400 font-bold">✓</span>
@@ -520,110 +643,218 @@ export default function DemoBarberPage() {
           <button
             type="button"
             onClick={() => document.getElementById('panel-barber')?.scrollIntoView({ behavior: 'smooth' })}
-            className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 w-fit text-sm"
+            className="text-slate-400 hover:text-white transition flex items-center gap-2 w-fit text-sm"
           >
             Ver calendario en vivo ↓
           </button>
         </div>
 
-        {/* Columna derecha — iPhone frame desktop */}
-        <div className="hidden w-full justify-center items-center lg:flex">
-          {!isMobile && (
-            <div className="flex flex-col items-center flex-shrink-0 w-full max-w-[380px]">
-              <div className={styles.iphoneFrame}>
-                <div className={`${styles.iphoneInner} ${styles.glassPhone} relative w-full max-w-[340px]`}>
-                  <div
-                    className={`${styles.dynamicIsland} ${loading ? styles.dynamicIslandActive : ''}`}
-                    aria-hidden
-                  >
-                    {loading && (
-                      <span className="text-[10px] text-emerald-400 font-medium">Procesando...</span>
+        <div className="flex justify-center relative z-10">
+          <PhoneMockup
+            businessName="Barbería El Estilo"
+            businessEmoji="✂️"
+            accentColor="#0d9488"
+            apiRoute="/api/demo/barber/chat"
+            initialMessage="¡Hola! ✂️ Soy el asistente de Barbería El Estilo. Intenta agendar una cita — te mostraré cómo funciono en tiempo real 😊"
+            suggestedChips={[
+              '🔴 Agendar en horario ocupado',
+              '📅 Quiero una cita para mañana',
+              '💈 ¿Qué servicios tienen?',
+              '💰 ¿Cuánto cuesta un corte?',
+            ]}
+          />
+        </div>
+      </section>
+
+      <div id="panel-barber" className="relative z-10 border-t border-white/10 px-4 md:px-6 py-6">
+        <div className="flex items-center gap-3 mb-1 flex-wrap">
+          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          <h2 className="text-xl font-semibold text-white">Panel de administración</h2>
+          <span className="text-xs px-2 py-0.5 rounded-full border bg-teal-500/20 text-teal-400 border-teal-500/30">
+            Vista interna del sistema
+          </span>
+        </div>
+        <p className="text-slate-400 text-sm">
+          Cuando el chat agenda una cita aparece en el calendario automáticamente. Pruébalo arriba.
+        </p>
+      </div>
+
+      <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:px-6 pb-6">
+        {[
+          {
+            label: 'Citas hoy',
+            color: 'text-teal-400',
+            node: <AnimatedNumber value={kpi.citasHoy} decimals={0} />,
+          },
+          {
+            label: 'Próxima cita',
+            color: 'text-blue-400',
+            node: <span className="text-lg font-bold tabular-nums leading-tight">{kpi.proximaLabel}</span>,
+          },
+          {
+            label: 'Ingresos del día',
+            color: 'text-emerald-400',
+            node: (
+              <AnimatedNumber
+                value={kpi.ingresos}
+                format={(n) =>
+                  new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(
+                    n
+                  )
+                }
+              />
+            ),
+          },
+          {
+            label: 'Confirmadas',
+            color: 'text-violet-400',
+            node: <AnimatedNumber value={kpi.confirmadas} decimals={0} />,
+          },
+        ].map((k, i) => (
+          <motion.div
+            key={k.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="rounded-xl border border-white/10 bg-white/[0.03] p-5"
+          >
+            <p className="text-slate-500 text-sm">{k.label}</p>
+            <p className={`text-2xl font-bold tabular-nums mt-1 ${k.color}`}>{k.node}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className={`${styles.content} relative z-10 flex flex-1 min-w-0 gap-6 p-4 md:p-6`}>
+        {isMobile && (
+          <>
+            <header className={styles.barberMobileHeader}>
+              <span className={styles.barberMobileHeaderTitle}>{config.businessName || 'Agentia Barber'}</span>
+              <a href={config.mapUrl} target="_blank" rel="noopener noreferrer" className={styles.barberMobileHeaderBtn}>
+                UBICACIÓN
+              </a>
+              <Link href="/admin/settings" className={styles.barberMobileHeaderBtn}>
+                CONFIGURACIÓN
+              </Link>
+            </header>
+            <div className={styles.heroMobileWrap}>
+              <HeroPortada />
+            </div>
+            <div className={styles.barberTabs}>
+              <button
+                type="button"
+                className={`${styles.barberTab} ${activeTab === 'chat' ? styles.barberTabActive : ''}`}
+                onClick={() => setActiveTab('chat')}
+              >
+                <svg className={styles.barberTabIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                CHAT
+              </button>
+              <button
+                type="button"
+                className={`${styles.barberTab} ${activeTab === 'agenda' ? styles.barberTabActive : ''}`}
+                onClick={() => setActiveTab('agenda')}
+              >
+                <svg className={styles.barberTabIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                AGENDA
+              </button>
+            </div>
+            {activeTab === 'chat' && (
+              <div className={styles.phoneFrameMinimal}>
+                <div className={styles.phoneFrameMinimalInner}>
+                  <div className={`${styles.chatDynamicIslandMobile} ${loading ? styles.dynamicIslandActive : ''}`} aria-hidden />
+                  <ChatHeaderWhatsApp loading={loading} />
+                  <div className={`${styles.mobileChatViewport} ${styles.chatWallpaper}`}>
+                    {chatBubbles}
+                    {showPagarButton && lastCitaId && (
+                      <div className="pt-2 pb-2">
+                        <p className="text-xs text-slate-400 mb-2">WhatsApp (opcional) para enviarte el acceso:</p>
+                        <input
+                          type="tel"
+                          value={payPhone}
+                          onChange={(e) => setPayPhone(e.target.value)}
+                          placeholder="Ej: 52 55 1234 5678"
+                          className="w-full rounded-xl px-3 py-2.5 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
+                        />
+                        <CheckoutSeguro onPagar={handlePagarAnticipo} />
+                      </div>
                     )}
                   </div>
-                  <ChatHeaderWhatsApp loading={loading} withIslandPadding />
-                  <div
-                    className={`h-[380px] overflow-y-auto px-3 py-4 space-y-2 ${styles.chatWallpaper}`}
-                  >
-                    {messages.length === 0 && (
-                      <p className="text-center text-slate-500 text-sm py-4">
-                        Escribe para agendar tu cita.
-                      </p>
-                    )}
-                    <AnimatePresence initial={false}>
-                      {messages.map((m, i) => (
-                        <motion.div
-                          key={`${i}-${m.content.slice(0, 12)}-${m.cita ? 'ticket' : ''}-${m.isLocation ? 'loc' : ''}`}
-                          variants={bubbleVariants}
-                          initial="initial"
-                          animate="animate"
-                          className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div
-                            className={`${m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant} max-w-[85%] px-3 py-2 text-sm shadow-sm break-words`}
-                            style={
-                              m.role === 'user'
-                                ? {
-                                    background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
-                                    marginLeft: 'auto',
-                                    color: '#fff',
-                                  }
-                                : {
-                                    background: 'rgba(30, 41, 59, 0.95)',
-                                    border: '1px solid rgba(255,255,255,0.08)',
-                                    color: 'rgba(255,255,255,0.92)',
-                                  }
-                            }
-                          >
-                            {m.content ? <span>{m.content}</span> : null}
-                            {m.cita ? <TicketReservacion cita={m.cita} /> : null}
-                            {m.showGallery ? <GalleryPlaceholder /> : null}
-                            {m.isLocation ? <MapPreviewBlock /> : null}
-                            {m.role === 'assistant' && (m.content || m.cita || m.showGallery || m.isLocation) && (
-                              <div className={styles.bubbleMeta}>
-                                <span className={styles.bubbleTime}>{formatMessageTime(m.createdAt)}</span>
-                                <DoubleCheckBlue />
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                    {loading && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex justify-start"
-                      >
-                        <div className={`${styles.bubbleAssistant} rounded-[22px] rounded-bl-md px-4 py-2.5 text-sm flex items-center gap-1`} style={{ background: 'rgba(30, 41, 59, 0.95)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                          <span className="text-slate-400 text-xs mr-1">Escribiendo</span>
-                          <span className={styles.typingDots}>
-                            <span>.</span>
-                            <span>.</span>
-                            <span>.</span>
-                          </span>
-                        </div>
-                      </motion.div>
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-                  {showPagarButton && lastCitaId && (
-                    <div
-                      className="px-3 py-3 border-t border-white/10"
-                      style={{ background: 'rgba(15, 23, 42, 0.95)' }}
-                    >
-                      <p className="text-xs text-slate-400 mb-2">
-                        WhatsApp (opcional) para enviarte el acceso a tu barbería:
-                      </p>
+                  <div className={styles.mobileChatInputWrap}>
+                    <div className="flex gap-2">
                       <input
-                        type="tel"
-                        value={payPhone}
-                        onChange={(e) => setPayPhone(e.target.value)}
-                        placeholder="Ej: 52 55 1234 5678"
-                        className="w-full rounded-xl px-3 py-2 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-3"
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                        placeholder="Escribe un mensaje..."
+                        className="flex-1 rounded-xl px-4 py-3 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
                       />
-                      <CheckoutSeguro onPagar={handlePagarAnticipo} />
+                      <button
+                        type="button"
+                        onClick={handleSend}
+                        disabled={loading}
+                        className="rounded-full p-3 text-white disabled:opacity-50 transition min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)' }}
+                        aria-label="Enviar"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                        </svg>
+                      </button>
                     </div>
-                  )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {activeTab === 'agenda' && (
+              <div className={styles.mobileAgendaColumn}>
+                <div className={styles.mobileCalendarWrap}>
+                  <CalendarDemo events={events} paidIds={paidIds} lastAddedEventId={lastAddedEventId} />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {!isMobile && (
+          <div className="flex flex-col lg:flex-row flex-1 gap-6 w-full min-w-0">
+            <div className="flex-1 flex flex-col gap-4 min-w-0 max-w-xl lg:max-w-none">
+              <HeroPortada />
+              <div className={styles.phoneFrameMinimal}>
+                <div className={styles.phoneFrameMinimalInner}>
+                  <div className={`${styles.chatDynamicIslandMobile} ${loading ? styles.dynamicIslandActive : ''}`} aria-hidden />
+                  <ChatHeaderWhatsApp loading={loading} />
+                  <div className={`h-[min(420px,50vh)] overflow-y-auto px-3 py-4 space-y-2 ${styles.chatWallpaper}`}>
+                    {chatBubbles}
+                    {showPagarButton && lastCitaId && (
+                      <div className="px-0 py-2">
+                        <p className="text-xs text-slate-400 mb-2">
+                          WhatsApp (opcional) para enviarte el acceso a tu barbería:
+                        </p>
+                        <input
+                          type="tel"
+                          value={payPhone}
+                          onChange={(e) => setPayPhone(e.target.value)}
+                          placeholder="Ej: 52 55 1234 5678"
+                          className="w-full rounded-xl px-3 py-2 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-3"
+                        />
+                        <CheckoutSeguro onPagar={handlePagarAnticipo} />
+                      </div>
+                    )}
+                  </div>
                   <div
                     className="flex gap-2 px-3 py-3 border-t border-white/10"
                     style={{ background: 'rgba(15, 23, 42, 0.95)' }}
@@ -652,240 +883,26 @@ export default function DemoBarberPage() {
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* ── SEPARADOR ── */}
-      <div id="panel-barber" className="relative z-10 border-t border-white/10 px-6 py-6 mt-4">
-        <div className="flex items-center gap-3 mb-1">
-          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-          <h2 className="text-xl font-semibold text-white">Calendario en vivo</h2>
-          <span className="text-xs px-2 py-0.5 rounded-full border bg-teal-500/20 text-teal-400 border-teal-500/30">
-            Actualización en tiempo real
-          </span>
-        </div>
-        <p className="text-slate-400 text-sm">
-          Cuando el chat agenda una cita, aparece aquí automáticamente. Pruébalo desde el teléfono de arriba.
-        </p>
-      </div>
-
-      {/* ── 4 KPI CARDS ── */}
-      <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4 px-6 pb-6">
-        {STATS_BARBER.map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-xl border border-white/10 bg-white/5 backdrop-blur p-4 flex flex-col gap-1 border-l-4"
-            style={{ borderLeftColor: stat.color }}
-          >
-            <span className="text-2xl">{stat.icon}</span>
-            <span className="text-2xl font-bold text-white">
-              {stat.suffix}
-              {stat.value}
-            </span>
-            <span className="text-xs text-slate-400">{stat.label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* ── CONTENIDO EXISTENTE DESDE AQUÍ — NO TOCAR ── */}
-      <div className={styles.meshBg} aria-hidden />
-      <div className={`${styles.content} flex flex-1 min-w-0 gap-6 p-6`}>
-        {/* ---------- Móvil: header + tabs + chat o agenda ---------- */}
-        {isMobile && (
-          <>
-            <header className={styles.barberMobileHeader}>
-              <span className={styles.barberMobileHeaderTitle}>
-                {config.businessName || 'Agentia Barber'}
-              </span>
-              <a
-                href={config.mapUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.barberMobileHeaderBtn}
-              >
-                UBICACIÓN
-              </a>
-              <Link href="/admin/settings" className={styles.barberMobileHeaderBtn}>
-                CONFIGURACIÓN
-              </Link>
-            </header>
-            <div className={styles.heroMobileWrap}>
-              <HeroPortada />
-            </div>
-            <div className={styles.barberTabs}>
-              <button
-                type="button"
-                className={`${styles.barberTab} ${activeTab === 'chat' ? styles.barberTabActive : ''}`}
-                onClick={() => setActiveTab('chat')}
-              >
-                <svg className={styles.barberTabIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                CHAT
-              </button>
-              <button
-                type="button"
-                className={`${styles.barberTab} ${activeTab === 'agenda' ? styles.barberTabActive : ''}`}
-                onClick={() => setActiveTab('agenda')}
-              >
-                <svg className={styles.barberTabIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                AGENDA
-              </button>
-            </div>
-            {activeTab === 'chat' && (
-              <div className={styles.phoneFrameMinimal}>
-                <div className={styles.phoneFrameMinimalInner}>
-                <div
-                  className={`${styles.chatDynamicIslandMobile} ${loading ? styles.dynamicIslandActive : ''}`}
-                  aria-hidden
-                />
-                <ChatHeaderWhatsApp loading={loading} />
-                <div className={`${styles.mobileChatViewport} ${styles.chatWallpaper}`}>
-                  {messages.length === 0 && (
-                    <p className="text-center text-slate-500 text-sm py-4">Escribe para agendar tu cita.</p>
-                  )}
-                  <AnimatePresence initial={false}>
-                    {messages.map((m, i) => (
-                      <motion.div
-                        key={`${i}-${m.content.slice(0, 12)}-${m.cita ? 'ticket' : ''}-${m.isLocation ? 'loc' : ''}`}
-                        variants={bubbleVariants}
-                        initial="initial"
-                        animate="animate"
-                        className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}
-                      >
-                        <div
-                          className={`${m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant} max-w-[85%] px-3 py-2 text-sm shadow-sm break-words`}
-                          style={
-                            m.role === 'user'
-                              ? {
-                                  background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
-                                  marginLeft: 'auto',
-                                  color: '#fff',
-                                }
-                              : {
-                                  background: 'rgba(30, 41, 59, 0.95)',
-                                  border: '1px solid rgba(255,255,255,0.08)',
-                                  color: 'rgba(255,255,255,0.92)',
-                                }
-                          }
-                        >
-                          {m.content ? <span>{m.content}</span> : null}
-                          {m.cita ? <TicketReservacion cita={m.cita} /> : null}
-                          {m.showGallery ? <GalleryPlaceholder /> : null}
-                          {m.isLocation ? <MapPreviewBlock /> : null}
-                          {m.role === 'assistant' && (m.content || m.cita || m.showGallery || m.isLocation) && (
-                            <div className={styles.bubbleMeta}>
-                              <span className={styles.bubbleTime}>{formatMessageTime(m.createdAt)}</span>
-                              <DoubleCheckBlue />
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                  {loading && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start mb-2">
-                      <div className={`${styles.bubbleAssistant} rounded-[22px] rounded-bl-md px-4 py-2.5 text-sm flex items-center gap-1 max-w-[85%]`} style={{ background: 'rgba(30, 41, 59, 0.95)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                        <span className="text-slate-400 text-xs mr-1">Escribiendo</span>
-                        <span className={styles.typingDots}><span>.</span><span>.</span><span>.</span></span>
-                      </div>
-                    </motion.div>
-                  )}
-                  {showPagarButton && lastCitaId && (
-                    <div className="pt-2 pb-2">
-                      <p className="text-xs text-slate-400 mb-2">WhatsApp (opcional) para enviarte el acceso:</p>
-                      <input
-                        type="tel"
-                        value={payPhone}
-                        onChange={(e) => setPayPhone(e.target.value)}
-                        placeholder="Ej: 52 55 1234 5678"
-                        className="w-full rounded-xl px-3 py-2.5 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-2"
-                      />
-                      <CheckoutSeguro onPagar={handlePagarAnticipo} />
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-                <div className={styles.mobileChatInputWrap}>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                      placeholder="Escribe un mensaje..."
-                      className="flex-1 rounded-xl px-4 py-3 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSend}
-                      disabled={loading}
-                      className="rounded-full p-3 text-white disabled:opacity-50 transition min-w-[44px] min-h-[44px] flex items-center justify-center"
-                      style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)' }}
-                      aria-label="Enviar"
-                    >
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                      </svg>
-                    </button>
-                  </div>
-                  </div>
+            <div className="flex-1 flex flex-col min-w-0 min-h-[480px]">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xl font-semibold text-white/95" style={{ fontFamily: 'Inter, sans-serif' }}>
+                  Calendario de citas
+                </h2>
+                <div className="flex items-center gap-3">
+                  <Link href="/book" className="text-xs font-medium text-emerald-400 hover:text-emerald-300 transition">
+                    Reservar cita
+                  </Link>
+                  <Link href="/admin/settings" className="text-xs font-medium text-blue-400 hover:text-blue-300 transition">
+                    Configuración
+                  </Link>
                 </div>
               </div>
-            )}
-            {activeTab === 'agenda' && (
-              <div className={styles.mobileAgendaColumn}>
-                <div className={styles.mobileCalendarWrap}>
-                  <CalendarDemo
-                    events={events}
-                    paidIds={paidIds}
-                    lastAddedEventId={lastAddedEventId}
-                  />
-                </div>
+              <div className={`flex-1 min-h-0 overflow-hidden ${styles.glassCalendar}`}>
+                <CalendarDemo events={events} paidIds={paidIds} lastAddedEventId={lastAddedEventId} />
               </div>
-            )}
-          </>
-        )}
-
-        {/* ---------- Desktop: calendario (chat en hero) ---------- */}
-        {!isMobile && (
-          <>
-        <div className="flex-1 flex flex-col min-w-0">
-          <HeroPortada />
-          <div className="flex items-center justify-between mb-3">
-            <h1
-              className="text-xl font-semibold text-white/95"
-              style={{ fontFamily: 'Inter, sans-serif' }}
-            >
-              Calendario de citas
-            </h1>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/book"
-                className="text-xs font-medium text-emerald-400 hover:text-emerald-300 transition"
-              >
-                Reservar cita
-              </Link>
-              <Link
-                href="/admin/settings"
-                className="text-xs font-medium text-blue-400 hover:text-blue-300 transition"
-              >
-                Configuración
-              </Link>
             </div>
           </div>
-          <div className={`flex-1 min-h-0 overflow-hidden ${styles.glassCalendar}`}>
-            <CalendarDemo
-              events={events}
-              paidIds={paidIds}
-              lastAddedEventId={lastAddedEventId}
-            />
-          </div>
-        </div>
-          </>
         )}
       </div>
     </div>

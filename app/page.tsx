@@ -329,8 +329,18 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Barbería</h3>
                   <p className="text-slate-400 text-sm leading-relaxed">
-                    Reservas con IA, calendario en vivo y detección de conflictos de horarios. Demo completa disponible.
+                    Agenda con IA que detecta conflictos de horario en tiempo real y ofrece alternativas automáticas.
                   </p>
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {['✂️ Agenda', '⚡ Conflictos', '👥 Clientes', '🔔 Recordatorios'].map((chip) => (
+                      <span
+                        key={chip}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
                   <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm" style={{ color: '#5eead4' }}>
                     Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </span>
