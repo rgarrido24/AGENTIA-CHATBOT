@@ -39,6 +39,62 @@ function addMinutes(iso: string, minutes: number): string {
   return d.toISOString();
 }
 
+/**
+ * Propone dos horarios adyacentes al solicitado: 1 h antes y 1 h después (ej. 3pm → 2pm y 4pm).
+ * Si alguno choca con eventos existentes, intenta rellenar con slots libres cercanos.
+ */
+export function proposeAdjacentAlternatives(
+  requestedStartIso: string,
+  durationMinutes: number,
+  events: SlotRange[],
+  capacidadSimultanea: number
+): { start: string; end: string }[] {
+  const addM = (iso: string, m: number) => {
+    const d = new Date(iso);
+    d.setUTCMinutes(d.getUTCMinutes() + m);
+    return d.toISOString();
+  };
+  const candidates = [addM(requestedStartIso, -60), addM(requestedStartIso, 60)];
+  const out: { start: string; end: string }[] = [];
+  const seen = new Set<string>();
+  for (const startIso of candidates) {
+    const endIso = addM(startIso, durationMinutes);
+    const minOfDay = minutesOfDayMexico(startIso);
+    if (minOfDay < DAY_START || minOfDay + durationMinutes > DAY_END) continue;
+    if (!isSlotAvailable(events, startIso, endIso, capacidadSimultanea)) continue;
+    if (seen.has(startIso)) continue;
+    seen.add(startIso);
+    out.push({ start: startIso, end: endIso });
+  }
+  let probe = new Date(requestedStartIso);
+  for (let k = 0; k < 80 && out.length < 2; k++) {
+    const startIso = probe.toISOString();
+    const endIso = addM(startIso, durationMinutes);
+    const minOfDay = minutesOfDayMexico(startIso);
+    if (minOfDay >= DAY_START && minOfDay + durationMinutes <= DAY_END) {
+      if (isSlotAvailable(events, startIso, endIso, capacidadSimultanea) && !seen.has(startIso)) {
+        seen.add(startIso);
+        out.push({ start: startIso, end: endIso });
+      }
+    }
+    probe = new Date(probe.getTime() + SLOT_STEP * 60 * 1000);
+  }
+  return out.slice(0, 2);
+}
+
+function minutesOfDayMexico(iso: string): number {
+  const d = new Date(iso);
+  const parts = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false,
+    timeZone: 'America/Mexico_City',
+  }).formatToParts(d);
+  const h = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10);
+  const min = parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
+  return h * 60 + min;
+}
+
 export function getNextAvailableSlots(
   events: SlotRange[],
   fromIso: string,

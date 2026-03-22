@@ -291,6 +291,12 @@ export default function DemoBarberPage() {
   const [loading, setLoading] = useState(false);
   const [events, setEvents] = useState<CalendarEvent[]>(() => []);
   const hasSimulatedConflict = useRef(false);
+  const pendingCitaDraftRef = useRef<{
+    clienteNombre: string;
+    servicio: string;
+    tipoNegocio: string;
+  } | null>(null);
+  const offeredSlotsRef = useRef<{ start: string; end: string }[] | null>(null);
   const [paidIds, setPaidIds] = useState<Set<string>>(new Set());
   const [showPagarButton, setShowPagarButton] = useState(false);
   const [lastCitaId, setLastCitaId] = useState<string | null>(null);
@@ -355,6 +361,8 @@ export default function DemoBarberPage() {
             services: config.services,
           },
           isFirstAppointmentRequest: isFirstAppointmentRequest || undefined,
+          pendingCitaDraft: pendingCitaDraftRef.current ?? undefined,
+          offeredSlots: offeredSlotsRef.current ?? undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -370,6 +378,11 @@ export default function DemoBarberPage() {
       const cita = data?.cita ?? null;
       const showGallery = !!data?.showGallery;
       const conflictRejectedSlot = data?.conflictRejectedSlot as { start: string; end: string } | undefined;
+      const offeredSlots = data?.offeredSlots as { start: string; end: string }[] | undefined;
+      const pendingCitaDraft = data?.pendingCitaDraft as
+        | { clienteNombre: string; servicio: string; tipoNegocio: string }
+        | undefined;
+      const clearPendingAlternatives = !!data?.clearPendingAlternatives;
 
       if (conflictRejectedSlot?.start && conflictRejectedSlot?.end) {
         hasSimulatedConflict.current = true;
@@ -386,6 +399,14 @@ export default function DemoBarberPage() {
             extendedProps: { tipoNegocio: 'Barbería', statusPago: 'ocupado', citaId: id },
           },
         ]);
+      }
+      if (offeredSlots && offeredSlots.length >= 2 && pendingCitaDraft) {
+        offeredSlotsRef.current = offeredSlots;
+        pendingCitaDraftRef.current = pendingCitaDraft;
+      }
+      if (cita || clearPendingAlternatives) {
+        offeredSlotsRef.current = null;
+        pendingCitaDraftRef.current = null;
       }
 
       const displayContent = cita ? stripConfirmacionCita(reply) : reply;
