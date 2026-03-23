@@ -9,4 +9,12 @@
   <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/dentista</loc><priority>0.8</priority></url>
   <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/medico</loc><priority>0.8</priority></url>
   <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/nutricion</loc><priority>0.8</priority></url>
+  <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/taller</loc><priority>0.8</priority></url>
+  <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/taller/ordenes</loc><priority>0.7</priority></url>
+  <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/taller/vehiculos</loc><priority>0.7</priority></url>
+  <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/taller/presupuestos</loc><priority>0.7</priority></url>
+  <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/taller/inventario</loc><priority>0.7</priority></url>
+  <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/taller/caja</loc><priority>0.7</priority></url>
+  <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/taller/recordatorios</loc><priority>0.7</priority></url>
+  <url><loc>https://agentia-chatbot-ventas.onrender.com/demo/taller/chat</loc><priority>0.7</priority></url>
 </urlset>

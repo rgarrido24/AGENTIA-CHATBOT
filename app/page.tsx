@@ -15,6 +15,7 @@ import {
   Salad,
   Stethoscope,
   UtensilsCrossed,
+  Wrench,
 } from 'lucide-react';
 
 // ─── Animated Counter ─────────────────────────────────────────────────────────
@@ -627,7 +628,47 @@ export default function LandingPage() {
                 </article>
               </Link>
 
-              {/* 9 — Nutrición & Bienestar */}
+              {/* 9 — Taller Mecánico */}
+              <Link href="/demo/taller" className="block group">
+                <article
+                  className="rounded-xl p-7 transition-all duration-300 h-full"
+                  style={{
+                    background: 'rgba(71,85,105,0.12)',
+                    border: '1px solid rgba(71,85,105,0.55)',
+                    backdropFilter: 'blur(12px)',
+                    boxShadow: '0 0 32px rgba(71,85,105,0.12)',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(100,116,139,0.75)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(71,85,105,0.25)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(71,85,105,0.55)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(71,85,105,0.12)';
+                  }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                    style={{ background: 'rgba(71,85,105,0.25)', border: '1px solid rgba(100,116,139,0.5)' }}
+                  >
+                    <Wrench className="w-6 h-6 text-slate-300" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Taller Mecánico</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Órdenes tipo taller, historial por vehículo, presupuestos PDF, inventario de refacciones, caja y recordatorios de mantenimiento con IA.
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {['🔧 Órdenes', '📄 Presupuesto PDF', '🔔 Recordatorios', '🤖 IA'].map((chip) => (
+                      <span key={chip} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">{chip}</span>
+                    ))}
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-slate-300">
+                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </article>
+              </Link>
+
+              {/* 10 — Nutrición & Bienestar */}
               <Link href="/demo/nutricion" className="block group">
                 <article
                   className="rounded-xl p-7 transition-all duration-300 h-full"
