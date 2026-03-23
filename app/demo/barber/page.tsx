@@ -1,35 +1,20 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import BarberPhoneMockup from '@/components/BarberPhoneMockup';
 import { getStoredConfig, getDefaultConfig, getDuracionMinutos } from '@/src/lib/demo-config';
 import type { DemoBusinessConfig } from '@/src/lib/demo-config';
 import styles from './demo-barber.module.css';
-import HeroPortada from './HeroPortada';
 import { AnimatedNumber } from '@/app/demo/cobranza/components/AnimatedNumber';
 import { useBarber } from './barber-context';
 import type { ChatMessage, CitaData } from './barber-chat-types';
 
 export type { CitaData } from './barber-chat-types';
 
-const CalendarDemo = dynamic(() => import('./CalendarDemo'), { ssr: false });
-
 const WELCOME_ASSISTANT =
   '¡Hola! ✂️ Soy el asistente de Barbería El Estilo. Intenta agendar una cita — escribe algo como "quiero una cita mañana" 😊';
-
-function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-  useEffect(() => {
-    const check = () => setIsMobile(typeof window !== 'undefined' && window.innerWidth < breakpoint);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, [breakpoint]);
-  return isMobile;
-}
 
 function looksLikeTimeRequest(text: string): boolean {
   const t = text.toLowerCase().trim();
@@ -127,7 +112,6 @@ export default function DemoBarberPage() {
   const [showPagarButton, setShowPagarButton] = useState<boolean>(false);
   const [lastCitaId, setLastCitaId] = useState<string | null>(null);
   const [payPhone, setPayPhone] = useState<string>('');
-  const isMobile = useIsMobile(768);
 
   useEffect(() => {
     if (!lastAddedEventId) return;
@@ -328,33 +312,6 @@ export default function DemoBarberPage() {
     return { citasHoy, proximaLabel, ingresos, confirmadas };
   }, [events, paidIds, config]);
 
-  const calendarBlock = (
-    <div className="w-full">
-      <HeroPortada config={config} />
-      <div className="flex items-center justify-between px-4 py-3">
-        <h3 className="text-lg font-semibold text-white">Calendario de citas</h3>
-        <span className="text-xs text-slate-400">Las citas del chat aparecen aquí</span>
-      </div>
-      <div className={isMobile ? styles.mobileAgendaColumn : undefined}>
-        <div
-          className={
-            isMobile
-              ? `${styles.mobileCalendarWrap} min-h-[360px]`
-              : `min-h-[480px] overflow-hidden ${styles.glassCalendar}`
-          }
-        >
-          <CalendarDemo
-            events={events}
-            paidIds={paidIds}
-            lastAddedEventId={lastAddedEventId}
-            config={config}
-            onEventAdded={addEvent}
-          />
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className={`${styles.page} flex flex-col w-full min-h-screen overflow-y-auto relative`}>
       <div className={styles.meshBg} aria-hidden />
@@ -391,13 +348,21 @@ export default function DemoBarberPage() {
             ))}
           </ul>
 
-          <button
-            type="button"
-            onClick={() => document.getElementById('panel-barber')?.scrollIntoView({ behavior: 'smooth' })}
-            className="text-slate-400 hover:text-white transition flex items-center gap-2 w-fit text-sm"
-          >
-            Ver calendario en vivo ↓
-          </button>
+          <div className="flex flex-wrap gap-3 items-center">
+            <Link
+              href="/demo/barber/agenda"
+              className="text-slate-400 hover:text-white transition flex items-center gap-2 w-fit text-sm"
+            >
+              Ver agenda semanal ↓
+            </Link>
+            <button
+              type="button"
+              onClick={() => document.getElementById('kpi-barber')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-slate-400 hover:text-white transition flex items-center gap-2 w-fit text-sm"
+            >
+              Ver métricas del día ↓
+            </button>
+          </div>
         </div>
 
         <div className="flex justify-center relative z-10">
@@ -427,20 +392,7 @@ export default function DemoBarberPage() {
         </div>
       </section>
 
-      <div id="panel-barber" className="relative z-10 border-t border-white/10 px-4 md:px-6 py-6">
-        <div className="flex items-center gap-3 mb-1 flex-wrap">
-          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-          <h2 className="text-xl font-semibold text-white">Panel de administración</h2>
-          <span className="text-xs px-2 py-0.5 rounded-full border bg-teal-500/20 text-teal-400 border-teal-500/30">
-            Vista interna del sistema
-          </span>
-        </div>
-        <p className="text-slate-400 text-sm">
-          Cuando el chat agenda una cita aparece en el calendario automáticamente. Pruébalo arriba.
-        </p>
-      </div>
-
-      <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:px-6 pb-6">
+      <div id="kpi-barber" className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 md:px-6 py-8 pb-12">
         {[
           {
             label: 'Citas hoy',
@@ -483,27 +435,6 @@ export default function DemoBarberPage() {
             <p className={`text-2xl font-bold tabular-nums mt-1 ${k.color}`}>{k.node}</p>
           </motion.div>
         ))}
-      </div>
-
-      <div className={`${styles.content} relative z-10 flex flex-1 min-w-0 gap-6 p-4 md:p-6`}>
-        {isMobile && (
-          <>
-            <header className={styles.barberMobileHeader}>
-              <span className={styles.barberMobileHeaderTitle}>{config.businessName || 'Agentia Barber'}</span>
-              <a href={config.mapUrl} target="_blank" rel="noopener noreferrer" className={styles.barberMobileHeaderBtn}>
-                UBICACIÓN
-              </a>
-              <Link href="/admin/settings" className={styles.barberMobileHeaderBtn}>
-                CONFIGURACIÓN
-              </Link>
-            </header>
-            <div className={styles.heroMobileWrap}>
-              {calendarBlock}
-            </div>
-          </>
-        )}
-
-        {!isMobile && <div className="w-full max-w-7xl mx-auto">{calendarBlock}</div>}
       </div>
     </div>
   );
