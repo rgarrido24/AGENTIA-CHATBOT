@@ -772,11 +772,9 @@ export default function DemoBarberPage() {
               </button>
             </div>
             {activeTab === 'chat' && (
-              <div className={styles.phoneFrameMinimal}>
-                <div className={styles.phoneFrameMinimalInner}>
-                  <div className={`${styles.chatDynamicIslandMobile} ${loading ? styles.dynamicIslandActive : ''}`} aria-hidden />
-                  <ChatHeaderWhatsApp loading={loading} />
-                  <div className={`${styles.mobileChatViewport} ${styles.chatWallpaper}`}>
+              <div className="rounded-2xl border border-white/10 overflow-hidden flex flex-col w-full max-w-lg mx-auto bg-slate-900/50 shadow-lg">
+                <ChatHeaderWhatsApp loading={loading} />
+                <div className={`${styles.mobileChatViewport} ${styles.chatWallpaper}`}>
                     {chatBubbles}
                     {showPagarButton && lastCitaId && (
                       <div className="pt-2 pb-2">
@@ -791,30 +789,29 @@ export default function DemoBarberPage() {
                         <CheckoutSeguro onPagar={handlePagarAnticipo} />
                       </div>
                     )}
-                  </div>
-                  <div className={styles.mobileChatInputWrap}>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Escribe un mensaje..."
-                        className="flex-1 rounded-xl px-4 py-3 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSend}
-                        disabled={loading}
-                        className="rounded-full p-3 text-white disabled:opacity-50 transition min-w-[44px] min-h-[44px] flex items-center justify-center"
-                        style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)' }}
-                        aria-label="Enviar"
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                        </svg>
-                      </button>
-                    </div>
+                </div>
+                <div className={styles.mobileChatInputWrap}>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                      placeholder="Escribe un mensaje..."
+                      className="flex-1 rounded-xl px-4 py-3 text-sm bg-slate-800/80 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSend}
+                      disabled={loading}
+                      className="rounded-full p-3 text-white disabled:opacity-50 transition min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)' }}
+                      aria-label="Enviar"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -833,11 +830,9 @@ export default function DemoBarberPage() {
           <div className="flex flex-col lg:flex-row flex-1 gap-6 w-full min-w-0">
             <div className="flex-1 flex flex-col gap-4 min-w-0 max-w-xl lg:max-w-none">
               <HeroPortada />
-              <div className={styles.phoneFrameMinimal}>
-                <div className={styles.phoneFrameMinimalInner}>
-                  <div className={`${styles.chatDynamicIslandMobile} ${loading ? styles.dynamicIslandActive : ''}`} aria-hidden />
-                  <ChatHeaderWhatsApp loading={loading} />
-                  <div className={`h-[min(420px,50vh)] overflow-y-auto px-3 py-4 space-y-2 ${styles.chatWallpaper}`}>
+              <div className="rounded-2xl border border-white/10 overflow-hidden flex flex-col w-full max-w-lg bg-slate-900/50 shadow-lg">
+                <ChatHeaderWhatsApp loading={loading} />
+                <div className={`h-[min(420px,50vh)] overflow-y-auto px-3 py-4 space-y-2 ${styles.chatWallpaper}`}>
                     {chatBubbles}
                     {showPagarButton && lastCitaId && (
                       <div className="px-0 py-2">
@@ -880,7 +875,6 @@ export default function DemoBarberPage() {
                       </svg>
                     </button>
                   </div>
-                </div>
               </div>
             </div>
 

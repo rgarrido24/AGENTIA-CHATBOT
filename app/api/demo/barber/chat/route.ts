@@ -2,11 +2,31 @@ import { streamText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { NextRequest } from 'next/server';
 
-const STAFF = `Eres el asistente IA interno de Barbería El Estilo ✂️ (demo Agentia).
+function dateContextBlock(): string {
+  const d = new Date();
+  return `FECHA Y HORA ACTUAL:
+Hoy es: ${d.toLocaleDateString('es-MX', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })}
+Hora actual: ${d.toLocaleTimeString('es-MX', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })}
+
+Cuando el cliente diga "mañana", "pasado mañana", "esta semana", "el fin de semana" etc., calcúlalo automáticamente basándote en la fecha de hoy.
+Nunca pidas que el cliente escriba la fecha exacta.
+
+`;
+}
+
+const STAFF_BODY = `Eres el asistente IA interno de Barbería El Estilo ✂️ (demo Agentia).
 Ayudas al personal con agenda del día, ingresos aproximados, recordatorios por WhatsApp y seguimiento de clientes.
 Responde en español, tono directo y profesional. Sé breve (máx. 2 párrafos). Si piden texto listo para WhatsApp, inclúyelo.`;
 
-const CLIENTE = `Eres el asistente IA de Barbería El Estilo ✂️
+const CLIENTE_BODY = `Eres el asistente IA de Barbería El Estilo ✂️
 Ayudas a los clientes a agendar citas y resolver dudas.
 
 SERVICIOS Y PRECIOS:
@@ -48,6 +68,38 @@ Al confirmar mostrar resumen completo con precio.
 Responde en español, amigable y directo.
 Máximo 3 párrafos por respuesta.`;
 
+const PAYMENT_CLIENTE =
+  '\nPASARELA DE PAGO (después de confirmar cita):\n' +
+  'Cuando confirmes una cita, SIEMPRE termina con:\n\n' +
+  '"✅ ¡Cita confirmada!\n' +
+  '📋 Resumen:\n' +
+  '- Nombre: {nombre}\n' +
+  '- Servicio: {servicio} — ${precio} MXN\n' +
+  '- Fecha: {fecha} a las {hora}\n\n' +
+  '¿Te gustaría apartar tu lugar con un anticipo? \n' +
+  'No es obligatorio, pero garantiza tu cita 💳\n\n' +
+  '💰 Pagar anticipo (50%): ${precio/2} MXN → [Link de pago]\n' +
+  '✅ Solo confirmar sin pago: Tu cita queda agendada igual\n\n' +
+  '¿Qué prefieres?"\n\n' +
+  'Cuando el cliente elija "solo confirmar": \n' +
+  '"¡Perfecto! Tu cita está confirmada ✂️ \n' +
+  'Te esperamos el {fecha} a las {hora}. \n' +
+  'Si necesitas cambiar algo escríbenos. ¡Hasta pronto!"\n\n' +
+  'Cuando el cliente elija pagar:\n' +
+  '"¡Excelente! Te mando el link de pago de MercadoPago:\n' +
+  '🔗 [En producción aquí va el link real de MP]\n' +
+  'Una vez que pagues recibirás confirmación por WhatsApp.\n' +
+  '⚠️ MODO DEMO: En producción se genera el cobro \n' +
+  'automáticamente vía API de MercadoPago."\n';
+
+function buildStaffSystem(): string {
+  return dateContextBlock() + STAFF_BODY;
+}
+
+function buildClienteSystem(): string {
+  return dateContextBlock() + CLIENTE_BODY + PAYMENT_CLIENTE;
+}
+
 type Msg = { role: 'user' | 'assistant'; content: string };
 
 export async function POST(req: NextRequest) {
@@ -77,7 +129,7 @@ export async function POST(req: NextRequest) {
     }
 
     const google = createGoogleGenerativeAI({ apiKey });
-    const system = mode === 'staff' ? STAFF : CLIENTE;
+    const system = mode === 'staff' ? buildStaffSystem() : buildClienteSystem();
 
     const coreMessages = [
       ...history
