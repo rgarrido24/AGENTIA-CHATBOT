@@ -7,6 +7,8 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { motion } from 'framer-motion';
 import styles from './demo-barber.module.css';
 import type { EventContentArg } from '@fullcalendar/core';
+import type { DemoBusinessConfig } from '@/src/lib/demo-config';
+import type { CitaData } from './barber-chat-types';
 
 export type CalendarEvent = {
   id: string;
@@ -31,11 +33,17 @@ export default function CalendarDemo({
   events,
   paidIds,
   lastAddedEventId,
+  config: _config,
+  onEventAdded: _onEventAdded,
 }: {
   events: CalendarEvent[];
   paidIds: Set<string>;
   lastAddedEventId?: string | null;
+  config?: DemoBusinessConfig;
+  onEventAdded?: (c: CitaData) => void;
 }) {
+  void _config;
+  void _onEventAdded;
   return (
     <div className={styles.calendarWrap}>
       <FullCalendar

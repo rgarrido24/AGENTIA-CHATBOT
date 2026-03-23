@@ -8,12 +8,16 @@ import {
 } from '@/src/lib/demo-config';
 import styles from './demo-barber.module.css';
 
-export default function HeroPortada() {
-  const [config, setConfig] = useState<DemoBusinessConfig | null>(null);
+export default function HeroPortada({ config: configProp }: { config?: DemoBusinessConfig }) {
+  const [internal, setInternal] = useState<DemoBusinessConfig | null>(null);
 
   useEffect(() => {
-    setConfig(getStoredConfig() || getDefaultConfig());
-  }, []);
+    if (!configProp) {
+      setInternal(getStoredConfig() || getDefaultConfig());
+    }
+  }, [configProp]);
+
+  const config = configProp ?? internal;
 
   if (!config) return null;
 
