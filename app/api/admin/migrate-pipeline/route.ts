@@ -12,7 +12,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: false, error: 'ADMIN_PASSWORD no configurado' }, { status: 503 });
   }
   if (key !== secret) {
-    return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 });
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'No autorizado',
+        debug: {
+          keyRecibida: key,
+          keyLength: key?.length,
+          secretLength: secret?.length,
+          match: key === secret,
+        },
+      },
+      { status: 401 }
+    );
   }
 
   try {
