@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
+/** Documento `prospectos` tal como lo devuelve el driver (tipado explícito para filtros/updates). */
+type ProspectoDoc = {
+  _id: ObjectId;
+  nombre?: string;
+  telefono?: string;
+  telefonoNorm?: string;
+  trackToken?: string;
+  giro?: string;
+  status?: string;
+  contactadoAt?: Date | null;
+  contactadoPor?: string;
+  asignadoA?: string;
+};
+
 // ─── Plantillas de mensaje ────────────────────────────────────────────────────
 // Cada función recibe: nombre del negocio, nombre del vendedor, link de seguimiento
 
@@ -97,14 +111,17 @@ export async function POST(request: NextRequest) {
     const db = await getMongoDb();
     const limitedIds = batchSize && batchSize > 0 ? ids.slice(0, batchSize) : ids;
     const oids = limitedIds.map((id) => new ObjectId(id));
-    const prospectos = await db.collection('prospectos').find({ _id: { $in: oids } }).toArray();
+    const prospectos = (await db
+      .collection('prospectos')
+      .find({ _id: { $in: oids } })
+      .toArray()) as ProspectoDoc[];
 
     const now = new Date();
     let queued = 0;
 
     for (let i = 0; i < prospectos.length; i++) {
-      const p = prospectos[i] as Record<string, unknown>;
-      const trackLink = `${(baseUrl || '').replace(/\/$/, '')}/t/${p.trackToken}`;
+      const p: ProspectoDoc = prospectos[i]!;
+      const trackLink = `${(baseUrl || '').replace(/\/$/, '')}/t/${p.trackToken ?? ''}`;
       const keyUsada = plantillaEfectiva(plantilla, p.giro);
       const plantillaFn = PLANTILLAS[keyUsada] ?? plantillaBaseFn;
       const message = plantillaFn(String(p.nombre || 'cliente'), vendedor, trackLink);
