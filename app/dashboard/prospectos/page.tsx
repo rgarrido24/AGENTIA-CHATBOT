@@ -2,10 +2,21 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  Upload, Send, Search, Filter, RefreshCw, X, Check, ChevronDown,
+  Upload, Send, Search, RefreshCw, X, Check,
   Phone, MapPin, User, MessageSquare, Eye, Trash2, Edit3,
-  Download, Plus, FileText,
+  Download, Plus,
 } from 'lucide-react';
+import {
+  GIRO_OPTIONS,
+  CANAL_ORIGEN_OPTIONS,
+  PIPELINE_DEFAULT,
+  coercePipeline,
+  coerceGiro,
+  coerceCanalOrigen,
+  type ProspectoPipeline,
+  type ProspectoGiro,
+  type ProspectoCanalOrigen,
+} from '@/lib/prospectos-constants';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -18,6 +29,9 @@ type Prospecto = {
   correo: string;
   demo: string;
   lote: string;
+  pipeline: ProspectoPipeline;
+  giro: ProspectoGiro | string;
+  canalOrigen: ProspectoCanalOrigen | string;
   status: string;
   asignadoA: string;
   contactadoAt: string | null;
@@ -73,6 +87,24 @@ const PLANTILLA_PREVIEW: Record<string, string> = {
 
 const statusInfo = (s: string) => STATUS_OPTIONS.find((o) => o.value === s) ?? STATUS_OPTIONS[0];
 
+const GIRO_EMOJI: Record<string, string> = {
+  Barbería: '✂️',
+  'Spa & Estética': '💆',
+  Grooming: '🐾',
+  'Clínica Dental': '🦷',
+  Médico: '👨‍⚕️',
+  Restaurante: '🍔',
+  'Taller Mecánico': '🔧',
+  Nutriólogo: '🥗',
+  Inmobiliaria: '🏠',
+  Telecomunicaciones: '📡',
+  Otro: '📋',
+};
+
+function giroEmoji(giro: string): string {
+  return GIRO_EMOJI[giro] ?? '📋';
+}
+
 function fmtDate(d: string | null) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: '2-digit' });
@@ -111,11 +143,23 @@ function parseCSV(text: string): Array<Record<string, string>> {
   });
 }
 
-function mapRow(row: Record<string, string>) {
+type MappedImportRow = {
+  nombre: string;
+  propietario: string;
+  ubicacion: string;
+  telefono: string;
+  correo: string;
+  pipeline: string;
+  giro: string;
+  canalOrigen: string;
+};
+
+function mapRow(row: Record<string, string>): MappedImportRow {
   const keys = Object.keys(row);
-  // Busca coincidencia exacta primero, luego parcial (el header contiene la palabra clave)
   const fuzzy = (...candidates: string[]) => {
-    for (const c of candidates) { if (row[c]) return row[c]; }
+    for (const c of candidates) {
+      if (row[c]) return row[c];
+    }
     for (const c of candidates) {
       const found = keys.find((k) => k.includes(c));
       if (found && row[found]) return row[found];
@@ -123,58 +167,101 @@ function mapRow(row: Record<string, string>) {
     return '';
   };
   return {
-    nombre:      fuzzy('nombre', 'negocio', 'estetica', 'empresa', 'name'),
-    propietario: fuzzy('propietario', 'dueno', 'owner', 'contacto', 'giro'),
-    ubicacion:   fuzzy('ubicacion', 'direccion', 'location', 'ciudad', 'municipio'),
-    telefono:    normalizePhone(fuzzy('telefono', 'tel', 'phone', 'celular', 'movil', 'whatsapp')),
-    correo:      fuzzy('correo', 'email', 'mail'),
+    nombre: fuzzy('nombre', 'negocio', 'estetica', 'empresa', 'name'),
+    propietario: fuzzy('propietario', 'dueno', 'owner', 'contacto'),
+    ubicacion: fuzzy('ubicacion', 'direccion', 'location', 'ciudad', 'municipio'),
+    telefono: normalizePhone(fuzzy('telefono', 'tel', 'phone', 'celular', 'movil', 'whatsapp')),
+    correo: fuzzy('correo', 'email', 'mail'),
+    pipeline: fuzzy('pipeline'),
+    giro: fuzzy('giro', 'demo', 'tipo', 'categoria'),
+    canalOrigen: fuzzy('canal_origen', 'canal', 'origen'),
   };
 }
+
+type AddFormState = {
+  nombre: string;
+  propietario: string;
+  ubicacion: string;
+  telefono: string;
+  correo: string;
+  demo: string;
+  lote: string;
+  pipeline: ProspectoPipeline;
+  giro: ProspectoGiro;
+  canalOrigen: ProspectoCanalOrigen;
+};
+
+const emptyAddForm = (): AddFormState => ({
+  nombre: '',
+  propietario: '',
+  ubicacion: '',
+  telefono: '',
+  correo: '',
+  demo: 'barberia',
+  lote: '',
+  pipeline: PIPELINE_DEFAULT,
+  giro: 'Otro',
+  canalOrigen: 'Manual',
+});
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ProspectosPage() {
   const [prospectos, setProspectos] = useState<Prospecto[]>([]);
-  const [stats, setStats] = useState<Stats>({ total:0,pendiente:0,contactado:0,demo_vista:0,interesado:0,negociacion:0,cerrado:0,no_interesado:0 });
+  const [stats, setStats] = useState<Stats>({
+    total: 0,
+    pendiente: 0,
+    contactado: 0,
+    demo_vista: 0,
+    interesado: 0,
+    negociacion: 0,
+    cerrado: 0,
+    no_interesado: 0,
+  });
   const [lotes, setLotes] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterLote, setFilterLote] = useState('');
-  const [filterVendedor, setFilterVendedor] = useState('');
-  const [currentVendedor, setCurrentVendedor] = useState(VENDEDORES[0]);
+  const [search, setSearch] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterLote, setFilterLote] = useState<string>('');
+  const [filterVendedor, setFilterVendedor] = useState<string>('');
+  const [pipelineSelected, setPipelineSelected] = useState<ProspectoPipeline>(PIPELINE_DEFAULT);
+  const [filterGiro, setFilterGiro] = useState<string>('');
+  const [filterCanal, setFilterCanal] = useState<string>('');
+  const [currentVendedor, setCurrentVendedor] = useState<string>(VENDEDORES[0]);
 
   // Modals
-  const [importModal, setImportModal] = useState(false);
-  const [messageModal, setMessageModal] = useState(false);
+  const [importModal, setImportModal] = useState<boolean>(false);
+  const [messageModal, setMessageModal] = useState<boolean>(false);
   const [editModal, setEditModal] = useState<Prospecto | null>(null);
-  const [addModal, setAddModal] = useState(false);
+  const [addModal, setAddModal] = useState<boolean>(false);
 
   // Import state
-  const [importText, setImportText] = useState('');
-  const [importLote, setImportLote] = useState('Lote 1');
-  const [importDemo, setImportDemo] = useState('barberia');
-  const [importPreview, setImportPreview] = useState<ReturnType<typeof mapRow>[]>([]);
-  const [importing, setImporting] = useState(false);
+  const [importText, setImportText] = useState<string>('');
+  const [importLote, setImportLote] = useState<string>('Lote 1');
+  const [importDemo, setImportDemo] = useState<string>('barberia');
+  const [importPreview, setImportPreview] = useState<MappedImportRow[]>([]);
+  const [importing, setImporting] = useState<boolean>(false);
 
   // Message state
-  const [plantilla, setPlantilla] = useState('intro_a');
-  const [batchSize, setBatchSize] = useState(10);
-  const [mediaUrl, setMediaUrl] = useState('');
-  const [sending, setSending] = useState(false);
+  const [plantilla, setPlantilla] = useState<string>('intro_a');
+  const [batchSize, setBatchSize] = useState<number>(10);
+  const [mediaUrl, setMediaUrl] = useState<string>('');
+  const [sending, setSending] = useState<boolean>(false);
   const [sentResult, setSentResult] = useState<{ queued: number; minutes: number } | null>(null);
 
   // Edit state
-  const [editStatus, setEditStatus] = useState('');
-  const [editNotas, setEditNotas] = useState('');
-  const [editAsignado, setEditAsignado] = useState('');
-  const [editLote, setEditLote] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [editStatus, setEditStatus] = useState<string>('');
+  const [editNotas, setEditNotas] = useState<string>('');
+  const [editAsignado, setEditAsignado] = useState<string>('');
+  const [editLote, setEditLote] = useState<string>('');
+  const [editPipeline, setEditPipeline] = useState<ProspectoPipeline>(PIPELINE_DEFAULT);
+  const [editGiro, setEditGiro] = useState<ProspectoGiro>('Otro');
+  const [editCanal, setEditCanal] = useState<ProspectoCanalOrigen>('Manual');
+  const [saving, setSaving] = useState<boolean>(false);
 
-  // Add state
-  const [addForm, setAddForm] = useState({ nombre:'', propietario:'', ubicacion:'', telefono:'', correo:'', demo:'barberia', lote:'' });
-  const [adding, setAdding] = useState(false);
+  const [addForm, setAddForm] = useState<AddFormState>(emptyAddForm);
+  const [adding, setAdding] = useState<boolean>(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -182,23 +269,35 @@ export default function ProspectosPage() {
 
   const fetchProspectos = useCallback(async () => {
     const params = new URLSearchParams();
+    params.set('pipeline', pipelineSelected);
     if (filterStatus) params.set('status', filterStatus);
-    if (filterLote)   params.set('lote', filterLote);
+    if (filterLote) params.set('lote', filterLote);
     if (filterVendedor) params.set('vendedor', filterVendedor);
-    if (search)       params.set('search', search);
+    if (filterGiro) params.set('giro', filterGiro);
+    if (filterCanal) params.set('canalOrigen', filterCanal);
+    if (search) params.set('search', search);
     try {
       const res = await fetch(`/api/prospectos?${params}`);
       const data = await res.json();
       if (data.ok) {
-        setProspectos(data.prospectos);
-        setStats(data.stats);
-        setLotes(data.lotes);
+        setProspectos(data.prospectos as Prospecto[]);
+        setStats(data.stats as Stats);
+        setLotes(data.lotes as string[]);
       }
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
-  }, [filterStatus, filterLote, filterVendedor, search]);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  }, [filterStatus, filterLote, filterVendedor, filterGiro, filterCanal, search, pipelineSelected]);
 
-  useEffect(() => { fetchProspectos(); }, [fetchProspectos]);
+  useEffect(() => {
+    fetchProspectos();
+  }, [fetchProspectos]);
+
+  useEffect(() => {
+    setSelected(new Set());
+  }, [pipelineSelected]);
 
   // ─── Import ───────────────────────────────────────────────────────────────
 
@@ -223,16 +322,32 @@ export default function ProspectosPage() {
       const res = await fetch('/api/prospectos/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows: importPreview, lote: importLote, demo: importDemo }),
+        body: JSON.stringify({
+          rows: importPreview,
+          lote: importLote,
+          demo: importDemo,
+          defaultPipeline: pipelineSelected,
+        }),
       });
       const data = await res.json();
       if (data.ok) {
+        const ins = typeof data.insertados === 'number' ? data.insertados : 0;
+        const dup = typeof data.duplicados === 'number' ? data.duplicados : 0;
+        const err = typeof data.errores === 'number' ? data.errores : 0;
+        alert(`Importación lista: ${ins} insertados · ${dup} duplicados omitidos · ${err} filas con error`);
         setImportModal(false);
         setImportText('');
         setImportPreview([]);
         fetchProspectos();
-      } else { alert(data.error || 'Error al importar'); }
-    } finally { setImporting(false); }
+      } else {
+        const ins = typeof data.insertados === 'number' ? data.insertados : 0;
+        const dup = typeof data.duplicados === 'number' ? data.duplicados : 0;
+        const err = typeof data.errores === 'number' ? data.errores : 0;
+        alert(data.error || `Error al importar (${ins}/${dup}/${err})`);
+      }
+    } finally {
+      setImporting(false);
+    }
   };
 
   // ─── Message ──────────────────────────────────────────────────────────────
@@ -271,6 +386,9 @@ export default function ProspectosPage() {
     setEditNotas(p.notas);
     setEditAsignado(p.asignadoA);
     setEditLote(p.lote);
+    setEditPipeline(coercePipeline(p.pipeline));
+    setEditGiro(coerceGiro(p.giro));
+    setEditCanal(coerceCanalOrigen(p.canalOrigen));
   };
 
   const handleSaveEdit = async () => {
@@ -280,11 +398,22 @@ export default function ProspectosPage() {
       await fetch('/api/prospectos/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editModal.id, status: editStatus, notas: editNotas, asignadoA: editAsignado, lote: editLote }),
+        body: JSON.stringify({
+          id: editModal.id,
+          status: editStatus,
+          notas: editNotas,
+          asignadoA: editAsignado,
+          lote: editLote,
+          pipeline: editPipeline,
+          giro: editGiro,
+          canalOrigen: editCanal,
+        }),
       });
       setEditModal(null);
       fetchProspectos();
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -306,14 +435,24 @@ export default function ProspectosPage() {
   };
 
   const handleDeleteAll = async () => {
+    const scope = filterLote
+      ? `del lote "${filterLote}" (pipeline ${pipelineSelected})`
+      : `del pipeline ${pipelineSelected} (${stats.total} visibles en filtros actuales)`;
     const confirmText = prompt(
-      `⚠️ Esto borrará ${filterLote ? `todos los prospectos del lote "${filterLote}"` : `los ${stats.total} prospectos`}.\n\nEscribe BORRAR TODO para confirmar:`
+      `⚠️ Esto borrará todos los prospectos ${scope}.\n\nEscribe BORRAR TODO para confirmar:`
     );
-    if (confirmText !== 'BORRAR TODO') { alert('Cancelado.'); return; }
+    if (confirmText !== 'BORRAR TODO') {
+      alert('Cancelado.');
+      return;
+    }
     await fetch('/api/prospectos/status', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deleteAll: true, ...(filterLote ? { lote: filterLote } : {}) }),
+      body: JSON.stringify({
+        deleteAll: true,
+        pipeline: pipelineSelected,
+        ...(filterLote ? { lote: filterLote } : {}),
+      }),
     });
     setSelected(new Set());
     fetchProspectos();
@@ -328,23 +467,48 @@ export default function ProspectosPage() {
       const res = await fetch('/api/prospectos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(addForm),
+        body: JSON.stringify({
+          ...addForm,
+          pipeline: addForm.pipeline || pipelineSelected,
+        }),
       });
       const data = await res.json();
-      if (data.ok) { setAddModal(false); setAddForm({ nombre:'',propietario:'',ubicacion:'',telefono:'',correo:'',demo:'barberia',lote:'' }); fetchProspectos(); }
-      else alert(data.error);
+      if (data.ok) {
+        setAddModal(false);
+        setAddForm({
+          ...emptyAddForm(),
+          pipeline: pipelineSelected,
+        });
+        fetchProspectos();
+      } else alert(data.error);
     } finally { setAdding(false); }
   };
 
   // ─── Export CSV ───────────────────────────────────────────────────────────
 
   const handleExport = () => {
-    const headers = 'Nombre,Propietario,Ubicacion,Telefono,Correo,Demo,Lote,Status,Asignado,Contactado,DemoVista,Notas';
+    const headers =
+      'Nombre,Propietario,Ubicacion,Telefono,Correo,Demo,Lote,Pipeline,Giro,CanalOrigen,Status,Asignado,Contactado,DemoVista,Notas';
     const rows = prospectos.map((p) =>
-      [p.nombre,p.propietario,p.ubicacion,p.telefono,p.correo,p.demo,p.lote,
-       p.status,p.asignadoA,p.contactadoAt ? fmtDate(p.contactadoAt) : '',
-       p.demoAbierta ? (p.demoAbiertaAt ? fmtDate(p.demoAbiertaAt) : 'Sí') : 'No',
-       p.notas].map((v) => `"${String(v || '').replace(/"/g,'""')}"`).join(',')
+      [
+        p.nombre,
+        p.propietario,
+        p.ubicacion,
+        p.telefono,
+        p.correo,
+        p.demo,
+        p.lote,
+        p.pipeline,
+        p.giro,
+        p.canalOrigen,
+        p.status,
+        p.asignadoA,
+        p.contactadoAt ? fmtDate(p.contactadoAt) : '',
+        p.demoAbierta ? (p.demoAbiertaAt ? fmtDate(p.demoAbiertaAt) : 'Sí') : 'No',
+        p.notas,
+      ]
+        .map((v) => `"${String(v || '').replace(/"/g, '""')}"`)
+        .join(',')
     );
     const csv = [headers, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -381,7 +545,14 @@ export default function ProspectosPage() {
           >
             {VENDEDORES.map((v) => <option key={v}>{v}</option>)}
           </select>
-          <button onClick={() => setAddModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm transition">
+          <button
+            type="button"
+            onClick={() => {
+              setAddForm((f) => ({ ...f, pipeline: pipelineSelected }));
+              setAddModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm transition"
+          >
             <Plus className="w-4 h-4" /> Agregar
           </button>
           <button onClick={() => setImportModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm transition">
@@ -397,6 +568,32 @@ export default function ProspectosPage() {
             <Trash2 className="w-4 h-4" /> {filterLote ? `Borrar lote` : 'Borrar todo'}
           </button>
         </div>
+      </div>
+
+      {/* Pipeline */}
+      <div className="flex flex-wrap gap-3 mb-5">
+        <button
+          type="button"
+          onClick={() => setPipelineSelected('Agentia')}
+          className={`flex-1 min-w-[200px] rounded-xl border-2 px-5 py-4 text-left font-semibold transition ${
+            pipelineSelected === 'Agentia'
+              ? 'border-teal-500/70 bg-teal-500/15 text-teal-100 shadow-lg shadow-teal-900/20'
+              : 'border-slate-600 bg-slate-800/40 text-slate-400 hover:border-slate-500'
+          }`}
+        >
+          🏢 Pipeline: Agentia
+        </button>
+        <button
+          type="button"
+          onClick={() => setPipelineSelected('Izzi')}
+          className={`flex-1 min-w-[200px] rounded-xl border-2 px-5 py-4 text-left font-semibold transition ${
+            pipelineSelected === 'Izzi'
+              ? 'border-blue-500/70 bg-blue-500/15 text-blue-100 shadow-lg shadow-blue-900/20'
+              : 'border-slate-600 bg-slate-800/40 text-slate-400 hover:border-slate-500'
+          }`}
+        >
+          📡 Pipeline: Izzi
+        </button>
       </div>
 
       {/* Stats */}
@@ -426,6 +623,13 @@ export default function ProspectosPage() {
         ))}
       </div>
 
+      <p className="text-xs text-slate-500 mb-4">
+        Mostrando pipeline: <span className="text-slate-300 font-medium">{pipelineSelected}</span> ·{' '}
+        <span className="text-slate-400">{stats.total} prospectos totales</span>
+        {filterGiro ? ` · giro: ${filterGiro}` : ''}
+        {filterCanal ? ` · canal: ${filterCanal}` : ''}
+      </p>
+
       {/* Filters + bulk action */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <div className="relative flex-1 min-w-48">
@@ -451,6 +655,30 @@ export default function ProspectosPage() {
           className="bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm">
           <option value="">Todos los vendedores</option>
           {VENDEDORES.map((v) => <option key={v} value={v}>{v}</option>)}
+        </select>
+        <select
+          value={filterGiro}
+          onChange={(e) => setFilterGiro(e.target.value)}
+          className="bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm"
+        >
+          <option value="">Todos los giros</option>
+          {GIRO_OPTIONS.map((g) => (
+            <option key={g} value={g}>
+              {g}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filterCanal}
+          onChange={(e) => setFilterCanal(e.target.value)}
+          className="bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm"
+        >
+          <option value="">Todos los canales</option>
+          {CANAL_ORIGEN_OPTIONS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
         </select>
 
         {selected.size > 0 && (
@@ -481,6 +709,8 @@ export default function ProspectosPage() {
                   onChange={toggleAll} className="rounded" />
               </th>
               <th className="py-3 px-3 text-left text-slate-400 font-medium">Negocio</th>
+              <th className="py-3 px-3 text-left text-slate-400 font-medium hidden sm:table-cell">Giro</th>
+              <th className="py-3 px-3 text-left text-slate-400 font-medium hidden sm:table-cell">Pipeline</th>
               <th className="py-3 px-3 text-left text-slate-400 font-medium hidden md:table-cell">Ubicación</th>
               <th className="py-3 px-3 text-left text-slate-400 font-medium">Teléfono</th>
               <th className="py-3 px-3 text-left text-slate-400 font-medium">Status</th>
@@ -494,9 +724,9 @@ export default function ProspectosPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={11} className="py-12 text-center text-slate-500">Cargando...</td></tr>
+              <tr><td colSpan={13} className="py-12 text-center text-slate-500">Cargando...</td></tr>
             ) : prospectos.length === 0 ? (
-              <tr><td colSpan={11} className="py-12 text-center text-slate-500">
+              <tr><td colSpan={13} className="py-12 text-center text-slate-500">
                 No hay prospectos. Importa tu lista con el botón <strong>Importar CSV</strong>.
               </td></tr>
             ) : prospectos.map((p) => {
@@ -509,6 +739,21 @@ export default function ProspectosPage() {
                   <td className="py-2.5 px-3">
                     <div className="font-medium text-white">{p.nombre}</div>
                     {p.propietario && <div className="text-xs text-slate-500">{p.propietario}</div>}
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-300 text-xs hidden sm:table-cell whitespace-nowrap">
+                    <span className="mr-1">{giroEmoji(String(p.giro))}</span>
+                    {p.giro || '—'}
+                  </td>
+                  <td className="py-2.5 px-3 hidden sm:table-cell">
+                    <span
+                      className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                        p.pipeline === 'Izzi'
+                          ? 'bg-blue-500/20 text-blue-200 border-blue-500/40'
+                          : 'bg-teal-500/20 text-teal-200 border-teal-500/40'
+                      }`}
+                    >
+                      {p.pipeline || PIPELINE_DEFAULT}
+                    </span>
                   </td>
                   <td className="py-2.5 px-3 text-slate-400 hidden md:table-cell">
                     <span className="flex items-center gap-1"><MapPin className="w-3 h-3 shrink-0" />{p.ubicacion || '—'}</span>
@@ -593,7 +838,9 @@ export default function ProspectosPage() {
 
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
-                  Pega tu CSV/Excel aquí — columnas: <code className="text-emerald-400">nombre, ubicacion, telefono</code> (+ propietario, correo opcionales)
+                  CSV/Excel: <code className="text-emerald-400">nombre, ubicacion, telefono</code>, opcionales{' '}
+                  <code className="text-emerald-400">propietario, correo, pipeline, giro, canal_origen</code>. Si no hay{' '}
+                  <code>pipeline</code> en el archivo, se usa el pipeline seleccionado arriba ({pipelineSelected}).
                 </label>
                 <textarea
                   value={importText}
@@ -729,6 +976,12 @@ export default function ProspectosPage() {
                           <p className="text-[10px] text-slate-500 mt-1 text-right">✓✓</p>
                         </div>
                       </div>
+                      {plantilla === 'intro_a' && (
+                        <p className="text-[11px] text-sky-300/90 mt-2">
+                          Al enviar, si el prospecto tiene <strong>giro</strong> definido (spa, dental, restaurante,
+                          etc.), Intro A se sustituye automáticamente por la variante de ese giro.
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -795,6 +1048,45 @@ export default function ProspectosPage() {
                 </div>
               </div>
               <div>
+                <label className="block text-xs text-slate-400 mb-1">Pipeline</label>
+                <select
+                  value={editPipeline}
+                  onChange={(e) => setEditPipeline(e.target.value as ProspectoPipeline)}
+                  className="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="Agentia">Agentia</option>
+                  <option value="Izzi">Izzi</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Giro</label>
+                <select
+                  value={editGiro}
+                  onChange={(e) => setEditGiro(e.target.value as ProspectoGiro)}
+                  className="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"
+                >
+                  {GIRO_OPTIONS.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Canal de origen</label>
+                <select
+                  value={editCanal}
+                  onChange={(e) => setEditCanal(e.target.value as ProspectoCanalOrigen)}
+                  className="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"
+                >
+                  {CANAL_ORIGEN_OPTIONS.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="block text-xs text-slate-400 mb-1">Asignado a</label>
                 <select value={editAsignado} onChange={(e) => setEditAsignado(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm">
@@ -845,9 +1137,12 @@ export default function ProspectosPage() {
               <button onClick={() => setAddModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-3">
-              {(['nombre','propietario','ubicacion','telefono','correo'] as const).map((field) => (
+              {(['nombre', 'propietario', 'ubicacion', 'telefono', 'correo'] as const).map((field) => (
                 <div key={field}>
-                  <label className="block text-xs text-slate-400 mb-1 capitalize">{field}{field === 'nombre' || field === 'telefono' ? ' *' : ''}</label>
+                  <label className="block text-xs text-slate-400 mb-1 capitalize">
+                    {field}
+                    {field === 'nombre' || field === 'telefono' ? ' *' : ''}
+                  </label>
                   <input
                     value={addForm[field]}
                     onChange={(e) => setAddForm((f) => ({ ...f, [field]: e.target.value }))}
@@ -855,6 +1150,48 @@ export default function ProspectosPage() {
                   />
                 </div>
               ))}
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Pipeline</label>
+                <select
+                  value={addForm.pipeline}
+                  onChange={(e) =>
+                    setAddForm((f) => ({ ...f, pipeline: e.target.value as ProspectoPipeline }))
+                  }
+                  className="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="Agentia">Agentia</option>
+                  <option value="Izzi">Izzi</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Giro</label>
+                <select
+                  value={addForm.giro}
+                  onChange={(e) => setAddForm((f) => ({ ...f, giro: e.target.value as ProspectoGiro }))}
+                  className="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"
+                >
+                  {GIRO_OPTIONS.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Canal de origen</label>
+                <select
+                  value={addForm.canalOrigen}
+                  onChange={(e) =>
+                    setAddForm((f) => ({ ...f, canalOrigen: e.target.value as ProspectoCanalOrigen }))
+                  }
+                  className="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="Manual">Manual</option>
+                  <option value="WhatsApp">WhatsApp</option>
+                  <option value="Facebook">Facebook</option>
+                  <option value="Instagram">Instagram</option>
+                </select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-slate-400 mb-1">Demo</label>
