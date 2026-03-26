@@ -4,19 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import {
-  ArrowRight,
-  Building2,
-  GraduationCap,
-  HeartPulse,
-  PawPrint,
-  Scissors,
-  Sparkles,
-  Salad,
-  Stethoscope,
-  UtensilsCrossed,
-  Wrench,
-} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { DemoPreview, type DemoPreviewProps } from '@/components/DemoPreview';
 
 // ─── Animated Counter ─────────────────────────────────────────────────────────
 function AnimatedCounter({
@@ -82,9 +71,254 @@ function Stars({ n = 5 }: { n?: number }) {
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const STATS = [
   { value: 120,   prefix: '+',  suffix: '',  label: 'Negocios automatizados' },
-  { value: 8,     prefix: '+',  suffix: '',  label: 'Industrias atendidas' },
+  { value: 10,    prefix: '+',  suffix: '',  label: 'Industrias atendidas' },
   { value: 98,    prefix: '',   suffix: '%', label: 'Satisfacción de clientes' },
   { value: 45000, prefix: '+',  suffix: '',  label: 'Chats procesados' },
+];
+
+const HERO_DEMO_CHIPS = ['✂️ Barbería', '🍔 Restaurante', '🦷 Dental', '🔧 Taller', '🥗 Nutrición', '💆 Spa'];
+
+type PortfolioEntry = {
+  href: string;
+  external?: boolean;
+  title: string;
+  emoji: string;
+  description: string;
+  chips: string[];
+  preview: DemoPreviewProps;
+  cardClass: string;
+  hoverClass: string;
+  ctaClass: string;
+};
+
+const PORTFOLIO: PortfolioEntry[] = [
+  {
+    href: '/demo/barber',
+    title: 'Barbería',
+    emoji: '✂️',
+    description: 'Agenda con IA que detecta conflictos de horario en tiempo real y ofrece alternativas automáticas.',
+    chips: ['✂️ Agenda', '⚡ Conflictos', '👥 Clientes', '🔔 Recordatorios'],
+    preview: {
+      accentColor: '#0d9488',
+      stats: [
+        { label: 'Citas hoy', value: '8' },
+        { label: 'Ingresos', value: '$1,240' },
+      ],
+      chatMessages: [
+        { role: 'user', text: 'Quiero cita mañana' },
+        { role: 'bot', text: 'Ese horario está ocupado ⚠️ ¿Te acomoda a las 11am?' },
+      ],
+      hasChart: true,
+    },
+    cardClass: 'rgba(13,148,136,0.07)',
+    hoverClass: 'hover:border-teal-500/60 hover:shadow-[0_0_48px_rgba(13,148,136,0.2)]',
+    ctaClass: 'text-teal-300',
+  },
+  {
+    href: '/demo/cobranza',
+    title: 'Cobranza & Cartera',
+    emoji: '📊',
+    description:
+      'Dashboard de morosidad, secuencias automáticas, estado de cuenta PDF y score de riesgo con IA para instituciones y empresas.',
+    chips: ['📊 Score IA', '🧾 PDF', '🤖 Secuencias', '💬 WhatsApp'],
+    preview: {
+      accentColor: '#1e40af',
+      stats: [
+        { label: 'Cartera', value: '$284K' },
+        { label: 'Adeudo', value: '23%' },
+      ],
+      chatMessages: [
+        { role: 'user', text: '¿Cuánto debo?' },
+        { role: 'bot', text: 'Tu adeudo es $3,200 MXN 📋 ¿Quieres un plan de pagos?' },
+      ],
+      hasChart: true,
+    },
+    cardClass: 'rgba(30,64,175,0.12)',
+    hoverClass: 'hover:border-blue-500/70 hover:shadow-[0_0_48px_rgba(30,64,175,0.25)]',
+    ctaClass: 'text-blue-300',
+  },
+  {
+    href: 'https://inmobiliaria-agentia.vercel.app/',
+    external: true,
+    title: 'Inmobiliaria IA',
+    emoji: '🏠',
+    description:
+      'Portal de propiedades con IA, calificación de leads automática, análisis de plusvalía y ROI por propiedad.',
+    chips: ['🏠 Portal', '📈 ROI', '🤖 Leads IA', '📍 Mapa'],
+    preview: {
+      accentColor: '#059669',
+      stats: [
+        { label: 'Propiedades', value: '48' },
+        { label: 'Leads hoy', value: '12' },
+      ],
+      chatMessages: [
+        { role: 'user', text: 'Busco casa 3 recámaras' },
+        { role: 'bot', text: 'Encontré 8 opciones 🏠 ¿Cuál es tu presupuesto?' },
+      ],
+      hasChart: false,
+    },
+    cardClass: 'rgba(5,150,105,0.1)',
+    hoverClass: 'hover:border-emerald-500/65 hover:shadow-[0_0_48px_rgba(5,150,105,0.2)]',
+    ctaClass: 'text-emerald-300',
+  },
+  {
+    href: '/demo/restaurante',
+    title: 'Restaurantes',
+    emoji: '🍔',
+    description:
+      'Sistema completo para bar-restaurante: menú QR, panel de cocina, delivery con CRM, inventario y caja con IA.',
+    chips: ['📱 Menú QR', '🍳 Cocina', '🛵 Delivery', '🤖 Chat IA'],
+    preview: {
+      accentColor: '#dc2626',
+      stats: [
+        { label: 'Ventas hoy', value: '$4,200' },
+        { label: 'Órdenes', value: '18' },
+      ],
+      chatMessages: [
+        { role: 'user', text: 'Quiero 2 alitas y un mojito' },
+        { role: 'bot', text: '¡Perfecto! 🍔 ¿Es para mesa o delivery?' },
+      ],
+      hasChart: true,
+    },
+    cardClass: 'rgba(220,38,38,0.1)',
+    hoverClass: 'hover:border-red-400/65 hover:shadow-[0_0_48px_rgba(220,38,38,0.22)]',
+    ctaClass: 'text-red-300',
+  },
+  {
+    href: '/demo/spa',
+    title: 'Spa & Estética',
+    emoji: '💆',
+    description: 'Agenda semanal, clientes VIP, servicios y recordatorios; dashboard con KPIs y chat IA para recepción.',
+    chips: ['📅 Agenda', '💜 KPIs', '✨ Servicios', '🤖 Chat IA'],
+    preview: {
+      accentColor: '#9333ea',
+      stats: [
+        { label: 'Citas hoy', value: '12' },
+        { label: 'VIP activas', value: '5' },
+      ],
+      chatMessages: [
+        { role: 'user', text: 'Masaje el martes a las 3pm' },
+        { role: 'bot', text: 'Carmen está ocupada 💜 ¿Te acomoda Ana a las 4pm?' },
+      ],
+      hasChart: false,
+    },
+    cardClass: 'rgba(147,51,234,0.1)',
+    hoverClass: 'hover:border-fuchsia-500/55 hover:shadow-[0_0_48px_rgba(147,51,234,0.22)]',
+    ctaClass: 'text-fuchsia-300',
+  },
+  {
+    href: '/demo/grooming',
+    title: 'Grooming Canino',
+    emoji: '🐾',
+    description: 'Fichas de mascotas, agenda, servicio a domicilio con seguimiento y recordatorios inteligentes.',
+    chips: ['🐾 Fichas', '📅 Agenda', '🚐 Domicilio', '🤖 Chat IA'],
+    preview: {
+      accentColor: '#f97316',
+      stats: [
+        { label: 'Citas hoy', value: '9' },
+        { label: 'Domicilios', value: '3' },
+      ],
+      chatMessages: [
+        { role: 'user', text: 'Baño para mi golden en Iztapalapa' },
+        { role: 'bot', text: 'Fuera de zona 🐾 ¿Lo traes a sucursal con 15% off?' },
+      ],
+      hasChart: false,
+    },
+    cardClass: 'rgba(249,115,22,0.1)',
+    hoverClass: 'hover:border-orange-400/75 hover:shadow-[0_0_48px_rgba(249,115,22,0.22)]',
+    ctaClass: 'text-orange-300',
+  },
+  {
+    href: '/demo/dentista',
+    title: 'Clínica Dental',
+    emoji: '🦷',
+    description: 'Expediente clínico con odontograma, recetas PDF, agenda por dentista y cobranza.',
+    chips: ['🦷 Expediente', '💊 Recetas PDF', '📅 Agenda', '💰 Pagos'],
+    preview: {
+      accentColor: '#0284c7',
+      stats: [
+        { label: 'Pacientes', value: '20' },
+        { label: 'Por cobrar', value: '$8,400' },
+      ],
+      chatMessages: [
+        { role: 'user', text: 'Receto Amoxicilina a María López' },
+        { role: 'bot', text: '⚠️ ALERGIA: María es alérgica a Penicilina. Sugiero Azitromicina.' },
+      ],
+      hasChart: false,
+    },
+    cardClass: 'rgba(2,132,199,0.1)',
+    hoverClass: 'hover:border-sky-400/75 hover:shadow-[0_0_48px_rgba(2,132,199,0.22)]',
+    ctaClass: 'text-sky-300',
+  },
+  {
+    href: '/demo/medico',
+    title: 'Médico & Especialistas',
+    emoji: '👨‍⚕️',
+    description:
+      'Expediente clínico digital, agenda por especialidad, recetas con QR verificable, signos vitales y recordatorios automáticos.',
+    chips: ['📋 Expediente', '📈 Signos vitales', '💊 Recetas+Incapacidad', '🤖 IA'],
+    preview: {
+      accentColor: '#16a34a',
+      stats: [
+        { label: 'Consultas hoy', value: '6' },
+        { label: 'En espera', value: '2' },
+      ],
+      chatMessages: [
+        { role: 'user', text: 'Cita con ginecología urgente' },
+        { role: 'bot', text: 'Agenda llena 3 semanas 📋 ¿Te anoto en lista de espera?' },
+      ],
+      hasChart: false,
+    },
+    cardClass: 'rgba(22,163,74,0.1)',
+    hoverClass: 'hover:border-green-400/65 hover:shadow-[0_0_48px_rgba(22,163,74,0.22)]',
+    ctaClass: 'text-green-300',
+  },
+  {
+    href: '/demo/taller',
+    title: 'Taller Mecánico',
+    emoji: '🔧',
+    description:
+      'Órdenes tipo taller, historial por vehículo, presupuestos PDF, inventario de refacciones, caja y recordatorios de mantenimiento con IA.',
+    chips: ['🔧 Órdenes', '📄 Presupuesto PDF', '🔔 Recordatorios', '🤖 IA'],
+    preview: {
+      accentColor: '#475569',
+      stats: [
+        { label: 'En taller', value: '7' },
+        { label: 'Listos', value: '2' },
+      ],
+      chatMessages: [
+        { role: 'user', text: '¿Ya está mi Honda Civic?' },
+        { role: 'bot', text: 'Listo ✅ + encontramos frenos al 15% ¿Los cambiamos?' },
+      ],
+      hasChart: true,
+    },
+    cardClass: 'rgba(71,85,105,0.12)',
+    hoverClass: 'hover:border-slate-500/75 hover:shadow-[0_0_48px_rgba(71,85,105,0.25)]',
+    ctaClass: 'text-slate-300',
+  },
+  {
+    href: '/demo/nutricion',
+    title: 'Nutrición & Bienestar',
+    emoji: '🥗',
+    description:
+      'Seguimiento nutricional con IA. Tablero de progreso, OCR de báscula InBody, recordatorios motivacionales y asistente que conoce la dieta de cada paciente.',
+    chips: ['📊 Tablero', '🤖 IA Dietética', '📷 OCR InBody', '💬 WhatsApp'],
+    preview: {
+      accentColor: '#16a34a',
+      stats: [
+        { label: 'Pacientes', value: '20' },
+        { label: 'Bajaron kg', value: '4.2' },
+      ],
+      chatMessages: [
+        { role: 'user', text: '¿Puedo comer pizza?' },
+        { role: 'bot', text: '🚫 No está en tu plan. ¿Te sugiero 3 opciones similares?' },
+      ],
+      hasChart: true,
+    },
+    cardClass: 'rgba(22,163,74,0.1)',
+    hoverClass: 'hover:border-emerald-400/65 hover:shadow-[0_0_48px_rgba(22,163,74,0.22)]',
+    ctaClass: 'text-emerald-300',
+  },
 ];
 
 const TESTIMONIOS = [
@@ -251,13 +485,23 @@ export default function LandingPage() {
                 para tu negocio
               </span>
             </h1>
-            <p className="text-slate-400 text-lg max-w-xl mb-10 leading-relaxed">
+            <p className="text-slate-400 text-lg max-w-xl mb-6 leading-relaxed">
               Chatbots con IA, CRM integrado y flujos de venta automatizados.
               Atención 24/7 sin aumentar tu equipo.
             </p>
+            <div className="flex flex-wrap justify-center gap-3 mt-6">
+              {HERO_DEMO_CHIPS.map((demo) => (
+                <span
+                  key={demo}
+                  className="animate-pulse rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-400"
+                >
+                  {demo}
+                </span>
+              ))}
+            </div>
             <Link
               href="/login?from=/dashboard"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-base font-bold transition-all duration-300 btn-cta"
+              className="mt-10 inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-base font-bold transition-all duration-300 btn-cta"
             >
               Acceso Clientes
               <ArrowRight className="w-5 h-5" />
@@ -302,413 +546,85 @@ export default function LandingPage() {
             <h2 className="text-2xl font-bold mb-2 tracking-wide">Portafolio de Demos</h2>
             <p className="text-slate-400 text-sm mb-8">Explora casos de uso reales con IA conversacional</p>
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-
-              {/* 1 — Barbería */}
-              <Link href="/demo/barber" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(13,148,136,0.07)',
-                    border: '1px solid rgba(13,148,136,0.3)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(13,148,136,0.08)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(13,148,136,0.6)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(13,148,136,0.2)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(13,148,136,0.3)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(13,148,136,0.08)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(13,148,136,0.2)', border: '1px solid rgba(13,148,136,0.4)' }}
+              {PORTFOLIO.map((entry) => {
+                const accent = entry.preview.accentColor;
+                const inner = (
+                  <article
+                    className={`flex h-full flex-col overflow-hidden rounded-xl border transition-all duration-300 ${entry.hoverClass}`}
+                    style={{
+                      background: entry.cardClass,
+                      borderColor: `${accent}44`,
+                      backdropFilter: 'blur(12px)',
+                      boxShadow: `0 0 32px ${accent}14`,
+                    }}
                   >
-                    <Scissors className="w-6 h-6 text-teal-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Barbería</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Agenda con IA que detecta conflictos de horario en tiempo real y ofrece alternativas automáticas.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['✂️ Agenda', '⚡ Conflictos', '👥 Clientes', '🔔 Recordatorios'].map((chip) => (
+                    <div className="min-h-[220px] flex-[3] min-h-0">
+                      <DemoPreview {...entry.preview} />
+                    </div>
+                    <div className="flex flex-[2] flex-col border-t border-white/10 p-5">
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <h3 className="text-lg font-semibold tracking-wide text-white">
+                          <span className="mr-1.5">{entry.emoji}</span>
+                          {entry.title}
+                        </h3>
+                        <span
+                          className="shrink-0 rounded-full border border-white/15 bg-black/25 px-2 py-0.5 text-[10px] font-medium text-emerald-400/95"
+                          title="Demo interactiva"
+                        >
+                          ● Vivo
+                        </span>
+                      </div>
+                      <p className="line-clamp-2 text-sm leading-relaxed text-slate-400">{entry.description}</p>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {entry.chips.map((chip) => (
+                          <span
+                            key={chip}
+                            className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-slate-400"
+                          >
+                            {chip}
+                          </span>
+                        ))}
+                      </div>
                       <span
-                        key={chip}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10"
+                        className={`mt-4 inline-flex items-center gap-1.5 text-sm font-semibold ${entry.ctaClass}`}
                       >
-                        {chip}
+                        Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm" style={{ color: '#5eead4' }}>
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </Link>
-
-              {/* 2 — Cobranza & Cartera */}
-              <Link href="/demo/cobranza" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(30,64,175,0.12)',
-                    border: '1px solid rgba(30,64,175,0.45)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(30,64,175,0.12)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(59,130,246,0.7)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(30,64,175,0.25)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(30,64,175,0.45)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(30,64,175,0.12)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(30,64,175,0.25)', border: '1px solid rgba(59,130,246,0.5)' }}
+                      <p className="mt-2 text-center text-xs text-slate-500">
+                        Desde <span className="font-medium text-slate-300">$399 MXN/mes</span>
+                        <span className="text-slate-600">*</span>
+                      </p>
+                    </div>
+                  </article>
+                );
+                return entry.external ? (
+                  <a
+                    key={entry.href}
+                    href={entry.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block"
                   >
-                    <GraduationCap className="w-6 h-6 text-blue-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Cobranza &amp; Cartera</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Dashboard de morosidad, secuencias automáticas, estado de cuenta PDF y score de riesgo con IA para instituciones y empresas.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['📊 Score IA', '🧾 PDF', '🤖 Secuencias', '💬 WhatsApp'].map((chip) => (
-                      <span key={chip} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">{chip}</span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-blue-300">
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </Link>
-
-              {/* 3 — Inmobiliaria */}
-              <a href="https://inmobiliaria-agentia.vercel.app/" target="_blank" rel="noopener noreferrer" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(5,150,105,0.1)',
-                    border: '1px solid rgba(5,150,105,0.35)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(5,150,105,0.08)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,185,129,0.65)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(5,150,105,0.2)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(5,150,105,0.35)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(5,150,105,0.08)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(5,150,105,0.2)', border: '1px solid rgba(16,185,129,0.45)' }}
-                  >
-                    <Building2 className="w-6 h-6 text-emerald-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Inmobiliaria IA</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Portal de propiedades con IA, calificación de leads automática, análisis de plusvalía y ROI por propiedad.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['🏠 Portal', '📈 ROI', '🤖 Leads IA', '📍 Mapa'].map((chip) => (
-                      <span key={chip} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">{chip}</span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-emerald-300">
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </a>
-
-              {/* 4 — Restaurantes */}
-              <Link href="/demo/restaurante" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(220,38,38,0.1)',
-                    border: '1px solid rgba(220,38,38,0.4)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(220,38,38,0.1)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(248,113,113,0.65)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(220,38,38,0.22)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(220,38,38,0.4)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(220,38,38,0.1)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(220,38,38,0.22)', border: '1px solid rgba(248,113,113,0.45)' }}
-                  >
-                    <UtensilsCrossed className="w-6 h-6 text-red-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Restaurantes</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Sistema completo para bar-restaurante: menú QR, panel de cocina, delivery con CRM, inventario y caja con IA.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['📱 Menú QR', '🍳 Cocina', '🛵 Delivery', '🤖 Chat IA'].map((chip) => (
-                      <span key={chip} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">{chip}</span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-red-300">
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </Link>
-
-              {/* 5 — Spa & Estética */}
-              <Link href="/demo/spa" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(147,51,234,0.1)',
-                    border: '1px solid rgba(147,51,234,0.4)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(147,51,234,0.1)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(236,72,153,0.55)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(147,51,234,0.22)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(147,51,234,0.4)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(147,51,234,0.1)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(147,51,234,0.22)', border: '1px solid rgba(236,72,153,0.45)' }}
-                  >
-                    <Sparkles className="w-6 h-6 text-fuchsia-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Spa &amp; Estética</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Agenda semanal, clientes VIP, servicios y recordatorios; dashboard con KPIs y chat IA para recepción.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['📅 Agenda', '💜 KPIs', '✨ Servicios', '🤖 Chat IA'].map((chip) => (
-                      <span key={chip} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">{chip}</span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-fuchsia-300">
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </Link>
-
-              {/* 6 — Grooming Canino */}
-              <Link href="/demo/grooming" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(249,115,22,0.1)',
-                    border: '1px solid rgba(249,115,22,0.45)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(249,115,22,0.1)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(251,146,60,0.75)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(249,115,22,0.22)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(249,115,22,0.45)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(249,115,22,0.1)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(249,115,22,0.22)', border: '1px solid rgba(251,146,60,0.5)' }}
-                  >
-                    <PawPrint className="w-6 h-6 text-orange-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Grooming Canino</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Fichas de mascotas, agenda, servicio a domicilio con seguimiento y recordatorios inteligentes.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['🐾 Fichas', '📅 Agenda', '🚐 Domicilio', '🤖 Chat IA'].map((chip) => (
-                      <span key={chip} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">{chip}</span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-orange-300">
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </Link>
-
-              {/* 7 — Clínica Dental */}
-              <Link href="/demo/dentista" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(2,132,199,0.1)',
-                    border: '1px solid rgba(2,132,199,0.45)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(2,132,199,0.1)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(56,189,248,0.75)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(2,132,199,0.22)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(2,132,199,0.45)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(2,132,199,0.1)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(2,132,199,0.22)', border: '1px solid rgba(56,189,248,0.5)' }}
-                  >
-                    <Stethoscope className="w-6 h-6 text-sky-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Clínica Dental</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Expediente clínico con odontograma, recetas PDF, agenda por dentista y cobranza.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['🦷 Expediente', '💊 Recetas PDF', '📅 Agenda', '💰 Pagos'].map((chip) => (
-                      <span key={chip} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">{chip}</span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-sky-300">
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </Link>
-
-              {/* 8 — Médico & Especialistas */}
-              <Link href="/demo/medico" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(22,163,74,0.1)',
-                    border: '1px solid rgba(22,163,74,0.4)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(22,163,74,0.1)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,222,128,0.65)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(22,163,74,0.22)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(22,163,74,0.4)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(22,163,74,0.1)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(22,163,74,0.22)', border: '1px solid rgba(74,222,128,0.5)' }}
-                  >
-                    <HeartPulse className="w-6 h-6 text-green-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Médico &amp; Especialistas</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Expediente clínico digital, agenda por especialidad, recetas con QR verificable, signos vitales y recordatorios automáticos.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['📋 Expediente', '📈 Signos vitales', '💊 Recetas+Incapacidad', '🤖 IA'].map((chip) => (
-                      <span key={chip} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">{chip}</span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-green-300">
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </Link>
-
-              {/* 9 — Taller Mecánico */}
-              <Link href="/demo/taller" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(71,85,105,0.12)',
-                    border: '1px solid rgba(71,85,105,0.55)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(71,85,105,0.12)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(100,116,139,0.75)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(71,85,105,0.25)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(71,85,105,0.55)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(71,85,105,0.12)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(71,85,105,0.25)', border: '1px solid rgba(100,116,139,0.5)' }}
-                  >
-                    <Wrench className="w-6 h-6 text-slate-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Taller Mecánico</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Órdenes tipo taller, historial por vehículo, presupuestos PDF, inventario de refacciones, caja y recordatorios de mantenimiento con IA.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['🔧 Órdenes', '📄 Presupuesto PDF', '🔔 Recordatorios', '🤖 IA'].map((chip) => (
-                      <span key={chip} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">{chip}</span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-slate-300">
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </Link>
-
-              {/* 10 — Nutrición & Bienestar */}
-              <Link href="/demo/nutricion" className="block group">
-                <article
-                  className="rounded-xl p-7 transition-all duration-300 h-full"
-                  style={{
-                    background: 'rgba(22,163,74,0.1)',
-                    border: '1px solid rgba(22,163,74,0.45)',
-                    backdropFilter: 'blur(12px)',
-                    boxShadow: '0 0 32px rgba(22,163,74,0.1)',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,222,128,0.65)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 48px rgba(22,163,74,0.22)';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(22,163,74,0.45)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 0 32px rgba(22,163,74,0.1)';
-                  }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                    style={{ background: 'rgba(22,163,74,0.22)', border: '1px solid rgba(74,222,128,0.5)' }}
-                  >
-                    <Salad className="w-6 h-6 text-emerald-300" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2 tracking-wide text-white">Nutrición &amp; Bienestar</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
-                    Seguimiento nutricional con IA. Tablero de progreso, OCR de báscula InBody, recordatorios motivacionales y asistente que conoce la dieta de cada paciente.
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {['📊 Tablero', '🤖 IA Dietética', '📷 OCR InBody', '💬 WhatsApp'].map((chip) => (
-                      <span key={chip} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">{chip}</span>
-                    ))}
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 mt-4 font-semibold text-sm text-emerald-300">
-                    Ver demo en vivo <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </article>
-              </Link>
-
+                    {inner}
+                  </a>
+                ) : (
+                  <Link key={entry.href} href={entry.href} className="group block">
+                    {inner}
+                  </Link>
+                );
+              })}
             </div>
+            <p className="mt-4 text-center text-xs text-slate-600">
+              * El precio final depende del nivel de personalización e integraciones requeridas.{' '}
+              <a
+                href="https://wa.me/529998080265"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-teal-500 hover:underline"
+              >
+                Solicita tu presupuesto exacto →
+              </a>
+            </p>
           </section>
 
           {/* ── BLOQUE C — INDUSTRIAS ATENDIDAS ─────────────────────────── */}
@@ -812,12 +728,12 @@ export default function LandingPage() {
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
                   <a
-                    href="https://wa.me/521XXXXXXXXXX"
+                    href="https://wa.me/529998080265"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 btn-cta w-full sm:w-auto justify-center"
                   >
-                    <span>💬</span> Escribir por WhatsApp
+                    <span>💬</span> Escribir a Agentia por WhatsApp
                   </a>
                   <a
                     href="mailto:contacto@agentia.software"
