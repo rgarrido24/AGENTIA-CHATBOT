@@ -225,7 +225,8 @@ export default function ProspectosPage() {
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterLote, setFilterLote] = useState<string>('');
   const [filterVendedor, setFilterVendedor] = useState<string>('');
-  const [pipelineSelected, setPipelineSelected] = useState<ProspectoPipeline>(PIPELINE_DEFAULT);
+  /** Pestaña inicial: Agentia (no Izzi). */
+  const [pipelineSelected, setPipelineSelected] = useState<ProspectoPipeline>('Agentia');
   const [filterGiro, setFilterGiro] = useState<string>('');
   const [filterCanal, setFilterCanal] = useState<string>('');
   const [currentVendedor, setCurrentVendedor] = useState<string>(VENDEDORES[0]);
