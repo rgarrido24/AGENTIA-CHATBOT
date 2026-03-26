@@ -1,37 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 
+/** Temporal — quitar al terminar la migración. */
+const TEMP_TOKEN = 'agentia-migrate-2025';
+
 /**
- * Migración temporal: prospectos sin `pipeline` → Izzi + giro Barbería.
- * GET /api/admin/migrate-pipeline?key=TU_ADMIN_PASSWORD
+ * Migración temporal: pipeline Izzi → Agentia.
+ * GET /api/admin/migrate-pipeline?key=agentia-migrate-2025
  */
 export async function GET(request: NextRequest) {
-  const secret = process.env.ADMIN_PASSWORD?.trim();
   const key = request.nextUrl.searchParams.get('key')?.trim();
-  if (!secret) {
-    return NextResponse.json({ ok: false, error: 'ADMIN_PASSWORD no configurado' }, { status: 503 });
-  }
-  if (key !== secret) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: 'No autorizado',
-        debug: {
-          keyRecibida: key,
-          keyLength: key?.length,
-          secretLength: secret?.length,
-          match: key === secret,
-        },
-      },
-      { status: 401 }
-    );
+
+  if (key !== TEMP_TOKEN) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
   try {
     const db = await getMongoDb();
     const result = await db.collection('prospectos').updateMany(
-      { pipeline: { $exists: false } },
-      { $set: { pipeline: 'Izzi', giro: 'Barbería' } }
+      { pipeline: 'Izzi' },
+      { $set: { pipeline: 'Agentia' } }
     );
     return NextResponse.json({ ok: true, actualizados: result.modifiedCount });
   } catch (err) {
