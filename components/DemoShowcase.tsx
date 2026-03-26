@@ -1,18 +1,29 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type ComponentType, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart3,
+  HeartPulse,
+  PawPrint,
+  Salad,
+  Scissors,
+  Sparkles,
+  Stethoscope,
+  UtensilsCrossed,
+  Wrench,
+} from 'lucide-react';
 
 export type Screen = {
   title: string;
   content: React.ReactNode;
+  imageUrl?: string;
 };
 
 export type Demo = {
   id: string;
-  emoji: string;
   nombre: string;
   descripcion: string;
   descripcionCorta: string;
@@ -31,6 +42,28 @@ function demoPath(fullUrl: string): string {
 }
 
 const SLIDE_MS = 3000;
+const PAGE_SIZE = 3;
+
+const ICON_BY_DEMO_ID: Record<string, ComponentType<{ size?: number; style?: CSSProperties }>> = {
+  barber: Scissors,
+  restaurante: UtensilsCrossed,
+  spa: Sparkles,
+  grooming: PawPrint,
+  dentista: Stethoscope,
+  medico: HeartPulse,
+  taller: Wrench,
+  nutricion: Salad,
+  cobranza: BarChart3,
+};
+
+function DemoIconBox({ demoId, accentColor, iconSize = 18 }: { demoId: string; accentColor: string; iconSize?: number }) {
+  const Icon = ICON_BY_DEMO_ID[demoId] ?? BarChart3;
+  return (
+    <div className="flex shrink-0 rounded-lg p-2" style={{ backgroundColor: `${accentColor}20` }}>
+      <Icon size={iconSize} style={{ color: accentColor }} />
+    </div>
+  );
+}
 
 function ChatLine({
   side,
@@ -59,7 +92,6 @@ function buildDemos(): Demo[] {
   return [
     {
       id: 'barber',
-      emoji: '✂️',
       nombre: 'Barbería',
       descripcionCorta: 'Agenda con IA y detección de conflictos de horario.',
       descripcion:
@@ -154,7 +186,6 @@ function buildDemos(): Demo[] {
     },
     {
       id: 'restaurante',
-      emoji: '🍔',
       nombre: 'Restaurantes',
       descripcionCorta: 'Menú QR, cocina en vivo y delivery con CRM.',
       descripcion:
@@ -247,7 +278,6 @@ function buildDemos(): Demo[] {
     },
     {
       id: 'spa',
-      emoji: '💆',
       nombre: 'Spa & Estética',
       descripcionCorta: 'Agenda semanal, VIP y chat en recepción.',
       descripcion:
@@ -322,7 +352,6 @@ function buildDemos(): Demo[] {
     },
     {
       id: 'grooming',
-      emoji: '🐾',
       nombre: 'Grooming Canino',
       descripcionCorta: 'Fichas por mascota, domicilio y recordatorios.',
       descripcion: 'Fichas de mascotas, agenda, servicio a domicilio con seguimiento y recordatorios inteligentes.',
@@ -391,7 +420,6 @@ function buildDemos(): Demo[] {
     },
     {
       id: 'dentista',
-      emoji: '🦷',
       nombre: 'Clínica Dental',
       descripcionCorta: 'Expediente, odontograma y recetas PDF.',
       descripcion: 'Expediente clínico con odontograma, recetas PDF, agenda por dentista y cobranza.',
@@ -446,7 +474,6 @@ function buildDemos(): Demo[] {
     },
     {
       id: 'medico',
-      emoji: '👨‍⚕️',
       nombre: 'Médico & Especialistas',
       descripcionCorta: 'Expediente digital, agenda y recetas con QR.',
       descripcion:
@@ -512,7 +539,6 @@ function buildDemos(): Demo[] {
     },
     {
       id: 'taller',
-      emoji: '🔧',
       nombre: 'Taller Mecánico',
       descripcionCorta: 'Órdenes, PDF, inventario y recordatorios.',
       descripcion:
@@ -588,7 +614,6 @@ function buildDemos(): Demo[] {
     },
     {
       id: 'nutricion',
-      emoji: '🥗',
       nombre: 'Nutrición & Bienestar',
       descripcionCorta: 'Tablero InBody, IA dietética y motivación.',
       descripcion:
@@ -647,7 +672,6 @@ function buildDemos(): Demo[] {
     },
     {
       id: 'cobranza',
-      emoji: '📊',
       nombre: 'Cobranza & Cartera',
       descripcionCorta: 'Morosidad, secuencias y estado de cuenta PDF.',
       descripcion:
@@ -721,9 +745,22 @@ function buildDemos(): Demo[] {
 const DEMOS = buildDemos();
 
 export function DemoShowcase() {
+  const totalPages = Math.ceil(DEMOS.length / PAGE_SIZE);
+  const [page, setPage] = useState(0);
   const [activeId, setActiveId] = useState(DEMOS[0]!.id);
   const [screenIndex, setScreenIndex] = useState(0);
   const [typedUrl, setTypedUrl] = useState('');
+
+  const visibleDemos = useMemo(
+    () => DEMOS.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [page]
+  );
+
+  useEffect(() => {
+    const start = page * PAGE_SIZE;
+    const visible = DEMOS.slice(start, start + PAGE_SIZE);
+    setActiveId((current) => (visible.some((d) => d.id === current) ? current : visible[0]!.id));
+  }, [page]);
 
   const active = useMemo(() => DEMOS.find((d) => d.id === activeId) ?? DEMOS[0]!, [activeId]);
   const screens = active.screens;
@@ -757,34 +794,63 @@ export function DemoShowcase() {
   return (
     <div className="w-full">
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-        {/* Mobile: chips */}
-        <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
-          {DEMOS.map((d) => (
+        {/* Mobile: chips + paginación */}
+        <div className="lg:hidden">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {visibleDemos.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setActiveId(d.id)}
+                className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-left text-xs transition ${
+                  activeId === d.id
+                    ? 'border-white/20 bg-white/10 text-white'
+                    : 'border-white/10 bg-white/5 text-slate-500'
+                }`}
+                style={
+                  activeId === d.id
+                    ? { borderColor: `${d.accentColor}88`, boxShadow: `0 0 0 1px ${d.accentColor}33` }
+                    : undefined
+                }
+              >
+                <DemoIconBox demoId={d.id} accentColor={d.accentColor} iconSize={16} />
+                {d.nombre}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-3">
             <button
-              key={d.id}
               type="button"
-              onClick={() => setActiveId(d.id)}
-              className={`shrink-0 rounded-full border px-3 py-2 text-left text-xs transition ${
-                activeId === d.id
-                  ? 'border-white/20 bg-white/10 text-white'
-                  : 'border-white/10 bg-white/5 text-slate-500'
-              }`}
-              style={
-                activeId === d.id
-                  ? { borderColor: `${d.accentColor}88`, boxShadow: `0 0 0 1px ${d.accentColor}33` }
-                  : undefined
-              }
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="text-slate-400 transition hover:text-white disabled:opacity-30"
             >
-              <span className="mr-1">{d.emoji}</span>
-              {d.nombre}
+              ← Anterior
             </button>
-          ))}
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Página ${i + 1}`}
+                onClick={() => setPage(i)}
+                className={`h-2 w-2 rounded-full transition ${page === i ? 'bg-teal-400' : 'bg-slate-600'}`}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page === totalPages - 1}
+              className="text-slate-400 transition hover:text-white disabled:opacity-30"
+            >
+              Siguiente →
+            </button>
+          </div>
         </div>
 
-        {/* Desktop list */}
+        {/* Desktop list + paginación */}
         <div className="hidden w-full shrink-0 lg:block lg:w-[40%]">
           <div className="flex flex-col gap-2">
-            {DEMOS.map((d) => {
+            {visibleDemos.map((d) => {
               const on = activeId === d.id;
               return (
                 <button
@@ -804,45 +870,72 @@ export function DemoShowcase() {
                       : undefined
                   }
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className={`text-sm font-semibold ${on ? 'text-white' : 'text-slate-500'}`}>
-                      <span className="mr-1.5">{d.emoji}</span>
-                      {d.nombre}
-                    </span>
-                  </div>
-                  <p className={`mt-1 text-xs ${on ? 'text-slate-300' : 'text-slate-600 line-clamp-1'}`}>
-                    {on ? d.descripcion : d.descripcionCorta}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {d.chips.map((c) => (
-                      <span
-                        key={c}
-                        className={`rounded-full px-2 py-0.5 text-[10px] ${
-                          on ? 'border border-white/15 bg-black/20 text-slate-300' : 'text-slate-600'
-                        }`}
-                      >
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                  {on && (
-                    <>
-                      <p className="mt-2 text-xs text-slate-500">
-                        Desde <span className="font-medium text-slate-300">$399 MXN/mes</span>
-                        <span className="text-slate-600">*</span>
+                  <div className="flex gap-3">
+                    <DemoIconBox demoId={d.id} accentColor={d.accentColor} />
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm font-semibold ${on ? 'text-white' : 'text-slate-500'}`}>{d.nombre}</p>
+                      <p className={`mt-1 text-xs ${on ? 'text-slate-300' : 'text-slate-600 line-clamp-1'}`}>
+                        {on ? d.descripcion : d.descripcionCorta}
                       </p>
-                      <Link
-                        href={demoPath(d.url)}
-                        className="mt-3 inline-flex items-center gap-1 text-sm font-semibold"
-                        style={{ color: d.accentColor }}
-                      >
-                        Ver demo completa <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </>
-                  )}
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {d.chips.map((c) => (
+                          <span
+                            key={c}
+                            className={`rounded-full px-2 py-0.5 text-[10px] ${
+                              on ? 'border border-white/15 bg-black/20 text-slate-300' : 'text-slate-600'
+                            }`}
+                          >
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                      {on && (
+                        <>
+                          <p className="mt-2 text-xs text-slate-500">
+                            Desde <span className="font-medium text-slate-300">$399 MXN/mes</span>
+                            <span className="text-slate-600">*</span>
+                          </p>
+                          <Link
+                            href={demoPath(d.url)}
+                            className="mt-3 inline-flex items-center gap-1 text-sm font-semibold"
+                            style={{ color: d.accentColor }}
+                          >
+                            Ver demo completa <ArrowRight className="h-4 w-4" />
+                          </Link>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </button>
               );
             })}
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="text-slate-400 transition hover:text-white disabled:opacity-30"
+            >
+              ← Anterior
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                aria-label={`Página ${i + 1}`}
+                onClick={() => setPage(i)}
+                className={`h-2 w-2 rounded-full transition ${page === i ? 'bg-teal-400' : 'bg-slate-600'}`}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              disabled={page === totalPages - 1}
+              className="text-slate-400 transition hover:text-white disabled:opacity-30"
+            >
+              Siguiente →
+            </button>
           </div>
         </div>
 
@@ -875,10 +968,26 @@ export function DemoShowcase() {
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: -48, opacity: 0 }}
                   transition={{ duration: 0.35, ease: 'easeInOut' }}
-                  className="absolute inset-0 overflow-y-auto p-2"
+                  className="absolute inset-0 flex flex-col overflow-hidden"
                 >
-                  <p className="mb-2 text-[10px] font-medium text-slate-500">{screens[screenIndex]?.title}</p>
-                  <div className="min-h-[240px] text-slate-200">{screens[screenIndex]?.content}</div>
+                  {(() => {
+                    const screen = screens[screenIndex];
+                    if (!screen) return null;
+                    return (
+                      <>
+                        <p className="mb-2 shrink-0 px-2 pt-2 text-[10px] font-medium text-slate-500">{screen.title}</p>
+                        {screen.imageUrl ? (
+                          <img
+                            src={screen.imageUrl}
+                            alt={screen.title}
+                            className="h-full w-full rounded-b-lg object-cover object-top"
+                          />
+                        ) : (
+                          <div className="h-full overflow-hidden p-4 text-slate-200">{screen.content}</div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </motion.div>
               </AnimatePresence>
             </div>
