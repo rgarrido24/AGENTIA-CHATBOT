@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell,
+  BookOpen,
+  CalendarDays,
   LayoutDashboard,
   Menu,
   MessageCircle,
@@ -30,6 +32,8 @@ const NAV = [
   { href: '/demo/nutricion/pacientes', label: 'Mis Pacientes', icon: Users },
   { href: '/demo/nutricion/tablero', label: 'Tablero de Resultados', icon: TrendingUp },
   { href: '/demo/nutricion/dietas', label: 'Planes de Dieta', icon: UtensilsCrossed },
+  { href: '/demo/nutricion/equivalentes', label: 'Tabla SMAE', icon: BookOpen },
+  { href: '/demo/nutricion/plan-semanal', label: 'Plan Semanal IA', icon: CalendarDays },
   { href: '/demo/nutricion/inbody', label: 'Registro InBody', icon: ScanLine },
   { href: '/demo/nutricion/recordatorios', label: 'Recordatorios', icon: Bell },
   { href: '/demo/nutricion/chat', label: 'Asistente IA', icon: MessageCircle },
@@ -40,6 +44,8 @@ const TITLE_MAP: Record<string, string> = {
   '/demo/nutricion/pacientes': 'Mis Pacientes',
   '/demo/nutricion/tablero': 'Tablero de Resultados',
   '/demo/nutricion/dietas': 'Planes de Dieta',
+  '/demo/nutricion/equivalentes': 'Tabla SMAE',
+  '/demo/nutricion/plan-semanal': 'Plan Semanal IA',
   '/demo/nutricion/inbody': 'Registro InBody',
   '/demo/nutricion/recordatorios': 'Recordatorios',
   '/demo/nutricion/chat': 'Asistente IA',
