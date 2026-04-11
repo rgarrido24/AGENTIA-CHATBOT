@@ -100,13 +100,41 @@ const ALIMENTOS_PROHIBIDOS_A = [
 ];
 
 const CONTENIDO_PLAN_A = `
-Plan hipocalórico moderado — 1,400 kcal/día
+PLAN DE ALIMENTACIÓN — 1,400 kcal/día
 
-DESAYUNO: 2 huevos revueltos con aceite en spray, 1 tostada integral, 1 fruta pequeña (manzana o pera).
-COLACIÓN: 1 yogurt griego sin azúcar + 10 almendras.
-COMIDA: 150g pollo a la plancha + ensalada mixta (aceite de oliva 1 cda) + 1/2 taza arroz integral cocido.
-MERIENDA: 1 manzana + 1 cda mantequilla de maní natural sin azúcar.
-CENA: Sopa de verduras casera + 100g atún al natural + 2 galletas integrales.
+DESAYUNO (7:00 AM):
+- 2 equivalentes de cereal sin grasa
+  (ej: 2 tortillas de maíz o 2 rebanadas pan integral)
+- 1 equivalente de proteína de origen animal bajo en grasa
+  (ej: 30g pollo cocido, 1 clara de huevo, 30g atún al natural)
+- 1 equivalente de fruta
+  (ej: 1 manzana mediana, 1 taza de fresas, 1 pera)
+- 1 equivalente de leche descremada
+
+COLACIÓN AM (10:00 AM):
+- 1 equivalente de fruta
+- 1 equivalente de proteína vegetal (leguminosa)
+  (ej: 1/2 taza frijoles cocidos, 1/2 taza lentejas)
+
+COMIDA (2:00 PM):
+- 3 equivalentes de cereal sin grasa
+  (ej: 3 tortillas de maíz o 3/4 taza arroz integral cocido)
+- 2 equivalentes de proteína de origen animal bajo en grasa
+  (ej: 60g pechuga de pollo, 60g pescado blanco)
+- 2 equivalentes de verdura
+  (ej: 1 taza ensalada mixta + 1/2 taza calabaza cocida)
+- 1 equivalente de grasa sin proteína
+  (ej: 1 cdta aceite de oliva o 1/8 aguacate)
+
+COLACIÓN PM (5:00 PM):
+- 1 equivalente de fruta
+- 1 equivalente de leche descremada
+
+CENA (8:00 PM):
+- 2 equivalentes de cereal sin grasa
+- 1 equivalente de proteína de origen animal
+  (ej: 30g atún al natural, 1 huevo entero)
+- 2 equivalentes de verdura
 
 Hidratación: 2–2.5 L agua simple al día. Evitar alcohol.
 `.trim();
@@ -123,15 +151,45 @@ const ALIMENTOS_PROHIBIDOS_B = [
 ];
 
 const CONTENIDO_PLAN_B = `
-Plan proteico para ganar músculo — 2,200 kcal/día
+PLAN DE ALIMENTACIÓN — 1,600 kcal/día
 
-DESAYUNO: Avena 80g cocida + 200ml leche descremada + 3 claras + 1 fruta + 1 cdta mantequilla de maní.
-COLACIÓN: Batido: 30g proteína en polvo + 250ml agua + 1 plátano.
-COMIDA: 200g pechuga o carne magra + 1.5 taza arroz o pasta integral + verduras al vapor + 1/2 aguacate.
-MERIENDA: Yogurt griego 200g + 30g granola sin azúcar + frutos rojos.
-CENA: 180g pescado + ensalada grande + papa al horno 200g + aceite de oliva 1 cda.
+DESAYUNO (7:00 AM):
+- 3 equivalentes de cereal sin grasa
+  (ej: 3/4 taza avena cocida o 3 rebanadas pan integral)
+- 2 equivalentes de proteína de origen animal bajo en grasa
+  (ej: 2 claras de huevo + 30g queso cottage)
+- 1 equivalente de fruta
+  (ej: 1 plátano pequeño, 1 taza arándanos)
+- 1 equivalente de leche semidescremada
 
-Priorizar proteína en cada comida; hidratar 3L/día en entrenamiento.
+COLACIÓN AM (10:00 AM):
+- 1 equivalente de fruta
+- 1 equivalente de proteína de origen animal
+  (ej: 30g pechuga, 1 huevo cocido)
+
+COMIDA (2:00 PM):
+- 4 equivalentes de cereal sin grasa
+  (ej: 1 taza arroz integral cocido + 1 tortilla)
+- 3 equivalentes de proteína de origen animal bajo en grasa
+  (ej: 90g pechuga de pollo o 90g salmón)
+- 2 equivalentes de verdura
+- 1 equivalente de grasa sin proteína
+  (ej: 1/4 aguacate o 1 cdta aceite de oliva)
+
+COLACIÓN PM (5:00 PM):
+- 1 equivalente de fruta
+- 1 equivalente de leche semidescremada
+- 1 equivalente de grasa con proteína
+  (ej: 10 almendras o 15g nueces)
+
+CENA (8:00 PM):
+- 2 equivalentes de cereal sin grasa
+- 2 equivalentes de proteína de origen animal
+  (ej: 60g pescado blanco, 60g atún al natural)
+- 2 equivalentes de verdura
+- 1 equivalente de grasa sin proteína
+
+Priorizar proteína en cada comida; hidratar 2.5–3 L/día.
 `.trim();
 
 const ALIMENTOS_PERMITIDOS_C = [
@@ -148,15 +206,45 @@ const ALIMENTOS_PROHIBIDOS_C = [
 ];
 
 const CONTENIDO_PLAN_C = `
-Plan de mantenimiento — 1,800 kcal/día
+PLAN DE ALIMENTACIÓN — 1,800 kcal/día
 
-DESAYUNO: 2 rebanadas pan integral + 2 huevos + 1 fruta + café/te sin azúcar.
-COLACIÓN: Fruta + puñado pequeño de nueces (15g).
-COMIDA: Proteína 120–150g + 1 taza carbohidrato complejo + ensalada + 1 cdta aceite.
-MERIENDA: Yogurt + granola casera sin azúcar (porción).
-CENA: Proteína magra 120g + verduras cocidas o crudas + opcional 1/2 taza arroz o 1 tortilla.
+DESAYUNO (7:00 AM):
+- 3 equivalentes de cereal sin grasa
+  (ej: 2 rebanadas pan integral + 1/3 taza avena)
+- 2 equivalentes de proteína de origen animal
+  (ej: 2 huevos enteros o 1 huevo + 30g queso panela)
+- 1 equivalente de fruta
+- 1 equivalente de leche entera o semidescremada
 
-Mantener rutina de 3–4 comidas + 1 colación; ajustar por hambre y actividad.
+COLACIÓN AM (10:00 AM):
+- 1 equivalente de fruta
+- 1 equivalente de grasa con proteína
+  (ej: 15g nueces, 10 almendras, 1 cda mantequilla de maní natural)
+
+COMIDA (2:00 PM):
+- 4 equivalentes de cereal sin grasa
+  (ej: 1 taza arroz integral + 2 tortillas de maíz)
+- 3 equivalentes de proteína de origen animal moderado
+  (ej: 90g pollo, 90g pavo, 90g pescado)
+- 2 equivalentes de verdura
+  (ej: 1 taza ensalada + 1/2 taza verduras cocidas)
+- 1 equivalente de leguminosa
+  (ej: 1/2 taza frijoles o lentejas cocidas)
+- 1 equivalente de grasa sin proteína
+  (ej: 1/4 aguacate o 1 cdta aceite de oliva)
+
+COLACIÓN PM (5:00 PM):
+- 1 equivalente de fruta
+- 1 equivalente de leche descremada o natural
+
+CENA (8:00 PM):
+- 2 equivalentes de cereal sin grasa
+  (ej: 2 tortillas de maíz o 1/2 taza arroz integral)
+- 2 equivalentes de proteína de origen animal
+  (ej: 60g pollo, 60g atún, 2 claras de huevo)
+- 2 equivalentes de verdura
+
+Mantener 3 comidas + 2 colaciones; ajustar porciones por actividad física.
 `.trim();
 
 export const PLANES_DIETA: Record<

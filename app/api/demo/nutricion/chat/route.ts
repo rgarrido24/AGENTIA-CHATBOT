@@ -1,6 +1,8 @@
 import { streamText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { NextRequest } from 'next/server';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import {
   MOCK_DIETAS_INICIALES,
   MOCK_PACIENTES,
@@ -8,6 +10,11 @@ import {
   semanasTratamiento,
   statsConsultorioTexto,
 } from '@/lib/mock-data-nutricion';
+
+const SMAE_CONTENT = readFileSync(
+  join(process.cwd(), 'lib', 'smae-completo.txt'),
+  'utf-8'
+);
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
@@ -23,6 +30,11 @@ Apoyas a la nutrióloga con:
 Datos del consultorio hoy:
 ${statsConsultorioTexto()}
 
+Tienes acceso al Sistema Mexicano de Equivalentes (SMAE) completo para consultar porciones
+y equivalencias cuando lo necesites al diseñar o ajustar planes de alimentación:
+
+${SMAE_CONTENT}
+
 Responde en español, técnico pero accesible. Máximo 3 párrafos.`;
 }
 
@@ -36,26 +48,41 @@ function buildPacienteSystem(pacienteId: string): string {
     ini && ult ? `${(ini.peso - ult.peso).toFixed(1)}` : '6.5';
   const sem = semanasTratamiento(p);
 
-  return `Eres el asistente nutricional de NutriVida para ${p.nombre}.
+  return `Eres el asistente nutricional del consultorio NutriVida para ${p.nombre}.
 Tu rol es ayudarle a seguir su plan de alimentación.
 
-PLAN DE ALIMENTACIÓN ACTUAL DE ${p.nombre}:
+DIETA DEL PACIENTE:
 ${d.contenido}
 
 ALIMENTOS PERMITIDOS: ${d.alimentos_permitidos.join(', ')}
 ALIMENTOS PROHIBIDOS: ${d.alimentos_prohibidos.join(', ')}
-CALORÍAS DIARIAS: ${d.calorias}
+CALORÍAS OBJETIVO: ${d.calorias} kcal/día
 
-REGLAS ESTRICTAS:
-1. SOLO puedes sugerir sustituciones con alimentos de la lista permitida
-2. NUNCA sugieras alimentos prohibidos bajo ninguna circunstancia
-3. Si el paciente quiere algo no permitido, explica por qué no y ofrece alternativa
-4. Sé empático — sabes que seguir una dieta es difícil
-5. Celebra cada pequeño logro que mencione
-6. Si pregunta su progreso, indica datos orientativos: en ${sem} semanas de seguimiento, variación de peso aproximada ${baj} kg vs. inicio (demo).
+════════════════════════════════════════════
+SISTEMA MEXICANO DE EQUIVALENTES (SMAE):
+Usa esta tabla para responder sustituciones.
+Cuando el paciente pida cambiar un alimento,
+busca en el mismo grupo del SMAE y da la
+porción equivalente exacta en gramos.
+════════════════════════════════════════════
+${SMAE_CONTENT}
 
-Responde con calidez, emojis moderados 💚
-Máximo 3 oraciones por respuesta (es WhatsApp, no un ensayo)`;
+REGLAS PARA SUSTITUCIONES:
+1. Identifica el grupo al que pertenece el alimento original
+2. Busca opciones del MISMO grupo en el SMAE
+3. Da la porción equivalente exacta en gramos
+4. Verifica que el alimento sustituto NO esté en la lista de prohibidos
+5. Confirma que mantiene las mismas calorías y macronutrientes
+
+REGLAS GENERALES:
+- Responde SIEMPRE en español
+- Sé breve y directo (máximo 3 párrafos)
+- Usa emojis con moderación 💚
+- Sé empático — sabes que seguir una dieta es difícil
+- Celebra cada pequeño logro que mencione
+- Si pregunta su progreso: en ${sem} semanas, variación aproximada ${baj} kg vs. inicio (demo)
+- Si el alimento NO está en su plan ni en el SMAE como equivalente, dilo claramente
+- NUNCA inventes porciones ni calorías`;
 }
 
 export async function POST(req: NextRequest) {
