@@ -2,86 +2,86 @@ GRUPO: VERDURAS
 
 ALIMENTOS:
   - ACELGA CRUDA: 2
-  - ACELGA PICADA COCIDA: 44593
-  - APIO COCIDO: 44654
+  - ACELGA PICADA COCIDA: 1/2
+  - APIO COCIDO: 3/4
   - APIO CRUDO: 1 1/2
-  - BETABEL CRUDO: 44652
-  - BRÓCOLI COCIDO: 44593
+  - BETABEL CRUDO: 1/4
+  - BRÓCOLI COCIDO: 1/2
   - CALABACITA REDONDA CRUDA: 1
-  - CEBOLLA BLANCA REBANADA: 44593
-  - CEBOLLA COCIDA: 44652
+  - CEBOLLA BLANCA REBANADA: 1/2
+  - CEBOLLA COCIDA: 1/4
   - CEBOLLITA DE CAMBRAY: 3
-  - CHAMPIÑÓN COCIDO: 44593
+  - CHAMPIÑÓN COCIDO: 1/2
   - CHAMPIÑÓN CRUDO ENTERO: 1
   - CHAMPIÑÓN CRUDO REBANADO: 1 1/2
-  - CHAYOTE COCIDO PICADO: 44593
-  - CHAYOTE CRUDO: 44593
+  - CHAYOTE COCIDO PICADO: 1/2
+  - CHAYOTE CRUDO: 1/2
   - CHILE CHILACA: 2
   - CHILE CHIPOTLE SECO: 2
   - CHILE CUARESMEÑO: 2
   - CHILE JALAPEÑO: 6
   - COLIFLOR COCIDA: 1
-  - CUITLACOCHE COCIDO: 44621
-  - ESPINACA COCIDA: 44593
+  - CUITLACOCHE COCIDO: 1/3
+  - ESPINACA COCIDA: 1/2
   - ESPINACA CRUDA: 2
   - FLOR DE CALABAZA COCIDA: 1
   - FLOR DE CALABAZA CRUDA: 4
   - GERMEN DE ALFALFA CRUDO: 3
-  - GERMEN DE LENTEJA CRUDO: 44652
+  - GERMEN DE LENTEJA CRUDO: 1/4
   - GRANOS DE ELOTE CRUDOS: 2
   - HONGOS CRUDOS: 1
-  - HUANZONTLE: 44593
-  - HUITLACOCHE COCIDO: 44621
-  - JÍCAMA PICADA: 44593
+  - HUANZONTLE: 1/2
+  - HUITLACOCHE COCIDO: 1/3
+  - JÍCAMA PICADA: 1/2
   - JITOMATE: 120
   - JITOMATE BOLA: 1
-  - JUGO DE ZANAHORIA: 44652
+  - JUGO DE ZANAHORIA: 1/4
   - LECHUGA: 3
   - NOPAL COCIDO: 1
   - NOPAL CRUDO: 2
   - PEPINO CON CÁSCARA REBANADO: 1
   - PIMIENTO ROJO Y VERDE CRUDO CHICO: 1
-  - SETAS COCIDAS: 44593
+  - SETAS COCIDAS: 1/2
   - VERDOLANGA COCIDA: 1
   - XOCONOSTLE: 3
-  - ZANAHORIA PICADA CRUDA: 44593
-  - ZANAHORIA RALLADA CRUDA: 44593
+  - ZANAHORIA PICADA CRUDA: 1/2
+  - ZANAHORIA RALLADA CRUDA: 1/2
 
 GRUPO: FRUTAS
 
 ALIMENTOS:
   - AGUA DE COCO: 1 1/2
   - ARANDANO FRESCO: 1 1/2
-  - ARANDANO SECO CON AZUCAR: 44593
-  - BLUEBERRIES: 44654
-  - BLUEBERRIES CONGELADAS: 44654
-  - BLUEBERRIES CONGELADAS CON AZUCAR: 44652
-  - BLUEBERRIES EN ALMIBAR: 44652
+  - ARANDANO SECO CON AZUCAR: 1/2
+  - BLUEBERRIES: 3/4
+  - BLUEBERRIES CONGELADAS: 3/4
+  - BLUEBERRIES CONGELADAS CON AZUCAR: 1/4
+  - BLUEBERRIES EN ALMIBAR: 1/4
   - CAÑA DE AZUCAR: 250
   - CAPULIN: 3
   - CEREZA: 20
   - CEREZA CONGELADAS: 1
-  - CEREZA EN ALMIBAR: 44652
+  - CEREZA EN ALMIBAR: 1/4
   - CEREZAS MASCHINO ENLATADAS: 4
   - CHABACANO: 4
   - CIRUELA CRIOLLA ROJA O AMARILLA: 3
-  - CIRUELA NEGRA: 44593
+  - CIRUELA NEGRA: 1/2
   - CIRUELA PASA DESHUESADA: 7
-  - COCKTAIL DE FRUTAS EN ALMIBAR: 44652
-  - COCKTAIL DE FRUTAS ENLATADO CON AGUA: 44593
-  - COCKTAIL DE FRUTAS ENLATADO CON JUGO DE FRUTA: 44593
+  - COCKTAIL DE FRUTAS EN ALMIBAR: 1/4
+  - COCKTAIL DE FRUTAS ENLATADO CON AGUA: 1/2
+  - COCKTAIL DE FRUTAS ENLATADO CON JUGO DE FRUTA: 1/2
   - DATIL SECO: 2
   - DURAZNO AMARILLO: 2
-  - DURAZNO CON AZUCAR CONGELADO: 44652
-  - DURAZNO EN ALMIBAR: 44593
+  - DURAZNO CON AZUCAR CONGELADO: 1/4
+  - DURAZNO EN ALMIBAR: 1/2
   - DURAZNO ENLATADO EN AGUA: 1
-  - DURAZNO ENLATADO EN JUGO: 44593
+  - DURAZNO ENLATADO EN JUGO: 1/2
   - DURAZNO PRISCO: 3
   - FRAMBUESA: 1
   - FRESA ENTERA: 17
   - FRESA REBANADA: 1
-  - FRESAS CONGELADAS CON AZUCAR: 44652
-  - FRESAS CONGELADAS SIN AZUCAR: 44593
+  - FRESAS CONGELADAS CON AZUCAR: 1/4
+  - FRESAS CONGELADAS SIN AZUCAR: 1/2
   - FRUTA PICADA: 1
   - GAJOS DE MANDARINA: 1
   - GAJOS DE NARANJA: 1
@@ -89,7 +89,7 @@ ALIMENTOS:
   - GRANADA CHINA: 2
   - GRANADA ROJA: 1
   - GROSELLAS: 1
-  - GROSELLAS EN ALMIBAR: 44652
+  - GROSELLAS EN ALMIBAR: 1/4
   - GROSELLAS NEGRAS: 1
   - GROSELLA ROJAS O BLANCAS: 1
   - GUANABANA: 1
@@ -97,39 +97,39 @@ ALIMENTOS:
   - GUAYABA ROSA: 1
   - HIGO: 2
   - HIGO DESHIDRATADO: 1
-  - JUGO DE LIMON: 44654
-  - JUGO DE MAMEY: 44621
-  - JUGO DE MANDARINA NATURAL: 44593
-  - JUGO DE MANGO: 44593
-  - JUGO DE NARANJA NATURAL: 44593
-  - JUGO DE PAPAYA: 44621
-  - JUGO DE TORONJA NATURAL: 44593
+  - JUGO DE LIMON: 3/4
+  - JUGO DE MAMEY: 1/3
+  - JUGO DE MANDARINA NATURAL: 1/2
+  - JUGO DE MANGO: 1/2
+  - JUGO DE NARANJA NATURAL: 1/2
+  - JUGO DE PAPAYA: 1/3
+  - JUGO DE TORONJA NATURAL: 1/2
   - KIWI: 1 1/2
   - LICHIS: 12
   - LIMA: 3
   - LIMON REAL: 4
-  - MAMEY: 44621
+  - MAMEY: 1/3
   - MANDARINA: 2
   - MANGO MANILA: 1
-  - MANGO PETACON: 44593
+  - MANGO PETACON: 1/2
   - MANGO PICADO: 1
   - MANZANA: 1
-  - MANZANA PICADA: 44593
+  - MANZANA PICADA: 1/2
   - MANZANA ROJA: 1
-  - MANZANA VERDE: 44593
-  - MELON: 44621
+  - MANZANA VERDE: 1/2
+  - MELON: 1/3
   - MELON PICADO: 1
-  - MORAS: 44654
+  - MORAS: 3/4
   - NARANJA: 2
   - PAPAYA PICADA: 1
   - PASAS: 10
-  - PERA: 44593
+  - PERA: 1/2
   - PERA PICADA: 1
-  - PIÑA PICADA: 44654
+  - PIÑA PICADA: 3/4
   - PIÑA REBANADA: 1
-  - PLATANO: 44593
+  - PLATANO: 1/2
   - PLATANO DOMINICO: 3
-  - PLATANO MACHO: 44652
+  - PLATANO MACHO: 1/4
   - SANDIA PICADA: 1
   - SANDIA REBANADA: 1
   - TAMARINDO: 50
@@ -140,48 +140,48 @@ ALIMENTOS:
   - UVA ROJA: 1
   - UVA VERDE: 1
   - ZARZAMORA: 1
-  - ZARZAMORA CONGELADA SIN AZUCAR: 44593
-  - ZARZAMORA EN ALMIBAR: 44652
+  - ZARZAMORA CONGELADA SIN AZUCAR: 1/2
+  - ZARZAMORA EN ALMIBAR: 1/4
 
 GRUPO: CEREALES SIN GRASA
-Calorías: ? | Proteína: ?g | Grasa: ?g | CHO: 44654g
+Calorías: ? | Proteína: ?g | Grasa: ?g | CHO: 69g
 
 ALIMENTOS:
   - ALEGRIA NATURAL: 5
-  - ARROZ COCIDO: 44652
-  - ARROZ INTEGRAL COCIDO: 44621
-  - ARROZ PRECOCIDO COCIDO: 44621
-  - AVENA COCIDA: 44654
-  - AVENA EN HOJUELAS: 44593
-  - BAGEL: 44621
+  - ARROZ COCIDO: 1/4
+  - ARROZ INTEGRAL COCIDO: 1/3
+  - ARROZ PRECOCIDO COCIDO: 1/3
+  - AVENA COCIDA: 3/4
+  - AVENA EN HOJUELAS: 1/2
+  - BAGEL: 1/3
   - BARRA SPECIAL K SABORES: 1
-  - BARRA STILA: 44654
-  - BARRITA DE AVENA: 44593
-  - BOLILLO: 44621
-  - CAMOTE COCIDO: 44621
-  - CEREAL KELLOGS KORN FLAKES: 44622
-  - CEREAL KELLOGS CHOCO CRISPIS: 44654
+  - BARRA STILA: 3/4
+  - BARRITA DE AVENA: 1/2
+  - BOLILLO: 1/3
+  - CAMOTE COCIDO: 1/3
+  - CEREAL KELLOGS KORN FLAKES: 2/3
+  - CEREAL KELLOGS CHOCO CRISPIS: 3/4
   - CEREAL ZUCARITAS: 1
   - CREPAS: 2
   - ELOTE AMARILLO CONGELADO: 1 1/2
-  - ELOTE AMARILLO DESGRANADO COCIDO: 44593
-  - ELOTE AMARILLO ENLATADO: 44593
-  - ESPAGUETI COCIDO: 44621
-  - ESPAGUETI INTEGRAL COCIDO: 44621
+  - ELOTE AMARILLO DESGRANADO COCIDO: 1/2
+  - ELOTE AMARILLO ENLATADO: 1/2
+  - ESPAGUETI COCIDO: 1/3
+  - ESPAGUETI INTEGRAL COCIDO: 1/3
   - GALLETA MARIA: 5
   - GALLETA SALADA: 4
   - GALLETA DE MAIZ HORNEADAS (SALMAS): 3
   - GRANOLA: 3
   - HABANERAS CLÁSICAS: 4
   - HABANERAS INTEGRALES: 4
-  - HOT CAKE: 44654
+  - HOT CAKE: 3/4
   - PALOMITAS: 2 1/2
-  - PAN ARABE: 44621
+  - PAN ARABE: 1/3
   - PAN INTEGRAL: 1
   - PAN MOLIDO: 8
   - PAN TOSTADO: 1
-  - PAPA COCIDA: 44593
-  - PASTA COCIDA: 44593
+  - PAPA COCIDA: 1/2
+  - PASTA COCIDA: 1/2
   - TORTILLA DE MAIZ: 1
   - TORTILLA DE NOPAL: 3
   - TOSTADA DE MAIZ HORNEADA: 2
@@ -190,28 +190,28 @@ ALIMENTOS:
 GRUPO: CEREALES CON GRASA
 
 ALIMENTOS:
-  - BARRA DE GRANOLA: 44654
-  - BISQUET: 44593
-  - CONCHA, PAN DULCE: 44621
-  - CROISSANT: 44593
-  - DONA: 44621
-  - DORITOS NACHOS: 44621
+  - BARRA DE GRANOLA: 3/4
+  - BISQUET: 1/2
+  - CONCHA, PAN DULCE: 1/3
+  - CROISSANT: 1/2
+  - DONA: 1/3
+  - DORITOS NACHOS: 1/3
   - GALLETA DE AVENA: 1
   - GALLETA DE AVENA CON PASAS: 2
   - GALLETA OREO: 2
   - GRANOLA ESTANDAR: 3
-  - KINDER DELICE: 44593
-  - MADALENA: 44654
-  - OREJA: 44621
-  - PANQUE: 44593
+  - KINDER DELICE: 1/2
+  - MADALENA: 3/4
+  - OREJA: 1/3
+  - PANQUE: 1/2
   - PAPA CONGELADA PARA FREIR: 50
   - PAPAS SABRITAS: 20
   - PASTEL DE CHOCOLATE: 1
-  - PASTEL DE ZANAHORIA CON CUBIERTA QUESO CREMA: 44593
+  - PASTEL DE ZANAHORIA CON CUBIERTA QUESO CREMA: 1/2
   - PAY DE MANZANA: 1
-  - ROLES DE CANELA: 44593
+  - ROLES DE CANELA: 1/2
   - STRUDEL DE MANZANA: 1
-  - TAMAL DE CARNE: 44682
+  - TAMAL DE CARNE: 1 pza
   - TORTILLA DE HARINA: 1
   - TORTILLA DE HARINA INTEGRAL: 1
   - TOSTADA: 1 1/2
@@ -221,588 +221,587 @@ ALIMENTOS:
 GRUPO: LEGUMINOSAS
 
 ALIMENTOS:
-  - Alubia cocida (chica o grande): 44593
-  - Bebida vegetal Silk soya sin azpucar, sin endulzar: 1
-  - Frijol molido: 44621
-  - Frijjol promedio cocido: 44593
-  - Frijoles enteros enlatados: 44593
-  - Frijoles refritos, caseros o enlatados: 44621
-  - Garbanzo cocido: 44593
-  - Haba seca cocida: 44593
-  - Lenteja cocida: 44593
-  - Lenteja cruda: 35
-  - Soya cocida: 44621
+  - ALUBIA COCIDA (CHICA O GRANDE): 1/2
+  - BEBIDA VEGETAL SILK SOYA SIN AZPUCAR, SIN ENDULZAR: 1
+  - FRIJOL MOLIDO: 1/3
+  - FRIJJOL PROMEDIO COCIDO: 1/2
+  - FRIJOLES ENTEROS ENLATADOS: 1/2
+  - FRIJOLES REFRITOS, CASEROS O ENLATADOS: 1/3
+  - GARBANZO COCIDO: 1/2
+  - HABA SECA COCIDA: 1/2
+  - LENTEJA COCIDA: 1/2
+  - LENTEJA CRUDA: 35
+  - SOYA COCIDA: 1/3
 
 GRUPO: POA MUY BAJO APORTE DE GRASA
 
 ALIMENTOS:
-  - Aguayón: 30
-  - Alón de pollo sin piel: 1
-  - Atún en agua drenado: 44621
-  - Atún fresco: 30
-  - Atún light (drenado): 44621
-  - Bistec: 30
-  - Bistec de res: 30
-  - Cabeza de pescado: 400
-  - Camarón cocido: 5
-  - Camarón enlatado: 44652
-  - Camarón seco: 10
-  - Carne de res seca: 11
-  - Carne molida de pavo: 30
-  - Carne molida de pollo: 30
-  - Cecina: 25
-  - Cecina enchilada: 25
-  - Chambarete: 35
-  - Chambarete de res: 35
-  - Charales frescos: 30
-  - Charales secos: 15
-  - Chuleta ahumada: 44593
-  - Clara de huevo: 2
-  - Falda: 35
-  - Falda de res: 35
-  - Filete de atún: 30
-  - Filete de majarra: 40
-  - Filete de pescado: 40
-  - Filete de res: 30
-  - Guachinango cocido: 70
-  - Hueva de pescado: 6
-  - Machaca: 44621
-  - Machacado de res: 15
-  - Maciza de res: 25
-  - Medallón de filete: 44652
-  - Medallón de filete de res: 30
-  - Milanesa de pollo: 30
-  - Milanesa de res: 30
-  - Molleja de pollo cocida: 25
-  - Pechuga de pavo: 1 1/2
-  - Pechuga de pavo ahumada: 1 1/2 reb
-  - Pechuga de pavo ahumada baja en grasa: 2
-  - Pechuga de pollo sin piel aplanada: 30
-  - Pechuga de pollo ahumada: 2
-  - Pechuga de pollo molida: 30
-  - ´Pechuga de pollo sin piel: 30
-  - Pechuga de pollo sin piel a la plancha: 30
-  - Pechuga de pollo sin piel asada: 30
-  - Pechuga de pollo sin piel cocida: 30
-  - Pechuga de pollo sin piel cruda: 40
-  - Pechuga de pollo sin piel molida cruda: 30
-  - Pechuga sin ´piel deshebrada: 30
-  - Pechuga sin piel dsmenuzada: 30
-  - Pechuga sin piel molida: 30
-  - Pescado fileteado: 40
-  - Pollo crudo sin piel en piezas: 40
-  - Pollo deshebrado: 44652
-  - Pollo sin piel cocido: 30
-  - Queso cotagge Lala light: 50
-  - Queso cotegge: 3
-  - Queso cotagge bajo en grasa: 44652
-  - Queso mozzarella cero grasa: 1
+  - AGUAYÓN: 30
+  - ALÓN DE POLLO SIN PIEL: 1
+  - ATÚN EN AGUA DRENADO: 1/3
+  - ATÚN FRESCO: 30
+  - ATÚN LIGHT (DRENADO): 1/3
+  - BISTEC: 30
+  - BISTEC DE RES: 30
+  - CABEZA DE PESCADO: 400
+  - CAMARÓN COCIDO: 5
+  - CAMARÓN ENLATADO: 1/4
+  - CAMARÓN SECO: 10
+  - CARNE DE RES SECA: 11
+  - CARNE MOLIDA DE PAVO: 30
+  - CARNE MOLIDA DE POLLO: 30
+  - CECINA: 25
+  - CECINA ENCHILADA: 25
+  - CHAMBARETE: 35
+  - CHAMBARETE DE RES: 35
+  - CHARALES FRESCOS: 30
+  - CHARALES SECOS: 15
+  - CHULETA AHUMADA: 1/2
+  - CLARA DE HUEVO: 2
+  - FALDA: 35
+  - FALDA DE RES: 35
+  - FILETE DE ATÚN: 30
+  - FILETE DE MAJARRA: 40
+  - FILETE DE PESCADO: 40
+  - FILETE DE RES: 30
+  - GUACHINANGO COCIDO: 70
+  - HUEVA DE PESCADO: 6
+  - MACHACA: 1/3
+  - MACHACADO DE RES: 15
+  - MACIZA DE RES: 25
+  - MEDALLÓN DE FILETE: 1/4
+  - MEDALLÓN DE FILETE DE RES: 30
+  - MILANESA DE POLLO: 30
+  - MILANESA DE RES: 30
+  - MOLLEJA DE POLLO COCIDA: 25
+  - PECHUGA DE PAVO: 1 1/2
+  - PECHUGA DE PAVO AHUMADA: 1 1/2 reb
+  - PECHUGA DE PAVO AHUMADA BAJA EN GRASA: 2
+  - PECHUGA DE POLLO SIN PIEL APLANADA: 30
+  - PECHUGA DE POLLO AHUMADA: 2
+  - PECHUGA DE POLLO MOLIDA: 30
+  - ´PECHUGA DE POLLO SIN PIEL: 30
+  - PECHUGA DE POLLO SIN PIEL A LA PLANCHA: 30
+  - PECHUGA DE POLLO SIN PIEL ASADA: 30
+  - PECHUGA DE POLLO SIN PIEL COCIDA: 30
+  - PECHUGA DE POLLO SIN PIEL CRUDA: 40
+  - PECHUGA DE POLLO SIN PIEL MOLIDA CRUDA: 30
+  - PECHUGA SIN ´PIEL DESHEBRADA: 30
+  - PECHUGA SIN PIEL DSMENUZADA: 30
+  - PECHUGA SIN PIEL MOLIDA: 30
+  - PESCADO FILETEADO: 40
+  - POLLO CRUDO SIN PIEL EN PIEZAS: 40
+  - POLLO DESHEBRADO: 1/4
+  - POLLO SIN PIEL COCIDO: 30
+  - QUESO COTAGGE LALA LIGHT: 50
+  - QUESO COTEGGE: 3
+  - QUESO COTAGGE BAJO EN GRASA: 1/4
+  - QUESO MOZZARELLA CERO GRASA: 1
 
 GRUPO: POA BAJO APORTE DE GRASA
 
 ALIMENTOS:
-  - Arrachera cruda: 35
-  - Arrachera de res cocida: 30
-  - Atún ahumado: 30
-  - Atún en aceite drenado: 44621
-  - Barbacoa: 50
-  - Bistec de ternera: 35
-  - Carne de cerdo: 40
-  - Carne de res(promedio): 30
-  - carne molida de cerdo: 40
-  - Chamorro cocido: 25
-  - Chuleta de cerdo: 44593
-  - Conejo: 40
-  - Corazon de pollo cocido: 25
-  - Cueritos de cerdo: 10
-  - Falda de cerdo: 40
-  - Filete de cerdo: 40
-  - Hígado de pollo cocido: 30
-  - Hígado de res cocido: 30
-  - Jamón bajo en grasa: 2
-  - Jamón de pavo: 2
-  - Jamón de pierna: 2
-  - Lomo de cerdo: 40
-  - Maciza de carnero: 50
-  - Maciza de ternera: 35
-  - Marlín: 35
-  - Milanesa de cerdo: 40
-  - Molida de res: 30
-  - Muslo de pollo crudo sin piel: 44593
-  - Ostión cocido: 35
-  - Ostión crudo: 75
-  - Pancita de puerco: 35
-  - Pavo: 45
-  - Pechuga de pollo con piel: 35
-  - Pescado blanco: 75
-  - Pescado blanco cocido: 30
-  - Pescuezo de pollo sin piel: 125
-  - Pierna de carnero: 50
-  - Pierna de pollo sin piel cocida: 44652
-  - Pierna de pollo sin piel cruda: 44621
-  - Queso Cheddar bajo en grasa: 30
-  - Queso Cottage cremoso: 3
-  - Queso de soya: 2
-  - Queso fresco: 40
-  - Queso fresco de cabra: 30
-  - Queso oaxaca Lala light: 30
-  - Queso panela: 40
-  - Queso panela Lala light: 30
-  - Queso Ricotta reducido en grasa: 3
-  - Rib Eye sin grasa: 25
-  - Salmón: 30
-  - Salmón cocido: 30
-  - Salmón fresco: 30
-  - Sirloin: 25
-  - T-bone sin grasa: 30
-  - Trucha: 70
-  - Trucha ahumada: 30
-  - Trucha cocida: 30
-  - Trucha fileteada: 35
+  - ARRACHERA CRUDA: 35
+  - ARRACHERA DE RES COCIDA: 30
+  - ATÚN AHUMADO: 30
+  - ATÚN EN ACEITE DRENADO: 1/3
+  - BARBACOA: 50
+  - BISTEC DE TERNERA: 35
+  - CARNE DE CERDO: 40
+  - CARNE DE RES(PROMEDIO): 30
+  - CARNE MOLIDA DE CERDO: 40
+  - CHAMORRO COCIDO: 25
+  - CHULETA DE CERDO: 1/2
+  - CONEJO: 40
+  - CORAZON DE POLLO COCIDO: 25
+  - CUERITOS DE CERDO: 10
+  - FALDA DE CERDO: 40
+  - FILETE DE CERDO: 40
+  - HÍGADO DE POLLO COCIDO: 30
+  - HÍGADO DE RES COCIDO: 30
+  - JAMÓN BAJO EN GRASA: 2
+  - JAMÓN DE PAVO: 2
+  - JAMÓN DE PIERNA: 2
+  - LOMO DE CERDO: 40
+  - MACIZA DE CARNERO: 50
+  - MACIZA DE TERNERA: 35
+  - MARLÍN: 35
+  - MILANESA DE CERDO: 40
+  - MOLIDA DE RES: 30
+  - MUSLO DE POLLO CRUDO SIN PIEL: 1/2
+  - OSTIÓN COCIDO: 35
+  - OSTIÓN CRUDO: 75
+  - PANCITA DE PUERCO: 35
+  - PAVO: 45
+  - PECHUGA DE POLLO CON PIEL: 35
+  - PESCADO BLANCO: 75
+  - PESCADO BLANCO COCIDO: 30
+  - PESCUEZO DE POLLO SIN PIEL: 125
+  - PIERNA DE CARNERO: 50
+  - PIERNA DE POLLO SIN PIEL COCIDA: 1/4
+  - PIERNA DE POLLO SIN PIEL CRUDA: 1/3
+  - QUESO CHEDDAR BAJO EN GRASA: 30
+  - QUESO COTTAGE CREMOSO: 3
+  - QUESO DE SOYA: 2
+  - QUESO FRESCO: 40
+  - QUESO FRESCO DE CABRA: 30
+  - QUESO OAXACA LALA LIGHT: 30
+  - QUESO PANELA: 40
+  - QUESO PANELA LALA LIGHT: 30
+  - QUESO RICOTTA REDUCIDO EN GRASA: 3
+  - RIB EYE SIN GRASA: 25
+  - SALMÓN: 30
+  - SALMÓN COCIDO: 30
+  - SALMÓN FRESCO: 30
+  - SIRLOIN: 25
+  - T-BONE SIN GRASA: 30
+  - TRUCHA: 70
+  - TRUCHA AHUMADA: 30
+  - TRUCHA COCIDA: 30
+  - TRUCHA FILETEADA: 35
 
 GRUPO: POA MODERADO APORTE DE GRASA
 
 ALIMENTOS:
-  - Anguila: 40
-  - Bistec de bola: 25
-  - Bola de res: 25
-  - Carne de suadero: 29
-  - Carne deshebrada: 30
-  - Carne molida extra magra cocida: 30
-  - Carne molida extra magra salteada: 30
-  - Caviar: 5
-  - Caviar negro: 5
-  - Caviar rojo: 5
-  - Chicharron: 12
-  - Chicharron de cerdo: 12
-  - Chicharron de puerco: 12
-  - Costillar de cerdo: 50
-  - Costillitas de cerdo: 50
-  - Dedos mozarella: 1
-  - Escamol: 15
-  - Filete de salmon: 30
-  - Gusano blanco de maguey: 15
-  - Gusano de maguey: 35
-  - Huevo enriquecido con DHA-Omega 3 y Vitamina E: 1
-  - Huevo Agra: 1
-  - Huevo batido o revuelto cocido: 3
-  - Huevo blanco cocido: 1
-  - Huevo cocido: 1
-  - Huevo de codorniz fresco: 6
-  - Huevo deshidratado: 2.5
-  - Huevo en polvo: 2.5
-  - Huevo entero cocido: 1
-  - Huevo entero fresco: 1
-  - Huevo fresco: 1
-  - Huevo ponchado: 1
-  - Huevo rojo cocido: 1
-  - Longaniza de primera: 45
-  - Macarela cocida: 0.3333333333333333
-  - Macarela fresca: 0.3333333333333333
-  - Muslo de pollo con piel cocido con hueso: 0.3333333333333333
-  - Muslo de pollo con piel crudo con hueso: 0.333333333333333
-  - Orejas de cerdo: 0.25
-  - Pata de cerdo cocida: 150
-  - Patas de cerdo en escabeche: 150
-  - Patitas de cerdo encurtidas sin hueso: 150
-  - Pecho de res: 50
-  - Pierna de pollo con piel cocida: 0.3333333333333333
-  - Pierna y muslo de pollo con piel: 0.2
-  - Queso blanco: 35
-  - Queso de soya: 2
-  - Queso holandes: 20
-  - Queso monterrey bajo en grasa: 1
-  - Queso mozzarella reducido en grasa: 1
-  - Queso mozzarella semidescremado: 30
-  - Queso muenster bajo en grasa: 1
-  - Queso parmesano: 3.5
-  - Queso parmesano duro: 20
-  - Queso parmesano en trozo: 20
-  - Queso parmesano rallado: 3.5
-  - Queso ricotta semidescremado: 55
-  - Queso tipo americano lala ligth: 30
-  - Requeson promedio: 3.5
-  - Sabritas chicharron de cerdo: 0.5
-  - Salami de pavo: 6
-  - Salchicha de pavo: 1
-  - Salchicha vegetariana: 1
-  - Salmon de aceite: 35
-  - Sardinas de aceite: 3
-  - Sardinas en tomate: 1
-  - Sesos de cerdo cocido: 50
-  - Sesos de cordero cocidos: 50
-  - Sesos de temera cocidos: 50
-  - Sierra: 50
-  - Sierra fileteada: 35
-  - Sierra picada: 35
-  - Suadero crudo: 29
-  - Sustituto de queso mozarrella: 1
+  - ANGUILA: 40
+  - BISTEC DE BOLA: 25
+  - BOLA DE RES: 25
+  - CARNE DE SUADERO: 29
+  - CARNE DESHEBRADA: 30
+  - CARNE MOLIDA EXTRA MAGRA COCIDA: 30
+  - CARNE MOLIDA EXTRA MAGRA SALTEADA: 30
+  - CAVIAR: 5
+  - CAVIAR NEGRO: 5
+  - CAVIAR ROJO: 5
+  - CHICHARRON: 12
+  - CHICHARRON DE CERDO: 12
+  - CHICHARRON DE PUERCO: 12
+  - COSTILLAR DE CERDO: 50
+  - COSTILLITAS DE CERDO: 50
+  - DEDOS MOZARELLA: 1
+  - ESCAMOL: 15
+  - FILETE DE SALMON: 30
+  - GUSANO BLANCO DE MAGUEY: 15
+  - GUSANO DE MAGUEY: 35
+  - HUEVO ENRIQUECIDO CON DHA-OMEGA 3 Y VITAMINA E: 1
+  - HUEVO AGRA: 1
+  - HUEVO BATIDO O REVUELTO COCIDO: 3
+  - HUEVO BLANCO COCIDO: 1
+  - HUEVO COCIDO: 1
+  - HUEVO DE CODORNIZ FRESCO: 6
+  - HUEVO DESHIDRATADO: 2.5
+  - HUEVO EN POLVO: 2.5
+  - HUEVO ENTERO COCIDO: 1
+  - HUEVO ENTERO FRESCO: 1
+  - HUEVO FRESCO: 1
+  - HUEVO PONCHADO: 1
+  - HUEVO ROJO COCIDO: 1
+  - LONGANIZA DE PRIMERA: 45
+  - MACARELA COCIDA: 0.3333333333333333
+  - MACARELA FRESCA: 0.3333333333333333
+  - MUSLO DE POLLO CON PIEL COCIDO CON HUESO: 0.3333333333333333
+  - MUSLO DE POLLO CON PIEL CRUDO CON HUESO: 0.333333333333333
+  - OREJAS DE CERDO: 0.25
+  - PATA DE CERDO COCIDA: 150
+  - PATAS DE CERDO EN ESCABECHE: 150
+  - PATITAS DE CERDO ENCURTIDAS SIN HUESO: 150
+  - PECHO DE RES: 50
+  - PIERNA DE POLLO CON PIEL COCIDA: 0.3333333333333333
+  - PIERNA Y MUSLO DE POLLO CON PIEL: 0.2
+  - QUESO BLANCO: 35
+  - QUESO DE SOYA: 2
+  - QUESO HOLANDES: 20
+  - QUESO MONTERREY BAJO EN GRASA: 1
+  - QUESO MOZZARELLA REDUCIDO EN GRASA: 1
+  - QUESO MOZZARELLA SEMIDESCREMADO: 30
+  - QUESO MUENSTER BAJO EN GRASA: 1
+  - QUESO PARMESANO: 3.5
+  - QUESO PARMESANO DURO: 20
+  - QUESO PARMESANO EN TROZO: 20
+  - QUESO PARMESANO RALLADO: 3.5
+  - QUESO RICOTTA SEMIDESCREMADO: 55
+  - QUESO TIPO AMERICANO LALA LIGTH: 30
+  - REQUESON PROMEDIO: 3.5
+  - SABRITAS CHICHARRON DE CERDO: 0.5
+  - SALAMI DE PAVO: 6
+  - SALCHICHA DE PAVO: 1
+  - SALCHICHA VEGETARIANA: 1
+  - SALMON DE ACEITE: 35
+  - SARDINAS DE ACEITE: 3
+  - SARDINAS EN TOMATE: 1
+  - SESOS DE CERDO COCIDO: 50
+  - SESOS DE CORDERO COCIDOS: 50
+  - SESOS DE TEMERA COCIDOS: 50
+  - SIERRA: 50
+  - SIERRA FILETEADA: 35
+  - SIERRA PICADA: 35
+  - SUADERO CRUDO: 29
+  - SUSTITUTO DE QUESO MOZARRELLA: 1
 
 GRUPO: POA ALTO APORTE DE GRASAS
 
 ALIMENTOS:
-  - Alòn de pollo con piel cocido: 1
-  - Alòn de Pollo con piel crudo: 1
-  - Carne de res semigrasosa: 40
-  - Carne molida popular de res: 40
-  - Carne molida regular: 40
-  - Carne molida regular cocida: 35
-  - Carne obscura de pollo con piel: 40
-  - Cecina de res: 50
-  - Chuleta de carnero: 40
-  - Chuleta de cordero entera: 44621
-  - Cordero: 50
-  - Costilla de carnero: 45
-  - Costilla de res: 40
-  - Espaldilla: 45
-  - Espaldilla de cerdo: 45
-  - Espinazo: 45
-  - Espinazo de cerdo: 45
-  - Fondue de queso: 3 1/2
-  - Huevo estrellado: 1
-  - Huevo frito: 1
-  - Huevo revuelto: 60
-  - Jamon ahumado: 1 1/2
-  - Jamon amerinano: 1 1/2
-  - Jamon bajo en sodio: 1 1/2
-  - Jamon virginia: 1 1/2
-  - Lengua de cerdo cocida: 30
-  - Lengua de res cocida: 45
-  - Maciza de cerdo: 35
-  - Maciza de puerco: 35
-  - Molida popular de res: 40
-  - Moronga: 1
-  - Mortadela: 1 1/2
-  - Mozzarella fresco: 35
-  - Nugget de pollo: 2
-  - Nugget de queso: 3
-  - Nugget de soya: 2
-  - Ostion ahumado: 55
-  - Ostion empanizado: 55
-  - Palitos de pescado congelados: 1 1/2
-  - Peperoni: 10
-  - Pescuezo de pollo con piel sin hueso: 1
-  - Pollo rostizado: 44621
-  - Pulpa de res: 25
-  - Queso amarillo: 2
-  - Queso amarillo fundido: 7
-  - Queso añejo: 25
-  - Queso añejo rallado: 4
-  - Queso asadero: 1
-  - Queso blue cheese: 30
-  - Queso brie: 30
-  - Queso canasto: 30
-  - Queso cheddar: 44654
-  - Queso cheddar rallado: 44652
-  - Queso chihuahua: 25
-  - Queso chihuahua fresco: 1
-  - Queso chihuahua rallado: 44652
-  - Queso cotija: 30
-  - Queso crema light: 3
-  - Queso de cabra duro: 20
-  - Queso de cabra semi suave: 1
-  - Queso de cabra suave: 35
-  - Queso feta: 40
-  - Queso manchego: 25
-  - Queso manchego rallado: 25
-  - Queso manchego rebanado: 25
-  - Queso mozarella: 35
-  - Queso mozarella rallado: 35
-  - Queso mozarella suave: 1
-  - Queso oaxaca: 30
-  - Queso pasteurizado americano: 1
-  - Queso provolone: 1
-  - Queso ricotta: 44652
-  - Queso roquefort: 25
-  - Queso suizo: 1
-  - Queso suizo rallado: 6
-  - Queso tipo americano: 1 1/2
-  - Queso tipo roquefort: 25
-  - Retazo: 350
-  - Retazo con hueso: 350
-  - Retazo de pollo: 350
-  - Retazo de res: 350
-  - Retazo de ternera: 350
-  - Rib eye: 30
-  - Salami: 3
-  - Salchicha: 44654
-  - Salchicha vienna: 3
-  - Sesos de res cocidos: 60
-  - Sesos de res fritos: 55
-  - Tofu: 40
-  - Tripas de res: 55
-  - Yema: 2
-  - Yema de huevo: 2
+  - ALÒN DE POLLO CON PIEL COCIDO: 1
+  - ALÒN DE POLLO CON PIEL CRUDO: 1
+  - CARNE DE RES SEMIGRASOSA: 40
+  - CARNE MOLIDA POPULAR DE RES: 40
+  - CARNE MOLIDA REGULAR: 40
+  - CARNE MOLIDA REGULAR COCIDA: 35
+  - CARNE OBSCURA DE POLLO CON PIEL: 40
+  - CECINA DE RES: 50
+  - CHULETA DE CARNERO: 40
+  - CHULETA DE CORDERO ENTERA: 1/3
+  - CORDERO: 50
+  - COSTILLA DE CARNERO: 45
+  - COSTILLA DE RES: 40
+  - ESPALDILLA: 45
+  - ESPALDILLA DE CERDO: 45
+  - ESPINAZO: 45
+  - ESPINAZO DE CERDO: 45
+  - FONDUE DE QUESO: 3 1/2
+  - HUEVO ESTRELLADO: 1
+  - HUEVO FRITO: 1
+  - HUEVO REVUELTO: 60
+  - JAMON AHUMADO: 1 1/2
+  - JAMON AMERINANO: 1 1/2
+  - JAMON BAJO EN SODIO: 1 1/2
+  - JAMON VIRGINIA: 1 1/2
+  - LENGUA DE CERDO COCIDA: 30
+  - LENGUA DE RES COCIDA: 45
+  - MACIZA DE CERDO: 35
+  - MACIZA DE PUERCO: 35
+  - MOLIDA POPULAR DE RES: 40
+  - MORONGA: 1
+  - MORTADELA: 1 1/2
+  - MOZZARELLA FRESCO: 35
+  - NUGGET DE POLLO: 2
+  - NUGGET DE QUESO: 3
+  - NUGGET DE SOYA: 2
+  - OSTION AHUMADO: 55
+  - OSTION EMPANIZADO: 55
+  - PALITOS DE PESCADO CONGELADOS: 1 1/2
+  - PEPERONI: 10
+  - PESCUEZO DE POLLO CON PIEL SIN HUESO: 1
+  - POLLO ROSTIZADO: 1/3
+  - PULPA DE RES: 25
+  - QUESO AMARILLO: 2
+  - QUESO AMARILLO FUNDIDO: 7
+  - QUESO AÑEJO: 25
+  - QUESO AÑEJO RALLADO: 4
+  - QUESO ASADERO: 1
+  - QUESO BLUE CHEESE: 30
+  - QUESO BRIE: 30
+  - QUESO CANASTO: 30
+  - QUESO CHEDDAR: 3/4
+  - QUESO CHEDDAR RALLADO: 1/4
+  - QUESO CHIHUAHUA: 25
+  - QUESO CHIHUAHUA FRESCO: 1
+  - QUESO CHIHUAHUA RALLADO: 1/4
+  - QUESO COTIJA: 30
+  - QUESO CREMA LIGHT: 3
+  - QUESO DE CABRA DURO: 20
+  - QUESO DE CABRA SEMI SUAVE: 1
+  - QUESO DE CABRA SUAVE: 35
+  - QUESO FETA: 40
+  - QUESO MANCHEGO: 25
+  - QUESO MANCHEGO RALLADO: 25
+  - QUESO MANCHEGO REBANADO: 25
+  - QUESO MOZARELLA: 35
+  - QUESO MOZARELLA RALLADO: 35
+  - QUESO MOZARELLA SUAVE: 1
+  - QUESO OAXACA: 30
+  - QUESO PASTEURIZADO AMERICANO: 1
+  - QUESO PROVOLONE: 1
+  - QUESO RICOTTA: 1/4
+  - QUESO ROQUEFORT: 25
+  - QUESO SUIZO: 1
+  - QUESO SUIZO RALLADO: 6
+  - QUESO TIPO AMERICANO: 1 1/2
+  - QUESO TIPO ROQUEFORT: 25
+  - RETAZO: 350
+  - RETAZO CON HUESO: 350
+  - RETAZO DE POLLO: 350
+  - RETAZO DE RES: 350
+  - RETAZO DE TERNERA: 350
+  - RIB EYE: 30
+  - SALAMI: 3
+  - SALCHICHA: 3/4
+  - SALCHICHA VIENNA: 3
+  - SESOS DE RES COCIDOS: 60
+  - SESOS DE RES FRITOS: 55
+  - TOFU: 40
+  - TRIPAS DE RES: 55
+  - YEMA: 2
+  - YEMA DE HUEVO: 2
 
 GRUPO: LECHE DESCREMADA
-Calorías: ? | Proteína: ?g | Grasa: 44621g | CHO: ?g
+Calorías: ? | Proteína: ?g | Grasa: 88g | CHO: ?g
 
 ALIMENTOS:
-  - Danonino, queso petit suisse sabor fresa: 2
-  - Leche Alpura Light Extra: 1
-  - Leche descremada: 1
-  - Leche en polvo descremada: 4
-  - Leche Light Extra: 1
-  - Sofúl LT natural: 1 1/2
-  - Sofúl LT para beber natural: 1
-  - Vitalinea bebible: 1
-  - Yoghurt Activia bebible ciruela pasa: 113
-  - Yoghurt bajo en grasa: 44621
-  - Yoghurt light: 44654
-  - Yoghurt light de fruta: 44654
+  - DANONINO, QUESO PETIT SUISSE SABOR FRESA: 2
+  - LECHE ALPURA LIGHT EXTRA: 1
+  - LECHE DESCREMADA: 1
+  - LECHE EN POLVO DESCREMADA: 4
+  - LECHE LIGHT EXTRA: 1
+  - SOFÚL LT NATURAL: 1 1/2
+  - SOFÚL LT PARA BEBER NATURAL: 1
+  - VITALINEA BEBIBLE: 1
+  - YOGHURT ACTIVIA BEBIBLE CIRUELA PASA: 113
+  - YOGHURT BAJO EN GRASA: 1/3
+  - YOGHURT LIGHT: 3/4
+  - YOGHURT LIGHT DE FRUTA: 3/4
 
 GRUPO: LECHE SEMI DESCREMADA
 
 ALIMENTOS:
-  - Leche fácil digestión: 1
-  - Leche semidescremada: 1
-  - Vitalinea bebible sabor fresa y guayaba: 1
-  - Yoghurt Oikos, estilo griego arándano: 44593
-  - Yoghurt Oikos, estilo griego sabor natural: 44593
-  - Yoghurt Oikos, estilo griego sabor natural sin azúcar y sin endulzar: 114
+  - LECHE FÁCIL DIGESTIÓN: 1
+  - LECHE SEMIDESCREMADA: 1
+  - VITALINEA BEBIBLE SABOR FRESA Y GUAYABA: 1
+  - YOGHURT OIKOS, ESTILO GRIEGO ARÁNDANO: 1/2
+  - YOGHURT OIKOS, ESTILO GRIEGO SABOR NATURAL: 1/2
+  - YOGHURT OIKOS, ESTILO GRIEGO SABOR NATURAL SIN AZÚCAR Y SIN ENDULZAR: 114
 
 GRUPO: LECHE ENTERA
 
 ALIMENTOS:
-  - Leche: 1
-  - Leche Clavel: 44593
-  - Leche en polvo: 4
-  - Leche entera evaporada: 44593
-  - Leche Liconsa Te Nutre: 4
-  - Leche materna: 1
-  - Leche maternizada en polvo: 2
-  - Leche pasteurizada: 1
-  - Yoghurt: 1
-  - Yoghurt natural: 1
+  - LECHE: 1
+  - LECHE CLAVEL: 1/2
+  - LECHE EN POLVO: 4
+  - LECHE ENTERA EVAPORADA: 1/2
+  - LECHE LICONSA TE NUTRE: 4
+  - LECHE MATERNA: 1
+  - LECHE MATERNIZADA EN POLVO: 2
+  - LECHE PASTEURIZADA: 1
+  - YOGHURT: 1
+  - YOGHURT NATURAL: 1
 
 GRUPO: LECHE CON AZÚCAR
-Calorías: 44593 | Proteína: ?g | Grasa: ?g | CHO: 1g
+Calorías: 183 | Proteína: ?g | Grasa: ?g | CHO: 1g
 
 ALIMENTOS:
-  - Activia natural bebible: 1 1/4
-  - Activia natural sólido: 2
-  - Chongos Zamoranos: 44593
-  - Helado de café: 44593
-  - Helado de café bajo en calorías: 44593
-  - Lehe con chocolate: 1
-  - Malteada de chocolate: 44622
-  - Yoghurt bebible sabor durazno: 2
-  - Yoghurt de soya: 1
+  - ACTIVIA NATURAL BEBIBLE: 1 1/4
+  - ACTIVIA NATURAL SÓLIDO: 2
+  - CHONGOS ZAMORANOS: 1/2
+  - HELADO DE CAFÉ: 1/2
+  - HELADO DE CAFÉ BAJO EN CALORÍAS: 1/2
+  - LEHE CON CHOCOLATE: 1
+  - MALTEADA DE CHOCOLATE: 2/3
+  - YOGHURT BEBIBLE SABOR DURAZNO: 2
+  - YOGHURT DE SOYA: 1
 
 GRUPO: ACEITES Y GRASAS
 
 ALIMENTOS:
-  - Aceite: 1
-  - Aceite comestible: 1
-  - Aceite de aguacate: 1
-  - Aceite de canola: 1
-  - Aceite de coco: 1
-  - Aceite de girasol: 1
-  - Aceite de maíz: 1
-  - Aceite de Oliva: 1
-  - Aceite de Oliva extra virgen: 1
-  - Aceite de soya: 1
-  - Aceite en spray: 4
-  - Aceituna negra sin hueso: 5
-  - Aceituna verde con hueso: 6
-  - Aceituna verde sin hueso: 8
-  - Aderezo: 44593
-  - Aderezo Blue Cheese: 44593
-  - Aderezo de hierbas finas: 44593
-  - Aderezo de mayonesa: 44593
-  - Aderezo de moztaza y miel: 44593
-  - Aderezo italiano: 44593
-  - Aderezo italiano bajo en calorías: 1 1/2
-  - Aderezo Mil Islas: 44593
-  - Aderezo Ranch: 44593
-  - Aderezo tipo Blue Cheese: 44593
-  - Aderezo tipo César: 44593
-  - Aderezo tipo Mil Islas: 44593
-  - Aderezo tipo Ranch: 44593
-  - Aderezo vinagreta casera: 2
-  - Aderezo vinagreta comercial: 4
-  - Aguacate Hass: 44621
-  - Calahua: 1
-  - Chicharrón de soya: 6
-  - Cocada: 44621
-  - Coco: 8
-  - Coco deshidratado: 6
-  - Coco entero: 25
-  - Coco fresco: 12
-  - Coco rallado: 1 1/2
-  - Crema: 1
-  - Crema ácida: 2
-  - Crema baja en grasa: 2
-  - Crema batida: 1 1/2
-  - Crema batida en aerosol: 5
-  - Crema chantilly: 1 1/2
-  - Crema dulce: 4
-  - Crema dulce para batir: 4
-  - Crema entera: 1
-  - Crema Lala Light: 5
-  - Crema ligera: 1
-  - Crema para café: 1
-  - Dip: 2
-  - Dip de cebolla: 2
-  - Grasa de tocino: 5
-  - Guacamole: 2
-  - Manteca de cerdo: 1
-  - Manteca vegetal: 1
-  - Mantequilla: 1 1/2
-  - Mantequilla clarificada: 1 1/2
-  - Mantequilla con sal: 1 1/2
-  - Mantequilla derretida: 1
-  - Mantequilla Lala reducida en grasa: 7
-  - Mantequilla sin sal: 1 1/2
-  - Margarina: 1
-  - Margarina baja en grasa: 2 1/2
-  - Margarina con sal: 1 1/2
-  - Margarina sin sal: 1
-  - Mayonesa: 1
-  - Mayonesa chiplotle: 1
-  - Mayonesa de aguacate: 44593
-  - Media crema: 2
-  - Nata: 1
-  - Pam: 5
-  - Pam aceite de oliva: 6
-  - Pam mantequilla: 6
-  - Queso crema: 1
-  - Queso crema bajo en grasa: 1
-  - Queso crema untable: 1
-  - Queso para nachos: 2 1/2
-  - Queso Philadelphia: 1
-  - Salsa Alfredo: 1
-  - Salsa Macha: 44593
-  - Tampico: 12
-  - Tocineta: 1
-  - Tocino: 1
-  - Tocino ahumado: 1
-  - Tocino frito: 1
-  - Tocino imitación: 1
-  - Tuétano: 6
+  - ACEITE: 1
+  - ACEITE COMESTIBLE: 1
+  - ACEITE DE AGUACATE: 1
+  - ACEITE DE CANOLA: 1
+  - ACEITE DE COCO: 1
+  - ACEITE DE GIRASOL: 1
+  - ACEITE DE MAÍZ: 1
+  - ACEITE DE OLIVA: 1
+  - ACEITE DE OLIVA EXTRA VIRGEN: 1
+  - ACEITE DE SOYA: 1
+  - ACEITE EN SPRAY: 4
+  - ACEITUNA NEGRA SIN HUESO: 5
+  - ACEITUNA VERDE CON HUESO: 6
+  - ACEITUNA VERDE SIN HUESO: 8
+  - ADEREZO: 1/2
+  - ADEREZO BLUE CHEESE: 1/2
+  - ADEREZO DE HIERBAS FINAS: 1/2
+  - ADEREZO DE MAYONESA: 1/2
+  - ADEREZO DE MOZTAZA Y MIEL: 1/2
+  - ADEREZO ITALIANO: 1/2
+  - ADEREZO ITALIANO BAJO EN CALORÍAS: 1 1/2
+  - ADEREZO MIL ISLAS: 1/2
+  - ADEREZO RANCH: 1/2
+  - ADEREZO TIPO BLUE CHEESE: 1/2
+  - ADEREZO TIPO CÉSAR: 1/2
+  - ADEREZO TIPO MIL ISLAS: 1/2
+  - ADEREZO TIPO RANCH: 1/2
+  - ADEREZO VINAGRETA CASERA: 2
+  - ADEREZO VINAGRETA COMERCIAL: 4
+  - AGUACATE HASS: 1/3
+  - CALAHUA: 1
+  - CHICHARRÓN DE SOYA: 6
+  - COCADA: 1/3
+  - COCO: 8
+  - COCO DESHIDRATADO: 6
+  - COCO ENTERO: 25
+  - COCO FRESCO: 12
+  - COCO RALLADO: 1 1/2
+  - CREMA: 1
+  - CREMA ÁCIDA: 2
+  - CREMA BAJA EN GRASA: 2
+  - CREMA BATIDA: 1 1/2
+  - CREMA BATIDA EN AEROSOL: 5
+  - CREMA CHANTILLY: 1 1/2
+  - CREMA DULCE: 4
+  - CREMA DULCE PARA BATIR: 4
+  - CREMA ENTERA: 1
+  - CREMA LALA LIGHT: 5
+  - CREMA LIGERA: 1
+  - CREMA PARA CAFÉ: 1
+  - DIP: 2
+  - DIP DE CEBOLLA: 2
+  - GRASA DE TOCINO: 5
+  - GUACAMOLE: 2
+  - MANTECA DE CERDO: 1
+  - MANTECA VEGETAL: 1
+  - MANTEQUILLA: 1 1/2
+  - MANTEQUILLA CLARIFICADA: 1 1/2
+  - MANTEQUILLA CON SAL: 1 1/2
+  - MANTEQUILLA DERRETIDA: 1
+  - MANTEQUILLA LALA REDUCIDA EN GRASA: 7
+  - MANTEQUILLA SIN SAL: 1 1/2
+  - MARGARINA: 1
+  - MARGARINA BAJA EN GRASA: 2 1/2
+  - MARGARINA CON SAL: 1 1/2
+  - MARGARINA SIN SAL: 1
+  - MAYONESA: 1
+  - MAYONESA CHIPLOTLE: 1
+  - MAYONESA DE AGUACATE: 1/2
+  - MEDIA CREMA: 2
+  - NATA: 1
+  - PAM: 5
+  - PAM ACEITE DE OLIVA: 6
+  - PAM MANTEQUILLA: 6
+  - QUESO CREMA: 1
+  - QUESO CREMA BAJO EN GRASA: 1
+  - QUESO CREMA UNTABLE: 1
+  - QUESO PARA NACHOS: 2 1/2
+  - QUESO PHILADELPHIA: 1
+  - SALSA ALFREDO: 1
+  - SALSA MACHA: 1/2
+  - TAMPICO: 12
+  - TOCINETA: 1
+  - TOCINO: 1
+  - TOCINO AHUMADO: 1
+  - TOCINO FRITO: 1
+  - TOCINO IMITACIÓN: 1
+  - TUÉTANO: 6
 
 GRUPO: ACEITES Y GRASAS CON PROTEÍNA
 Calorías: ? | Proteína: 1g | Grasa: ?g | CHO: ?g
 
 ALIMENTOS:
-  - Aderezo de yogurt: 2
-  - Ajonjolí: 4
-  - Ajonjolí acaramelado: 5
-  - Ajonjolí tostado: 5
-  - Almendra: 10
-  - Almendra acaramelada: 6
-  - Almendra fileteada: 2
-  - Almendra tostada: 10
-  - Avellana: 9
-  - Avellana picada: 5
-  - Avellana salada: 8
-  - Avellana tostada: 8
-  - Bebida vegetal Silk, Almendra sin azúcar sin endulzar con proteína: 1
-  - Bebida vegetal Silk Almendra sin azúcar sin endulzar sabor Monk Fruit: 2
-  - Bebida vegetal Silk Coco sin azúcar y sin endulzar: 1
-  - Cacahuate: 14
-  - Cacahuate acaramelado: 5
-  - Cacahuate con cáscara: 12
-  - Cacahuate con pepitas: 12
-  - Cacahuate enchilado: 13
-  - Cacahuate japonés: 15
-  - Cacahuate salado: 13
-  - Cacahuate tostado: 13
-  - Cacahuates confitados: 44652
-  - Cacahuates cubiertos con salsa y limón: 2
-  - Chía: 7
-  - Chilorio: 30
-  - Chistorra: 15
-  - Chorizo: 15
-  - Chorizo de pavo: 21
-  - Chorizo vegetariano: 15
-  - Crema de almendras: 1
-  - Harina de almendras: 11
-  - Mantequilla de cacahuate: 2
-  - Mazapán sin azúcar: 1
-  - Nueces mixtas: 1
-  - Nuez: 3
-  - Nuez acaramelada: 44654
-  - Nuez de Castilla: 3
-  - Nuez de la India con sal: 7
-  - Nuez de la India sin sal en mitades: 15
-  - Nuez en mitades: 7
-  - Nuez picada: 10
-  - Pepita limpia: 1 1/2
-  - Pepitas: 60
-  - Pepipa con cáscara: 2
-  - Pepita de calabaza: 1 1/2
-  - Peperoni: 4
-  - Pistache: 18
-  - Queso de puerco: 20
-  - Salsa de Cacahuate: 2
-  - Salsa de queso: 2
+  - ADEREZO DE YOGURT: 2
+  - AJONJOLÍ: 4
+  - AJONJOLÍ ACARAMELADO: 5
+  - AJONJOLÍ TOSTADO: 5
+  - ALMENDRA: 10
+  - ALMENDRA ACARAMELADA: 6
+  - ALMENDRA FILETEADA: 2
+  - ALMENDRA TOSTADA: 10
+  - AVELLANA: 9
+  - AVELLANA PICADA: 5
+  - AVELLANA SALADA: 8
+  - AVELLANA TOSTADA: 8
+  - BEBIDA VEGETAL SILK, ALMENDRA SIN AZÚCAR SIN ENDULZAR CON PROTEÍNA: 1
+  - BEBIDA VEGETAL SILK ALMENDRA SIN AZÚCAR SIN ENDULZAR SABOR MONK FRUIT: 2
+  - BEBIDA VEGETAL SILK COCO SIN AZÚCAR Y SIN ENDULZAR: 1
+  - CACAHUATE: 14
+  - CACAHUATE ACARAMELADO: 5
+  - CACAHUATE CON CÁSCARA: 12
+  - CACAHUATE CON PEPITAS: 12
+  - CACAHUATE ENCHILADO: 13
+  - CACAHUATE JAPONÉS: 15
+  - CACAHUATE SALADO: 13
+  - CACAHUATE TOSTADO: 13
+  - CACAHUATES CONFITADOS: 1/4
+  - CACAHUATES CUBIERTOS CON SALSA Y LIMÓN: 2
+  - CHÍA: 7
+  - CHILORIO: 30
+  - CHISTORRA: 15
+  - CHORIZO: 15
+  - CHORIZO DE PAVO: 21
+  - CHORIZO VEGETARIANO: 15
+  - CREMA DE ALMENDRAS: 1
+  - HARINA DE ALMENDRAS: 11
+  - MANTEQUILLA DE CACAHUATE: 2
+  - MAZAPÁN SIN AZÚCAR: 1
+  - NUECES MIXTAS: 1
+  - NUEZ: 3
+  - NUEZ ACARAMELADA: 3/4
+  - NUEZ DE CASTILLA: 3
+  - NUEZ DE LA INDIA CON SAL: 7
+  - NUEZ DE LA INDIA SIN SAL EN MITADES: 15
+  - NUEZ EN MITADES: 7
+  - NUEZ PICADA: 10
+  - PEPITA LIMPIA: 1 1/2
+  - PEPITAS: 60
+  - PEPIPA CON CÁSCARA: 2
+  - PEPITA DE CALABAZA: 1 1/2
+  - PEPERONI: 4
+  - PISTACHE: 18
+  - QUESO DE PUERCO: 20
+  - SALSA DE CACAHUATE: 2
+  - SALSA DE QUESO: 2
 
 GRUPO: AZÚCARES SIN GRASA
-Calorías: ? | Proteína: 44622g | Grasa: 44622g | CHO: ?g
 
 ALIMENTOS:
-  - até: 44621
-  - azucar blanca: 2
-  - azucar de mesa: 2
-  - zucar glass: 4
-  - azucar mascabado: 2
-  - azucar morena: 3
-  - cafe cap helado: 44621
-  - cafe cap. insta: 2
-  - cajeta: 1. 1/2
-  - caramelo: 1
-  - chicle: 5
-  - cocoa en polvo: 2
-  - conos de helado: 3
-  - danonino bebible: 1
-  - gelatina: 44621
-  - gelatina Dany 💧: 44593
-  - gelanina polvo leche: 10
-  - gomitas: 4
-  - leche condensada: 2
-  - lec.cond. light: 1
-  - malvavisco: 2
-  - mermelada: 2. 1/2
-  - mermelada c/fructosa: 2. 1/2
-  - miel de abeja: 2
-  - nieve de frutas: 40
-  - obleas de cajeta: 1
-  - paleta de caramelo: 2
-  - paleta helaada agua: 1
-  - panditas: 44621
-  - pasitas c/choc: 11
-  - ponche de frutas: 44621
-  - refresco: 44652
-  - salsa catsup: 2
+  - ATÉ: 1/3
+  - AZUCAR BLANCA: 2
+  - AZUCAR DE MESA: 2
+  - ZUCAR GLASS: 4
+  - AZUCAR MASCABADO: 2
+  - AZUCAR MORENA: 3
+  - CAFE CAP HELADO: 1/3
+  - CAFE CAP. INSTA: 2
+  - CAJETA: 1. 1/2
+  - CARAMELO: 1
+  - CHICLE: 5
+  - COCOA EN POLVO: 2
+  - CONOS DE HELADO: 3
+  - DANONINO BEBIBLE: 1
+  - GELATINA: 1/3
+  - GELATINA DANY 💧: 1/2
+  - GELANINA POLVO LECHE: 10
+  - GOMITAS: 4
+  - LECHE CONDENSADA: 2
+  - LEC.COND. LIGHT: 1
+  - MALVAVISCO: 2
+  - MERMELADA: 2. 1/2
+  - MERMELADA C/FRUCTOSA: 2. 1/2
+  - MIEL DE ABEJA: 2
+  - NIEVE DE FRUTAS: 40
+  - OBLEAS DE CAJETA: 1
+  - PALETA DE CARAMELO: 2
+  - PALETA HELAADA AGUA: 1
+  - PANDITAS: 1/3
+  - PASITAS C/CHOC: 11
+  - PONCHE DE FRUTAS: 1/3
+  - REFRESCO: 1/4
+  - SALSA CATSUP: 2
 
 GRUPO: AZÚCARES CON GRASA
 Calorías: ? | Proteína: ?g | Grasa: ?g | CHO: 5g
 
 ALIMENTOS:
-  - A, mil islas b/ckal: 4
-  - A, ranch b/ckal: 3
-  - almendras c/choc: 15
-  - cacahuat confit: 4
-  - chispas de cho. hershey: 5
-  - chispas de cho. hershey: 5
-  - cho. amargo: 44621
-  - choc. almendra: 44621
-  - choc. c/azucar: 15
-  - choc.coco y alme: 44621
-  - choc. c/leche: 44622
-  - choc. semi amarg: 17
-  - cocada: 44654
-  - crema p/cafe polco: 9
-  - flan casero: 44682
-  - flan danette: 44593
-  - kinder delice: 44593
-  - kranky: 44621
-  - lunetas: 44621
-  - malv de choc: 44593
-  - mayonesa b/gras: 2
-  - may light: 2
-  - mazapan: 44654
+  - A, MIL ISLAS B/CKAL: 4
+  - A, RANCH B/CKAL: 3
+  - ALMENDRAS C/CHOC: 15
+  - CACAHUAT CONFIT: 4
+  - CHISPAS DE CHO. HERSHEY: 5
+  - CHISPAS DE CHO. HERSHEY: 5
+  - CHO. AMARGO: 1/3
+  - CHOC. ALMENDRA: 1/3
+  - CHOC. C/AZUCAR: 15
+  - CHOC.COCO Y ALME: 1/3
+  - CHOC. C/LECHE: 2/3
+  - CHOC. SEMI AMARG: 17
+  - COCADA: 3/4
+  - CREMA P/CAFE POLCO: 9
+  - FLAN CASERO: 1 pza
+  - FLAN DANETTE: 1/2
+  - KINDER DELICE: 1/2
+  - KRANKY: 1/3
+  - LUNETAS: 1/3
+  - MALV DE CHOC: 1/2
+  - MAYONESA B/GRAS: 2
+  - MAY LIGHT: 2
+  - MAZAPAN: 3/4
 
 GRUPO: ALIMENTOS LIBRES DE ENERGÍA 
 Calorías: ? | Proteína: 45g | Grasa: 70g | CHO: ?g
