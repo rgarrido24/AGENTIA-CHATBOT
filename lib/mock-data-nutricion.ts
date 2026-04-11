@@ -1006,3 +1006,100 @@ export function pacientesMasActivosParaDashboard(limit = 5, pool?: MedicionInBod
 export function logrosEsteMesCount(): number {
   return MOCK_LOGROS.filter((l) => l.fecha.startsWith('2026-03')).length;
 }
+
+// ── Panel de Actividad — últimos 14 días ─────────────────────────────────────
+
+export type RegistroActividad = {
+  pacienteId: string;
+  fecha: string; // 'YYYY-MM-DD'
+  registroComida: boolean;
+  registroAgua: boolean;
+  mensajeEnviado: boolean;
+  pesoRegistrado: boolean;
+};
+
+const ACCIONES_POSITIVAS = [
+  'Envió foto de desayuno',
+  'Registró comida y colación',
+  'Preguntó al chatbot sobre sustitución',
+  'Envió foto de cena',
+  'Reportó hidratación completa',
+  'Consultó su progreso al bot',
+  'Registró peso matutino',
+  'Envió foto de comida y cena',
+  'Preguntó sobre su plan al bot',
+  'Reportó actividad física',
+];
+
+/** Genera actividad determinista coherente con diasSinRegistro del paciente */
+function buildActividad14Dias(p: Paciente): RegistroActividad[] {
+  const HOY = new Date('2026-04-11T12:00:00');
+  const seed = p.id.charCodeAt(1) * 7 + p.id.charCodeAt(2) * 3;
+  const result: RegistroActividad[] = [];
+
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(HOY);
+    d.setDate(d.getDate() - i);
+    const fecha = d.toISOString().slice(0, 10);
+
+    // Los últimos `diasSinRegistro` días no tienen actividad
+    const diasAtras = i;
+    const activo = diasAtras >= p.diasSinRegistro
+      ? false
+      : ((seed + i * 13) % 10) < (p.status === 'activo' ? 8 : 3);
+
+    result.push({
+      pacienteId: p.id,
+      fecha,
+      registroComida: activo && ((seed + i) % 3) !== 0,
+      registroAgua: activo && ((seed + i * 2) % 4) !== 0,
+      mensajeEnviado: activo && ((seed + i * 5) % 5) !== 0,
+      pesoRegistrado: activo && ((seed + i * 7) % 7) === 0,
+    });
+  }
+  return result;
+}
+
+export const MOCK_ACTIVIDAD_14DIAS: RegistroActividad[] =
+  MOCK_PACIENTES.flatMap((p) => buildActividad14Dias(p));
+
+export function actividadDePaciente(pacienteId: string): RegistroActividad[] {
+  return MOCK_ACTIVIDAD_14DIAS.filter((r) => r.pacienteId === pacienteId);
+}
+
+export function heatmapActividad(pacienteId: string): {
+  fecha: string;
+  activo: boolean;
+  descripcion: string;
+  diaSemana: string;
+}[] {
+  const registros = actividadDePaciente(pacienteId);
+  return registros.map((r) => {
+    const acciones: string[] = [];
+    if (r.registroComida) acciones.push('registró comidas');
+    if (r.registroAgua) acciones.push('reportó hidratación');
+    if (r.mensajeEnviado) acciones.push('preguntó al chatbot');
+    if (r.pesoRegistrado) acciones.push('registró peso');
+
+    const activo = r.registroComida || r.registroAgua || r.mensajeEnviado || r.pesoRegistrado;
+    const fecha = new Date(r.fecha + 'T12:00:00');
+    const diaSemana = fecha.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'short' });
+
+    return {
+      fecha: r.fecha,
+      activo,
+      descripcion: activo ? acciones.join(' + ') : 'Sin actividad',
+      diaSemana: diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1),
+    };
+  });
+}
+
+export function ultimaAccionTexto(p: Paciente): string {
+  const d = p.diasSinRegistro;
+  const seed = p.id.charCodeAt(1) + p.id.charCodeAt(2);
+  const accion = ACCIONES_POSITIVAS[seed % ACCIONES_POSITIVAS.length]!;
+  if (d === 0) return `🟢 Hoy — ${accion}`;
+  if (d === 1) return `🟡 Ayer — ${accion}`;
+  if (d <= 6) return `🟠 Hace ${d} días — Última consulta al bot`;
+  return `🔴 ${d} días sin actividad ⚠️`;
+}

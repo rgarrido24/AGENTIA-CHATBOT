@@ -28,12 +28,147 @@ import {
   sparklinePeso4Semanas,
   ultimaMedicion,
   variacionPesoUltimaSemana,
+  heatmapActividad,
+  ultimaAccionTexto,
 } from '@/lib/mock-data-nutricion';
 import { useNutricion } from './nutricion-context';
 import { useEffect, useRef, useState } from 'react';
 
 const ACCENT = '#16a34a';
 const AMBER = '#f59e0b';
+
+// ── Panel de Actividad ────────────────────────────────────────────────────────
+function CuadroHeatmap({ activo, diasSinRegistro, diaSemana, descripcion }: {
+  activo: boolean;
+  diasSinRegistro: number;
+  diaSemana: string;
+  descripcion: string;
+}) {
+  const [tip, setTip] = useState(false);
+  const enRiesgo = diasSinRegistro >= 7 && !activo;
+
+  return (
+    <div className="relative" onMouseEnter={() => setTip(true)} onMouseLeave={() => setTip(false)}>
+      <motion.div
+        className="w-3 h-3 rounded-sm flex-shrink-0"
+        animate={enRiesgo ? { opacity: [1, 0.4, 1] } : {}}
+        transition={enRiesgo ? { duration: 1.4, repeat: Infinity } : {}}
+        style={{
+          background: activo ? '#16a34a' : enRiesgo ? '#ef4444' : '#1e293b',
+          border: `1px solid ${activo ? '#15803d' : enRiesgo ? '#dc2626' : '#334155'}`,
+        }}
+      />
+      <AnimatePresence>
+        {tip && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.1 }}
+            className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+          >
+            <div className="bg-slate-800 border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-200 whitespace-nowrap shadow-xl">
+              <p className="font-semibold text-slate-100">{diaSemana}</p>
+              <p className="text-slate-400">{descripcion}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function PanelActividad({ pacientes }: { pacientes: ReturnType<typeof pacientesActivos> }) {
+  const badgeStatus = (status: string) => {
+    if (status === 'activo') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">Activo</span>;
+    if (status === 'pausado') return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800">Pausado</span>;
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">Completado</span>;
+  };
+
+  return (
+    <div>
+      <div className="mb-3">
+        <h2 className="text-sm font-semibold text-white">📱 Actividad de Pacientes — Últimos 14 días</h2>
+        <p className="text-xs text-slate-500 mt-0.5">Registro en tiempo real de la interacción de cada paciente con el sistema</p>
+      </div>
+
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+        {/* Header de columnas */}
+        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-4 px-4 py-2 border-b border-white/5 bg-white/[0.02]">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Paciente</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Últimos 14 días</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Último registro</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Status</p>
+        </div>
+
+        <div className="divide-y divide-white/[0.04]">
+          {pacientes.map((p, i) => {
+            const heatmap = heatmapActividad(p.id);
+            const ultimaAccion = ultimaAccionTexto(p);
+            const enRiesgo = p.diasSinRegistro >= 7;
+
+            return (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className={`grid grid-cols-[1fr_auto_1fr_auto] gap-4 items-center px-4 py-3 ${enRiesgo ? 'bg-red-950/10' : ''}`}
+              >
+                {/* Columna 1: Avatar + nombre */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white"
+                    style={{ background: enRiesgo ? '#7f1d1d' : '#14532d' }}
+                  >
+                    {p.nombre.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-200 truncate">{p.nombre}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{p.objetivo}</p>
+                  </div>
+                </div>
+
+                {/* Columna 2: Heatmap */}
+                <div className="flex gap-0.5 items-center">
+                  {heatmap.map((h) => (
+                    <CuadroHeatmap
+                      key={h.fecha}
+                      activo={h.activo}
+                      diasSinRegistro={p.diasSinRegistro}
+                      diaSemana={h.diaSemana}
+                      descripcion={h.descripcion}
+                    />
+                  ))}
+                </div>
+
+                {/* Columna 3: Último registro */}
+                <p className={`text-xs truncate ${
+                  p.diasSinRegistro === 0 ? 'text-emerald-400' :
+                  p.diasSinRegistro === 1 ? 'text-yellow-400' :
+                  p.diasSinRegistro <= 6  ? 'text-orange-400' :
+                  'text-red-400 font-semibold'
+                }`}>
+                  {ultimaAccion}
+                </p>
+
+                {/* Columna 4: Badge */}
+                <div>{badgeStatus(p.status)}</div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Nota al pie */}
+        <div className="px-4 py-3 border-t border-white/5 bg-white/[0.015]">
+          <p className="text-[10px] text-slate-500">
+            💡 Los pacientes registran desde WhatsApp — solo escriben al número del consultorio y el sistema guarda todo automáticamente. Sin apps, sin fricción.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 type ListaItem = { alimento: string; cantidad: string; unidad: string };
@@ -414,6 +549,8 @@ export default function NutricionDashboardPage() {
             })}
           </div>
         </div>
+
+        <PanelActividad pacientes={MOCK_PACIENTES} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
