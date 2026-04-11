@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import PhoneMockup from '@/components/PhoneMockup';
 import {
   Area,
@@ -19,6 +19,7 @@ import {
   BRAND_NUTRICION,
   MOCK_CITAS_SEMANA,
   MOCK_PACIENTES,
+  MOCK_DIETAS_INICIALES,
   pacientesActivos,
   pacientesActivosEnRiesgo,
   pacientesMasActivosParaDashboard,
@@ -29,9 +30,236 @@ import {
   variacionPesoUltimaSemana,
 } from '@/lib/mock-data-nutricion';
 import { useNutricion } from './nutricion-context';
+import { useEffect, useRef, useState } from 'react';
 
 const ACCENT = '#16a34a';
 const AMBER = '#f59e0b';
+
+// ── Tipos ──────────────────────────────────────────────────────────────────────
+type ListaItem = { alimento: string; cantidad: string; unidad: string };
+type ListaSeccion = { nombre: string; emoji: string; items: ListaItem[] };
+type ListaSuper = { secciones: ListaSeccion[]; calorias_diarias: number; semana: string };
+
+// ── Modal de Lista del Súper ──────────────────────────────────────────────────
+function ModalListaSuper({
+  pacienteNombre,
+  lista,
+  onClose,
+}: {
+  pacienteNombre: string;
+  lista: ListaSuper;
+  onClose: () => void;
+}) {
+  const STORAGE_KEY = `nutri-super-${pacienteNombre.replace(/\s+/g, '-').toLowerCase()}`;
+  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+    } catch {
+      return {};
+    }
+  });
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(checked));
+  }, [checked, STORAGE_KEY]);
+
+  function toggle(key: string) {
+    setChecked((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function handleWhatsApp() {
+    const lines: string[] = [`🛒 Tu lista del súper — ${lista.semana}\n`];
+    for (const sec of lista.secciones) {
+      lines.push(`${sec.emoji} ${sec.nombre}:`);
+      for (const it of sec.items) {
+        lines.push(`  - ${it.alimento}: ${it.cantidad} ${it.unidad}`);
+      }
+      lines.push('');
+    }
+    lines.push('Enviado por NutriVida con ❤️');
+    const msg = encodeURIComponent(lines.join('\n'));
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  }
+
+  function handleCopy() {
+    const lines: string[] = [`🛒 Lista del súper — ${lista.semana}\n`];
+    for (const sec of lista.secciones) {
+      lines.push(`${sec.emoji} ${sec.nombre}:`);
+      for (const it of sec.items) {
+        lines.push(`  - ${it.alimento}: ${it.cantidad} ${it.unidad}`);
+      }
+      lines.push('');
+    }
+    void navigator.clipboard.writeText(lines.join('\n'));
+  }
+
+  const total = lista.secciones.flatMap((s) => s.items).length;
+  const done = Object.values(checked).filter(Boolean).length;
+
+  return (
+    <div
+      ref={overlayRef}
+      onClick={(e) => e.target === overlayRef.current && onClose()}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 16 }}
+        transition={{ duration: 0.18 }}
+        className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl border border-white/10 bg-slate-900 overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 p-5 border-b border-white/10">
+          <div>
+            <p className="text-white font-semibold text-base">🛒 Lista del súper — {pacienteNombre}</p>
+            <p className="text-slate-400 text-xs mt-0.5">{lista.semana} · {lista.calorias_diarias} kcal/día</p>
+            {total > 0 && (
+              <div className="mt-2 h-1.5 w-40 rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${(done / total) * 100}%`, background: ACCENT }}
+                />
+              </div>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white text-xl leading-none flex-shrink-0 mt-0.5"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Secciones */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {lista.secciones.map((sec) => (
+            <div key={sec.nombre}>
+              <p className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                {sec.emoji} {sec.nombre}
+              </p>
+              <ul className="space-y-1.5">
+                {sec.items.map((it) => {
+                  const key = `${sec.nombre}::${it.alimento}`;
+                  const done = !!checked[key];
+                  return (
+                    <li
+                      key={key}
+                      onClick={() => toggle(key)}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer hover:bg-white/5 transition-colors"
+                    >
+                      <span
+                        className="w-4 h-4 flex-shrink-0 rounded border flex items-center justify-center text-[10px]"
+                        style={{
+                          borderColor: done ? ACCENT : 'rgba(255,255,255,0.2)',
+                          background: done ? ACCENT : 'transparent',
+                        }}
+                      >
+                        {done && '✓'}
+                      </span>
+                      <span className={`flex-1 text-sm ${done ? 'line-through text-slate-500' : 'text-slate-200'}`}>
+                        {it.alimento}
+                      </span>
+                      <span className="text-xs text-slate-400 flex-shrink-0">
+                        {it.cantidad} {it.unidad}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-2 p-4 border-t border-white/10">
+          <button
+            onClick={handleWhatsApp}
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white"
+            style={{ background: '#25D366' }}
+          >
+            📱 Enviar por WhatsApp
+          </button>
+          <button
+            onClick={handleCopy}
+            className="px-4 rounded-xl text-sm font-semibold text-slate-200 bg-white/10 hover:bg-white/15 transition-colors"
+          >
+            📋 Copiar
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ── Fila de paciente con botón lista del súper ────────────────────────────────
+function FilaPacienteSuper({ pacienteId }: { pacienteId: string }) {
+  const p = MOCK_PACIENTES.find((x) => x.id === pacienteId)!;
+  const d = MOCK_DIETAS_INICIALES().find((x) => x.pacienteId === pacienteId) ?? MOCK_DIETAS_INICIALES()[0]!;
+  const [loading, setLoading] = useState(false);
+  const [lista, setLista] = useState<ListaSuper | null>(null);
+  const [error, setError] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+
+  async function generarLista() {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/demo/nutricion/lista-super', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pacienteId }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error ?? `Error ${res.status}`);
+      setLista(json.lista as ListaSuper);
+      setModalOpen(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al generar la lista');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-emerald-300 truncate">{p.nombre}</p>
+          <p className="text-xs text-slate-500 truncate">{d.nombre} · {d.calorias} kcal</p>
+          {error && <p className="text-xs text-red-400 mt-0.5 truncate">{error}</p>}
+        </div>
+        <button
+          onClick={lista ? () => setModalOpen(true) : generarLista}
+          disabled={loading}
+          className="flex-shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition-colors"
+          style={{ background: loading ? '#334155' : ACCENT }}
+        >
+          {loading ? (
+            <>
+              <span className="animate-spin inline-block w-3 h-3 border border-white/40 border-t-white rounded-full" />
+              Calculando…
+            </>
+          ) : (
+            <>🛒 {lista ? 'Ver lista' : 'Generar lista'}</>
+          )}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {modalOpen && lista && (
+          <ModalListaSuper
+            pacienteNombre={p.nombre}
+            lista={lista}
+            onClose={() => setModalOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
 
 function nombreCorto(id: string) {
   return MOCK_PACIENTES.find((p) => p.id === id)?.nombre.split(' ')[0] ?? '';
@@ -233,6 +461,19 @@ export default function NutricionDashboardPage() {
                 );
               })}
             </div>
+          </div>
+        </div>
+
+        {/* ── Lista del Súper por Paciente ────────────────────────────── */}
+        <div>
+          <h2 className="text-sm font-semibold text-white mb-3">🛒 Lista del súper semanal</h2>
+          <p className="text-xs text-slate-500 mb-3">
+            Genera la lista de compras para 7 días basada en el plan de cada paciente y el SMAE.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {MOCK_PACIENTES.slice(0, 6).map((p) => (
+              <FilaPacienteSuper key={p.id} pacienteId={p.id} />
+            ))}
           </div>
         </div>
 
