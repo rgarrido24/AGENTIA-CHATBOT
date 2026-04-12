@@ -20,6 +20,27 @@ export const DENTISTAS = [
 
 export type NivelPaciente = 'Nuevo' | 'Regular' | 'VIP';
 
+export type Radiografia = {
+  id: string;
+  nombre: string;
+  fecha: string;
+  tipo: 'periapical' | 'panoramica' | 'bitewing' | 'cefalometrica';
+  diente?: string;
+  notas?: string;
+  url: string;
+  soloDoctor: true;
+};
+
+export type FotoEvolucion = {
+  id: string;
+  fecha: string;
+  tipo: 'antes' | 'durante' | 'despues';
+  descripcion: string;
+  url: string;
+  tratamiento: string;
+  visible: 'ambos';
+};
+
 export type Paciente = {
   id: string;
   folio: string;
@@ -37,6 +58,8 @@ export type Paciente = {
   dentistaTratante: string;
   nivel: NivelPaciente;
   deuda: number;
+  radiografias: Radiografia[];
+  fotosEvolucion: FotoEvolucion[];
 };
 
 export type MedicamentoReceta = {
@@ -180,6 +203,48 @@ function mkOdontograma(seed: number): OdontogramaData {
   return { estados, notas };
 }
 
+const RADIOGRAFIAS_MOCK: Record<string, Radiografia[]> = {
+  p1: [
+    { id: 'rx-p1-1', nombre: 'Periapical molar superior', fecha: '2026-01-15', tipo: 'periapical', diente: '16', notas: 'Control post-extracción molar superior derecho', url: 'https://placehold.co/400x300/1a1a2e/ffffff?text=Rx+Periapical', soloDoctor: true },
+    { id: 'rx-p1-2', nombre: 'Panorámica general', fecha: '2025-08-10', tipo: 'panoramica', notas: 'Evaluación general. Se observan terceros molares retenidos', url: 'https://placehold.co/800x400/1a1a2e/ffffff?text=Rx+Panoramica', soloDoctor: true },
+    { id: 'rx-p1-3', nombre: 'Bitewing interproximal', fecha: '2025-11-20', tipo: 'bitewing', diente: '14, 15', notas: 'Revisión caries interproximal premolares', url: 'https://placehold.co/400x300/1a1a2e/ffffff?text=Rx+Bitewing', soloDoctor: true },
+  ],
+  p2: [
+    { id: 'rx-p2-1', nombre: 'Panorámica ortodoncia', fecha: '2025-06-01', tipo: 'panoramica', notas: 'Inicio tratamiento ortodoncia. Base inicial', url: 'https://placehold.co/800x400/1a1a2e/ffffff?text=Rx+Panoramica', soloDoctor: true },
+    { id: 'rx-p2-2', nombre: 'Cefalométrica lateral', fecha: '2025-06-01', tipo: 'cefalometrica', notas: 'Análisis cefalométrico clase II esqueletal', url: 'https://placehold.co/400x300/1a1a2e/ffffff?text=Rx+Bitewing', soloDoctor: true },
+  ],
+  p3: [
+    { id: 'rx-p3-1', nombre: 'Periapical endodoncia 36', fecha: '2026-02-05', tipo: 'periapical', diente: '36', notas: 'Pre-endodoncia. Lesión periapical visible', url: 'https://placehold.co/400x300/1a1a2e/ffffff?text=Rx+Periapical', soloDoctor: true },
+    { id: 'rx-p3-2', nombre: 'Periapical control 36', fecha: '2026-03-10', tipo: 'periapical', diente: '36', notas: 'Post-endodoncia. Buena condensación. Sin lesión activa', url: 'https://placehold.co/400x300/1a1a2e/ffffff?text=Rx+Periapical', soloDoctor: true },
+    { id: 'rx-p3-3', nombre: 'Bitewing sector posterior', fecha: '2025-09-14', tipo: 'bitewing', diente: '35, 36, 37', notas: 'Revisión caries secundarias sector posterior izquierdo', url: 'https://placehold.co/400x300/1a1a2e/ffffff?text=Rx+Bitewing', soloDoctor: true },
+  ],
+  p4: [
+    { id: 'rx-p4-1', nombre: 'Panorámica implante', fecha: '2025-12-03', tipo: 'panoramica', notas: 'Planificación implante zona 46. Buena densidad ósea', url: 'https://placehold.co/800x400/1a1a2e/ffffff?text=Rx+Panoramica', soloDoctor: true },
+    { id: 'rx-p4-2', nombre: 'Periapical post-implante', fecha: '2026-02-20', tipo: 'periapical', diente: '46', notas: 'Control osteointegración implante. Sin signos de rechazo', url: 'https://placehold.co/400x300/1a1a2e/ffffff?text=Rx+Periapical', soloDoctor: true },
+  ],
+  p5: [
+    { id: 'rx-p5-1', nombre: 'Bitewing bilateral', fecha: '2026-01-08', tipo: 'bitewing', notas: 'Revisión anual. Pequeña caries incipiente en 25', url: 'https://placehold.co/400x300/1a1a2e/ffffff?text=Rx+Bitewing', soloDoctor: true },
+    { id: 'rx-p5-2', nombre: 'Panorámica control', fecha: '2025-07-22', tipo: 'panoramica', notas: 'Sin novedades. Terceros molares en posición correcta', url: 'https://placehold.co/800x400/1a1a2e/ffffff?text=Rx+Panoramica', soloDoctor: true },
+    { id: 'rx-p5-3', nombre: 'Periapical sector anterior', fecha: '2025-10-30', tipo: 'periapical', diente: '11, 21', notas: 'Control post-blanqueamiento. Tejidos periodontales sanos', url: 'https://placehold.co/400x300/1a1a2e/ffffff?text=Rx+Periapical', soloDoctor: true },
+  ],
+};
+
+const FOTOS_EVOLUCION_MOCK: Record<string, FotoEvolucion[]> = {
+  p1: [
+    { id: 'fe-p1-1', fecha: '2025-01-10', tipo: 'antes', descripcion: 'Apiñamiento dental severo, clase II canina bilateral', url: 'https://placehold.co/400x300/2d1b1b/ffffff?text=Antes', tratamiento: 'Ortodoncia metálica', visible: 'ambos' },
+    { id: 'fe-p1-2', fecha: '2025-07-15', tipo: 'durante', descripcion: 'A 6 meses. Descruzamiento anterior logrado, alineación en progreso', url: 'https://placehold.co/400x300/1b2d1b/ffffff?text=Durante', tratamiento: 'Ortodoncia metálica', visible: 'ambos' },
+    { id: 'fe-p1-3', fecha: '2026-03-10', tipo: 'despues', descripcion: 'Tratamiento finalizado. Alineación completa, oclusión clase I', url: 'https://placehold.co/400x300/1b1b2d/ffffff?text=Despues', tratamiento: 'Ortodoncia metálica', visible: 'ambos' },
+  ],
+  p2: [
+    { id: 'fe-p2-1', fecha: '2025-06-01', tipo: 'antes', descripcion: 'Diastema central superior 3mm. Caninos retenidos', url: 'https://placehold.co/400x300/2d1b1b/ffffff?text=Antes', tratamiento: 'Ortodoncia + cirugía exposición caninos', visible: 'ambos' },
+    { id: 'fe-p2-2', fecha: '2025-10-20', tipo: 'durante', descripcion: 'Cierre de diastema 60% completado. Caninos en erupción guiada', url: 'https://placehold.co/400x300/1b2d1b/ffffff?text=Durante', tratamiento: 'Ortodoncia + cirugía exposición caninos', visible: 'ambos' },
+  ],
+  p3: [
+    { id: 'fe-p3-1', fecha: '2026-02-05', tipo: 'antes', descripcion: 'Tejidos inflamados. Caries avanzada molar 36 con absceso', url: 'https://placehold.co/400x300/2d1b1b/ffffff?text=Antes', tratamiento: 'Endodoncia + corona cerámica', visible: 'ambos' },
+    { id: 'fe-p3-2', fecha: '2026-03-18', tipo: 'despues', descripcion: 'Molar restaurado con corona E-max. Tejidos periodontales sanos', url: 'https://placehold.co/400x300/1b1b2d/ffffff?text=Despues', tratamiento: 'Endodoncia + corona cerámica', visible: 'ambos' },
+  ],
+};
+
 export const MOCK_PACIENTES: Paciente[] = nombres.map((nombre, i) => {
   const y = 1965 + (i % 45);
   const fechaNac = `${y}-${String((i % 12) + 1).padStart(2, '0')}-15`;
@@ -206,6 +271,8 @@ export const MOCK_PACIENTES: Paciente[] = nombres.map((nombre, i) => {
     dentistaTratante: dentistasRot[i % 3]!,
     nivel: niveles[i]!,
     deuda: [0, 0, 500, 1200, 0, 2500, 800, 0, 300, 0][i % 10]! + (i % 3) * 100,
+    radiografias: RADIOGRAFIAS_MOCK[`p${i + 1}`] ?? [],
+    fotosEvolucion: FOTOS_EVOLUCION_MOCK[`p${i + 1}`] ?? [],
   };
 });
 

@@ -70,7 +70,15 @@ export default function PacientesPage() {
                     </span>
                   </td>
                   <td className="p-3">
-                    <span className="text-xs text-slate-400">{p.nivel}</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs text-slate-400">{p.nivel}</span>
+                      {p.radiografias.length > 0 && (
+                        <span title={`${p.radiografias.length} radiografía(s)`} className="text-xs cursor-default select-none">🩻</span>
+                      )}
+                      {p.fotosEvolucion.length > 0 && (
+                        <span title={`${p.fotosEvolucion.length} foto(s) de evolución`} className="text-xs cursor-default select-none">📸</span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3">
                     <Link
