@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { MessageCircle, Send } from 'lucide-react';
 import { MOCK_PACIENTES } from '@/lib/mock-data-nutricion';
+import { useNutricionTheme } from '../nutricion-theme-context';
 
 type ChatMsg = { role: 'user' | 'assistant'; content: string };
 type Mode = 'nutriologa' | 'paciente';
@@ -29,6 +30,8 @@ const CHIPS_PAC = [
 ];
 
 function ChatInner() {
+  const { colors, theme } = useNutricionTheme();
+  const isLight = theme === 'light';
   const sp = useSearchParams();
   const preP = sp.get('paciente') ?? 'p01';
   const [mode, setMode] = useState<Mode>('nutriologa');
@@ -116,6 +119,15 @@ function ChatInner() {
 
   const isPac = mode === 'paciente';
 
+  // The chat area keeps WhatsApp-style dark bg when in patient mode (by design)
+  const chatAreaStyle = isPac
+    ? { background: '#0b141a', border: '1px solid rgba(245,158,11,0.25)' }
+    : { background: colors.cardBg, border: `1px solid ${colors.border}` };
+
+  const assistantBubbleStyle = isPac
+    ? { background: '#202c33', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.06)' }
+    : { background: isLight ? '#f3f4f6' : '#1e293b', color: colors.textPrimary, border: `1px solid ${colors.border}` };
+
   return (
     <div className="max-w-3xl mx-auto flex flex-col h-[calc(100vh-10rem)] min-h-[420px]">
       <div className="flex flex-wrap gap-2 mb-4 items-center">
@@ -125,10 +137,12 @@ function ChatInner() {
             setMode('nutriologa');
             setMessages([]);
           }}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-            mode === 'nutriologa' ? 'text-white' : 'bg-white/10 text-slate-400'
-          }`}
-          style={mode === 'nutriologa' ? { background: ACCENT } : undefined}
+          className="px-4 py-2 rounded-lg text-sm font-semibold"
+          style={
+            mode === 'nutriologa'
+              ? { background: ACCENT, color: '#fff' }
+              : { background: colors.cardBgAlt, color: colors.textSecondary }
+          }
         >
           👩‍⚕️ Nutrióloga
         </button>
@@ -138,15 +152,17 @@ function ChatInner() {
             setMode('paciente');
             setMessages([]);
           }}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-            mode === 'paciente' ? 'text-white' : 'bg-white/10 text-slate-400'
-          }`}
-          style={mode === 'paciente' ? { background: AMBER } : undefined}
+          className="px-4 py-2 rounded-lg text-sm font-semibold"
+          style={
+            mode === 'paciente'
+              ? { background: AMBER, color: '#fff' }
+              : { background: colors.cardBgAlt, color: colors.textSecondary }
+          }
         >
           🥗 Paciente
         </button>
         {isPac && (
-          <label className="text-xs text-slate-400 flex items-center gap-2 ml-auto">
+          <label className="text-xs flex items-center gap-2 ml-auto" style={{ color: colors.textSecondary }}>
             Simulando como:
             <select
               value={pacienteId}
@@ -154,7 +170,12 @@ function ChatInner() {
                 setPacienteId(e.target.value);
                 setMessages([]);
               }}
-              className="bg-slate-900 border border-white/15 rounded-lg px-2 py-1 text-white text-xs"
+              className="rounded-lg px-2 py-1 text-xs"
+              style={{
+                background: colors.inputBg,
+                border: `1px solid ${colors.border}`,
+                color: colors.textPrimary,
+              }}
             >
               {MOCK_PACIENTES.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -168,18 +189,14 @@ function ChatInner() {
 
       {isPac && (
         <div
-          className="mb-3 rounded-lg border p-3 text-xs text-amber-100"
-          style={{ borderColor: `${AMBER}55`, background: 'rgba(245,158,11,0.12)' }}
+          className="mb-3 rounded-lg border p-3 text-xs text-amber-700"
+          style={{ borderColor: `${AMBER}55`, background: isLight ? '#fef3c7' : 'rgba(245,158,11,0.12)', color: isLight ? '#b45309' : '#fcd34d' }}
         >
           Vista tipo WhatsApp: la IA usa la dieta del paciente seleccionado.
         </div>
       )}
 
-      <div
-        className={`flex-1 overflow-y-auto rounded-xl border p-4 space-y-3 ${
-          isPac ? 'bg-[#0b141a] border-amber-900/40' : 'bg-white/[0.03] border-white/10'
-        }`}
-      >
+      <div className="flex-1 overflow-y-auto rounded-xl p-4 space-y-3" style={chatAreaStyle}>
         {messages.length === 0 && (
           <div className="flex flex-wrap gap-2">
             {(mode === 'nutriologa' ? CHIPS_NUTRI : CHIPS_PAC).map((s) => (
@@ -187,11 +204,12 @@ function ChatInner() {
                 key={s}
                 type="button"
                 onClick={() => setInput(s)}
-                className={`text-xs px-3 py-1.5 rounded-full border ${
+                className="text-xs px-3 py-1.5 rounded-full border"
+                style={
                   isPac
-                    ? 'border-amber-700 text-amber-200 hover:bg-amber-900/40'
-                    : 'border-emerald-500/40 text-emerald-200 hover:bg-emerald-900/20'
-                }`}
+                    ? { borderColor: 'rgba(245,158,11,0.5)', color: '#fcd34d' }
+                    : { borderColor: isLight ? '#bbf7d0' : 'rgba(22,163,74,0.4)', color: isLight ? '#15803d' : '#86efac' }
+                }
               >
                 {s}
               </button>
@@ -201,20 +219,16 @@ function ChatInner() {
         {messages.map((m, i) => (
           <div key={`${i}-${m.role}`} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+              className="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed"
+              style={
                 m.role === 'user'
-                  ? isPac
-                    ? 'text-white rounded-tr-sm'
-                    : 'text-white'
-                  : isPac
-                    ? 'bg-[#202c33] text-slate-100 border border-white/5 rounded-tl-sm'
-                    : 'bg-slate-800/90 text-slate-100 border border-white/10'
-              }`}
-              style={m.role === 'user' ? { background: isPac ? AMBER : ACCENT } : undefined}
+                  ? { background: isPac ? AMBER : ACCENT, color: '#fff', borderRadius: '1rem 1rem 0.25rem 1rem' }
+                  : { ...assistantBubbleStyle, borderRadius: '1rem 1rem 1rem 0.25rem' }
+              }
             >
               {m.content ||
                 (loading && i === messages.length - 1 && m.role === 'assistant' && !m.content ? (
-                  <span className="text-slate-400 italic">Escribiendo…</span>
+                  <span style={{ color: colors.textMuted }} className="italic">Escribiendo…</span>
                 ) : null)}
             </div>
           </div>
@@ -228,9 +242,12 @@ function ChatInner() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && void handleSend()}
           placeholder="Escribe un mensaje…"
-          className={`flex-1 rounded-xl px-4 py-3 text-sm border ${
-            isPac ? 'bg-[#2a3942] border-white/10 text-white placeholder-slate-500' : 'bg-slate-900 border-white/10 text-white'
-          }`}
+          className="flex-1 rounded-xl px-4 py-3 text-sm focus:outline-none"
+          style={
+            isPac
+              ? { background: '#2a3942', border: '1px solid rgba(255,255,255,0.1)', color: '#e2e8f0' }
+              : { background: colors.inputBg, border: `1px solid ${colors.border}`, color: colors.textPrimary }
+          }
         />
         <button
           type="button"
@@ -247,13 +264,14 @@ function ChatInner() {
 }
 
 export default function NutricionChatPage() {
+  const { colors } = useNutricionTheme();
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 text-slate-400 text-sm max-w-3xl mx-auto">
+      <div className="flex items-center gap-2 text-sm max-w-3xl mx-auto" style={{ color: colors.textSecondary }}>
         <MessageCircle className="w-5 h-5" style={{ color: '#16a34a' }} />
         <span>Asistente IA — NutriVida (demo)</span>
       </div>
-      <Suspense fallback={<div className="text-slate-500 text-center py-12">Cargando…</div>}>
+      <Suspense fallback={<div className="text-center py-12" style={{ color: '#6b7280' }}>Cargando…</div>}>
         <ChatInner />
       </Suspense>
     </div>

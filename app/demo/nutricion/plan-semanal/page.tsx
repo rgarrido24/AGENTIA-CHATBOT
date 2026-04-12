@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MOCK_PACIENTES } from '@/lib/mock-data-nutricion';
 import type { PlanSemanal, DiaPlan } from '@/app/api/demo/nutricion/plan-semanal/route';
+import { useNutricionTheme } from '../nutricion-theme-context';
 
 const ACCENT = '#16a34a';
 
@@ -17,35 +18,48 @@ const RESTRICCIONES_OPCIONES = [
 ];
 
 // ── Componente de un día ──────────────────────────────────────────────────────
-function TarjetaDia({ dia }: { dia: DiaPlan }) {
+function TarjetaDia({ dia, colors }: { dia: DiaPlan; colors: ReturnType<typeof useNutricionTheme>['colors'] }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ background: colors.cardBg, border: `1px solid ${colors.border}` }}
+    >
       <div
-        className="flex items-center justify-between px-5 py-3 border-b border-white/10"
-        style={{ background: `${ACCENT}18` }}
+        className="flex items-center justify-between px-5 py-3"
+        style={{ background: `${ACCENT}18`, borderBottom: `1px solid ${colors.border}` }}
       >
-        <h3 className="font-bold text-white text-base">{dia.dia}</h3>
+        <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>{dia.dia}</h3>
         <span className="text-sm font-semibold" style={{ color: ACCENT }}>
           {dia.totalCalorias.toLocaleString()} kcal
         </span>
       </div>
-      <div className="divide-y divide-white/[0.04]">
-        {dia.tiempos.map((t) => (
-          <div key={t.nombre} className="grid grid-cols-[120px_1fr] gap-0">
-            <div className="flex items-start gap-2 px-4 py-3 border-r border-white/[0.06] bg-white/[0.015]">
+      <div>
+        {dia.tiempos.map((t, idx) => (
+          <div
+            key={t.nombre}
+            className="grid grid-cols-[120px_1fr] gap-0"
+            style={{ borderTop: idx > 0 ? `1px solid ${colors.divider}` : 'none' }}
+          >
+            <div
+              className="flex items-start gap-2 px-4 py-3"
+              style={{
+                borderRight: `1px solid ${colors.divider}`,
+                background: colors.cardBgAlt,
+              }}
+            >
               <span className="text-lg">{t.emoji}</span>
               <div>
-                <p className="text-xs font-semibold text-slate-300">{t.nombre}</p>
-                <p className="text-[10px] text-slate-500">{t.calorias} kcal</p>
+                <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{t.nombre}</p>
+                <p className="text-[10px]" style={{ color: colors.textMuted }}>{t.calorias} kcal</p>
               </div>
             </div>
             <div className="px-4 py-3 space-y-1.5">
               {t.equivalentes.map((eq, i) => (
                 <div key={i} className="text-xs">
-                  <span className="font-semibold text-emerald-400">{eq.cantidad} eq</span>
-                  <span className="text-slate-300 mx-1">{eq.grupo}</span>
+                  <span className="font-semibold text-emerald-600">{eq.cantidad} eq</span>
+                  <span className="mx-1" style={{ color: colors.textSecondary }}>{eq.grupo}</span>
                   {eq.ejemplos.length > 0 && (
-                    <span className="text-slate-500">
+                    <span style={{ color: colors.textMuted }}>
                       — {eq.ejemplos.slice(0, 2).join(' · ')}
                     </span>
                   )}
@@ -61,6 +75,8 @@ function TarjetaDia({ dia }: { dia: DiaPlan }) {
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function PlanSemanalPage() {
+  const { colors, theme } = useNutricionTheme();
+  const isLight = theme === 'light';
   const [pacienteId, setPacienteId] = useState(MOCK_PACIENTES[0]!.id);
   const [calorias, setCalorias] = useState(1400);
   const [restricciones, setRestricciones] = useState<string[]>([]);
@@ -121,27 +137,37 @@ export default function PlanSemanalPage() {
     void navigator.clipboard.writeText(lines.join('\n'));
   }
 
+  const inputStyle = {
+    background: colors.inputBg,
+    border: `1px solid ${colors.border}`,
+    color: colors.textPrimary,
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-white">🗓️ Generador de Plan Semanal con IA</h1>
-        <p className="text-slate-400 text-sm mt-1">
+        <h1 className="text-xl font-bold" style={{ color: colors.textPrimary }}>🗓️ Generador de Plan Semanal con IA</h1>
+        <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
           Genera un plan de 7 días basado en equivalentes del SMAE adaptado a cada paciente
         </p>
       </div>
 
       {/* Formulario */}
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5 space-y-5">
+      <div
+        className="rounded-xl p-5 space-y-5"
+        style={{ background: colors.cardBg, border: `1px solid ${colors.border}` }}
+      >
         {/* Paciente */}
         <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider block mb-1.5" style={{ color: colors.textMuted }}>
             Paciente
           </label>
           <select
             value={pacienteId}
             onChange={e => setPacienteId(e.target.value)}
-            className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50"
+            className="w-full rounded-lg px-3 py-2.5 text-sm focus:outline-none"
+            style={inputStyle}
           >
             {MOCK_PACIENTES.map(p => (
               <option key={p.id} value={p.id}>{p.nombre} — {p.objetivo}</option>
@@ -151,7 +177,7 @@ export default function PlanSemanalPage() {
 
         {/* Calorías */}
         <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider block mb-1.5" style={{ color: colors.textMuted }}>
             Calorías objetivo: <span style={{ color: ACCENT }} className="text-sm font-bold">{calorias.toLocaleString()} kcal/día</span>
           </label>
           <input
@@ -163,14 +189,14 @@ export default function PlanSemanalPage() {
             onChange={e => setCalorias(Number(e.target.value))}
             className="w-full accent-emerald-500"
           />
-          <div className="flex justify-between text-[10px] text-slate-600 mt-0.5">
+          <div className="flex justify-between text-[10px] mt-0.5" style={{ color: colors.textMuted }}>
             <span>1,000</span><span>2,000</span><span>3,000</span>
           </div>
         </div>
 
         {/* Restricciones */}
         <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+          <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{ color: colors.textMuted }}>
             Restricciones alimentarias
           </label>
           <div className="flex flex-wrap gap-2">
@@ -183,7 +209,7 @@ export default function PlanSemanalPage() {
                   className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors"
                   style={active
                     ? { background: ACCENT, borderColor: ACCENT, color: '#fff' }
-                    : { background: 'transparent', borderColor: 'rgba(255,255,255,0.15)', color: '#94a3b8' }
+                    : { background: 'transparent', borderColor: colors.border, color: colors.textSecondary }
                   }
                 >
                   {active ? '✓ ' : ''}{r.label}
@@ -195,7 +221,7 @@ export default function PlanSemanalPage() {
 
         {/* Preferencias */}
         <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider block mb-1.5" style={{ color: colors.textMuted }}>
             Preferencias del paciente
           </label>
           <textarea
@@ -203,17 +229,18 @@ export default function PlanSemanalPage() {
             onChange={e => setPreferencias(e.target.value)}
             placeholder='Ej: "No le gustan las espinacas, prefiere pollo a res, come mucho de noche"'
             rows={2}
-            className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 resize-none"
+            className="w-full rounded-lg px-3 py-2.5 text-sm focus:outline-none resize-none"
+            style={{ ...inputStyle, opacity: 1 }}
           />
         </div>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-red-500">{error}</p>}
 
         <button
           onClick={generar}
           disabled={loading}
           className="w-full py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
-          style={{ background: loading ? '#334155' : ACCENT }}
+          style={{ background: loading ? (isLight ? '#94a3b8' : '#334155') : ACCENT }}
         >
           {loading ? (
             <>
@@ -233,15 +260,27 @@ export default function PlanSemanalPage() {
             className="space-y-4"
           >
             {/* Resumen */}
-            <div className="flex flex-wrap items-center gap-3 px-5 py-3 rounded-xl border border-white/10 bg-white/[0.03]">
-              <p className="text-sm font-semibold text-white flex-1">
+            <div
+              className="flex flex-wrap items-center gap-3 px-5 py-3 rounded-xl"
+              style={{ background: colors.cardBg, border: `1px solid ${colors.border}` }}
+            >
+              <p className="text-sm font-semibold flex-1" style={{ color: colors.textPrimary }}>
                 Plan para <span style={{ color: ACCENT }}>{paciente.nombre}</span>
                 {' '}— promedio {plan.caloriasPromedio.toLocaleString()} kcal/día
               </p>
               <div className="flex gap-2 text-xs">
-                <span className="px-2 py-1 rounded-full bg-violet-950 text-violet-300 border border-violet-800">P: {plan.distribucionMacros.proteina}%</span>
-                <span className="px-2 py-1 rounded-full bg-amber-950 text-amber-300 border border-amber-800">G: {plan.distribucionMacros.grasa}%</span>
-                <span className="px-2 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">CHO: {plan.distribucionMacros.carbohidratos}%</span>
+                <span
+                  className="px-2 py-1 rounded-full border"
+                  style={{ background: isLight ? '#ede9fe' : 'rgba(109,40,217,0.2)', color: isLight ? '#7c3aed' : '#c4b5fd', borderColor: isLight ? '#ddd6fe' : '#6d28d9' }}
+                >P: {plan.distribucionMacros.proteina}%</span>
+                <span
+                  className="px-2 py-1 rounded-full border"
+                  style={{ background: isLight ? '#fef3c7' : 'rgba(120,53,15,0.5)', color: isLight ? '#b45309' : '#fcd34d', borderColor: isLight ? '#fde68a' : '#78350f' }}
+                >G: {plan.distribucionMacros.grasa}%</span>
+                <span
+                  className="px-2 py-1 rounded-full border"
+                  style={{ background: isLight ? '#dcfce7' : 'rgba(6,78,59,0.4)', color: isLight ? '#15803d' : '#6ee7b7', borderColor: isLight ? '#bbf7d0' : '#064e3b' }}
+                >CHO: {plan.distribucionMacros.carbohidratos}%</span>
               </div>
             </div>
 
@@ -256,7 +295,7 @@ export default function PlanSemanalPage() {
                     style={
                       i === diaActivo
                         ? { background: ACCENT, color: '#fff' }
-                        : { background: 'rgba(255,255,255,0.04)', color: '#94a3b8' }
+                        : { background: colors.cardBgAlt, color: colors.textSecondary }
                     }
                   >
                     {dia.dia}
@@ -269,19 +308,21 @@ export default function PlanSemanalPage() {
             </div>
 
             {/* Tarjeta del día activo */}
-            {plan.dias[diaActivo] && <TarjetaDia dia={plan.dias[diaActivo]!} />}
+            {plan.dias[diaActivo] && <TarjetaDia dia={plan.dias[diaActivo]!} colors={colors} />}
 
             {/* Acciones */}
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={copiarPlan}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-200 bg-white/10 hover:bg-white/15 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                style={{ background: colors.cardBgAlt, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
               >
                 📋 Copiar plan completo
               </button>
               <button
                 onClick={generar}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-200 bg-white/10 hover:bg-white/15 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                style={{ background: colors.cardBgAlt, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
               >
                 🔄 Regenerar
               </button>

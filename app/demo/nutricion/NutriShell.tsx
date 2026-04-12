@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell,
   BookOpen,
@@ -21,8 +19,11 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useState } from 'react';
 import { BRAND_NUTRICION } from '@/lib/mock-data-nutricion';
 import { NutricionProvider } from './nutricion-context';
+import { NutricionThemeProvider, useNutricionTheme } from './nutricion-theme-context';
 
 const ACCENT = '#16a34a';
 const ACCENT_SOFT = 'rgba(22, 163, 74, 0.2)';
@@ -57,24 +58,17 @@ const TITLE_MAP: Record<string, string> = {
 function ShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [light, setLight] = useState(false);
+  const { theme, colors, toggleTheme } = useNutricionTheme();
   const sectionTitle = TITLE_MAP[pathname] ?? 'Nutrición';
+  const isLight = theme === 'light';
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', !light);
-    return () => document.documentElement.classList.remove('dark');
-  }, [light]);
-
-  const bg = light ? 'bg-emerald-50/90 text-zinc-900' : 'bg-[#07120c] text-white';
-  const sidebarBg = light ? 'bg-white border-emerald-200' : 'bg-[#0a1a12] border-white/10';
-  const muted = light ? 'text-zinc-500' : 'text-slate-500';
-  const navInactive = light
-    ? 'text-zinc-600 hover:bg-emerald-50'
-    : 'text-slate-400 hover:bg-white/5 hover:text-white';
-  const headerBg = light ? 'bg-white/95 border-emerald-100' : 'bg-[#0a1a12]/95 border-white/10';
+  const navInactiveColor = isLight ? '#4b5563' : '#94a3b8';
 
   return (
-    <div className={`min-h-screen flex transition-colors ${bg}`}>
+    <div
+      className="min-h-screen flex transition-colors"
+      style={{ background: colors.pageBg, color: colors.textPrimary }}
+    >
       <AnimatePresence>
         {open && (
           <motion.button
@@ -91,13 +85,18 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-50 w-64 flex flex-col border-r ${sidebarBg}
+          fixed lg:static inset-y-0 left-0 z-50 w-64 flex flex-col
           transform transition-transform duration-200 ease-out lg:transform-none
           ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
+        style={{
+          background: colors.sidebarBg,
+          borderRight: `1px solid ${colors.border}`,
+        }}
       >
         <div
-          className={`p-4 border-b ${light ? 'border-emerald-100' : 'border-white/10'} flex items-center justify-between lg:block`}
+          className="p-4 flex items-center justify-between lg:block"
+          style={{ borderBottom: `1px solid ${colors.border}` }}
         >
           <div className="flex items-center gap-2">
             <div
@@ -107,13 +106,18 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               <Salad className="w-6 h-6" style={{ color: ACCENT }} />
             </div>
             <div>
-              <p className="font-semibold text-sm leading-tight">Agentia Nutrición</p>
-              <p className={`text-xs ${muted}`}>{BRAND_NUTRICION.centro.split('—')[0]?.trim()}</p>
+              <p className="font-semibold text-sm leading-tight" style={{ color: colors.textPrimary }}>
+                Agentia Nutrición
+              </p>
+              <p className="text-xs" style={{ color: colors.textMuted }}>
+                {BRAND_NUTRICION.centro.split('—')[0]?.trim()}
+              </p>
             </div>
           </div>
           <button
             type="button"
-            className="lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
+            className="lg:hidden p-2 rounded-lg"
+            style={{ color: colors.textSecondary }}
             onClick={() => setOpen(false)}
             aria-label="Cerrar"
           >
@@ -121,7 +125,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        <p className={`px-4 pt-3 text-[11px] ${muted}`} style={{ color: light ? undefined : AMBER }}>
+        <p className="px-4 pt-3 text-[11px]" style={{ color: isLight ? ACCENT : AMBER }}>
           {BRAND_NUTRICION.tagline}
         </p>
 
@@ -133,14 +137,18 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                  active ? 'text-white shadow-lg' : navInactive
-                }`}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors"
                 style={
                   active
-                    ? { background: ACCENT, boxShadow: `0 8px 24px rgba(22,163,74,0.4)` }
-                    : undefined
+                    ? { background: ACCENT, color: '#fff', boxShadow: `0 8px 24px rgba(22,163,74,0.35)` }
+                    : { color: navInactiveColor }
                 }
+                onMouseEnter={(e) => {
+                  if (!active) (e.currentTarget as HTMLAnchorElement).style.background = colors.hoverBg;
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
+                }}
               >
                 <Icon className="w-5 h-5 shrink-0 opacity-90" />
                 {label}
@@ -149,35 +157,46 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className={`p-4 border-t ${light ? 'border-emerald-100' : 'border-white/10'}`}>
-          <p className={`text-xs ${light ? 'text-zinc-600' : 'text-slate-400'}`}>
+        <div
+          className="p-4"
+          style={{ borderTop: `1px solid ${colors.border}` }}
+        >
+          <p className="text-xs" style={{ color: colors.textSecondary }}>
             {BRAND_NUTRICION.doctora}
-            <span className={muted}> · </span>
-            <span className="font-medium" style={{ color: ACCENT }}>
-              Nutrióloga
-            </span>
+            <span style={{ color: colors.textMuted }}> · </span>
+            <span className="font-medium" style={{ color: ACCENT }}>Nutrióloga</span>
           </p>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className={`sticky top-0 z-30 flex items-center gap-3 px-4 py-3 border-b backdrop-blur-md ${headerBg}`}>
+        <header
+          className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 backdrop-blur-md"
+          style={{
+            background: isLight ? 'rgba(255,255,255,0.95)' : 'rgba(10,26,18,0.95)',
+            borderBottom: `1px solid ${colors.border}`,
+          }}
+        >
           <button
             type="button"
-            className={`lg:hidden p-2 rounded-lg -ml-1 ${light ? 'hover:bg-emerald-50' : 'hover:bg-white/10'}`}
+            className="lg:hidden p-2 rounded-lg -ml-1"
+            style={{ color: colors.textSecondary }}
             onClick={() => setOpen(true)}
             aria-label="Abrir menú"
           >
             <Menu className="w-6 h-6" />
           </button>
-          <h1 className="text-lg font-semibold tracking-tight flex-1">{sectionTitle}</h1>
+          <h1 className="text-lg font-semibold tracking-tight flex-1" style={{ color: colors.textPrimary }}>
+            {sectionTitle}
+          </h1>
           <button
             type="button"
-            onClick={() => setLight((v) => !v)}
-            className={`p-2 rounded-lg ${light ? 'hover:bg-emerald-50' : 'hover:bg-white/10'}`}
-            aria-label={light ? 'Modo oscuro' : 'Modo claro'}
+            onClick={toggleTheme}
+            className="p-2 rounded-lg transition-colors"
+            style={{ color: colors.textSecondary }}
+            aria-label={isLight ? 'Modo oscuro' : 'Modo claro'}
           >
-            {light ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5 text-emerald-400" />}
+            {isLight ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5 text-emerald-400" />}
           </button>
           <span
             className="text-xs font-bold px-2.5 py-1 rounded-full text-white shrink-0"
@@ -187,7 +206,12 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           </span>
         </header>
 
-        <main className="flex-1 p-4 md:p-6 overflow-x-auto">{children}</main>
+        <main
+          className="flex-1 p-4 md:p-6 overflow-x-auto"
+          style={{ background: colors.pageBg }}
+        >
+          {children}
+        </main>
       </div>
     </div>
   );
@@ -195,8 +219,10 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
 export default function NutriShell({ children }: { children: React.ReactNode }) {
   return (
-    <NutricionProvider>
-      <ShellInner>{children}</ShellInner>
-    </NutricionProvider>
+    <NutricionThemeProvider>
+      <NutricionProvider>
+        <ShellInner>{children}</ShellInner>
+      </NutricionProvider>
+    </NutricionThemeProvider>
   );
 }

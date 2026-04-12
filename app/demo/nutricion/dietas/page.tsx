@@ -13,6 +13,7 @@ import {
   type PlanDietaId,
 } from '@/lib/mock-data-nutricion';
 import { useNutricion } from '../nutricion-context';
+import { useNutricionTheme } from '../nutricion-theme-context';
 
 const ACCENT = '#16a34a';
 const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] as const;
@@ -25,6 +26,8 @@ type GenForm = { objetivo: string; calorias: number; restricciones: string };
 
 // ─── Modal Receta ──────────────────────────────────────────────────────────────
 function ModalReceta({ receta, onClose }: { receta: Receta; onClose: () => void }) {
+  const { colors, theme } = useNutricionTheme();
+  const isLight = theme === 'light';
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={onClose}>
@@ -32,58 +35,74 @@ function ModalReceta({ receta, onClose }: { receta: Receta; onClose: () => void 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-[#0d1625] border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+        style={{ background: colors.cardBg, border: `1px solid ${colors.border}` }}
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
-        <div className="h-40 rounded-t-2xl bg-gradient-to-br from-emerald-900/60 to-slate-900 flex items-center justify-center text-6xl">
+        <div
+          className="h-40 rounded-t-2xl flex items-center justify-center text-6xl"
+          style={{
+            background: isLight
+              ? 'linear-gradient(135deg, #dcfce7, #f0fdf4)'
+              : 'linear-gradient(135deg, rgba(22,163,74,0.3), rgba(15,23,42,1))',
+          }}
+        >
           {receta.tags.includes('mexicana') ? '🇲🇽' : receta.tags.includes('vegetariana') ? '🥦' : '🍳'}
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <h2 className="text-xl font-bold text-white">{receta.nombre}</h2>
-            <p className="text-sm text-slate-400 mt-1">{receta.descripcion}</p>
+            <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>{receta.nombre}</h2>
+            <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{receta.descripcion}</p>
           </div>
           <div className="flex gap-3 text-sm">
-            <span className="text-slate-400">⏱️ {receta.tiempoPrep} min</span>
-            <span className="text-emerald-400">🔥 {receta.calorias} kcal</span>
+            <span style={{ color: colors.textSecondary }}>⏱️ {receta.tiempoPrep} min</span>
+            <span className="text-emerald-600">🔥 {receta.calorias} kcal</span>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
             <div className="bg-sky-500/10 border border-sky-500/20 rounded-lg py-2">
-              <p className="text-sky-300 font-bold text-sm">{receta.proteinas}g</p>
-              <p className="text-sky-400/70">Proteína</p>
+              <p className="text-sky-600 font-bold text-sm">{receta.proteinas}g</p>
+              <p className="text-sky-500/70">Proteína</p>
             </div>
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg py-2">
-              <p className="text-amber-300 font-bold text-sm">{receta.carbohidratos}g</p>
-              <p className="text-amber-400/70">Carbos</p>
+              <p className="text-amber-600 font-bold text-sm">{receta.carbohidratos}g</p>
+              <p className="text-amber-500/70">Carbos</p>
             </div>
             <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg py-2">
-              <p className="text-rose-300 font-bold text-sm">{receta.grasas}g</p>
-              <p className="text-rose-400/70">Grasa</p>
+              <p className="text-rose-600 font-bold text-sm">{receta.grasas}g</p>
+              <p className="text-rose-500/70">Grasa</p>
             </div>
           </div>
           <div>
-            <p className="text-xs font-semibold text-emerald-400 mb-2">Ingredientes</p>
+            <p className="text-xs font-semibold text-emerald-600 mb-2">Ingredientes</p>
             <ul className="space-y-1">
               {receta.ingredientes.map((ing) => (
                 <li key={ing} className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setChecked((c) => ({ ...c, [ing]: !c[ing] }))}
-                    className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${checked[ing] ? 'bg-emerald-500 border-emerald-500' : 'border-white/30'}`}
+                    className="w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors"
+                    style={
+                      checked[ing]
+                        ? { background: '#16a34a', borderColor: '#16a34a' }
+                        : { borderColor: colors.border }
+                    }
                   >
                     {checked[ing] && <span className="text-white text-[10px]">✓</span>}
                   </button>
-                  <span className={`text-sm ${checked[ing] ? 'line-through text-slate-500' : 'text-slate-300'}`}>{ing}</span>
+                  <span
+                    className={`text-sm ${checked[ing] ? 'line-through' : ''}`}
+                    style={{ color: checked[ing] ? colors.textMuted : colors.textSecondary }}
+                  >{ing}</span>
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-xs font-semibold text-emerald-400 mb-2">Preparación</p>
+            <p className="text-xs font-semibold text-emerald-600 mb-2">Preparación</p>
             <ol className="space-y-2">
               {receta.preparacion.map((paso, i) => (
-                <li key={i} className="flex gap-2 text-sm text-slate-300">
-                  <span className="w-5 h-5 rounded-full bg-emerald-600/40 text-emerald-300 flex items-center justify-center text-xs font-bold flex-shrink-0">{i+1}</span>
+                <li key={i} className="flex gap-2 text-sm" style={{ color: colors.textSecondary }}>
+                  <span className="w-5 h-5 rounded-full bg-emerald-600/30 text-emerald-600 flex items-center justify-center text-xs font-bold flex-shrink-0">{i+1}</span>
                   {paso}
                 </li>
               ))}
@@ -91,16 +110,20 @@ function ModalReceta({ receta, onClose }: { receta: Receta; onClose: () => void 
           </div>
           <div className="flex flex-wrap gap-1.5">
             {receta.tags.map((tag) => (
-              <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
+              <span
+                key={tag}
+                className="text-[10px] px-2 py-0.5 rounded-full border border-emerald-500/30 text-emerald-600"
+                style={{ background: isLight ? '#dcfce7' : 'rgba(22,163,74,0.15)' }}
+              >
                 {tag === 'mexicana' ? '🇲🇽' : tag === 'alta proteína' ? '💪' : tag === 'rápida' ? '⚡' : tag === 'vegetariana' ? '🥦' : '•'} {tag}
               </span>
             ))}
           </div>
-          <div className="border-t border-white/5 pt-3">
-            <p className="text-[10px] text-slate-600">Referencia SMAE: {receta.equivalentesSMAE}</p>
+          <div style={{ borderTop: `1px solid ${colors.divider}` }} className="pt-3">
+            <p className="text-[10px]" style={{ color: colors.textMuted }}>Referencia SMAE: {receta.equivalentesSMAE}</p>
           </div>
         </div>
-        <div className="p-4 border-t border-white/10 flex justify-end">
+        <div className="p-4 flex justify-end" style={{ borderTop: `1px solid ${colors.border}` }}>
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold">
             Cerrar
           </button>
@@ -111,6 +134,7 @@ function ModalReceta({ receta, onClose }: { receta: Receta; onClose: () => void 
 }
 
 // ─── Vista Paciente Mobile ─────────────────────────────────────────────────────
+// This component intentionally keeps a light iOS-style look regardless of theme
 function ModalVistaPaciente({ semana, pacienteNombre, onClose }: {
   semana: DiaMenu[];
   pacienteNombre: string;
@@ -211,14 +235,27 @@ function ModalVistaPaciente({ semana, pacienteNombre, onClose }: {
 
 // ─── Modal Subir Receta ────────────────────────────────────────────────────────
 function ModalSubirReceta({ onClose }: { onClose: () => void }) {
+  const { colors } = useNutricionTheme();
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({ nombre: '', ingredientes: '', preparacion: '' });
+
+  const inputStyle = {
+    background: colors.inputBg,
+    border: `1px solid ${colors.border}`,
+    color: colors.textPrimary,
+  };
+
   if (saved) return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={onClose}>
-      <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-[#0d1625] border border-emerald-500/40 rounded-2xl p-8 text-center max-w-sm w-full">
+      <motion.div
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        className="rounded-2xl p-8 text-center max-w-sm w-full"
+        style={{ background: colors.cardBg, border: `1px solid ${colors.border}` }}
+      >
         <div className="text-5xl mb-3">✅</div>
-        <p className="text-white font-semibold text-lg">¡Receta agregada!</p>
-        <p className="text-slate-400 text-sm mt-1">La receta fue guardada en el recetario.</p>
+        <p className="font-semibold text-lg" style={{ color: colors.textPrimary }}>¡Receta agregada!</p>
+        <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>La receta fue guardada en el recetario.</p>
         <button type="button" onClick={onClose} className="mt-4 px-5 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold">Cerrar</button>
       </motion.div>
     </div>
@@ -228,40 +265,53 @@ function ModalSubirReceta({ onClose }: { onClose: () => void }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-[#0d1625] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl"
+        className="rounded-2xl w-full max-w-md shadow-2xl"
+        style={{ background: colors.cardBg, border: `1px solid ${colors.border}` }}
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
-        <div className="p-5 border-b border-white/10 flex justify-between items-center">
-          <h3 className="text-white font-semibold">📷 Subir receta</h3>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+        <div className="p-5 flex justify-between items-center" style={{ borderBottom: `1px solid ${colors.border}` }}>
+          <h3 className="font-semibold" style={{ color: colors.textPrimary }}>📷 Subir receta</h3>
+          <button type="button" onClick={onClose} style={{ color: colors.textSecondary }}>✕</button>
         </div>
         <div className="p-5 space-y-3">
           <input
-            className="w-full bg-slate-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500"
+            className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+            style={inputStyle}
             placeholder="Nombre de la receta"
             value={form.nombre}
             onChange={(e) => setForm(f => ({ ...f, nombre: e.target.value }))}
           />
           <textarea
-            className="w-full bg-slate-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 resize-none"
+            className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none resize-none"
+            style={inputStyle}
             placeholder="Ingredientes (uno por línea)"
             rows={4}
             value={form.ingredientes}
             onChange={(e) => setForm(f => ({ ...f, ingredientes: e.target.value }))}
           />
           <textarea
-            className="w-full bg-slate-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 resize-none"
+            className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none resize-none"
+            style={inputStyle}
             placeholder="Preparación (pasos)"
             rows={4}
             value={form.preparacion}
             onChange={(e) => setForm(f => ({ ...f, preparacion: e.target.value }))}
           />
-          <button type="button" className="w-full py-2 border border-dashed border-white/20 rounded-lg text-slate-400 text-sm hover:border-emerald-500/50 hover:text-emerald-300 transition-colors">
+          <button
+            type="button"
+            className="w-full py-2 border border-dashed rounded-lg text-sm transition-colors"
+            style={{ borderColor: colors.border, color: colors.textMuted }}
+          >
             📎 Seleccionar foto (simulado)
           </button>
         </div>
-        <div className="p-5 border-t border-white/10 flex gap-2 justify-end">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-white/20 text-sm text-slate-300">Cancelar</button>
+        <div className="p-5 flex gap-2 justify-end" style={{ borderTop: `1px solid ${colors.border}` }}>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg text-sm"
+            style={{ border: `1px solid ${colors.border}`, color: colors.textSecondary }}
+          >Cancelar</button>
           <button
             type="button"
             onClick={() => { if (form.nombre) setSaved(true); }}
@@ -286,13 +336,11 @@ function TabMenuSemanal({
   pacienteNombre: string;
   kcalObjetivo: number;
 }) {
+  const { colors, theme } = useNutricionTheme();
+  const isLight = theme === 'light';
   const [diaIdx, setDiaIdx] = useState(0);
   const [recetaModal, setRecetaModal] = useState<Receta | null>(null);
   const dia = semana[diaIdx]!;
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   return (
     <>
@@ -303,9 +351,12 @@ function TabMenuSemanal({
             key={d.dia}
             type="button"
             onClick={() => setDiaIdx(i)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              i === diaIdx ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'
-            }`}
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+            style={
+              i === diaIdx
+                ? { background: '#16a34a', color: '#fff' }
+                : { color: colors.textSecondary }
+            }
           >
             {d.dia.slice(0, 3)}
           </button>
@@ -315,12 +366,19 @@ function TabMenuSemanal({
       {/* Tiempo cards */}
       <div className="space-y-3 mt-2">
         {dia.tiempos.map((tiempo) => (
-          <div key={tiempo.nombre} className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
-            <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2">
+          <div
+            key={tiempo.nombre}
+            className="rounded-xl overflow-hidden"
+            style={{ background: colors.cardBg, border: `1px solid ${colors.border}` }}
+          >
+            <div
+              className="px-4 py-3 flex items-center gap-2"
+              style={{ borderBottom: `1px solid ${colors.divider}` }}
+            >
               <span className="text-lg">{tiempo.emoji}</span>
               <div>
-                <span className="text-sm font-semibold text-white">{tiempo.nombre}</span>
-                <span className="text-xs text-slate-500 ml-2">{tiempo.hora} · {tiempo.calorias} kcal</span>
+                <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{tiempo.nombre}</span>
+                <span className="text-xs ml-2" style={{ color: colors.textMuted }}>{tiempo.hora} · {tiempo.calorias} kcal</span>
               </div>
             </div>
             <div className="p-3 grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -329,14 +387,23 @@ function TabMenuSemanal({
                   key={receta.id}
                   type="button"
                   onClick={() => setRecetaModal(receta)}
-                  className="text-left p-3 rounded-lg border border-white/10 bg-white/[0.02] hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-colors group"
+                  className="text-left p-3 rounded-lg transition-colors group"
+                  style={{ border: `1px solid ${colors.border}`, background: colors.cardBgAlt }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(22,163,74,0.4)';
+                    (e.currentTarget as HTMLButtonElement).style.background = isLight ? '#f0fdf4' : 'rgba(22,163,74,0.07)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = colors.border;
+                    (e.currentTarget as HTMLButtonElement).style.background = colors.cardBgAlt;
+                  }}
                 >
                   <div className="text-2xl mb-1">
                     {receta.tags.includes('mexicana') ? '🇲🇽' : receta.tags.includes('vegetariana') ? '🥦' : receta.tags.includes('alta proteína') ? '💪' : '🍳'}
                   </div>
-                  <p className="text-xs font-semibold text-white leading-tight">{receta.nombre}</p>
-                  <p className="text-[10px] text-slate-500 mt-1">⏱️ {receta.tiempoPrep} min · {receta.calorias} kcal</p>
-                  <span className="text-[10px] text-emerald-400 group-hover:underline mt-1 block">Ver receta →</span>
+                  <p className="text-xs font-semibold leading-tight" style={{ color: colors.textPrimary }}>{receta.nombre}</p>
+                  <p className="text-[10px] mt-1" style={{ color: colors.textMuted }}>⏱️ {receta.tiempoPrep} min · {receta.calorias} kcal</p>
+                  <span className="text-[10px] text-emerald-600 mt-1 block">Ver receta →</span>
                 </button>
               ))}
             </div>
@@ -345,14 +412,19 @@ function TabMenuSemanal({
       </div>
 
       {/* Barra resumen del día */}
-      <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+      <div
+        className="mt-4 rounded-xl p-4"
+        style={{ background: colors.cardBg, border: `1px solid ${colors.border}` }}
+      >
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-white">Total: {dia.totalCalorias} / {kcalObjetivo} kcal</span>
-              {Math.abs(dia.totalCalorias - kcalObjetivo) <= 50 && <span className="text-emerald-400 text-xs">✅</span>}
+              <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                Total: {dia.totalCalorias} / {kcalObjetivo} kcal
+              </span>
+              {Math.abs(dia.totalCalorias - kcalObjetivo) <= 50 && <span className="text-emerald-500 text-xs">✅</span>}
             </div>
-            <div className="flex gap-3 mt-1 text-[10px] text-slate-400">
+            <div className="flex gap-3 mt-1 text-[10px]" style={{ color: colors.textSecondary }}>
               {dia.tiempos.map(t => (
                 <span key={t.nombre}>{t.emoji} {t.calorias}</span>
               ))}
@@ -361,8 +433,9 @@ function TabMenuSemanal({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={handlePrint}
-              className="px-3 py-1.5 rounded-lg border border-white/20 text-xs text-slate-300 hover:bg-white/5"
+              onClick={() => window.print()}
+              className="px-3 py-1.5 rounded-lg text-xs"
+              style={{ border: `1px solid ${colors.border}`, color: colors.textSecondary }}
             >
               📄 Exportar PDF
             </button>
@@ -407,6 +480,8 @@ function TabMenuSemanal({
 
 // ─── Tab Recetario ─────────────────────────────────────────────────────────────
 function TabRecetario() {
+  const { colors, theme } = useNutricionTheme();
+  const isLight = theme === 'light';
   const [filtroTiempo, setFiltroTiempo] = useState<string>('Todos');
   const [filtroTag, setFiltroTag] = useState<string>('Todos');
   const [recetaModal, setRecetaModal] = useState<Receta | null>(null);
@@ -440,7 +515,13 @@ function TabRecetario() {
         <div className="flex gap-1.5 flex-wrap">
           {TIEMPOS_FILTER.map((f) => (
             <button key={f} type="button" onClick={() => setFiltroTiempo(f)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${filtroTiempo === f ? 'bg-emerald-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'}`}>
+              className="px-3 py-1 rounded-full text-xs font-semibold transition-colors"
+              style={
+                filtroTiempo === f
+                  ? { background: '#16a34a', color: '#fff' }
+                  : { background: colors.cardBgAlt, color: colors.textSecondary }
+              }
+            >
               {f}
             </button>
           ))}
@@ -449,7 +530,13 @@ function TabRecetario() {
         <div className="flex gap-1.5 flex-wrap">
           {TAGS_FILTER.map((f) => (
             <button key={f} type="button" onClick={() => setFiltroTag(f)}
-              className={`px-3 py-1 rounded-full text-xs transition-colors ${filtroTag === f ? 'border border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border border-white/10 text-slate-500 hover:border-white/20 hover:text-white'}`}>
+              className="px-3 py-1 rounded-full text-xs transition-colors border"
+              style={
+                filtroTag === f
+                  ? { borderColor: '#16a34a', background: isLight ? '#dcfce7' : 'rgba(22,163,74,0.15)', color: '#15803d' }
+                  : { borderColor: colors.border, color: colors.textMuted }
+              }
+            >
               {f}
             </button>
           ))}
@@ -462,23 +549,35 @@ function TabRecetario() {
             key={receta.id}
             type="button"
             onClick={() => setRecetaModal(receta)}
-            className="text-left p-4 rounded-xl border border-white/10 bg-white/[0.03] hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-colors group flex flex-col"
+            className="text-left p-4 rounded-xl transition-colors group flex flex-col"
+            style={{ border: `1px solid ${colors.border}`, background: colors.cardBg }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(22,163,74,0.4)';
+              (e.currentTarget as HTMLButtonElement).style.background = isLight ? '#f0fdf4' : 'rgba(22,163,74,0.07)';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = colors.border;
+              (e.currentTarget as HTMLButtonElement).style.background = colors.cardBg;
+            }}
           >
-            <div className="h-20 rounded-lg bg-gradient-to-br from-emerald-900/40 to-slate-900 flex items-center justify-center text-4xl mb-3">
+            <div
+              className="h-20 rounded-lg flex items-center justify-center text-4xl mb-3"
+              style={{ background: isLight ? '#f0fdf4' : 'linear-gradient(135deg, rgba(22,163,74,0.2), rgba(15,23,42,0.5))' }}
+            >
               {receta.tags.includes('mexicana') ? '🇲🇽' : receta.tags.includes('vegetariana') ? '🥦' : receta.tags.includes('alta proteína') ? '💪' : '🍳'}
             </div>
-            <p className="text-sm font-semibold text-white leading-tight flex-1">{receta.nombre}</p>
-            <p className="text-[10px] text-slate-500 mt-1">⏱️ {receta.tiempoPrep} min · 🔥 {receta.calorias} kcal</p>
+            <p className="text-sm font-semibold leading-tight flex-1" style={{ color: colors.textPrimary }}>{receta.nombre}</p>
+            <p className="text-[10px] mt-1" style={{ color: colors.textMuted }}>⏱️ {receta.tiempoPrep} min · 🔥 {receta.calorias} kcal</p>
             {receta.tags[0] && (
-              <span className="text-[10px] text-emerald-400 mt-1 block">{receta.tags[0]}</span>
+              <span className="text-[10px] text-emerald-600 mt-1 block">{receta.tags[0]}</span>
             )}
-            <span className="text-xs text-emerald-400 group-hover:underline mt-2 block">+ Ver receta</span>
+            <span className="text-xs text-emerald-600 mt-2 block">+ Ver receta</span>
           </button>
         ))}
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-center text-slate-500 py-12 text-sm">No hay recetas para este filtro.</p>
+        <p className="text-center py-12 text-sm" style={{ color: colors.textMuted }}>No hay recetas para este filtro.</p>
       )}
 
       {/* Floating upload button */}
@@ -509,6 +608,8 @@ function TabGestion({
   setPlanSel: (v: PlanDietaId) => void;
   onAsignar: () => void;
 }) {
+  const { colors, theme } = useNutricionTheme();
+  const isLight = theme === 'light';
   const [genOpen, setGenOpen] = useState(false);
   const [genLoading, setGenLoading] = useState(false);
   const [genForm, setGenForm] = useState<GenForm>({
@@ -517,10 +618,15 @@ function TabGestion({
     restricciones: 'Sin lactosa, sin refrescos',
   });
   const [genResult, setGenResult] = useState<string | null>(null);
-  const [semanal, setSemanal] = useState(false);
   const [semanalLoading, setSemanalLoading] = useState(false);
   const [semanalMsg, setSemanalMsg] = useState<string | null>(null);
   const { addDieta, replaceDietaPaciente } = useNutricion();
+
+  const inputStyle = {
+    background: colors.inputBg,
+    border: `1px solid ${colors.border}`,
+    color: colors.textPrimary,
+  };
 
   const generarIA = async () => {
     setGenLoading(true);
@@ -604,15 +710,19 @@ function TabGestion({
   return (
     <div className="space-y-6 max-w-2xl">
       {/* Asignar plan */}
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
-        <p className="text-sm font-semibold text-white">Asignar plan a paciente</p>
+      <div
+        className="rounded-xl p-4 space-y-3"
+        style={{ background: colors.cardBg, border: `1px solid ${colors.border}` }}
+      >
+        <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>Asignar plan a paciente</p>
         <div className="flex flex-wrap gap-3">
           <div>
-            <label className="text-xs text-slate-500 block mb-1">Paciente</label>
+            <label className="text-xs block mb-1" style={{ color: colors.textMuted }}>Paciente</label>
             <select
               value={asignarA}
               onChange={(e) => setAsignarA(e.target.value)}
-              className="bg-slate-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white"
+              className="rounded-lg px-3 py-2 text-sm focus:outline-none"
+              style={inputStyle}
             >
               {MOCK_PACIENTES.map((p) => (
                 <option key={p.id} value={p.id}>{p.nombre}</option>
@@ -620,11 +730,12 @@ function TabGestion({
             </select>
           </div>
           <div>
-            <label className="text-xs text-slate-500 block mb-1">Plan</label>
+            <label className="text-xs block mb-1" style={{ color: colors.textMuted }}>Plan</label>
             <select
               value={planSel}
               onChange={(e) => setPlanSel(e.target.value as PlanDietaId)}
-              className="bg-slate-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white"
+              className="rounded-lg px-3 py-2 text-sm focus:outline-none"
+              style={inputStyle}
             >
               <option value="plan-a">Hipocalórico 1,400</option>
               <option value="plan-b">Proteico 1,600</option>
@@ -644,31 +755,64 @@ function TabGestion({
       {/* Botones IA */}
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => setGenOpen((v) => !v)}
-          className="px-4 py-2 rounded-lg border border-amber-500/50 text-amber-200 text-sm font-semibold">
+          className="px-4 py-2 rounded-lg text-sm font-semibold"
+          style={{
+            border: `1px solid ${isLight ? '#fde68a' : 'rgba(245,158,11,0.5)'}`,
+            color: isLight ? '#b45309' : '#fcd34d',
+          }}
+        >
           ✨ Generar plan con IA
         </button>
         <button type="button" onClick={() => void generarMenuSemanal()} disabled={semanalLoading}
-          className="px-4 py-2 rounded-lg border border-emerald-500/50 text-emerald-200 text-sm font-semibold disabled:opacity-50">
+          className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+          style={{
+            border: `1px solid ${isLight ? '#bbf7d0' : 'rgba(22,163,74,0.5)'}`,
+            color: isLight ? '#15803d' : '#86efac',
+          }}
+        >
           {semanalLoading ? 'Generando…' : '📅 Generar menú semanal completo'}
         </button>
       </div>
 
       {semanalMsg && (
-        <p className="text-sm text-slate-300 bg-white/5 rounded-lg px-3 py-2">{semanalMsg}</p>
+        <p
+          className="text-sm rounded-lg px-3 py-2"
+          style={{ background: colors.cardBgAlt, color: colors.textSecondary }}
+        >{semanalMsg}</p>
       )}
 
       {genOpen && (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 space-y-3">
-          <p className="text-sm font-semibold text-amber-200">Generador con Gemini</p>
-          <input className="w-full bg-slate-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white"
-            value={genForm.objetivo} onChange={(e) => setGenForm((f) => ({ ...f, objetivo: e.target.value }))}
-            placeholder="Objetivo" />
-          <input type="number" className="w-full bg-slate-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white"
-            value={genForm.calorias} onChange={(e) => setGenForm((f) => ({ ...f, calorias: Number(e.target.value) || 0 }))} />
-          <input className="w-full bg-slate-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white"
-            value={genForm.restricciones} onChange={(e) => setGenForm((f) => ({ ...f, restricciones: e.target.value }))}
-            placeholder="Restricciones" />
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl p-4 space-y-3"
+          style={{
+            background: isLight ? '#fffbeb' : 'rgba(120,53,15,0.15)',
+            border: `1px solid ${isLight ? '#fde68a' : 'rgba(245,158,11,0.3)'}`,
+          }}
+        >
+          <p className="text-sm font-semibold" style={{ color: isLight ? '#b45309' : '#fcd34d' }}>Generador con Gemini</p>
+          <input
+            className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+            style={inputStyle}
+            value={genForm.objetivo}
+            onChange={(e) => setGenForm((f) => ({ ...f, objetivo: e.target.value }))}
+            placeholder="Objetivo"
+          />
+          <input
+            type="number"
+            className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+            style={inputStyle}
+            value={genForm.calorias}
+            onChange={(e) => setGenForm((f) => ({ ...f, calorias: Number(e.target.value) || 0 }))}
+          />
+          <input
+            className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
+            style={inputStyle}
+            value={genForm.restricciones}
+            onChange={(e) => setGenForm((f) => ({ ...f, restricciones: e.target.value }))}
+            placeholder="Restricciones"
+          />
           <div className="flex gap-2">
             <button type="button" disabled={genLoading} onClick={() => void generarIA()}
               className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50">
@@ -676,20 +820,27 @@ function TabGestion({
             </button>
             {genResult && (
               <button type="button" onClick={guardarGenerado}
-                className="px-4 py-2 rounded-lg border border-white/20 text-sm text-slate-200">
+                className="px-4 py-2 rounded-lg text-sm"
+                style={{ border: `1px solid ${colors.border}`, color: colors.textSecondary }}
+              >
                 Guardar en paciente
               </button>
             )}
           </div>
           {genResult && (
-            <pre className="text-xs text-slate-300 whitespace-pre-wrap max-h-[240px] overflow-y-auto">{genResult}</pre>
+            <pre
+              className="text-xs whitespace-pre-wrap max-h-[240px] overflow-y-auto"
+              style={{ color: colors.textSecondary }}
+            >{genResult}</pre>
           )}
         </motion.div>
       )}
 
       {/* Lista de dietas asignadas */}
       <div>
-        <p className="text-xs text-slate-500 mb-3 font-semibold uppercase tracking-wide">Dietas actuales asignadas</p>
+        <p className="text-xs mb-3 font-semibold uppercase tracking-wide" style={{ color: colors.textMuted }}>
+          Dietas actuales asignadas
+        </p>
         <GestionDietas />
       </div>
     </div>
@@ -697,6 +848,7 @@ function TabGestion({
 }
 
 function GestionDietas() {
+  const { colors } = useNutricionTheme();
   const { dietas } = useNutricion();
   const unicos = useMemo(() => {
     const map = new Map<string, DietaActual>();
@@ -712,13 +864,17 @@ function GestionDietas() {
         const pctC = Math.min(100, Math.round((d.carbohidratos * 4 / d.calorias) * 100));
         const pctG = Math.min(100, Math.round((d.grasas * 9 / d.calorias) * 100));
         return (
-          <div key={d.id} className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+          <div
+            key={d.id}
+            className="rounded-lg p-3"
+            style={{ background: colors.cardBgAlt, border: `1px solid ${colors.border}` }}
+          >
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm font-semibold text-white">{pac?.nombre}</p>
-                <p className="text-xs text-slate-500">{d.nombre} · {d.calorias} kcal</p>
+                <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{pac?.nombre}</p>
+                <p className="text-xs" style={{ color: colors.textMuted }}>{d.nombre} · {d.calorias} kcal</p>
               </div>
-              <span className="text-xs text-emerald-400">{d.semana ? '📅 Menú rico' : '📝 Texto'}</span>
+              <span className="text-xs text-emerald-600">{d.semana ? '📅 Menú rico' : '📝 Texto'}</span>
             </div>
             <div className="mt-2 space-y-1">
               {[
@@ -727,10 +883,10 @@ function GestionDietas() {
                 { label: `G ${d.grasas}g (${pctG}%)`, pct: pctG, color: 'bg-rose-500' },
               ].map(({ label, pct, color }) => (
                 <div key={label} className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: colors.border }}>
                     <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
                   </div>
-                  <span className="text-[10px] text-slate-500 w-24">{label}</span>
+                  <span className="text-[10px] w-24" style={{ color: colors.textMuted }}>{label}</span>
                 </div>
               ))}
             </div>
@@ -743,6 +899,8 @@ function GestionDietas() {
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 function DietasInner() {
+  const { colors, theme } = useNutricionTheme();
+  const isLight = theme === 'light';
   const sp = useSearchParams();
   const prePaciente = sp.get('paciente') ?? '';
   const { dietas, addDieta, replaceDietaPaciente } = useNutricion();
@@ -786,16 +944,23 @@ function DietasInner() {
     { id: 'gestion', label: '⚙️ Gestión' },
   ];
 
+  const inputStyle = {
+    background: colors.inputBg,
+    border: `1px solid ${colors.border}`,
+    color: colors.textPrimary,
+  };
+
   return (
     <div className="max-w-5xl mx-auto space-y-5 print:max-w-full print:space-y-0">
       {/* Patient selector + patient view button */}
       <div className="flex flex-wrap items-center gap-3 print:hidden">
         <div>
-          <label className="text-xs text-slate-500 block mb-1">Paciente</label>
+          <label className="text-xs block mb-1" style={{ color: colors.textMuted }}>Paciente</label>
           <select
             value={asignarA}
             onChange={(e) => setAsignarA(e.target.value)}
-            className="bg-slate-900 border border-white/15 rounded-lg px-3 py-2 text-sm text-white"
+            className="rounded-lg px-3 py-2 text-sm focus:outline-none"
+            style={inputStyle}
           >
             {MOCK_PACIENTES.map((p) => (
               <option key={p.id} value={p.id}>{p.nombre}</option>
@@ -806,31 +971,33 @@ function DietasInner() {
           <button
             type="button"
             onClick={() => setPacienteView(true)}
-            className="px-4 py-2 rounded-lg border border-white/20 text-sm text-slate-300 hover:bg-white/5"
+            className="px-4 py-2 rounded-lg text-sm"
+            style={{ border: `1px solid ${colors.border}`, color: colors.textSecondary }}
           >
             📱 Ver menú como paciente
           </button>
         </div>
         {currentDieta && (
           <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs text-slate-500">{currentDieta.nombre}</span>
-            <span className="text-xs font-bold text-emerald-400">{currentDieta.calorias} kcal/día</span>
+            <span className="text-xs" style={{ color: colors.textMuted }}>{currentDieta.nombre}</span>
+            <span className="text-xs font-bold text-emerald-600">{currentDieta.calorias} kcal/día</span>
           </div>
         )}
       </div>
 
       {/* Tab navigation */}
-      <div className="flex gap-1 border-b border-white/10 print:hidden">
+      <div className="flex gap-1 print:hidden" style={{ borderBottom: `1px solid ${colors.border}` }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setMainTab(tab.id)}
-            className={`px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+            className="px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-px"
+            style={
               mainTab === tab.id
-                ? 'border-emerald-500 text-emerald-400'
-                : 'border-transparent text-slate-400 hover:text-white'
-            }`}
+                ? { borderColor: '#16a34a', color: '#16a34a' }
+                : { borderColor: 'transparent', color: colors.textSecondary }
+            }
           >
             {tab.label}
           </button>
@@ -843,11 +1010,11 @@ function DietasInner() {
           <TabMenuSemanal semana={semana} pacienteNombre={pac?.nombre ?? ''} kcalObjetivo={kcalObjetivo} />
         )}
         {mainTab === 'semanal' && semana.length === 0 && (
-          <div className="text-center py-12 text-slate-500">
+          <div className="text-center py-12" style={{ color: colors.textMuted }}>
             <p className="text-4xl mb-3">🥗</p>
             <p>No hay menú semanal asignado para este paciente.</p>
             <button type="button" onClick={() => setMainTab('gestion')}
-              className="mt-3 text-sm text-emerald-400 underline">
+              className="mt-3 text-sm text-emerald-600 underline">
               Asignar un plan →
             </button>
           </div>
@@ -911,7 +1078,7 @@ function DietasInner() {
 
 export default function DietasPage() {
   return (
-    <Suspense fallback={<div className="text-slate-500 text-center py-12">Cargando…</div>}>
+    <Suspense fallback={<div className="text-center py-12" style={{ color: '#6b7280' }}>Cargando…</div>}>
       <DietasInner />
     </Suspense>
   );

@@ -9,6 +9,7 @@ import {
   type MedicionInBody,
 } from '@/lib/mock-data-nutricion';
 import { useNutricion } from '../nutricion-context';
+import { useNutricionTheme } from '../nutricion-theme-context';
 
 type InbodyForm = {
   pacienteId: string;
@@ -27,6 +28,8 @@ function imcFromPeso(peso: number): number {
 }
 
 function InbodyInner() {
+  const { colors, theme } = useNutricionTheme();
+  const isLight = theme === 'light';
   const sp = useSearchParams();
   const pre = sp.get('paciente') ?? 'p01';
   const { mediciones, addMedicion, addLogro } = useNutricion();
@@ -135,29 +138,52 @@ function InbodyInner() {
     }
   };
 
+  const inputClass = 'mt-1 w-full rounded-xl px-4 focus:outline-none';
+  const inputStyle = {
+    background: colors.inputBg,
+    border: `1px solid ${colors.border}`,
+    color: colors.textPrimary,
+  };
+
   return (
     <div className="max-w-lg mx-auto space-y-6 pb-24">
       <div className="flex gap-2 justify-center">
         <button
           type="button"
           onClick={() => setManual(true)}
-          className={`px-4 py-2 rounded-full text-sm font-semibold ${manual ? 'bg-emerald-600 text-white' : 'border border-white/15 text-slate-400'}`}
+          className="px-4 py-2 rounded-full text-sm font-semibold"
+          style={
+            manual
+              ? { background: '#16a34a', color: '#fff' }
+              : { border: `1px solid ${colors.border}`, color: colors.textSecondary }
+          }
         >
           Captura manual
         </button>
         <button
           type="button"
           onClick={() => setManual(false)}
-          className={`px-4 py-2 rounded-full text-sm font-semibold ${!manual ? 'bg-emerald-600 text-white' : 'border border-white/15 text-slate-400'}`}
+          className="px-4 py-2 rounded-full text-sm font-semibold"
+          style={
+            !manual
+              ? { background: '#16a34a', color: '#fff' }
+              : { border: `1px solid ${colors.border}`, color: colors.textSecondary }
+          }
         >
           OCR ticket
         </button>
       </div>
 
       {!manual && (
-        <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/30 p-5 space-y-3">
-          <p className="text-sm font-semibold text-emerald-200">📷 ¡Nuevo! Captura automática con IA</p>
-          <p className="text-xs text-slate-400 leading-relaxed">
+        <div
+          className="rounded-2xl p-5 space-y-3"
+          style={{
+            background: isLight ? '#f0fdf4' : 'rgba(22,163,74,0.1)',
+            border: `1px solid ${isLight ? '#bbf7d0' : 'rgba(22,163,74,0.4)'}`,
+          }}
+        >
+          <p className="text-sm font-semibold" style={{ color: isLight ? '#15803d' : '#86efac' }}>📷 ¡Nuevo! Captura automática con IA</p>
+          <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
             Toma una foto del ticket de la báscula InBody y la IA extrae los datos automáticamente.
           </p>
           <label className="block">
@@ -180,11 +206,12 @@ function InbodyInner() {
 
       <div className="space-y-4">
         <label className="block">
-          <span className="text-xs text-slate-500">Paciente</span>
+          <span className="text-xs" style={{ color: colors.textMuted }}>Paciente</span>
           <select
             value={form.pacienteId}
             onChange={(e) => setForm((f) => ({ ...f, pacienteId: e.target.value }))}
-            className="mt-1 w-full text-lg py-3 px-4 rounded-xl bg-slate-900 border border-white/15 text-white"
+            className="mt-1 w-full text-lg py-3 px-4 rounded-xl"
+            style={inputStyle}
           >
             {MOCK_PACIENTES.map((p) => (
               <option key={p.id} value={p.id}>
@@ -194,44 +221,48 @@ function InbodyInner() {
           </select>
         </label>
         <label className="block">
-          <span className="text-xs text-slate-500">Fecha</span>
+          <span className="text-xs" style={{ color: colors.textMuted }}>Fecha</span>
           <input
             type="date"
             value={form.fecha}
             onChange={(e) => setForm((f) => ({ ...f, fecha: e.target.value }))}
-            className="mt-1 w-full text-lg py-3 px-4 rounded-xl bg-slate-900 border border-white/15 text-white"
+            className={`${inputClass} py-3 text-lg`}
+            style={inputStyle}
           />
         </label>
         <label className="block">
-          <span className="text-xs text-slate-500">Peso (kg)</span>
+          <span className="text-xs" style={{ color: colors.textMuted }}>Peso (kg)</span>
           <input
             inputMode="decimal"
             value={form.peso}
             onChange={(e) => setForm((f) => ({ ...f, peso: e.target.value }))}
-            className="mt-1 w-full text-2xl py-4 px-4 rounded-xl bg-slate-900 border border-white/15 text-white"
+            className={`${inputClass} py-4 text-2xl`}
             placeholder="0.0"
+            style={inputStyle}
           />
         </label>
         <label className="block">
-          <span className="text-xs text-slate-500">% Grasa corporal</span>
+          <span className="text-xs" style={{ color: colors.textMuted }}>% Grasa corporal</span>
           <input
             inputMode="decimal"
             value={form.grasaCorporal}
             onChange={(e) => setForm((f) => ({ ...f, grasaCorporal: e.target.value }))}
-            className="mt-1 w-full text-xl py-3 px-4 rounded-xl bg-slate-900 border border-white/15 text-white"
+            className={`${inputClass} py-3 text-xl`}
+            style={inputStyle}
           />
         </label>
         <label className="block">
-          <span className="text-xs text-slate-500">Masa muscular (kg)</span>
+          <span className="text-xs" style={{ color: colors.textMuted }}>Masa muscular (kg)</span>
           <input
             inputMode="decimal"
             value={form.masaMuscular}
             onChange={(e) => setForm((f) => ({ ...f, masaMuscular: e.target.value }))}
-            className="mt-1 w-full text-xl py-3 px-4 rounded-xl bg-slate-900 border border-white/15 text-white"
+            className={`${inputClass} py-3 text-xl`}
+            style={inputStyle}
           />
         </label>
         <div>
-          <span className="text-xs text-slate-500">Grasa visceral (1–20)</span>
+          <span className="text-xs" style={{ color: colors.textMuted }}>Grasa visceral (1–20)</span>
           <input
             type="range"
             min={1}
@@ -240,30 +271,32 @@ function InbodyInner() {
             onChange={(e) => setForm((f) => ({ ...f, grasaVisceral: e.target.value }))}
             className="w-full mt-2 accent-emerald-500"
           />
-          <p className="text-center text-emerald-400 font-bold text-lg">{form.grasaVisceral}</p>
+          <p className="text-center text-emerald-600 font-bold text-lg">{form.grasaVisceral}</p>
         </div>
         <label className="block">
-          <span className="text-xs text-slate-500">% Agua corporal</span>
+          <span className="text-xs" style={{ color: colors.textMuted }}>% Agua corporal</span>
           <input
             inputMode="decimal"
             value={form.aguaCorporal}
             onChange={(e) => setForm((f) => ({ ...f, aguaCorporal: e.target.value }))}
-            className="mt-1 w-full text-xl py-3 px-4 rounded-xl bg-slate-900 border border-white/15 text-white"
+            className={`${inputClass} py-3 text-xl`}
+            style={inputStyle}
           />
         </label>
         <label className="block">
-          <span className="text-xs text-slate-500">Edad metabólica</span>
+          <span className="text-xs" style={{ color: colors.textMuted }}>Edad metabólica</span>
           <input
             inputMode="numeric"
             value={form.edadMetabolica}
             onChange={(e) => setForm((f) => ({ ...f, edadMetabolica: e.target.value }))}
-            className="mt-1 w-full text-xl py-3 px-4 rounded-xl bg-slate-900 border border-white/15 text-white"
+            className={`${inputClass} py-3 text-xl`}
+            style={inputStyle}
           />
         </label>
         <button
           type="button"
           onClick={guardar}
-          className="w-full py-4 rounded-xl bg-emerald-600 text-white text-lg font-bold shadow-lg shadow-emerald-900/40"
+          className="w-full py-4 rounded-xl bg-emerald-600 text-white text-lg font-bold shadow-lg shadow-emerald-200/40"
         >
           Guardar medición
         </button>
@@ -304,7 +337,7 @@ function InbodyInner() {
 
 export default function InbodyPage() {
   return (
-    <Suspense fallback={<div className="text-slate-500 text-center py-12">Cargando…</div>}>
+    <Suspense fallback={<div className="text-center py-12" style={{ color: '#6b7280' }}>Cargando…</div>}>
       <InbodyInner />
     </Suspense>
   );
