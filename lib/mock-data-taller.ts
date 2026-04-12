@@ -4,6 +4,50 @@
 
 export type Combustible = 'Gasolina' | 'Diesel' | 'Híbrido' | 'Eléctrico';
 
+export type DanoVehiculo = {
+  id: string;
+  zona:
+    | 'defensa_delantera'
+    | 'defensa_trasera'
+    | 'cofre'
+    | 'cajuela'
+    | 'puerta_del_izq'
+    | 'puerta_del_der'
+    | 'puerta_tra_izq'
+    | 'puerta_tra_der'
+    | 'techo'
+    | 'costado_izq'
+    | 'costado_der';
+  tipo: 'golpe' | 'rayon' | 'abolladura' | 'quebrado';
+  descripcion: string;
+  nivel: 'leve' | 'moderado' | 'severo';
+};
+
+export type FotoOrden = {
+  id: string;
+  url: string;
+  fecha: string;
+  tipo: 'recepcion' | 'avance' | 'entrega';
+  descripcion: string;
+  tecnico: string;
+  visibleCliente: boolean;
+};
+
+export type ChecklistOrden = {
+  nivelGasolina: number;
+  kilometraje: number;
+  llavesEntregadas: boolean;
+  llantaRefaccion: boolean;
+  gato: boolean;
+  herramientas: boolean;
+  tapetes: boolean;
+  radio: boolean;
+  golpes: DanoVehiculo[];
+  rayones: DanoVehiculo[];
+  firmaCliente: boolean;
+  fechaChecklist: string;
+};
+
 export type Vehiculo = {
   id: string;
   placa: string;
@@ -64,6 +108,8 @@ export type OrdenServicio = {
   kilometrajeEntrada: number;
   observaciones: string;
   garantia: string;
+  checklist?: ChecklistOrden;
+  fotosOrden: FotoOrden[];
 };
 
 export type MovimientoCaja = {
@@ -229,41 +275,273 @@ const STATUS_ROT: StatusOrden[] = [
   'entregado',
 ];
 
+// ── Mock checklists para las primeras 8 órdenes ──────────────────────────────
+const NIVELES_GAS = [2, 4, 6, 7, 2, 6, 4, 7] as const;
+
+const CHECKLISTS_MOCK: ChecklistOrden[] = [
+  {
+    nivelGasolina: 2, kilometraje: 47800, llavesEntregadas: true, llantaRefaccion: false,
+    gato: false, herramientas: true, tapetes: true, radio: true, firmaCliente: true,
+    fechaChecklist: isoDaysAgo(1),
+    golpes: [{ id: 'd1', zona: 'defensa_delantera', tipo: 'golpe', descripcion: 'Abolladuras considerables lado derecho', nivel: 'severo' }],
+    rayones: [{ id: 'd2', zona: 'puerta_del_izq', tipo: 'rayon', descripcion: 'Rayón superficial ~15cm aprox', nivel: 'leve' }],
+  },
+  {
+    nivelGasolina: 4, kilometraje: 62300, llavesEntregadas: true, llantaRefaccion: true,
+    gato: true, herramientas: false, tapetes: false, radio: true, firmaCliente: true,
+    fechaChecklist: isoDaysAgo(2),
+    golpes: [{ id: 'd3', zona: 'costado_der', tipo: 'abolladura', descripcion: 'Abolladura en costado derecho trasero', nivel: 'moderado' }],
+    rayones: [],
+  },
+  {
+    nivelGasolina: 6, kilometraje: 53100, llavesEntregadas: true, llantaRefaccion: false,
+    gato: false, herramientas: false, tapetes: true, radio: false, firmaCliente: true,
+    fechaChecklist: isoDaysAgo(3),
+    golpes: [],
+    rayones: [
+      { id: 'd4', zona: 'cofre', tipo: 'rayon', descripcion: 'Rayones finos por ramas en cofre', nivel: 'leve' },
+      { id: 'd5', zona: 'cajuela', tipo: 'rayon', descripcion: 'Rayón diagonal en cajuela', nivel: 'moderado' },
+    ],
+  },
+  {
+    nivelGasolina: 7, kilometraje: 78400, llavesEntregadas: true, llantaRefaccion: true,
+    gato: true, herramientas: true, tapetes: true, radio: true, firmaCliente: true,
+    fechaChecklist: isoDaysAgo(1),
+    golpes: [
+      { id: 'd6', zona: 'defensa_trasera', tipo: 'golpe', descripcion: 'Impacto leve en estacionamiento', nivel: 'leve' },
+    ],
+    rayones: [],
+  },
+  {
+    nivelGasolina: 2, kilometraje: 91200, llavesEntregadas: true, llantaRefaccion: false,
+    gato: false, herramientas: false, tapetes: false, radio: true, firmaCliente: true,
+    fechaChecklist: isoDaysAgo(4),
+    golpes: [
+      { id: 'd7', zona: 'puerta_del_der', tipo: 'golpe', descripcion: 'Golpe de puerta en puerta delantera derecha', nivel: 'moderado' },
+      { id: 'd8', zona: 'puerta_tra_der', tipo: 'abolladura', descripcion: 'Abolladura menor puerta trasera der.', nivel: 'leve' },
+    ],
+    rayones: [{ id: 'd9', zona: 'costado_izq', tipo: 'rayon', descripcion: 'Rayaduras largas costado izquierdo', nivel: 'severo' }],
+  },
+  {
+    nivelGasolina: 6, kilometraje: 44700, llavesEntregadas: true, llantaRefaccion: true,
+    gato: false, herramientas: true, tapetes: true, radio: true, firmaCliente: true,
+    fechaChecklist: isoDaysAgo(1),
+    golpes: [],
+    rayones: [{ id: 'd10', zona: 'techo', tipo: 'rayon', descripcion: 'Rayones finos en techo (granizo)', nivel: 'leve' }],
+  },
+  {
+    nivelGasolina: 4, kilometraje: 67900, llavesEntregadas: true, llantaRefaccion: false,
+    gato: false, herramientas: false, tapetes: true, radio: false, firmaCliente: true,
+    fechaChecklist: isoDaysAgo(2),
+    golpes: [{ id: 'd11', zona: 'cofre', tipo: 'abolladura', descripcion: 'Abolladura central en cofre por impacto', nivel: 'moderado' }],
+    rayones: [],
+  },
+  {
+    nivelGasolina: 7, kilometraje: 55500, llavesEntregadas: true, llantaRefaccion: true,
+    gato: true, herramientas: true, tapetes: false, radio: true, firmaCliente: true,
+    fechaChecklist: isoDaysAgo(1),
+    golpes: [],
+    rayones: [
+      { id: 'd12', zona: 'puerta_tra_izq', tipo: 'rayon', descripcion: 'Rayón puerta trasera izquierda ~20cm', nivel: 'leve' },
+    ],
+  },
+];
+
+const FOTOS_MOCK: FotoOrden[][] = [
+  [
+    { id: 'f1', url: 'https://placehold.co/400x300/1a1a1a/ffffff?text=%F0%9F%93%B8+Recepcion', fecha: isoDaysAgo(1), tipo: 'recepcion', descripcion: 'Vehículo al ingreso — frente', tecnico: 'Miguel Ángel', visibleCliente: true },
+    { id: 'f2', url: 'https://placehold.co/400x300/1a2a1a/ffffff?text=%F0%9F%94%A7+Avance', fecha: isoDaysAgo(1), tipo: 'avance', descripcion: 'Motor abierto — filtro por cambiar', tecnico: 'Miguel Ángel', visibleCliente: false },
+  ],
+  [
+    { id: 'f3', url: 'https://placehold.co/400x300/1a1a1a/ffffff?text=%F0%9F%93%B8+Recepcion', fecha: isoDaysAgo(2), tipo: 'recepcion', descripcion: 'Estado frenos al ingreso', tecnico: 'Roberto', visibleCliente: true },
+    { id: 'f4', url: 'https://placehold.co/400x300/1a2a1a/ffffff?text=%F0%9F%94%A7+Avance', fecha: isoDaysAgo(2), tipo: 'avance', descripcion: 'Pastillas desgastadas al 20%', tecnico: 'Roberto', visibleCliente: true },
+    { id: 'f5', url: 'https://placehold.co/400x300/1a1a2a/ffffff?text=%E2%9C%85+Entrega', fecha: isoDaysAgo(1), tipo: 'entrega', descripcion: 'Frenos nuevos instalados', tecnico: 'Roberto', visibleCliente: true },
+  ],
+  [
+    { id: 'f6', url: 'https://placehold.co/400x300/1a1a1a/ffffff?text=%F0%9F%93%B8+Recepcion', fecha: isoDaysAgo(3), tipo: 'recepcion', descripcion: 'Diagnóstico escáner OBD2', tecnico: 'Roberto', visibleCliente: false },
+    { id: 'f7', url: 'https://placehold.co/400x300/1a2a1a/ffffff?text=%F0%9F%94%A7+Avance', fecha: isoDaysAgo(2), tipo: 'avance', descripcion: 'Códigos activos P0300 detectados', tecnico: 'Roberto', visibleCliente: true },
+  ],
+  [
+    { id: 'f8', url: 'https://placehold.co/400x300/1a1a1a/ffffff?text=%F0%9F%93%B8+Recepcion', fecha: isoDaysAgo(1), tipo: 'recepcion', descripcion: 'Suspensión delantera vista inferior', tecnico: 'Jesús', visibleCliente: true },
+    { id: 'f9', url: 'https://placehold.co/400x300/1a2a1a/ffffff?text=%F0%9F%94%A7+Avance', fecha: isoDaysAgo(1), tipo: 'avance', descripcion: 'Rotula delantera desgastada', tecnico: 'Jesús', visibleCliente: false },
+  ],
+  [
+    { id: 'f10', url: 'https://placehold.co/400x300/1a1a1a/ffffff?text=%F0%9F%93%B8+Recepcion', fecha: isoDaysAgo(4), tipo: 'recepcion', descripcion: 'Daños de hojalatería laterales', tecnico: 'Armando', visibleCliente: true },
+    { id: 'f11', url: 'https://placehold.co/400x300/1a2a1a/ffffff?text=%F0%9F%94%A7+Avance', fecha: isoDaysAgo(3), tipo: 'avance', descripcion: 'Masilla y preparación de superficie', tecnico: 'Armando', visibleCliente: false },
+    { id: 'f12', url: 'https://placehold.co/400x300/1a1a2a/ffffff?text=%E2%9C%85+Entrega', fecha: isoDaysAgo(1), tipo: 'entrega', descripcion: 'Terminado pintura — lacado final', tecnico: 'Armando', visibleCliente: true },
+  ],
+  [
+    { id: 'f13', url: 'https://placehold.co/400x300/1a1a1a/ffffff?text=%F0%9F%93%B8+Recepcion', fecha: isoDaysAgo(1), tipo: 'recepcion', descripcion: 'Sistema eléctrico al ingreso', tecnico: 'Roberto', visibleCliente: false },
+    { id: 'f14', url: 'https://placehold.co/400x300/1a2a1a/ffffff?text=%F0%9F%94%A7+Avance', fecha: isoDaysAgo(1), tipo: 'avance', descripcion: 'Alternador revisado — OK', tecnico: 'Roberto', visibleCliente: true },
+  ],
+  [
+    { id: 'f15', url: 'https://placehold.co/400x300/1a1a1a/ffffff?text=%F0%9F%93%B8+Recepcion', fecha: isoDaysAgo(2), tipo: 'recepcion', descripcion: 'Afinación general — estado inicial', tecnico: 'Miguel Ángel', visibleCliente: true },
+    { id: 'f16', url: 'https://placehold.co/400x300/1a2a1a/ffffff?text=%F0%9F%94%A7+Avance', fecha: isoDaysAgo(2), tipo: 'avance', descripcion: 'Bujías y filtros cambiados', tecnico: 'Miguel Ángel', visibleCliente: true },
+    { id: 'f17', url: 'https://placehold.co/400x300/1a1a2a/ffffff?text=%E2%9C%85+Entrega', fecha: isoDaysAgo(1), tipo: 'entrega', descripcion: 'Prueba de ruta completada OK', tecnico: 'Miguel Ángel', visibleCliente: true },
+  ],
+  [
+    { id: 'f18', url: 'https://placehold.co/400x300/1a1a1a/ffffff?text=%F0%9F%93%B8+Recepcion', fecha: isoDaysAgo(1), tipo: 'recepcion', descripcion: 'Vista general vehículo al ingreso', tecnico: 'Jesús', visibleCliente: true },
+    { id: 'f19', url: 'https://placehold.co/400x300/1a2a1a/ffffff?text=%F0%9F%94%A7+Avance', fecha: isoDaysAgo(1), tipo: 'avance', descripcion: 'Transmisión abierta revisada', tecnico: 'Jesús', visibleCliente: false },
+  ],
+];
+
+// ── Datos de trabajo variados por tipo ────────────────────────────────────────
+type TrabajoDef = { descripcion: string; tiempo: number; costo: number };
+type RefDef = { nombre: string; cantidad: number; costoUnitario: number; total: number };
+
+const TRABAJOS_POR_TIPO: Record<TipoOrden, TrabajoDef[][]> = {
+  Mantenimiento: [
+    [
+      { descripcion: 'Cambio de aceite y filtro', tiempo: 0.5, costo: 150 },
+      { descripcion: 'Revisión general 27 puntos', tiempo: 0.5, costo: 200 },
+    ],
+    [
+      { descripcion: 'Cambio de aceite sintético', tiempo: 0.5, costo: 220 },
+      { descripcion: 'Cambio de filtro de aire', tiempo: 0.3, costo: 120 },
+      { descripcion: 'Limpieza de inyectores', tiempo: 1, costo: 350 },
+    ],
+  ],
+  Reparación: [
+    [
+      { descripcion: 'Cambio pastillas frenos delanteros', tiempo: 1.5, costo: 450 },
+      { descripcion: 'Rectificación discos', tiempo: 1, costo: 600 },
+    ],
+    [
+      { descripcion: 'Cambio de banda de distribución', tiempo: 3, costo: 900 },
+      { descripcion: 'Cambio de tensor y polea', tiempo: 1, costo: 350 },
+    ],
+  ],
+  Diagnóstico: [
+    [
+      { descripcion: 'Diagnóstico electrónico escáner', tiempo: 1, costo: 350 },
+      { descripcion: 'Inspección visual motor', tiempo: 0.5, costo: 150 },
+    ],
+    [
+      { descripcion: 'Diagnóstico sistema ABS/ESP', tiempo: 1.5, costo: 500 },
+      { descripcion: 'Revisión sensores O2', tiempo: 0.5, costo: 200 },
+    ],
+  ],
+  Hojalatería: [
+    [
+      { descripcion: 'Reparación puerta lateral', tiempo: 4, costo: 1200 },
+      { descripcion: 'Pintura y lacado zona reparada', tiempo: 3, costo: 900 },
+    ],
+    [
+      { descripcion: 'Reparación defensa delantera', tiempo: 5, costo: 1500 },
+      { descripcion: 'Pintura completa defensa', tiempo: 3, costo: 1200 },
+      { descripcion: 'Instalación emblemas', tiempo: 0.5, costo: 200 },
+    ],
+  ],
+  Eléctrico: [
+    [
+      { descripcion: 'Revisión sistema de carga', tiempo: 1, costo: 300 },
+      { descripcion: 'Cambio de alternador', tiempo: 2, costo: 600 },
+    ],
+    [
+      { descripcion: 'Diagnóstico sistema de arranque', tiempo: 1, costo: 350 },
+      { descripcion: 'Cambio de batería', tiempo: 0.5, costo: 200 },
+    ],
+  ],
+};
+
+const REFS_POR_TIPO: Record<TipoOrden, RefDef[][]> = {
+  Mantenimiento: [
+    [
+      { nombre: 'Aceite 5W30 4L', cantidad: 1, costoUnitario: 320, total: 320 },
+      { nombre: 'Filtro de aceite', cantidad: 1, costoUnitario: 95, total: 95 },
+    ],
+    [
+      { nombre: 'Aceite sintético 5W40 4L', cantidad: 1, costoUnitario: 480, total: 480 },
+      { nombre: 'Filtro de aceite', cantidad: 1, costoUnitario: 95, total: 95 },
+      { nombre: 'Filtro de aire', cantidad: 1, costoUnitario: 180, total: 180 },
+    ],
+  ],
+  Reparación: [
+    [
+      { nombre: 'Pastillas freno delanteras', cantidad: 1, costoUnitario: 450, total: 450 },
+      { nombre: 'Líquido de frenos DOT4', cantidad: 1, costoUnitario: 62, total: 62 },
+    ],
+    [
+      { nombre: 'Kit banda distribución', cantidad: 1, costoUnitario: 850, total: 850 },
+      { nombre: 'Tensor distribución', cantidad: 1, costoUnitario: 320, total: 320 },
+    ],
+  ],
+  Diagnóstico: [
+    [
+      { nombre: 'Bujías NGK (4 pzas)', cantidad: 4, costoUnitario: 55, total: 220 },
+    ],
+    [
+      { nombre: 'Sensor O2 universal', cantidad: 1, costoUnitario: 380, total: 380 },
+    ],
+  ],
+  Hojalatería: [
+    [
+      { nombre: 'Masilla automotriz 1kg', cantidad: 2, costoUnitario: 180, total: 360 },
+      { nombre: 'Pintura base poliuretano', cantidad: 1, costoUnitario: 420, total: 420 },
+      { nombre: 'Barniz acabado', cantidad: 1, costoUnitario: 380, total: 380 },
+    ],
+    [
+      { nombre: 'Masilla automotriz 1kg', cantidad: 3, costoUnitario: 180, total: 540 },
+      { nombre: 'Pintura base poliuretano', cantidad: 2, costoUnitario: 420, total: 840 },
+      { nombre: 'Barniz acabado', cantidad: 2, costoUnitario: 380, total: 760 },
+    ],
+  ],
+  Eléctrico: [
+    [
+      { nombre: 'Alternador remanufacturado', cantidad: 1, costoUnitario: 1800, total: 1800 },
+    ],
+    [
+      { nombre: 'Batería 12V 70Ah', cantidad: 1, costoUnitario: 1200, total: 1200 },
+      { nombre: 'Cable terminal batería', cantidad: 1, costoUnitario: 85, total: 85 },
+    ],
+  ],
+};
+
+const PROBLEMAS_POR_TIPO: Record<TipoOrden, string[]> = {
+  Mantenimiento: ['Servicio de mantenimiento preventivo', 'Cambio de aceite y revisión general', 'Afinación completa solicitada por cliente'],
+  Reparación: ['Ruido en frenos al frenar', 'Vibración en dirección al acelerar', 'Testigo de motor encendido — revisión solicitada'],
+  Diagnóstico: ['Testigo "Check Engine" encendido', 'Pérdida de potencia sin causa aparente', 'Luz ABS activa — diagnóstico solicitado'],
+  Hojalatería: ['Golpe lateral derecho en estacionamiento', 'Daño en defensa por choque menor', 'Rayones profundos en costado — requiere pintura'],
+  Eléctrico: ['No enciende fácilmente por las mañanas', 'Testigo de batería encendido', 'Fallas intermitentes en arranque'],
+};
+
+const DIAGNOSTICOS_POR_TIPO: Record<TipoOrden, string[]> = {
+  Mantenimiento: ['Aceite degradado, filtros colmatados', 'Mantenimiento preventivo en tiempo y forma', 'Revisión 27 puntos sin anomalías adicionales'],
+  Reparación: ['Pastillas freno al límite, discos con ranuras', 'Banda distribución con desgaste visible — cambio inmediato', 'Bujías carbonizadas, bobina #3 defectuosa'],
+  Diagnóstico: ['Códigos P0301-P0304 activos — fallo en cilindros 1-4', 'Sensor O2 aguas abajo desconectado', 'Sensor velocidad rueda trasera derecha dañado'],
+  Hojalatería: ['Deformación en chapa — requiere conformado y pintura', 'Defensa dañada — cambio de pieza y pintura', 'Rayones profundos hasta imprimación — pintura parcial'],
+  Eléctrico: ['Alternador generando 11.2V — por debajo del mínimo', 'Batería con 280 CCA, original requiere 450 CCA', 'Sistema de arranque OK — batería descargada'],
+};
+
 function buildOrden(i: number): OrdenServicio {
   const vid = `v${(i % 25) + 1}`;
   const v = MOCK_VEHICULOS.find((x) => x.id === vid)!;
   const cliente = MOCK_CLIENTES.find((c) => c.vehiculos.includes(vid))!;
-  const tipo = TIPOS[i % TIPOS.length];
-  const status = STATUS_ROT[i % STATUS_ROT.length];
-  const tec = TECN_NOMBRES[i % 4];
-  const trabajos = [
-    { descripcion: 'Cambio de aceite y filtro', tiempo: 0.5, costo: 150 },
-    { descripcion: 'Revisión de frenos delanteros', tiempo: 1, costo: 300 },
-  ];
-  const refs = [
-    { nombre: 'Aceite 5W30 1L', cantidad: 4, costoUnitario: 85, total: 340 },
-    { nombre: 'Filtro de aceite', cantidad: 1, costoUnitario: 120, total: 120 },
-  ];
-  const sub = 450;
-  const refT = 460;
-  const total = sub + refT;
+  const tipo = TIPOS[i % TIPOS.length]!;
+  const status = STATUS_ROT[i % STATUS_ROT.length]!;
+  const tec = TECN_NOMBRES[i % 4]!;
   const diasTaller = i % 8;
+
+  const trabaOpts = TRABAJOS_POR_TIPO[tipo];
+  const trabajos = trabaOpts[i % trabaOpts.length]!;
+  const refOpts = REFS_POR_TIPO[tipo];
+  const refs = refOpts[i % refOpts.length]!;
+
+  const sub = trabajos.reduce((s, t) => s + t.costo, 0);
+  const refT = refs.reduce((s, r) => s + r.total, 0);
+  const total = sub + refT;
+
+  const probOpts = PROBLEMAS_POR_TIPO[tipo];
+  const diagOpts = DIAGNOSTICOS_POR_TIPO[tipo];
+
   return {
     id: `o${i + 1}`,
     vehiculoId: vid,
     clienteId: cliente.id,
     tecnico: tec,
     tipo,
-    descripcionProblema:
-      i % 3 === 0
-        ? 'Ruido en motor al acelerar'
-        : i % 3 === 1
-          ? 'Testigo de motor encendido'
-          : 'Golpe en lateral derecho',
-    diagnostico:
-      tipo === 'Diagnóstico'
-        ? 'Códigos P0301-P0304; revisar bobinas'
-        : 'Desgaste normal en banda de accesorios',
+    descripcionProblema: probOpts[i % probOpts.length]!,
+    diagnostico: diagOpts[i % diagOpts.length]!,
     trabajosRealizados: trabajos,
     refacciones: refs,
     subtotalManoObra: sub,
@@ -275,8 +553,12 @@ function buildOrden(i: number): OrdenServicio {
     fechaEntrega:
       status === 'entregado' ? (i % 4 === 0 ? isoDaysAgo(7) : isoDaysAgo(1)) : undefined,
     kilometrajeEntrada: v.kilometraje,
-    observaciones: 'Cliente autorizado en espera.',
-    garantia: '30 días o 3,000 km',
+    observaciones: i % 5 === 0
+      ? 'Encontramos que los frenos también necesitan cambio. ¿Autoriza? Costo adicional: $850 MXN'
+      : 'Cliente autorizado — trabajo en proceso.',
+    garantia: tipo === 'Hojalatería' ? '90 días en pintura' : '30 días o 3,000 km',
+    checklist: i < 8 ? CHECKLISTS_MOCK[i] : undefined,
+    fotosOrden: i < 8 ? (FOTOS_MOCK[i] ?? []) : [],
   };
 }
 
