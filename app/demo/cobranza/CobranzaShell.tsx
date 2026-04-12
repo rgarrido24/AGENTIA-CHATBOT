@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bot,
+  CreditCard,
   GitBranch,
   GraduationCap,
   LayoutDashboard,
@@ -25,6 +26,7 @@ const NAV = [
   { href: '/demo/cobranza/conciliacion', label: 'Conciliación', icon: RefreshCw },
   { href: '/demo/cobranza/secuencias', label: 'Secuencias', icon: GitBranch },
   { href: '/demo/cobranza/asistente', label: 'Asistente IA', icon: Bot },
+  { href: '/demo/cobranza/precios', label: '💼 Planes y Precios', icon: CreditCard },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {
@@ -35,6 +37,7 @@ const TITLE_MAP: Record<string, string> = {
   '/demo/cobranza/conciliacion': 'Conciliación',
   '/demo/cobranza/secuencias': 'Secuencias',
   '/demo/cobranza/asistente': 'Asistente IA',
+  '/demo/cobranza/precios': 'Planes y Precios',
 };
 
 export default function CobranzaShell({ children }: { children: React.ReactNode }) {

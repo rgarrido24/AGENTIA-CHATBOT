@@ -16,6 +16,7 @@ import {
   Settings,
   Stethoscope,
   Sun,
+  Tag,
   Users,
   X,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ const NAV = [
   { href: '/demo/dentista/pagos', label: 'Pagos', icon: CreditCard },
   { href: '/demo/dentista/chat', label: 'Asistente IA', icon: MessageCircle },
   { href: '/demo/dentista/configuracion', label: 'Configuración', icon: Settings },
+  { href: '/demo/dentista/precios', label: '💼 Planes y Precios', icon: Tag },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {
@@ -44,6 +46,7 @@ const TITLE_MAP: Record<string, string> = {
   '/demo/dentista/pagos': 'Pagos',
   '/demo/dentista/chat': 'Asistente IA',
   '/demo/dentista/configuracion': 'Configuración',
+  '/demo/dentista/precios': 'Planes y Precios',
 };
 
 function ShellInner({ children }: { children: React.ReactNode }) {

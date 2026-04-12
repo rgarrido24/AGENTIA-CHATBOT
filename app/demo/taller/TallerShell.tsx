@@ -35,6 +35,7 @@ const NAV = [
   { href: '/demo/taller/caja', label: 'Caja', icon: DollarSign },
   { href: '/demo/taller/recordatorios', label: 'Recordatorios', icon: Bell },
   { href: '/demo/taller/chat', label: 'Asistente IA', icon: MessageCircle },
+  { href: '/demo/taller/precios', label: '💼 Planes y Precios', icon: DollarSign },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {
@@ -47,6 +48,7 @@ const TITLE_MAP: Record<string, string> = {
   '/demo/taller/caja': 'Caja',
   '/demo/taller/recordatorios': 'Recordatorios',
   '/demo/taller/chat': 'Asistente IA',
+  '/demo/taller/precios': 'Planes y Precios',
 };
 
 function ShellInner({ children }: { children: React.ReactNode }) {

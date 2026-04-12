@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell,
   CalendarDays,
+  CreditCard,
   LayoutDashboard,
   Menu,
   MessageCircle,
@@ -28,6 +29,7 @@ const NAV = [
   { href: '/demo/barber/agenda', label: 'Agenda', icon: CalendarDays },
   { href: '/demo/barber/recordatorios', label: 'Recordatorios', icon: Bell },
   { href: '/demo/barber/chat', label: 'Chat IA', icon: MessageCircle },
+  { href: '/demo/barber/precios', label: '💼 Planes y Precios', icon: CreditCard },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {
@@ -37,6 +39,7 @@ const TITLE_MAP: Record<string, string> = {
   '/demo/barber/agenda': 'Agenda',
   '/demo/barber/recordatorios': 'Recordatorios',
   '/demo/barber/chat': 'Chat IA',
+  '/demo/barber/precios': 'Planes y Precios',
 };
 
 function ShellInner({ children }: { children: React.ReactNode }) {

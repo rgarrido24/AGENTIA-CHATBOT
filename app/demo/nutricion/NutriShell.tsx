@@ -8,6 +8,7 @@ import {
   Bell,
   BookOpen,
   CalendarDays,
+  CreditCard,
   LayoutDashboard,
   Menu,
   MessageCircle,
@@ -37,6 +38,7 @@ const NAV = [
   { href: '/demo/nutricion/inbody', label: 'Registro InBody', icon: ScanLine },
   { href: '/demo/nutricion/recordatorios', label: 'Recordatorios', icon: Bell },
   { href: '/demo/nutricion/chat', label: 'Asistente IA', icon: MessageCircle },
+  { href: '/demo/nutricion/precios', label: '💼 Planes y Precios', icon: CreditCard },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {
@@ -49,6 +51,7 @@ const TITLE_MAP: Record<string, string> = {
   '/demo/nutricion/inbody': 'Registro InBody',
   '/demo/nutricion/recordatorios': 'Recordatorios',
   '/demo/nutricion/chat': 'Asistente IA',
+  '/demo/nutricion/precios': 'Planes y Precios',
 };
 
 function ShellInner({ children }: { children: React.ReactNode }) {
