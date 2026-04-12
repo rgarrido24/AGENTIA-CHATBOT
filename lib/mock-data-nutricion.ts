@@ -45,12 +45,43 @@ export type MedicionInBody = {
   fotoTicket?: string;
 };
 
+export type Receta = {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  tiempoPrep: number;
+  calorias: number;
+  proteinas: number;
+  carbohidratos: number;
+  grasas: number;
+  ingredientes: string[];
+  preparacion: string[];
+  foto?: string;
+  equivalentesSMAE: string;
+  tags: string[];
+};
+
+export type TiempoComidaDia = {
+  nombre: 'Desayuno' | 'Colación AM' | 'Comida' | 'Merienda' | 'Cena';
+  emoji: string;
+  hora: string;
+  calorias: number;
+  recetas: Receta[];
+};
+
+export type DiaMenu = {
+  dia: 'Lunes' | 'Martes' | 'Miércoles' | 'Jueves' | 'Viernes' | 'Sábado' | 'Domingo';
+  totalCalorias: number;
+  tiempos: TiempoComidaDia[];
+};
+
 export type DietaActual = {
   id: string;
   pacienteId: string;
   fechaAsignacion: string;
   nombre: string;
-  contenido: string;
+  contenido?: string;
+  semana?: DiaMenu[];
   calorias: number;
   proteinas: number;
   carbohidratos: number;
@@ -247,13 +278,314 @@ CENA (8:00 PM):
 Mantener 3 comidas + 2 colaciones; ajustar porciones por actividad física.
 `.trim();
 
+// ═══════════════════════════════════════════════════════
+// BANCO DE RECETAS MEXICANAS SALUDABLES
+// ═══════════════════════════════════════════════════════
+
+// DESAYUNOS
+const rQuesadillasPavo: Receta = {
+  id: 'r-d1', nombre: 'Quesadillas de pechuga de pavo',
+  descripcion: 'Tortillas de maíz con pechuga de pavo ahumada, espinacas y aguacate.',
+  tiempoPrep: 10, calorias: 340, proteinas: 28, carbohidratos: 32, grasas: 10,
+  ingredientes: ['2 tortillas de maíz', '90 g pechuga de pavo ahumada', 'Espinacas al gusto', '⅓ aguacate en rebanadas'],
+  preparacion: ['Calienta las tortillas en comal sin aceite', 'Coloca la pechuga y espinacas', 'Dobla y calienta 2 min por lado', 'Sirve con aguacate'],
+  equivalentesSMAE: '2 cereales sin grasa + 3 proteína AOA bajo + 1 grasa',
+  tags: ['mexicana', 'alta proteína'],
+};
+const rHuevosRancheros: Receta = {
+  id: 'r-d2', nombre: 'Huevos rancheros light',
+  descripcion: 'Huevos sobre tortillas tostadas con salsa roja casera y cilantro.',
+  tiempoPrep: 15, calorias: 310, proteinas: 18, carbohidratos: 28, grasas: 12,
+  ingredientes: ['2 tortillas de maíz tostadas', '2 claras + 1 huevo entero', '3 cdas salsa roja casera', 'Cilantro al gusto'],
+  preparacion: ['Tueste las tortillas en comal', 'Cocine los huevos al gusto con aceite spray', 'Calienta la salsa', 'Arme: tortilla → huevo → salsa → cilantro'],
+  equivalentesSMAE: '2 cereales sin grasa + 1½ proteína AOA bajo',
+  tags: ['mexicana', 'clásica'],
+};
+const rAvenaFruta: Receta = {
+  id: 'r-d3', nombre: 'Avena con fruta y canela',
+  descripcion: 'Avena cocida en leche descremada con plátano y canela.',
+  tiempoPrep: 8, calorias: 280, proteinas: 12, carbohidratos: 44, grasas: 5,
+  ingredientes: ['½ taza avena en hojuelas', '1 taza leche descremada', '½ plátano en rodajas', 'Canela al gusto'],
+  preparacion: ['Cuece la avena en leche a fuego medio', 'Mueve constantemente 5 min', 'Agrega plátano y canela', 'Sirve caliente'],
+  equivalentesSMAE: '2 cereales sin grasa + 1 leche descremada + 1 fruta',
+  tags: ['rápida', 'alta fibra'],
+};
+const rChilaquilesVerdes: Receta = {
+  id: 'r-d4', nombre: 'Chilaquiles verdes fit',
+  descripcion: 'Totopos horneados bañados en salsa verde con pechuga deshebrada.',
+  tiempoPrep: 15, calorias: 365, proteinas: 22, carbohidratos: 40, grasas: 12,
+  ingredientes: ['6 totopos horneados (40 g)', '60 g pechuga cocida deshebrada', '½ taza salsa verde', '1 cda crema light', 'Cilantro'],
+  preparacion: ['Calienta la salsa verde en sartén', 'Agrega los totopos y mezcla rápido', 'Añade la pechuga deshebrada', 'Sirve con crema y cilantro'],
+  equivalentesSMAE: '2 cereales sin grasa + 2 proteína AOA bajo + 1 grasa',
+  tags: ['mexicana', 'alta proteína'],
+};
+const rMolleteFrijol: Receta = {
+  id: 'r-d5', nombre: 'Molletes de frijol con pico de gallo',
+  descripcion: 'Bolillo integral con frijoles refritos, queso panela y pico de gallo fresco.',
+  tiempoPrep: 10, calorias: 320, proteinas: 14, carbohidratos: 45, grasas: 8,
+  ingredientes: ['1 bolillo integral partido', '3 cdas frijoles refritos sin grasa', '40 g queso panela', '2 cdas pico de gallo'],
+  preparacion: ['Tueste el bolillo en comal', 'Unta los frijoles generosamente', 'Agrega el queso panela', 'Hornea 5 min y sirve con pico de gallo'],
+  equivalentesSMAE: '2 cereales sin grasa + 1 leguminosa + 1 proteína AOA bajo',
+  tags: ['mexicana', 'vegetariana'],
+};
+const rOmeletteNopales: Receta = {
+  id: 'r-d6', nombre: 'Omelette de claras con nopales',
+  descripcion: 'Omelette esponjoso de claras con nopales salteados y cebolla.',
+  tiempoPrep: 12, calorias: 260, proteinas: 20, carbohidratos: 12, grasas: 14,
+  ingredientes: ['3 claras + 1 huevo entero', '½ taza nopales cocidos en cubos', '2 cdas cebolla picada', 'Sal y pimienta', 'Aceite spray'],
+  preparacion: ['Saltea nopales y cebolla con aceite spray 4 min', 'Bate los huevos y vierte en sartén', 'Añade los nopales al centro', 'Dobla y cocina 1 min más'],
+  equivalentesSMAE: '1½ proteína AOA bajo + 1 verdura + 1 grasa',
+  tags: ['mexicana', 'alta proteína', 'rápida'],
+};
+
+// COLACIONES
+const rJicamaChile: Receta = {
+  id: 'r-c1', nombre: 'Jícama con chile y limón',
+  descripcion: 'Jícama fresca en bastones con limón, chile en polvo y sal.',
+  tiempoPrep: 5, calorias: 65, proteinas: 1, carbohidratos: 14, grasas: 0,
+  ingredientes: ['1 taza jícama en bastones', 'Jugo de 1 limón', 'Chile en polvo al gusto', 'Sal al gusto'],
+  preparacion: ['Pela y corta la jícama en bastones', 'Rocía con limón y sal', 'Espolvorea chile en polvo', 'Sirve frío'],
+  equivalentesSMAE: '1 fruta',
+  tags: ['rápida', 'mexicana', 'bajo en calorías'],
+};
+const rManzanaCacahuate: Receta = {
+  id: 'r-c2', nombre: 'Manzana con cacahuate natural',
+  descripcion: 'Rebanadas de manzana con mantequilla de cacahuate natural.',
+  tiempoPrep: 3, calorias: 155, proteinas: 4, carbohidratos: 22, grasas: 7,
+  ingredientes: ['1 manzana mediana', '1 cda mantequilla de cacahuate natural (15 g)'],
+  preparacion: ['Lava y rebana la manzana', 'Unta con mantequilla de cacahuate', 'Sirve inmediatamente'],
+  equivalentesSMAE: '1 fruta + 1 grasa con proteína',
+  tags: ['rápida', 'alta fibra'],
+};
+const rYogurtGranola: Receta = {
+  id: 'r-c3', nombre: 'Yogurt griego con granola',
+  descripcion: 'Yogurt griego natural con granola light y fresas frescas.',
+  tiempoPrep: 3, calorias: 140, proteinas: 12, carbohidratos: 16, grasas: 3,
+  ingredientes: ['150 g yogurt griego natural sin azúcar', '20 g granola light', '½ taza fresas rebanadas'],
+  preparacion: ['Sirve el yogurt en tazón', 'Agrega la granola encima', 'Decora con fresas'],
+  equivalentesSMAE: '1 leche descremada + 1 cereal sin grasa + 1 fruta',
+  tags: ['rápida', 'alta proteína'],
+};
+const rPepinHummus: Receta = {
+  id: 'r-c4', nombre: 'Pepino con hummus',
+  descripcion: 'Rodajas de pepino fresco con hummus casero y pimentón.',
+  tiempoPrep: 5, calorias: 90, proteinas: 3, carbohidratos: 10, grasas: 4,
+  ingredientes: ['1 pepino mediano en rodajas', '3 cdas hummus (45 g)', 'Pimentón al gusto'],
+  preparacion: ['Rebana el pepino en rodajas gruesas', 'Sirve con hummus al lado', 'Espolvorea pimentón'],
+  equivalentesSMAE: '1 verdura + 1 grasa',
+  tags: ['rápida', 'vegetariana'],
+};
+const rPlatanoAlmendras: Receta = {
+  id: 'r-c5', nombre: 'Plátano con almendras',
+  descripcion: 'Plátano dominico acompañado de almendras naturales.',
+  tiempoPrep: 2, calorias: 160, proteinas: 4, carbohidratos: 26, grasas: 6,
+  ingredientes: ['1 plátano dominico (100 g)', '10 almendras naturales (15 g)'],
+  preparacion: ['Pela el plátano', 'Acompaña con almendras', 'Opcional: espolvorea canela'],
+  equivalentesSMAE: '1 fruta + 1 grasa con proteína',
+  tags: ['rápida', 'potasio'],
+};
+
+// COMIDAS
+const rFideoPollo: Receta = {
+  id: 'r-co1', nombre: 'Sopa de fideo seco con pollo',
+  descripcion: 'Fideo tostado guisado en salsa de jitomate con pechuga de pollo.',
+  tiempoPrep: 20, calorias: 430, proteinas: 28, carbohidratos: 52, grasas: 10,
+  ingredientes: ['½ taza fideo delgado', '120 g pechuga de pollo cocida', '2 jitomates guaje', '½ cebolla', '1 diente ajo', '1 taza caldo de pollo bajo en sodio'],
+  preparacion: ['Tuesta el fideo en sartén con aceite spray', 'Licúa jitomate, cebolla y ajo', 'Vierte la salsa sobre el fideo', 'Agrega caldo y pollo, cocina 12 min tapado'],
+  equivalentesSMAE: '3 cereales sin grasa + 4 proteína AOA bajo + 1 verdura',
+  tags: ['mexicana', 'alta proteína'],
+};
+const rArrozCalabacita: Receta = {
+  id: 'r-co2', nombre: 'Arroz rojo con calabacitas y pollo',
+  descripcion: 'Arroz integral guisado con pollo en tiras, calabacita y chícharos.',
+  tiempoPrep: 25, calorias: 450, proteinas: 30, carbohidratos: 55, grasas: 10,
+  ingredientes: ['½ taza arroz integral', '120 g pechuga en tiras', '1 calabacita en cubos', '½ taza chícharos', '1 jitomate picado', 'Caldo de pollo'],
+  preparacion: ['Sofríe pollo y verduras 5 min', 'Agrega arroz y caldo (1:2)', 'Cocina tapado 20 min a fuego bajo', 'Destapa y esponja con tenedor'],
+  equivalentesSMAE: '3 cereales sin grasa + 4 proteína AOA bajo + 2 verduras',
+  tags: ['mexicana', 'alta proteína', 'completo'],
+};
+const rLentejasChorizoPavo: Receta = {
+  id: 'r-co3', nombre: 'Lentejas guisadas con chorizo de pavo',
+  descripcion: 'Lentejas cocidas con chorizo de pavo, jitomate y especias.',
+  tiempoPrep: 20, calorias: 415, proteinas: 28, carbohidratos: 50, grasas: 8,
+  ingredientes: ['½ taza lentejas cocidas', '60 g chorizo de pavo', '1 jitomate', '¼ cebolla', '1 diente ajo', '2 tortillas de maíz'],
+  preparacion: ['Sofríe chorizo de pavo 3 min', 'Agrega jitomate, cebolla y ajo picados', 'Incorpora las lentejas con caldo', 'Hierve 10 min; sirve con tortillas'],
+  equivalentesSMAE: '2 leguminosas + 2 proteína AOA med + 2 cereales sin grasa',
+  tags: ['mexicana', 'alta proteína'],
+};
+const rTacosPickadillo: Receta = {
+  id: 'r-co4', nombre: 'Tacos de picadillo',
+  descripcion: 'Picadillo de res magra con papa, chícharos y jitomate en tortillas de maíz.',
+  tiempoPrep: 20, calorias: 440, proteinas: 26, carbohidratos: 46, grasas: 14,
+  ingredientes: ['120 g carne molida de res magra', '2 papas chicas en cubos', '½ taza chícharos', '1 jitomate picado', '3 tortillas de maíz'],
+  preparacion: ['Cuece papa al vapor 8 min', 'Sofríe la carne hasta dorar', 'Agrega papa, chícharos y jitomate', 'Cocina 5 min; sirve en tortillas'],
+  equivalentesSMAE: '3 cereales sin grasa + 3 proteína AOA mod + 1 verdura',
+  tags: ['mexicana', 'clásica'],
+};
+const rCaldoTalpeno: Receta = {
+  id: 'r-co5', nombre: 'Caldo tlalpeño',
+  descripcion: 'Caldo de pollo con garbanzo, chipotle y epazote. Reconfortante y nutritivo.',
+  tiempoPrep: 25, calorias: 390, proteinas: 30, carbohidratos: 35, grasas: 10,
+  ingredientes: ['120 g pechuga de pollo', '½ taza garbanzos cocidos', '1 chile chipotle (opcional)', 'Epazote al gusto', '1 zanahoria', 'Ejotes', 'Caldo de pollo'],
+  preparacion: ['Hierve el pollo con verduras 20 min', 'Agrega garbanzos y chipotle', 'Sazona con epazote y sal', 'Sirve caliente con limón'],
+  equivalentesSMAE: '4 proteína AOA bajo + 1 leguminosa + 2 verduras',
+  tags: ['mexicana', 'alta fibra'],
+};
+const rPozoleRojoFit: Receta = {
+  id: 'r-co6', nombre: 'Pozole rojo fit',
+  descripcion: 'Pozole con lomo magro, maíz pozolero y toppings frescos. Sin piel ni exceso de grasa.',
+  tiempoPrep: 35, calorias: 420, proteinas: 32, carbohidratos: 48, grasas: 8,
+  ingredientes: ['120 g lomo de cerdo magro', '½ taza maíz pozolero cocido', '2 chiles guajillo', 'Lechuga, cebolla, orégano', '2 tostadas horneadas'],
+  preparacion: ['Tuesta y remoja chiles 15 min', 'Licúa chiles con ajo y caldo', 'Hierve lomo, agrega maíz y salsa', 'Sazona y sirve con toppings'],
+  equivalentesSMAE: '4 proteína AOA bajo + 2 cereales sin grasa + 1 verdura',
+  tags: ['mexicana', 'clásica'],
+};
+const rEnchiladasVerdes: Receta = {
+  id: 'r-co7', nombre: 'Enchiladas verdes light',
+  descripcion: 'Enchiladas de pechuga deshebrada bañadas en salsa verde con crema light.',
+  tiempoPrep: 20, calorias: 455, proteinas: 26, carbohidratos: 50, grasas: 14,
+  ingredientes: ['3 tortillas de maíz', '90 g pechuga deshebrada', '½ taza salsa verde', '2 cdas crema light', '20 g queso panela'],
+  preparacion: ['Calienta tortillas y rellena con pechuga', 'Enrolla y coloca en refractario', 'Baña con salsa verde caliente', 'Agrega crema y queso, calienta 5 min'],
+  equivalentesSMAE: '3 cereales sin grasa + 3 proteína AOA bajo + 1 grasa',
+  tags: ['mexicana', 'clásica'],
+};
+
+// CENAS
+const rSopaVerduras: Receta = {
+  id: 'r-cn1', nombre: 'Sopa de verduras con tostadas',
+  descripcion: 'Sopa de zanahoria, chayote y ejotes con tostadas horneadas.',
+  tiempoPrep: 15, calorias: 280, proteinas: 10, carbohidratos: 38, grasas: 8,
+  ingredientes: ['1 taza verduras mixtas (zanahoria, chayote, ejotes)', '1 taza caldo de pollo', '2 tostadas horneadas', 'Limón y sal'],
+  preparacion: ['Hierve verduras en caldo 15 min', 'Sazona con sal y comino', 'Sirve con tostadas y limón'],
+  equivalentesSMAE: '1 cereal sin grasa + 2 verduras',
+  tags: ['ligera', 'mexicana', 'rápida'],
+};
+const rTacosEjotesHuevo: Receta = {
+  id: 'r-cn2', nombre: 'Tacos de ejotes con huevo',
+  descripcion: 'Ejotes salteados con huevo revuelto, servidos en tortillas de maíz.',
+  tiempoPrep: 12, calorias: 295, proteinas: 18, carbohidratos: 30, grasas: 10,
+  ingredientes: ['1 taza ejotes en trozos', '2 huevos enteros', '3 tortillas de maíz', '1 jitomate picado', 'Aceite spray'],
+  preparacion: ['Saltea ejotes 5 min con aceite spray', 'Bate huevos y agrega a los ejotes', 'Mezcla hasta cuajar', 'Sirve en tortillas con jitomate'],
+  equivalentesSMAE: '2 cereales sin grasa + 2 proteína AOA bajo + 1 verdura',
+  tags: ['mexicana', 'vegetariana', 'rápida'],
+};
+const rQuesadillasRequeson: Receta = {
+  id: 'r-cn3', nombre: 'Quesadillas de requesón',
+  descripcion: 'Tortillas rellenas de requesón fresco con epazote y salsa verde.',
+  tiempoPrep: 10, calorias: 315, proteinas: 16, carbohidratos: 34, grasas: 12,
+  ingredientes: ['3 tortillas de maíz', '90 g requesón', 'Epazote picado al gusto', 'Salsa verde al gusto'],
+  preparacion: ['Unta requesón sobre tortillas', 'Agrega epazote', 'Dobla y calienta en comal 2 min cada lado', 'Sirve con salsa verde'],
+  equivalentesSMAE: '2 cereales sin grasa + 1½ proteína AOA bajo',
+  tags: ['mexicana', 'vegetariana'],
+};
+const rEnsaladaNopalesAtun: Receta = {
+  id: 'r-cn4', nombre: 'Ensalada de nopales con atún',
+  descripcion: 'Nopales cocidos con atún al natural, jitomate, cebolla morada y limón.',
+  tiempoPrep: 10, calorias: 265, proteinas: 22, carbohidratos: 18, grasas: 10,
+  ingredientes: ['1 taza nopales cocidos en tiras', '90 g atún al natural', '1 jitomate en cubos', '½ cebolla morada', 'Cilantro', 'Limón + 1 cda aceite de oliva'],
+  preparacion: ['Mezcla nopales con atún escurrido', 'Agrega jitomate y cebolla morada', 'Adereza con limón y aceite de oliva', 'Espolvorea cilantro fresco'],
+  equivalentesSMAE: '3 proteína AOA bajo + 2 verduras + 1 grasa',
+  tags: ['mexicana', 'alta proteína', 'sin gluten'],
+};
+const rCremaCalabaZa: Receta = {
+  id: 'r-cn5', nombre: 'Crema de calabaza',
+  descripcion: 'Crema suave de calabaza italiana con toque de nuez moscada y aceite de oliva.',
+  tiempoPrep: 18, calorias: 245, proteinas: 8, carbohidratos: 32, grasas: 8,
+  ingredientes: ['2 tazas calabaza italiana picada', '½ taza caldo de pollo', '¼ taza leche descremada', '1 cda aceite de oliva', 'Nuez moscada'],
+  preparacion: ['Cuece calabaza en caldo 12 min', 'Licúa con leche hasta suavizar', 'Regresa al fuego y sazona', 'Sirve con hilo de aceite de oliva'],
+  equivalentesSMAE: '2 verduras + 1 grasa + ½ leche descremada',
+  tags: ['ligera', 'vegetariana'],
+};
+const rSopaLima: Receta = {
+  id: 'r-cn6', nombre: 'Sopa de lima con tostadas',
+  descripcion: 'Caldo yucateco de pollo con lima, chile, cebolla morada y tostadas horneadas.',
+  tiempoPrep: 20, calorias: 310, proteinas: 24, carbohidratos: 28, grasas: 10,
+  ingredientes: ['120 g pechuga deshebrada', '1 taza caldo de pollo', 'Jugo de 2 limas', '½ cebolla morada', 'Cilantro', '2 tostadas horneadas'],
+  preparacion: ['Hierve caldo con pechuga 15 min', 'Deshebra el pollo y devuelve al caldo', 'Agrega jugo de lima y cebolla', 'Sirve con cilantro y tostadas'],
+  equivalentesSMAE: '3 proteína AOA bajo + 1 cereal sin grasa + 1 grasa',
+  tags: ['mexicana', 'alta proteína'],
+};
+
+export const BANCO_RECETAS: Receta[] = [
+  rQuesadillasPavo, rHuevosRancheros, rAvenaFruta, rChilaquilesVerdes, rMolleteFrijol, rOmeletteNopales,
+  rJicamaChile, rManzanaCacahuate, rYogurtGranola, rPepinHummus, rPlatanoAlmendras,
+  rFideoPollo, rArrozCalabacita, rLentejasChorizoPavo, rTacosPickadillo, rCaldoTalpeno, rPozoleRojoFit, rEnchiladasVerdes,
+  rSopaVerduras, rTacosEjotesHuevo, rQuesadillasRequeson, rEnsaladaNopalesAtun, rCremaCalabaZa, rSopaLima,
+];
+
+const DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] as const;
+
+function buildDia(
+  dia: DiaMenu['dia'],
+  kcalTotal: number,
+  desayunos: Receta[],
+  colaciones: Receta[],
+  comidas: Receta[],
+  meriendas: Receta[],
+  cenas: Receta[],
+  kcals: [number,number,number,number,number]
+): DiaMenu {
+  return {
+    dia, totalCalorias: kcalTotal,
+    tiempos: [
+      { nombre: 'Desayuno', emoji: '🌅', hora: '7:00 AM', calorias: kcals[0], recetas: desayunos },
+      { nombre: 'Colación AM', emoji: '🍎', hora: '10:00 AM', calorias: kcals[1], recetas: colaciones },
+      { nombre: 'Comida', emoji: '🍽️', hora: '2:00 PM', calorias: kcals[2], recetas: comidas },
+      { nombre: 'Merienda', emoji: '🥤', hora: '5:00 PM', calorias: kcals[3], recetas: meriendas },
+      { nombre: 'Cena', emoji: '🌙', hora: '8:00 PM', calorias: kcals[4], recetas: cenas },
+    ],
+  };
+}
+
+function buildSemanaA(): DiaMenu[] {
+  const kcals: [number,number,number,number,number] = [300,120,500,120,360];
+  const t = kcals.reduce((a,b)=>a+b,0);
+  return [
+    buildDia('Lunes',   t, [rAvenaFruta,rOmeletteNopales],   [rJicamaChile,rPepinHummus],      [rCaldoTalpeno,rFideoPollo],        [rYogurtGranola,rJicamaChile],    [rEnsaladaNopalesAtun,rSopaVerduras], kcals),
+    buildDia('Martes',  t, [rHuevosRancheros,rMolleteFrijol], [rManzanaCacahuate,rPepinHummus],  [rLentejasChorizoPavo,rCaldoTalpeno],[rJicamaChile,rYogurtGranola],    [rTacosEjotesHuevo,rCremaCalabaZa],   kcals),
+    buildDia('Miércoles',t,[rQuesadillasPavo,rAvenaFruta],    [rPepinHummus,rJicamaChile],       [rFideoPollo,rEnchiladasVerdes],     [rYogurtGranola,rManzanaCacahuate],[rQuesadillasRequeson,rSopaLima],     kcals),
+    buildDia('Jueves',  t, [rOmeletteNopales,rChilaquilesVerdes],[rJicamaChile,rYogurtGranola],  [rTacosPickadillo,rPozoleRojoFit],   [rPepinHummus,rJicamaChile],      [rSopaVerduras,rEnsaladaNopalesAtun], kcals),
+    buildDia('Viernes', t, [rAvenaFruta,rHuevosRancheros],    [rYogurtGranola,rPepinHummus],     [rArrozCalabacita,rCaldoTalpeno],    [rManzanaCacahuate,rJicamaChile], [rCremaCalabaZa,rTacosEjotesHuevo],   kcals),
+    buildDia('Sábado',  t, [rChilaquilesVerdes,rMolleteFrijol],[rPlatanoAlmendras,rJicamaChile], [rPozoleRojoFit,rLentejasChorizoPavo],[rYogurtGranola,rPepinHummus],   [rSopaLima,rQuesadillasRequeson],     kcals),
+    buildDia('Domingo', t, [rQuesadillasPavo,rOmeletteNopales],[rManzanaCacahuate,rYogurtGranola],[rEnchiladasVerdes,rArrozCalabacita],[rJicamaChile,rPlatanoAlmendras],[rEnsaladaNopalesAtun,rCremaCalabaZa],kcals),
+  ];
+}
+
+function buildSemanaB(): DiaMenu[] {
+  const kcals: [number,number,number,number,number] = [380,150,560,150,360];
+  const t = kcals.reduce((a,b)=>a+b,0);
+  return [
+    buildDia('Lunes',   t, [rChilaquilesVerdes,rQuesadillasPavo], [rManzanaCacahuate,rPlatanoAlmendras],[rArrozCalabacita,rCaldoTalpeno],    [rYogurtGranola,rManzanaCacahuate],[rSopaLima,rEnsaladaNopalesAtun],    kcals),
+    buildDia('Martes',  t, [rHuevosRancheros,rOmeletteNopales],   [rPlatanoAlmendras,rYogurtGranola],  [rPozoleRojoFit,rFideoPollo],         [rManzanaCacahuate,rPepinHummus],  [rQuesadillasRequeson,rTacosEjotesHuevo],kcals),
+    buildDia('Miércoles',t,[rAvenaFruta,rChilaquilesVerdes],       [rYogurtGranola,rPlatanoAlmendras],  [rEnchiladasVerdes,rLentejasChorizoPavo],[rPepinHummus,rJicamaChile],     [rCremaCalabaZa,rSopaVerduras],      kcals),
+    buildDia('Jueves',  t, [rQuesadillasPavo,rMolleteFrijol],      [rManzanaCacahuate,rYogurtGranola], [rTacosPickadillo,rArrozCalabacita],   [rPlatanoAlmendras,rManzanaCacahuate],[rSopaLima,rEnsaladaNopalesAtun],  kcals),
+    buildDia('Viernes', t, [rOmeletteNopales,rAvenaFruta],         [rPlatanoAlmendras,rPepinHummus],   [rCaldoTalpeno,rPozoleRojoFit],        [rYogurtGranola,rManzanaCacahuate],[rTacosEjotesHuevo,rQuesadillasRequeson],kcals),
+    buildDia('Sábado',  t, [rChilaquilesVerdes,rHuevosRancheros],  [rYogurtGranola,rPlatanoAlmendras], [rFideoPollo,rEnchiladasVerdes],        [rManzanaCacahuate,rPlatanoAlmendras],[rSopaVerduras,rSopaLima],        kcals),
+    buildDia('Domingo', t, [rQuesadillasPavo,rAvenaFruta],         [rPlatanoAlmendras,rManzanaCacahuate],[rArrozCalabacita,rTacosPickadillo], [rPepinHummus,rYogurtGranola],    [rEnsaladaNopalesAtun,rCremaCalabaZa],kcals),
+  ];
+}
+
+function buildSemanaC(): DiaMenu[] {
+  const kcals: [number,number,number,number,number] = [420,180,600,180,420];
+  const t = kcals.reduce((a,b)=>a+b,0);
+  return [
+    buildDia('Lunes',   t, [rChilaquilesVerdes,rMolleteFrijol],   [rPlatanoAlmendras,rManzanaCacahuate],[rArrozCalabacita,rEnchiladasVerdes],[rYogurtGranola,rPlatanoAlmendras],[rSopaLima,rEnsaladaNopalesAtun],    kcals),
+    buildDia('Martes',  t, [rQuesadillasPavo,rOmeletteNopales],   [rManzanaCacahuate,rYogurtGranola],  [rPozoleRojoFit,rLentejasChorizoPavo],[rPlatanoAlmendras,rManzanaCacahuate],[rQuesadillasRequeson,rSopaVerduras],kcals),
+    buildDia('Miércoles',t,[rAvenaFruta,rHuevosRancheros],         [rYogurtGranola,rPlatanoAlmendras],  [rTacosPickadillo,rCaldoTalpeno],     [rManzanaCacahuate,rPepinHummus],  [rCremaCalabaZa,rTacosEjotesHuevo],  kcals),
+    buildDia('Jueves',  t, [rChilaquilesVerdes,rQuesadillasPavo],  [rPlatanoAlmendras,rManzanaCacahuate],[rFideoPollo,rArrozCalabacita],      [rYogurtGranola,rPlatanoAlmendras],[rSopaLima,rEnsaladaNopalesAtun],    kcals),
+    buildDia('Viernes', t, [rMolleteFrijol,rOmeletteNopales],      [rManzanaCacahuate,rYogurtGranola], [rEnchiladasVerdes,rPozoleRojoFit],   [rPlatanoAlmendras,rPepinHummus],  [rSopaVerduras,rQuesadillasRequeson],kcals),
+    buildDia('Sábado',  t, [rAvenaFruta,rChilaquilesVerdes],       [rYogurtGranola,rPlatanoAlmendras], [rLentejasChorizoPavo,rTacosPickadillo],[rManzanaCacahuate,rPlatanoAlmendras],[rCremaCalabaZa,rSopaLima],       kcals),
+    buildDia('Domingo', t, [rQuesadillasPavo,rHuevosRancheros],    [rPlatanoAlmendras,rManzanaCacahuate],[rArrozCalabacita,rCaldoTalpeno],   [rPepinHummus,rYogurtGranola],    [rEnsaladaNopalesAtun,rTacosEjotesHuevo],kcals),
+  ];
+}
+
 export const PLANES_DIETA: Record<
   PlanDietaId,
   Omit<DietaActual, 'id' | 'pacienteId' | 'fechaAsignacion'>
 > = {
   'plan-a': {
     nombre: 'Plan hipocalórico moderado',
-    contenido: CONTENIDO_PLAN_A,
+    semana: buildSemanaA(),
     calorias: 1400,
     proteinas: 95,
     carbohidratos: 140,
@@ -264,18 +596,18 @@ export const PLANES_DIETA: Record<
   },
   'plan-b': {
     nombre: 'Plan proteico (ganancia muscular)',
-    contenido: CONTENIDO_PLAN_B,
-    calorias: 2200,
-    proteinas: 180,
-    carbohidratos: 220,
-    grasas: 65,
+    semana: buildSemanaB(),
+    calorias: 1600,
+    proteinas: 140,
+    carbohidratos: 160,
+    grasas: 55,
     restricciones: ['Alto en proteína', 'Ajustar a días de entreno'],
     alimentos_permitidos: ALIMENTOS_PERMITIDOS_B,
     alimentos_prohibidos: ALIMENTOS_PROHIBIDOS_B,
   },
   'plan-c': {
     nombre: 'Plan de mantenimiento equilibrado',
-    contenido: CONTENIDO_PLAN_C,
+    semana: buildSemanaC(),
     calorias: 1800,
     proteinas: 120,
     carbohidratos: 190,
@@ -759,7 +1091,7 @@ export function MOCK_DIETAS_INICIALES(): DietaActual[] {
       pacienteId: p.id,
       fechaAsignacion: p.fechaInicio,
       nombre: `${plan.nombre} (${p.nombre.split(' ')[0]})`,
-      contenido: plan.contenido,
+      semana: plan.semana ? [...plan.semana] : undefined,
       calorias: plan.calorias,
       proteinas: plan.proteinas,
       carbohidratos: plan.carbohidratos,
