@@ -277,6 +277,76 @@ async function main() {
     }
   }
 
+  // ─── Retención: Reactivación de inactivos (cada hora) ───────────
+  async function pollAndSendReactivation() {
+    if (!whatsappReady || !client) return;
+    try {
+      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
+      };
+      const res = await fetch(`${API_URL}/api/barber/reactivation`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ clientId: CLIENT_ID, daysThreshold: 20 }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.enqueued > 0) {
+        console.log(`[Agentia] Reactivación: ${data.enqueued} mensajes encolados`);
+      }
+    } catch (e) {
+      console.error('[Agentia] Error poll reactivation:', e.message);
+    }
+  }
+
+  // ─── Retención: Confirmaciones anti no-show (cada 10 min) ───────
+  async function pollAndSendConfirmations() {
+    if (!whatsappReady || !client) return;
+    try {
+      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
+      };
+      const res = await fetch(`${API_URL}/api/barber/confirmations`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.enqueued > 0) {
+        console.log(`[Agentia] Confirmaciones: ${data.enqueued} mensajes encolados`);
+      }
+    } catch (e) {
+      console.error('[Agentia] Error poll confirmations:', e.message);
+    }
+  }
+
+  // ─── Retención: Solicitudes de reseña (cada 15 min) ─────────────
+  async function pollAndSendReviews() {
+    if (!whatsappReady || !client) return;
+    try {
+      const reviewUrl = getEnv('GOOGLE_MAPS_REVIEW_URL', '') || process.env.GOOGLE_MAPS_REVIEW_URL || '';
+      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
+      };
+      const res = await fetch(`${API_URL}/api/barber/reviews`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ clientId: CLIENT_ID, reviewUrl }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.enqueued > 0) {
+        console.log(`[Agentia] Reseñas: ${data.enqueued} mensajes encolados`);
+      }
+    } catch (e) {
+      console.error('[Agentia] Error poll reviews:', e.message);
+    }
+  }
+
   // ────────────────────────────────────────────────────────────────
 
   function initClient() {
@@ -496,6 +566,16 @@ async function main() {
 
   setTimeout(pollAndSendOutboundMessages, 3 * 1000);
   setInterval(pollAndSendOutboundMessages, 5 * 1000);
+
+  // Retención: primera ejecución con retraso para que el bridge se establezca
+  setTimeout(pollAndSendReactivation, 10 * 60 * 1000);
+  setInterval(pollAndSendReactivation, 60 * 60 * 1000);
+
+  setTimeout(pollAndSendConfirmations, 2 * 60 * 1000);
+  setInterval(pollAndSendConfirmations, 10 * 60 * 1000);
+
+  setTimeout(pollAndSendReviews, 3 * 60 * 1000);
+  setInterval(pollAndSendReviews, 15 * 60 * 1000);
 }
 
 main();

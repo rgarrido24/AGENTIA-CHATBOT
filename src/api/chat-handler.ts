@@ -21,6 +21,8 @@ import {
   getAvailabilityForPrompt,
   storeOfferedSlots,
 } from '../lib/appointment-flow';
+import { getLoyaltyPoints, formatLoyaltyReply } from '../lib/loyalty';
+import { handleConfirmationReply } from '../lib/noshow-confirmation';
 import {
   lookupCoverageByCP,
   formatCoverageContext,
@@ -332,6 +334,29 @@ export async function handleChat(params: {
   if (userMessage && isPromptInjectionAttempt(userMessage)) {
     console.warn('[chat-handler] Intento de prompt injection bloqueado:', userMessage.slice(0, 80));
     return { status: 200, json: { clientId, reply: getSafeReply() } };
+  }
+
+  // COMANDO: Mis Puntos (sistema de lealtad)
+  if (senderId && /\bmis\s*puntos?\b/i.test(userMessage)) {
+    try {
+      const visits = await getLoyaltyPoints(senderId, clientId);
+      const reply = formatLoyaltyReply(visits, senderName);
+      return { status: 200, json: { clientId, reply } };
+    } catch (loyaltyErr) {
+      console.error('[chat-handler] Error loyalty:', loyaltyErr instanceof Error ? loyaltyErr.message : loyaltyErr);
+    }
+  }
+
+  // RESPUESTA: CONFIRMAR / REPROGRAMAR (anti no-show)
+  if (senderId && userMessage && /\b(CONFIRMAR|REPROGRAMAR)\b/i.test(userMessage)) {
+    try {
+      const confirmReply = await handleConfirmationReply(senderId, userMessage, clientId);
+      if (confirmReply) {
+        return { status: 200, json: { clientId, reply: confirmReply } };
+      }
+    } catch (confirmErr) {
+      console.error('[chat-handler] Error confirmation reply:', confirmErr instanceof Error ? confirmErr.message : confirmErr);
+    }
   }
 
   try {
