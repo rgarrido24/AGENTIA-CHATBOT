@@ -55,7 +55,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { inventario } = useTaller();
   const [open, setOpen] = useState(false);
-  const [light, setLight] = useState(false);
+  const [light, setLight] = useState(true);
   const sectionTitle = TITLE_MAP[pathname] ?? 'Taller';
   const alertasInv = useMemo(
     () => inventario.filter((i) => i.stock <= i.minimo).length,
