@@ -5,11 +5,14 @@ export type CitaData = {
   tipoNegocio: string;
 };
 
+export type { LoyaltyCardData } from './LoyaltyCard';
+
 export type ChatMessage = {
   role: 'user' | 'assistant';
   content: string;
   cita?: CitaData | null;
   showGallery?: boolean;
   isLocation?: boolean;
+  loyaltyCard?: import('./LoyaltyCard').LoyaltyCardData;
   createdAt?: number;
 };

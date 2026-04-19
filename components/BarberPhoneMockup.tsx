@@ -14,6 +14,7 @@ import {
   TicketReservacion,
   formatMessageTime,
 } from '@/app/demo/barber/barber-chat-blocks';
+import LoyaltyCard from '@/app/demo/barber/LoyaltyCard';
 
 const bubbleVariants = {
   initial: { opacity: 0, y: 8 },
@@ -142,7 +143,8 @@ export default function BarberPhoneMockup({
                       {m.cita ? <TicketReservacion cita={m.cita} /> : null}
                       {m.showGallery ? <GalleryPlaceholder /> : null}
                       {m.isLocation ? <MapPreviewBlock /> : null}
-                      {!isUser && (m.content || m.cita || m.showGallery || m.isLocation) && (
+                      {m.loyaltyCard ? <LoyaltyCard data={m.loyaltyCard} compact /> : null}
+                      {!isUser && (m.content || m.cita || m.showGallery || m.isLocation || m.loyaltyCard) && (
                         <div className={`flex items-center gap-1 mt-1 ${styles.bubbleMeta}`}>
                           <span className={styles.bubbleTime}>{formatMessageTime(m.createdAt)}</span>
                           <DoubleCheckBlue />
