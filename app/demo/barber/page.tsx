@@ -9,12 +9,17 @@ import type { DemoBusinessConfig } from '@/src/lib/demo-config';
 import styles from './demo-barber.module.css';
 import { AnimatedNumber } from '@/app/demo/cobranza/components/AnimatedNumber';
 import { useBarber } from './barber-context';
+import { GIRO_CONFIGS } from './giro-config';
 import type { ChatMessage, CitaData } from './barber-chat-types';
+import type { LoyaltyCardData } from './LoyaltyCard';
 
 export type { CitaData } from './barber-chat-types';
 
-const WELCOME_ASSISTANT =
-  '¡Hola! ✂️ Soy el asistente de Barbería El Estilo. Intenta agendar una cita — escribe algo como "quiero una cita mañana" 😊';
+// Loyalty mock data for demo (hardcoded)
+const DEMO_LOYALTY: Record<string, { visitas: number; clienteId: string }> = {
+  barberia: { visitas: 3, clienteId: 'C-0042' },
+  nail: { visitas: 2, clienteId: 'N-0018' },
+};
 
 function looksLikeTimeRequest(text: string): boolean {
   const t = text.toLowerCase().trim();
@@ -95,11 +100,20 @@ export default function DemoBarberPage() {
     setConfig(getStoredConfig() || getDefaultConfig());
   }, []);
 
-  const { events, setEvents, paidIds, setPaidIds, lastAddedEventId, setLastAddedEventId } = useBarber();
+  const { events, setEvents, paidIds, setPaidIds, lastAddedEventId, setLastAddedEventId, giro } = useBarber();
+  const giroCfg = giro ? GIRO_CONFIGS[giro] : null;
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: WELCOME_ASSISTANT, createdAt: Date.now() },
-  ]);
+  // Build initial messages: returning client recognition + welcome
+  const buildInitialMessages = useCallback((): ChatMessage[] => {
+    if (!giroCfg) return [];
+    const c = giroCfg.clienteRegreso;
+    const greet = giro === 'barberia'
+      ? `Hola ${c.nombre} 👋 La última vez te hicimos *${c.ultimoServicio}* con ${c.ultimoArtista}. ¿Repetimos o quieres cambiar algo?`
+      : `Hola ${c.nombre} 💅 La última vez te hicimos *${c.ultimoServicio}* con ${c.ultimoArtista}. ¿Repetimos o quieres algo diferente?`;
+    return [{ role: 'assistant', content: greet, createdAt: Date.now() }];
+  }, [giro, giroCfg]);
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => buildInitialMessages());
   const [input, setInput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const hasSimulatedConflict = useRef<boolean>(false);
@@ -153,6 +167,46 @@ export default function DemoBarberPage() {
       if (!text || loading) return;
       setInput('');
       setMessages((prev) => [...prev, { role: 'user', content: text, createdAt: Date.now() }]);
+
+      // Local intercept: loyalty card keywords
+      if (giroCfg && /mis\s*puntos?|mi\s*tarjeta|lealtad|puntos/i.test(text)) {
+        const demo = DEMO_LOYALTY[giro ?? 'barberia'] ?? { visitas: 3, clienteId: 'C-0042' };
+        const cardData: LoyaltyCardData = {
+          clienteNombre: giroCfg.clienteRegreso.nombre,
+          clienteId: demo.clienteId,
+          negocio: giroCfg.nombre,
+          giro: giroCfg.id,
+          visitas: demo.visitas,
+          meta: giroCfg.metaVisitas,
+          ultimoServicio: giroCfg.clienteRegreso.ultimoServicio,
+          recompensaNombre: giroCfg.recompensaNombre,
+        };
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: '',
+            loyaltyCard: cardData,
+            createdAt: Date.now(),
+          },
+        ]);
+        return;
+      }
+
+      // Local intercept: "repetir mismo servicio"
+      if (giroCfg && /repetir|mismo\s*servicio|igual\s*que\s*siempre/i.test(text)) {
+        const c = giroCfg.clienteRegreso;
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `¡Perfecto! Te agendamos *${c.ultimoServicio}* con ${c.ultimoArtista}, igual que la última vez. ¿Cuándo te queda bien? Escríbeme un día y hora 📅`,
+            createdAt: Date.now(),
+          },
+        ]);
+        return;
+      }
+
       setLoading(true);
       try {
         const isFirstAppointmentRequest =
@@ -247,7 +301,7 @@ export default function DemoBarberPage() {
         setLoading(false);
       }
     },
-    [input, loading, messages, events, config, addEvent, setEvents]
+    [input, loading, messages, events, config, addEvent, setEvents, giro, giroCfg]
   );
 
   const handlePagarAnticipo = async () => {
@@ -326,12 +380,15 @@ export default function DemoBarberPage() {
           <h1 className="text-4xl font-bold text-white leading-tight">
             Prueba el asistente de
             <br />
-            <span className="text-teal-400">Barbería El Estilo</span>
+            <span style={{ color: giroCfg?.acento ?? '#0d9488' }}>
+              {giroCfg?.nombre ?? 'Barbería El Estilo'}
+            </span>
           </h1>
 
           <p className="text-slate-400 text-lg">
-            Intenta agendar una cita — el sistema detecta horarios ocupados en tiempo real y ofrece alternativas
-            automáticamente. Pruébalo ahora.
+            {giroCfg?.id === 'nail'
+              ? 'Agenda citas de uñas — el sistema detecta disponibilidad en tiempo real y confirma automáticamente. Pruébalo ahora.'
+              : 'Intenta agendar una cita — el sistema detecta horarios ocupados en tiempo real y ofrece alternativas automáticamente.'}
           </p>
 
           <ul className="flex flex-col gap-3">
@@ -367,16 +424,18 @@ export default function DemoBarberPage() {
 
         <div className="flex justify-center relative z-10">
           <BarberPhoneMockup
-            businessName="Barbería El Estilo"
-            businessEmoji="✂️"
-            accentColor="#0d9488"
-            initialMessage={WELCOME_ASSISTANT}
-            suggestedChips={[
-              '🔴 Quiero cita mañana a las 11am',
-              '📅 ¿Qué horarios tienen disponibles?',
-              '💈 ¿Qué servicios ofrecen?',
-              '💰 ¿Cuánto cuesta un corte?',
-            ]}
+            businessName={giroCfg?.nombre ?? 'Barbería El Estilo'}
+            businessEmoji={giroCfg?.emoji ?? '✂️'}
+            accentColor={giroCfg?.acento ?? '#0d9488'}
+            initialMessage={giroCfg?.welcomeMsg ?? '¡Hola! ✂️ Soy tu asistente. Intenta agendar una cita 😊'}
+            suggestedChips={
+              giroCfg
+                ? [
+                    `🔄 Repetir ${giroCfg.clienteRegreso.ultimoServicio}`,
+                    ...giroCfg.chipsCliente.slice(0, 3),
+                  ]
+                : ['Quiero cita mañana', '¿Qué horarios tienen?', '¿Cuánto cuesta?']
+            }
             messages={messages}
             input={input}
             loading={loading}

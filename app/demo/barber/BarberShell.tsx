@@ -12,15 +12,16 @@ import {
   Menu,
   MessageCircle,
   Moon,
+  RefreshCw,
   Scissors,
+  Sparkles,
   Sun,
   Users,
   X,
 } from 'lucide-react';
-import { BarberProvider } from './barber-context';
-
-const ACCENT = '#0d9488';
-const ACCENT_SOFT = 'rgba(13, 148, 136, 0.22)';
+import { BarberProvider, useBarber } from './barber-context';
+import { GIRO_CONFIGS } from './giro-config';
+import GiroSelector from './GiroSelector';
 
 const NAV = [
   { href: '/demo/barber', label: 'Dashboard', icon: LayoutDashboard },
@@ -44,20 +45,40 @@ const TITLE_MAP: Record<string, string> = {
 
 function ShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { giro, setGiro } = useBarber();
   const [open, setOpen] = useState(false);
   const [light, setLight] = useState(false);
   const sectionTitle = TITLE_MAP[pathname] ?? 'Barbería';
+
+  const cfg = giro ? GIRO_CONFIGS[giro] : null;
+  const ACCENT = cfg?.acento ?? '#0d9488';
+  const ACCENT_SOFT = cfg?.acentoSoft ?? 'rgba(13,148,136,0.22)';
+  const isNail = giro === 'nail';
+
+  // Sync light/dark with giro default when first selected
+  useEffect(() => {
+    if (cfg) setLight(!cfg.temaOscuro);
+  }, [giro]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', !light);
     return () => document.documentElement.classList.remove('dark');
   }, [light]);
 
+  // Show giro selector until a giro is chosen
+  if (!giro) {
+    return <GiroSelector onSelect={(g) => { setGiro(g); }} />;
+  }
+
   const bg = light ? 'bg-zinc-100 text-zinc-900' : 'bg-[#0a0f1a] text-white';
   const sidebarBg = light ? 'bg-white border-zinc-200' : 'bg-[#0a0f1a] border-white/10';
   const muted = light ? 'text-zinc-500' : 'text-slate-500';
   const navInactive = light ? 'text-zinc-600 hover:bg-zinc-100' : 'text-slate-400 hover:bg-white/5 hover:text-white';
   const headerBg = light ? 'bg-white/90 border-zinc-200' : 'bg-[#0a0f1a]/95 border-white/10';
+  const LogoIcon = isNail ? Sparkles : Scissors;
+  const staffLabel = isNail ? 'Nail Artist' : 'Barbero';
+  const ownerInitial = isNail ? 'S' : 'C';
+  const ownerName = isNail ? 'Sofia' : 'Carlos';
 
   return (
     <div className={`min-h-screen flex transition-colors ${bg}`}>
@@ -88,16 +109,16 @@ function ShellInner({ children }: { children: React.ReactNode }) {
               className="w-10 h-10 rounded-xl flex items-center justify-center border"
               style={{ background: ACCENT_SOFT, borderColor: `${ACCENT}55` }}
             >
-              <Scissors className="w-6 h-6" style={{ color: ACCENT }} />
+              <LogoIcon className="w-6 h-6" style={{ color: ACCENT }} />
             </div>
             <div>
-              <p className="font-semibold text-sm leading-tight">Agentia Barbería</p>
-              <p className={`text-xs ${muted}`}>Barbería El Estilo</p>
+              <p className="font-semibold text-sm leading-tight">{isNail ? 'Agentia Nail' : 'Agentia Barbería'}</p>
+              <p className={`text-xs ${muted}`}>{cfg?.nombre}</p>
             </div>
           </div>
           <button
             type="button"
-            className="lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
+            className={`lg:hidden p-2 rounded-lg ${light ? 'hover:bg-zinc-100' : 'hover:bg-white/10'}`}
             onClick={() => setOpen(false)}
             aria-label="Cerrar"
           >
@@ -117,11 +138,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   active ? 'text-white shadow-lg' : navInactive
                 }`}
-                style={
-                  active
-                    ? { background: ACCENT, boxShadow: `0 8px 24px rgba(13,148,136,0.35)` }
-                    : undefined
-                }
+                style={active ? { background: ACCENT, boxShadow: `0 8px 24px ${ACCENT}55` } : undefined}
               >
                 <Icon className="w-5 h-5 shrink-0 opacity-90" />
                 {label}
@@ -130,17 +147,33 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
+        {/* Cambiar giro button */}
+        <div className={`px-3 pb-2 border-t ${light ? 'border-zinc-200' : 'border-white/10'} pt-2`}>
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== 'undefined') localStorage.removeItem('barber-giro');
+              setGiro('barberia' as never); // trigger re-render; context will show selector
+              // Force null by removing and navigating
+              window.location.reload();
+            }}
+            className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs transition-colors ${navInactive}`}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Cambiar giro ({isNail ? '💅→✂️' : '✂️→💅'})
+          </button>
+        </div>
+
         <div className={`p-4 border-t ${light ? 'border-zinc-200' : 'border-white/10'} flex items-center gap-3`}>
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold border shrink-0"
             style={{ background: ACCENT_SOFT, borderColor: `${ACCENT}66` }}
           >
-            C
+            {ownerInitial}
           </div>
           <p className={`text-sm truncate ${light ? 'text-zinc-700' : 'text-slate-300'}`}>
-            <span className="font-medium">Carlos</span>
-            <span className={muted}> · </span>
-            <span className={muted}>Barbero</span>
+            <span className="font-medium">{ownerName}</span>
+            <span className={muted}> · {staffLabel}</span>
           </p>
         </div>
       </aside>
@@ -162,7 +195,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             className={`p-2 rounded-lg ${light ? 'hover:bg-zinc-100' : 'hover:bg-white/10'}`}
             aria-label={light ? 'Modo oscuro' : 'Modo claro'}
           >
-            {light ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5 text-teal-300" />}
+            {light ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" style={{ color: ACCENT }} />}
           </button>
           <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-500 text-white shrink-0">DEMO</span>
         </header>
