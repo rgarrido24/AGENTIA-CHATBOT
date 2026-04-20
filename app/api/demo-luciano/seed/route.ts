@@ -1,17 +1,69 @@
 import { NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 
+// Córdoba, Argentina — +54 9 351 XXX-XXXX
+// wa.me format: 5493516XXXXXX (54 + 9 + 351 + number)
 const MOCK_LEADS = [
-  { nombre: 'Carlos Mendoza',     telefono: '5215512345678', correo: 'carlos.mendoza@gmail.com',   utm_campaign: 'Barberías CDMX — Leads Q2' },
-  { nombre: 'Ana Sofía Reyes',    telefono: '5215587654321', correo: 'anasofia.reyes@hotmail.com', utm_campaign: 'Spas & Estéticas GDL' },
-  { nombre: 'Roberto Villarreal', telefono: '5215533221144', correo: 'roberto.v@gmail.com',        utm_campaign: 'Barberías CDMX — Leads Q2' },
-  { nombre: 'Fernanda Castro',    telefono: '5215544332211', correo: 'fcastro@outlook.com',        utm_campaign: 'Restaurantes MTY Retargeting' },
-  { nombre: 'Miguel Ángel Torres',telefono: '5215566778899', correo: 'ma.torres@gmail.com',        utm_campaign: 'Talleres Mecánicos — Norte' },
-  { nombre: 'Valeria Guzmán',     telefono: '5215511223344', correo: 'valeria.guzman@gmail.com',   utm_campaign: 'Spas & Estéticas GDL' },
-  { nombre: 'Jorge Hernández',    telefono: '5215599887766', correo: 'jhernandez@protonmail.com',  utm_campaign: 'Dentistas CDMX — Awareness' },
-  { nombre: 'Luisa Ramírez',      telefono: '5215577665544', correo: 'luisa.ramirez@gmail.com',    utm_campaign: 'Barberías CDMX — Leads Q2' },
-  { nombre: 'Diego Morales',      telefono: '5215522334455', correo: 'dmorales@gmail.com',         utm_campaign: 'Restaurantes MTY Retargeting' },
-  { nombre: 'Paola Jiménez',      telefono: '5215588990011', correo: 'paola.jimenez@hotmail.com',  utm_campaign: 'Nutriólogos — Intereses Salud' },
+  {
+    nombre: 'Facundo González',
+    telefono: '5493513507812',
+    correo: 'facundo.gonzalez@gmail.com',
+    utm_campaign: 'FB_LeadAds_Inmuebles_NuevaCordoba',
+  },
+  {
+    nombre: 'Julieta Martínez',
+    telefono: '5493516234891',
+    correo: 'julieta.martinez@hotmail.com',
+    utm_campaign: 'IG_Promo_Estetica_Cerro',
+  },
+  {
+    nombre: 'Lucas Rossi',
+    telefono: '5493515748203',
+    correo: 'lucas.rossi@gmail.com',
+    utm_campaign: 'FB_Ventas_Concesionaria_Cba',
+  },
+  {
+    nombre: 'Valentina Ferreyra',
+    telefono: '5493513901456',
+    correo: 'vale.ferreyra@gmail.com',
+    utm_campaign: 'IG_LeadAds_Odontologia_Alberdi',
+  },
+  {
+    nombre: 'Matías Herrera',
+    telefono: '5493516582047',
+    correo: 'mati.herrera@outlook.com',
+    utm_campaign: 'Google_Search_Seguros_GeneralPaz',
+  },
+  {
+    nombre: 'Camila Pereyra',
+    telefono: '5493515103678',
+    correo: 'cami.pereyra@gmail.com',
+    utm_campaign: 'IG_Reel_Gym_BrioVerde',
+  },
+  {
+    nombre: 'Tomás Álvarez',
+    telefono: '5493513278934',
+    correo: 'tomas.alvarez@gmail.com',
+    utm_campaign: 'FB_LeadAds_Inmuebles_NuevaCordoba',
+  },
+  {
+    nombre: 'Agustina López',
+    telefono: '5493516845201',
+    correo: 'agus.lopez@hotmail.com',
+    utm_campaign: 'FB_Ventas_Concesionaria_Cba',
+  },
+  {
+    nombre: 'Nicolás Romero',
+    telefono: '5493515491823',
+    correo: 'nico.romero@gmail.com',
+    utm_campaign: 'Google_Display_Abogados_CbaCapital',
+  },
+  {
+    nombre: 'Sofía Díaz',
+    telefono: '5493513764509',
+    correo: 'sofi.diaz@gmail.com',
+    utm_campaign: 'IG_Promo_Estetica_Cerro',
+  },
 ];
 
 export async function POST() {
@@ -28,7 +80,7 @@ export async function POST() {
     const docs = MOCK_LEADS.map((lead, i) => ({
       ...lead,
       isDemo: true,
-      createdAt: new Date(now.getTime() - (MOCK_LEADS.length - i) * 3 * 60 * 1000),
+      createdAt: new Date(now.getTime() - (MOCK_LEADS.length - i) * 4 * 60 * 1000),
     }));
 
     const result = await coll.insertMany(docs);
@@ -36,9 +88,6 @@ export async function POST() {
     return NextResponse.json({ ok: true, inserted: result.insertedCount });
   } catch (err) {
     console.error('[demo-luciano/seed] ERROR:', err);
-    return NextResponse.json(
-      { ok: false, error: String(err) },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
   }
 }

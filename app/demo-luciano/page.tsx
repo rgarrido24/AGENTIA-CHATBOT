@@ -20,9 +20,23 @@ type Lead = {
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+// Argentine numbers stored as 549351XXXXXXX — wa.me uses that directly
 function waUrl(telefono: string) {
   const digits = telefono.replace(/\D/g, '');
   return `https://wa.me/${digits}`;
+}
+
+// Display as +54 9 351 XXX-XXXX for Argentine Córdoba numbers
+function formatPhone(telefono: string) {
+  const d = telefono.replace(/\D/g, '');
+  // 549351XXXXXXX → +54 9 351 XXX-XXXX
+  if (d.startsWith('5493') && d.length === 13) {
+    const area = d.slice(4, 7);   // 351
+    const part1 = d.slice(7, 10); // XXX
+    const part2 = d.slice(10);    // XXXX
+    return `+54 9 ${area} ${part1}-${part2}`;
+  }
+  return `+${d}`;
 }
 
 function timeAgo(iso: string) {
@@ -34,12 +48,14 @@ function timeAgo(iso: string) {
 }
 
 const CAMPAIGN_COLORS: Record<string, string> = {
-  'Barberías CDMX — Leads Q2':       '#22c55e',
-  'Spas & Estéticas GDL':             '#a855f7',
-  'Restaurantes MTY Retargeting':     '#f97316',
-  'Dentistas CDMX — Awareness':       '#0ea5e9',
-  'Nutriólogos — Intereses Salud':    '#84cc16',
-  'Talleres Mecánicos — Norte':       '#f59e0b',
+  'FB_LeadAds_Inmuebles_NuevaCordoba':  '#22c55e',
+  'IG_Promo_Estetica_Cerro':            '#a855f7',
+  'FB_Ventas_Concesionaria_Cba':        '#f97316',
+  'IG_LeadAds_Odontologia_Alberdi':     '#0ea5e9',
+  'Google_Search_Seguros_GeneralPaz':   '#f59e0b',
+  'IG_Reel_Gym_BrioVerde':              '#84cc16',
+  'Google_Display_Abogados_CbaCapital': '#ef4444',
+  'Campaña Test Córdoba':               '#38bdf8',
 };
 
 function campaignColor(c: string) {
@@ -94,7 +110,7 @@ function LeadCard({ lead, isNew }: { lead: Lead; isNew: boolean }) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-white font-bold text-base leading-tight truncate">{lead.nombre}</p>
-        <p className="text-slate-400 text-xs truncate">{lead.correo}</p>
+        <p className="text-slate-400 text-xs truncate">{formatPhone(lead.telefono)} · {lead.correo}</p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           <span
             className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
@@ -252,7 +268,7 @@ export default function DemoLucianoPage() {
             />
             <div className="text-left">
               <p className="text-white font-bold text-sm leading-tight">Agentia</p>
-              <p className="text-slate-500 text-[11px]">Panel de Leads</p>
+              <p className="text-slate-500 text-[11px]">Córdoba, Argentina</p>
             </div>
           </button>
 
