@@ -11,7 +11,6 @@ export async function GET() {
       .limit(50)
       .toArray();
 
-    console.log('[demo-luciano/leads] GET OK, count:', leads.length);
     return NextResponse.json({
       ok: true,
       leads: leads.map((l) => ({
@@ -20,6 +19,7 @@ export async function GET() {
         telefono: l.telefono,
         correo: l.correo,
         utm_campaign: l.utm_campaign,
+        estado: l.estado ?? 'nuevo',
         createdAt: l.createdAt,
       })),
     });
