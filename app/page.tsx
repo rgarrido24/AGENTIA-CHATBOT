@@ -4,7 +4,18 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import {
+  Apple,
+  Dog,
+  Scissors,
+  Send,
+  Shield,
+  Sparkles,
+  Stethoscope,
+  UtensilsCrossed,
+  Wrench,
+  Zap,
+} from 'lucide-react';
 import { DemoShowcase } from '@/components/DemoShowcase';
 
 // ─── Animated Counter ─────────────────────────────────────────────────────────
@@ -76,7 +87,17 @@ const STATS = [
   { value: 45000, prefix: '+',  suffix: '',  label: 'Chats procesados' },
 ];
 
-const HERO_DEMO_CHIPS = ['✂️ Barbería', '🍔 Restaurante', '🦷 Dental', '🔧 Taller', '🥗 Nutrición', '💆 Spa'];
+const LUCIDE_INDUSTRIAS = [
+  { Icon: Scissors,        label: 'Barberías' },
+  { Icon: UtensilsCrossed, label: 'Restaurantes' },
+  { Icon: Sparkles,        label: 'Spas' },
+  { Icon: Apple,           label: 'Nutrición' },
+  { Icon: Shield,          label: 'Dentistas' },
+  { Icon: Wrench,          label: 'Talleres' },
+  { Icon: Zap,             label: 'Telecomunicaciones' },
+  { Icon: Dog,             label: 'Grooming' },
+  { Icon: Stethoscope,     label: 'Médicos' },
+] as const;
 
 const TESTIMONIOS = [
   {
@@ -148,6 +169,143 @@ const INDUSTRIAS = [
   { emoji: '🎓', label: 'Instituciones Educativas' },
 ];
 
+// ─── Animated Chat Demo (Hero right column) ───────────────────────────────────
+const CHAT_MSGS: { role: 'bot' | 'user'; text: string; buttons?: string[] }[] = [
+  { role: 'bot',  text: 'Hola 👋 Soy el asistente de la barbería. ¿En qué te ayudo?' },
+  { role: 'user', text: 'Quiero agendar un corte' },
+  { role: 'bot',  text: '¡Perfecto Carlos! 🗓️ Tengo disponibilidad:', buttons: ['Hoy — 4:00 PM con Fernando', 'Mañana — 11:00 AM con Sofía'] },
+  { role: 'user', text: 'Sí, el de hoy a las 4 🙌' },
+  { role: 'bot',  text: '✅ ¡Listo Carlos! Cita confirmada para hoy 4:00 PM con Fernando. ¡Te esperamos!' },
+];
+
+function AnimatedChatDemo() {
+  const [visible, setVisible] = useState(0);
+  const [typing, setTyping] = useState(false);
+  const [cycleKey, setCycleKey] = useState(0);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setVisible(0);
+    setTyping(false);
+    const T = (fn: () => void, ms: number) => setTimeout(fn, ms);
+    const ts = [
+      T(() => setTyping(true), 500),
+      T(() => { setTyping(false); setVisible(1); }, 1500),
+      T(() => setVisible(2), 2700),
+      T(() => setTyping(true), 3200),
+      T(() => { setTyping(false); setVisible(3); }, 4300),
+      T(() => setVisible(4), 5600),
+      T(() => setTyping(true), 6100),
+      T(() => { setTyping(false); setVisible(5); }, 7200),
+      T(() => setCycleKey((k) => k + 1), 11000),
+    ];
+    return () => ts.forEach(clearTimeout);
+  }, [cycleKey]);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [visible, typing]);
+
+  return (
+    <div
+      className="w-full max-w-[320px] rounded-3xl overflow-hidden flex flex-col"
+      style={{
+        background: '#000',
+        border: '1px solid rgba(34,197,94,0.35)',
+        boxShadow: '0 0 50px rgba(34,197,94,0.18), 0 20px 60px rgba(0,0,0,0.6)',
+        height: '520px',
+      }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.9)' }}
+      >
+        <div
+          className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden"
+          style={{ background: '#000', border: '1.5px solid #22c55e' }}
+        >
+          <Image src="/logo-agentia-2026.png" alt="Agentia" width={28} height={28} className="rounded-full object-contain" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-sm font-semibold leading-tight">Barbería Demo</p>
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-[10px] text-green-400">en línea</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5" style={{ background: '#0b141a' }}>
+        {CHAT_MSGS.slice(0, visible).map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className="max-w-[88%]">
+              <div
+                className="rounded-2xl px-3 py-2 text-xs leading-relaxed"
+                style={
+                  m.role === 'user'
+                    ? { background: '#22c55e', color: '#fff', borderRadius: '1rem 1rem 0.25rem 1rem' }
+                    : { background: '#202c33', color: '#e2e8f0', borderRadius: '1rem 1rem 1rem 0.25rem' }
+                }
+              >
+                {m.text}
+              </div>
+              {m.buttons && (
+                <div className="mt-1.5 space-y-1">
+                  {m.buttons.map((b) => (
+                    <div
+                      key={b}
+                      className="rounded-lg px-3 py-1.5 text-[10px] text-center"
+                      style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)', color: '#4ade80' }}
+                    >
+                      {b}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+        {typing && (
+          <div className="flex justify-start">
+            <div
+              className="rounded-2xl px-4 py-2.5 flex items-center gap-1"
+              style={{ background: '#202c33', borderRadius: '1rem 1rem 1rem 0.25rem' }}
+            >
+              {[0, 1, 2].map((d) => (
+                <span
+                  key={d}
+                  className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce"
+                  style={{ animationDelay: `${d * 160}ms` }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+
+      {/* Input bar */}
+      <div
+        className="flex items-center gap-2 px-3 py-2.5 flex-shrink-0"
+        style={{ background: '#0b141a', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        <div
+          className="flex-1 rounded-full px-4 py-2 text-[11px] text-slate-500"
+          style={{ background: '#2a3942' }}
+        >
+          Escribe un mensaje…
+        </div>
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: '#22c55e' }}
+        >
+          <Send className="w-3.5 h-3.5 text-white" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function initials(name: string) {
   return name
     .split(' ')
@@ -217,52 +375,90 @@ export default function LandingPage() {
           </header>
 
           {/* ── Hero ────────────────────────────────────────────────────── */}
-          <section className="mb-20">
-            <div
-              className="inline-flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full mb-6"
-              style={{
-                background: 'rgba(13,148,136,0.1)',
-                border: '1px solid rgba(13,148,136,0.25)',
-                color: '#5eead4',
-              }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-              Impulsado por Gemini 2.5 Flash
-            </div>
-            <h1 className="text-4xl sm:text-6xl font-extrabold mb-5 leading-tight tracking-tight">
-              Automatización inteligente
-              <br />
-              <span
-                style={{
-                  background: 'linear-gradient(90deg, #5eead4, #0d9488, #3b82f6)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
+          <section className="mb-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left column */}
+            <div>
+              {/* Badge */}
+              <div
+                className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-6"
+                style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#4ade80' }}
               >
-                para tu negocio
-              </span>
-            </h1>
-            <p className="text-slate-400 text-lg max-w-xl mb-6 leading-relaxed">
-              Chatbots con IA, CRM integrado y flujos de venta automatizados.
-              Atención 24/7 sin aumentar tu equipo.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3 mt-6">
-              {HERO_DEMO_CHIPS.map((demo) => (
-                <span
-                  key={demo}
-                  className="animate-pulse rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-400"
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                IA activa 24/7
+              </div>
+
+              {/* H1 */}
+              <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold mb-5 leading-tight tracking-tight text-white">
+                Tu negocio
+                <br />
+                <span style={{ color: '#22c55e' }}>automatizado</span>
+                <br />
+                en WhatsApp
+              </h1>
+
+              {/* Subtitle */}
+              <p className="text-slate-400 text-lg max-w-lg mb-8 leading-relaxed">
+                Chatbots con IA que agendan, cobran y fidelizan clientes — sin que tú hagas nada.
+              </p>
+
+              {/* Buttons */}
+              <div className="flex flex-wrap gap-3 mb-10">
+                <a
+                  href="#demos"
+                  className="px-6 py-3 rounded-xl font-bold text-sm text-white transition-opacity hover:opacity-90"
+                  style={{ background: '#22c55e' }}
                 >
-                  {demo}
-                </span>
+                  Ver demos en vivo
+                </a>
+                <a
+                  href="https://wa.me/529998080265"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 rounded-xl font-bold text-sm text-white transition-opacity hover:opacity-80"
+                  style={{ border: '1.5px solid rgba(255,255,255,0.28)', background: 'transparent' }}
+                >
+                  Ver precios
+                </a>
+              </div>
+
+              {/* Metrics */}
+              <div className="flex flex-wrap gap-6">
+                {[
+                  { value: '9+', label: 'industrias' },
+                  { value: 'desde $399', label: 'por mes' },
+                  { value: '7 días', label: 'implementación' },
+                ].map((m) => (
+                  <div key={m.value} className="flex flex-col">
+                    <span className="text-xl font-extrabold text-white">{m.value}</span>
+                    <span className="text-xs text-slate-500">{m.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right column: animated phone */}
+            <div className="flex justify-center lg:justify-end">
+              <AnimatedChatDemo />
+            </div>
+          </section>
+
+          {/* ── Industry chips (Lucide icons) ────────────────────────────── */}
+          <section className="mb-16">
+            <div
+              className="rounded-2xl px-6 py-5 flex flex-wrap justify-center gap-3"
+              style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}
+            >
+              {LUCIDE_INDUSTRIAS.map(({ Icon, label }) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-slate-400 transition-colors hover:text-white"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}
+                >
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#22c55e' }} />
+                  {label}
+                </div>
               ))}
             </div>
-            <Link
-              href="/login?from=/dashboard"
-              className="mt-10 inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-base font-bold transition-all duration-300 btn-cta"
-            >
-              Acceso Clientes
-              <ArrowRight className="w-5 h-5" />
-            </Link>
           </section>
 
           {/* ── BLOQUE A — ESTADÍSTICAS ANIMADAS ────────────────────────── */}
@@ -299,7 +495,7 @@ export default function LandingPage() {
           </section>
 
           {/* ── Portafolio de Demos ──────────────────────────────────────── */}
-          <section className="mb-24">
+          <section id="demos" className="mb-24">
             <h2 className="text-2xl font-bold mb-2 tracking-wide">Portafolio de Demos</h2>
             <p className="text-slate-400 text-sm mb-8">Explora casos de uso reales con IA conversacional</p>
             <DemoShowcase />
