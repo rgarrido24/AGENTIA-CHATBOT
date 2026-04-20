@@ -5,6 +5,14 @@ const nextConfig = {
   },
   transpilePackages: ['lucide-react'],
 
+  // Fix for EISDIR/readlink error on Windows with Next.js 14 + webpack cache
+  webpack: (config) => {
+    config.resolve.symlinks = false;
+    // Disable persistent filesystem cache (triggers readlink on Windows NTFS)
+    config.cache = { type: 'memory' };
+    return config;
+  },
+
   async headers() {
     return [
       {
