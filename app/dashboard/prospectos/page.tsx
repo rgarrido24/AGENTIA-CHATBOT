@@ -43,6 +43,11 @@ type Prospecto = {
   notas: string;
   trackToken: string;
   createdAt: string | null;
+  // Facebook Lead Ads
+  source?: string;
+  source_meta?: boolean;
+  campana?: string;
+  adset?: string;
 };
 
 type Stats = {
@@ -103,6 +108,19 @@ const GIRO_EMOJI: Record<string, string> = {
 
 function giroEmoji(giro: string): string {
   return GIRO_EMOJI[giro] ?? '📋';
+}
+
+function FuenteBadge({ source, sourceMeta }: { source?: string; sourceMeta?: boolean }) {
+  if (sourceMeta && source === 'facebook') {
+    return <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40">FB Ads</span>;
+  }
+  if (sourceMeta && source === 'instagram') {
+    return <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/40">IG Ads</span>;
+  }
+  if (source === 'whatsapp' || source === undefined) {
+    return <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/40">WhatsApp</span>;
+  }
+  return <span className="inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-400 border border-slate-500/40">Manual</span>;
 }
 
 function fmtDate(d: string | null) {
@@ -229,6 +247,7 @@ export default function ProspectosPage() {
   const [pipelineSelected, setPipelineSelected] = useState<ProspectoPipeline>('Agentia');
   const [filterGiro, setFilterGiro] = useState<string>('');
   const [filterCanal, setFilterCanal] = useState<string>('');
+  const [filterFuente, setFilterFuente] = useState<string>('');
   const [currentVendedor, setCurrentVendedor] = useState<string>(VENDEDORES[0]);
 
   // Modals
@@ -276,6 +295,7 @@ export default function ProspectosPage() {
     if (filterVendedor) params.set('vendedor', filterVendedor);
     if (filterGiro) params.set('giro', filterGiro);
     if (filterCanal) params.set('canalOrigen', filterCanal);
+    if (filterFuente) params.set('fuente', filterFuente);
     if (search) params.set('search', search);
     try {
       const res = await fetch(`/api/prospectos?${params}`);
@@ -290,7 +310,7 @@ export default function ProspectosPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, filterLote, filterVendedor, filterGiro, filterCanal, search, pipelineSelected]);
+  }, [filterStatus, filterLote, filterVendedor, filterGiro, filterCanal, filterFuente, search, pipelineSelected]);
 
   useEffect(() => {
     fetchProspectos();
@@ -681,6 +701,17 @@ export default function ProspectosPage() {
             </option>
           ))}
         </select>
+        <select
+          value={filterFuente}
+          onChange={(e) => setFilterFuente(e.target.value)}
+          className="bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm"
+        >
+          <option value="">Todas las fuentes</option>
+          <option value="fb_ads">FB Ads</option>
+          <option value="ig_ads">IG Ads</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="manual">Manual</option>
+        </select>
 
         {selected.size > 0 && (
           <>
@@ -720,14 +751,16 @@ export default function ProspectosPage() {
               <th className="py-3 px-3 text-center text-slate-400 font-medium hidden md:table-cell">Demo</th>
               <th className="py-3 px-3 text-left text-slate-400 font-medium hidden xl:table-cell">Contactado</th>
               <th className="py-3 px-3 text-left text-slate-400 font-medium hidden xl:table-cell">Notas</th>
+              <th className="py-3 px-3 text-left text-slate-400 font-medium hidden lg:table-cell">Fuente</th>
+              <th className="py-3 px-3 text-left text-slate-400 font-medium hidden 2xl:table-cell">Campaña</th>
               <th className="py-3 px-3 text-slate-400 font-medium">Acc.</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={13} className="py-12 text-center text-slate-500">Cargando...</td></tr>
+              <tr><td colSpan={15} className="py-12 text-center text-slate-500">Cargando...</td></tr>
             ) : prospectos.length === 0 ? (
-              <tr><td colSpan={13} className="py-12 text-center text-slate-500">
+              <tr><td colSpan={15} className="py-12 text-center text-slate-500">
                 No hay prospectos. Importa tu lista con el botón <strong>Importar CSV</strong>.
               </td></tr>
             ) : prospectos.map((p) => {
@@ -785,6 +818,14 @@ export default function ProspectosPage() {
                   <td className="py-2.5 px-3 hidden xl:table-cell">
                     <p className="text-xs text-slate-500 max-w-[160px] truncate" title={p.notas}>{p.notas || '—'}</p>
                   </td>
+                  <td className="py-2.5 px-3 hidden lg:table-cell">
+                    <FuenteBadge source={p.source} sourceMeta={p.source_meta} />
+                  </td>
+                  <td className="py-2.5 px-3 hidden 2xl:table-cell">
+                    {p.campana ? (
+                      <span className="text-xs text-slate-400 max-w-[140px] truncate block" title={p.campana}>{p.campana}</span>
+                    ) : <span className="text-slate-600 text-xs">—</span>}
+                  </td>
                   <td className="py-2.5 px-3">
                     <div className="flex items-center gap-1">
                       <button onClick={() => openEdit(p)} className="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition" title="Editar">
@@ -794,6 +835,17 @@ export default function ProspectosPage() {
                         className="p-1.5 rounded hover:bg-emerald-600/20 text-slate-400 hover:text-emerald-400 transition" title="Enviar mensaje">
                         <MessageSquare className="w-3.5 h-3.5" />
                       </button>
+                      {p.telefono && (
+                        <a
+                          href={`https://wa.me/${p.telefono.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded hover:bg-green-600/20 text-slate-400 hover:text-green-400 transition"
+                          title="Contactar por WhatsApp"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                        </a>
+                      )}
                       <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded hover:bg-red-600/20 text-slate-600 hover:text-red-400 transition" title="Eliminar">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
