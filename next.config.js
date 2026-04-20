@@ -4,6 +4,43 @@ const nextConfig = {
     serverComponentsExternalPackages: ['mongodb', 'qrcode', 'pdf-parse', 'ai', '@ai-sdk/google'],
   },
   transpilePackages: ['lucide-react'],
+
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          // Prevent clickjacking
+          { key: 'X-Frame-Options', value: 'DENY' },
+          // Prevent MIME sniffing
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // Minimal referrer information
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // Disable browser features not needed
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          // HSTS — only applied by browsers over HTTPS
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          // Content Security Policy
+          // unsafe-inline needed for Tailwind inline styles and Next.js hydration
+          // unsafe-eval needed for Next.js dynamic imports in some builds
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "connect-src 'self' https://generativelanguage.googleapis.com",
+              "font-src 'self' data:",
+              "frame-ancestors 'none'",
+              "object-src 'none'",
+              "base-uri 'self'",
+            ].join('; '),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
