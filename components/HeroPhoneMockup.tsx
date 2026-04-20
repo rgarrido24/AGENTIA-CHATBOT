@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { Camera, Leaf, Scissors, Send, Shield, Sparkles, UtensilsCrossed, Waves } from 'lucide-react';
@@ -290,15 +290,17 @@ function ChatItemView({ item, accent }: { item: DemoItem; accent: string }) {
 }
 
 function MatrixParticles() {
-  const particles = useRef(
-    Array.from({ length: 18 }, (_, i) => ({
-      id: i,
-      char: '01アカサタナハマヤラ01'.charAt(i % 13),
-      left: `${((i / 18) * 100 + (i % 3) * 2.5).toFixed(1)}%`,
-      delay: `${(i * 0.07).toFixed(2)}s`,
-      duration: `${(0.7 + (i % 5) * 0.12).toFixed(2)}s`,
-    }))
-  ).current;
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 18 }, (_, i) => ({
+        id: i,
+        char: '01アカサタナハマヤラ01'.charAt(i % 13),
+        left: `${((i / 18) * 100 + (i % 3) * 2.5).toFixed(1)}%`,
+        delay: `${(i * 0.07).toFixed(2)}s`,
+        duration: `${(0.7 + (i % 5) * 0.12).toFixed(2)}s`,
+      })),
+    []
+  );
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -330,7 +332,6 @@ export function HeroPhoneMockup() {
   const [typing, setTyping] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [showLabel, setShowLabel] = useState(false);
-  const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const demo = DEMOS[demoIdx];
@@ -369,10 +370,6 @@ export function HeroPhoneMockup() {
 
     return () => timers.forEach(clearTimeout);
   }, [demoIdx]);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [visibleCount, typing]);
 
   const demo = DEMOS[demoIdx];
   const nextDemo = DEMOS[(demoIdx + 1) % DEMOS.length];
@@ -426,14 +423,40 @@ export function HeroPhoneMockup() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -32, opacity: 0 }}
               transition={{ duration: 0.4, ease: 'easeInOut' }}
-              className="absolute inset-0 overflow-y-auto px-3 py-3 space-y-2"
-              style={{ background: '#0b141a' }}
+              className="absolute inset-0"
+              style={{
+                background: '#0b141a',
+                display: 'flex',
+                flexDirection: 'column-reverse',
+                overflow: 'hidden',
+                padding: '12px',
+                gap: '8px',
+              }}
             >
-              {demo.items.slice(0, visibleCount).map((item, i) => (
-                <ChatItemView key={i} item={item} accent={demo.accent} />
-              ))}
-              {typing && <TypingIndicator />}
-              <div ref={endRef} />
+              {/* column-reverse: first child = bottom of visual layout */}
+              {typing && (
+                <motion.div
+                  key="typing"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <TypingIndicator />
+                </motion.div>
+              )}
+              {[...demo.items.slice(0, visibleCount)].reverse().map((item, revIdx) => {
+                const stableKey = visibleCount - 1 - revIdx;
+                return (
+                  <motion.div
+                    key={stableKey}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <ChatItemView item={item} accent={demo.accent} />
+                  </motion.div>
+                );
+              })}
             </motion.div>
           ) : (
             <motion.div
