@@ -119,6 +119,28 @@ export default function BarberPhoneMockup({
             <AnimatePresence initial={false}>
               {messages.map((m, i) => {
                 const isUser = m.role === 'user';
+
+                // Loyalty card: render outside the normal bubble to avoid dark-on-dark
+                if (m.loyaltyCard && !isUser) {
+                  return (
+                    <motion.div
+                      key={`loyalty-${i}`}
+                      variants={bubbleVariants}
+                      initial="initial"
+                      animate="animate"
+                      className="flex justify-start w-full"
+                    >
+                      <div className="w-full px-1">
+                        <LoyaltyCard data={m.loyaltyCard} compact />
+                        <div className={`flex items-center gap-1 mt-1 pl-1 ${styles.bubbleMeta}`}>
+                          <span className={styles.bubbleTime}>{formatMessageTime(m.createdAt)}</span>
+                          <DoubleCheckBlue />
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                }
+
                 return (
                   <motion.div
                     key={`${i}-${m.content.slice(0, 12)}-${m.cita ? 't' : ''}-${m.isLocation ? 'l' : ''}`}
@@ -143,8 +165,7 @@ export default function BarberPhoneMockup({
                       {m.cita ? <TicketReservacion cita={m.cita} /> : null}
                       {m.showGallery ? <GalleryPlaceholder /> : null}
                       {m.isLocation ? <MapPreviewBlock /> : null}
-                      {m.loyaltyCard ? <LoyaltyCard data={m.loyaltyCard} compact /> : null}
-                      {!isUser && (m.content || m.cita || m.showGallery || m.isLocation || m.loyaltyCard) && (
+                      {!isUser && (m.content || m.cita || m.showGallery || m.isLocation) && (
                         <div className={`flex items-center gap-1 mt-1 ${styles.bubbleMeta}`}>
                           <span className={styles.bubbleTime}>{formatMessageTime(m.createdAt)}</span>
                           <DoubleCheckBlue />

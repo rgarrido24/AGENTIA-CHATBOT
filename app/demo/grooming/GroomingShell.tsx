@@ -48,7 +48,7 @@ const TITLE_MAP: Record<string, string> = {
 function ShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [light, setLight] = useState(true);
+  const [light, setLight] = useState(false);
   const sectionTitle = pathname.startsWith('/demo/grooming/mascotas')
     ? 'Mascotas'
     : TITLE_MAP[pathname] ?? 'Grooming';

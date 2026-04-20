@@ -39,10 +39,10 @@ const fmt = (n: number) =>
 
 function statusBadge(s: Cita['status']) {
   const m: Record<Cita['status'], string> = {
-    confirmada: 'bg-violet-500/25 text-violet-200 border-violet-500/40',
-    pendiente: 'bg-amber-500/20 text-amber-200 border-amber-500/40',
-    completada: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-    cancelada: 'bg-slate-600/40 text-slate-400 border-slate-500/40',
+    confirmada: 'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/25 dark:text-violet-300 dark:border-violet-500/40',
+    pendiente: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40',
+    completada: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40',
+    cancelada: 'bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-slate-600/40 dark:text-slate-400 dark:border-slate-500/40',
   };
   const labels: Record<Cita['status'], string> = {
     confirmada: 'Confirmada',
@@ -70,17 +70,17 @@ export default function SpaDashboardPage() {
       {/* Hero: PhoneMockup */}
       <section className="max-w-7xl mx-auto mb-12 flex flex-col lg:flex-row items-center gap-10 px-2">
         <div className="flex-1 space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-purple-400">Demo en vivo · Lumina Spa</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+          <p className="text-xs font-semibold uppercase tracking-widest text-purple-600 dark:text-purple-400">Demo en vivo · Lumina Spa</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white leading-tight">
             Tu asistente de spa<br />
-            <span className="text-purple-400">disponible 24/7</span>
+            <span className="text-purple-600 dark:text-purple-400">disponible 24/7</span>
           </h2>
-          <p className="text-slate-400 text-base max-w-md">
+          <p className="text-zinc-600 dark:text-slate-400 text-base max-w-md">
             Agenda citas, consulta precios y resuelve dudas automáticamente. Prueba el chat en vivo — es el bot real.
           </p>
-          <ul className="space-y-2 text-sm text-slate-300">
+          <ul className="space-y-2 text-sm text-zinc-700 dark:text-slate-300">
             {['Agendamiento paso a paso', 'Catálogo de servicios y precios', 'Respuestas en segundos, 24/7'].map(t => (
-              <li key={t} className="flex items-center gap-2"><span className="text-purple-400">✓</span>{t}</li>
+              <li key={t} className="flex items-center gap-2"><span className="text-purple-600 dark:text-purple-400">✓</span>{t}</li>
             ))}
           </ul>
         </div>
@@ -98,122 +98,122 @@ export default function SpaDashboardPage() {
 
       {/* Dashboard */}
       <div id="panel-admin" className="space-y-8 max-w-7xl mx-auto">
-      <p className="text-slate-500 text-sm">{BRAND_SPA.nombre} — resumen del día</p>
+        <p className="text-zinc-500 dark:text-slate-500 text-sm">{BRAND_SPA.nombre} — resumen del día</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {[
-          { label: 'Citas hoy', value: hoy.length, color: 'text-fuchsia-400' },
-          { label: 'Ingresos del día (completadas)', value: ingresos, format: fmt, color: 'text-violet-300' },
-          { label: 'Clientes VIP', value: vip, color: 'text-pink-400' },
-          {
-            label: 'Especialista más solicitada',
-            value: topEspStats?.count ?? 0,
-            sub: topEspStats?.especialista.nombre ?? '—',
-            color: 'text-purple-300',
-          },
-        ].map((k, i) => (
-          <motion.div
-            key={k.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="rounded-xl border border-white/10 bg-white/[0.03] p-5"
-          >
-            <p className="text-slate-500 text-sm">{k.label}</p>
-            <p className={`text-2xl font-bold tabular-nums mt-1 ${k.color}`}>
-              {'format' in k && k.format ? (
-                <AnimatedNumber value={k.value as number} format={k.format} />
-              ) : (
-                <AnimatedNumber value={k.value as number} decimals={0} />
-              )}
-            </p>
-            {'sub' in k && k.sub && <p className="text-xs text-slate-500 mt-1">{k.sub}</p>}
-          </motion.div>
-        ))}
-      </div>
-
-      <div>
-        <h2 className="text-sm font-semibold text-white mb-3">Timeline — citas de hoy</h2>
-        <div className="space-y-2">
-          {ordenadas.map((c) => {
-            const cli = getCliente(c.clienteId);
-            const srv = getServicio(c.servicioId);
-            const esp = getEspecialista(c.especialistaId);
-            return (
-              <div
-                key={c.id}
-                className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
-              >
-                <span className="font-mono text-fuchsia-300 font-bold w-14">{c.hora}</span>
-                <span className="text-white font-medium">{esp?.nombre}</span>
-                <span className="text-slate-500">—</span>
-                <span className="text-slate-300">{srv?.nombre}</span>
-                <span className="text-slate-500">—</span>
-                <span className="text-slate-400">{cli?.nombre}</span>
-                <span className="text-slate-500 text-sm">{c.duracion} min</span>
-                <span className="text-pink-300 text-sm">{fmt(c.precio)}</span>
-                {statusBadge(c.status)}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-sm font-semibold text-white mb-3">Especialistas</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {MOCK_ESPECIALISTAS.map((e) => (
-            <div key={e.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center">
-              <div className="text-4xl mb-2">{e.foto}</div>
-              <p className="font-semibold text-white text-sm">{e.nombre}</p>
-              <p className="text-[11px] mt-1">
-                <span className={e.disponibleAhora ? 'text-emerald-400' : 'text-amber-400'}>
-                  ● {e.disponibleAhora ? 'Disponible' : 'En servicio'}
-                </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {[
+            { label: 'Citas hoy', value: hoy.length, color: 'text-fuchsia-600 dark:text-fuchsia-400' },
+            { label: 'Ingresos del día (completadas)', value: ingresos, format: fmt, color: 'text-violet-600 dark:text-violet-300' },
+            { label: 'Clientes VIP', value: vip, color: 'text-pink-600 dark:text-pink-400' },
+            {
+              label: 'Especialista más solicitada',
+              value: topEspStats?.count ?? 0,
+              sub: topEspStats?.especialista.nombre ?? '—',
+              color: 'text-purple-600 dark:text-purple-300',
+            },
+          ].map((k, i) => (
+            <motion.div
+              key={k.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="rounded-xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03] p-5 shadow-sm dark:shadow-none"
+            >
+              <p className="text-zinc-500 dark:text-slate-500 text-sm">{k.label}</p>
+              <p className={`text-2xl font-bold tabular-nums mt-1 ${k.color}`}>
+                {'format' in k && k.format ? (
+                  <AnimatedNumber value={k.value as number} format={k.format} />
+                ) : (
+                  <AnimatedNumber value={k.value as number} decimals={0} />
+                )}
               </p>
-              <p className="text-xs text-slate-500 mt-1">Turno {e.turno}</p>
-              <p className="text-xs text-fuchsia-300 mt-1">{e.citas_hoy} citas hoy</p>
-            </div>
+              {'sub' in k && k.sub && <p className="text-xs text-zinc-500 dark:text-slate-500 mt-1">{k.sub}</p>}
+            </motion.div>
           ))}
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 h-[300px]">
-          <h3 className="text-sm font-semibold mb-2">Servicios más solicitados</h3>
-          <ResponsiveContainer width="100%" height="85%">
-            <BarChart data={topServ.map((x) => ({ name: x.nombre.slice(0, 18), citas: x.count }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-              <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 9 }} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} />
-              <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)' }} />
-              <Bar dataKey="citas" fill="#9333ea" radius={[4, 4, 0, 0]} name="Citas" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-white mb-3">Timeline — citas de hoy</h2>
+          <div className="space-y-2">
+            {ordenadas.map((c) => {
+              const cli = getCliente(c.clienteId);
+              const srv = getServicio(c.servicioId);
+              const esp = getEspecialista(c.especialistaId);
+              return (
+                <div
+                  key={c.id}
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03] px-4 py-3 shadow-sm dark:shadow-none"
+                >
+                  <span className="font-mono text-fuchsia-600 dark:text-fuchsia-300 font-bold w-14">{c.hora}</span>
+                  <span className="text-zinc-900 dark:text-white font-medium">{esp?.nombre}</span>
+                  <span className="text-zinc-400 dark:text-slate-500">—</span>
+                  <span className="text-zinc-700 dark:text-slate-300">{srv?.nombre}</span>
+                  <span className="text-zinc-400 dark:text-slate-500">—</span>
+                  <span className="text-zinc-600 dark:text-slate-400">{cli?.nombre}</span>
+                  <span className="text-zinc-500 dark:text-slate-500 text-sm">{c.duracion} min</span>
+                  <span className="text-pink-600 dark:text-pink-300 text-sm">{fmt(c.precio)}</span>
+                  {statusBadge(c.status)}
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 h-[300px]">
-          <h3 className="text-sm font-semibold mb-2">Ingresos por categoría (completadas)</h3>
-          <ResponsiveContainer width="100%" height="85%">
-            <PieChart>
-              <Pie
-                data={donut.length ? donut : [{ name: 'N/D', value: 1, fill: '#9333ea' }]}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                innerRadius={45}
-                outerRadius={80}
-              >
-                {(donut.length ? donut : [{ name: 'N/D', value: 1, fill: '#9333ea' }]).map((e, i) => (
-                  <Cell key={i} fill={'fill' in e ? e.fill : '#9333ea'} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v: number) => fmt(v)} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-white mb-3">Especialistas</h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {MOCK_ESPECIALISTAS.map((e) => (
+              <div key={e.id} className="rounded-xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03] p-4 text-center shadow-sm dark:shadow-none">
+                <div className="text-4xl mb-2">{e.foto}</div>
+                <p className="font-semibold text-zinc-900 dark:text-white text-sm">{e.nombre}</p>
+                <p className="text-[11px] mt-1">
+                  <span className={e.disponibleAhora ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
+                    ● {e.disponibleAhora ? 'Disponible' : 'En servicio'}
+                  </span>
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-slate-500 mt-1">Turno {e.turno}</p>
+                <p className="text-xs text-fuchsia-600 dark:text-fuchsia-300 mt-1">{e.citas_hoy} citas hoy</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="rounded-xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03] p-4 h-[300px] shadow-sm dark:shadow-none">
+            <h3 className="text-sm font-semibold text-zinc-800 dark:text-slate-200 mb-2">Servicios más solicitados</h3>
+            <ResponsiveContainer width="100%" height="85%">
+              <BarChart data={topServ.map((x) => ({ name: x.nombre.slice(0, 18), citas: x.count }))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 9 }} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#e2e8f0' }} />
+                <Bar dataKey="citas" fill="#9333ea" radius={[4, 4, 0, 0]} name="Citas" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="rounded-xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03] p-4 h-[300px] shadow-sm dark:shadow-none">
+            <h3 className="text-sm font-semibold text-zinc-800 dark:text-slate-200 mb-2">Ingresos por categoría (completadas)</h3>
+            <ResponsiveContainer width="100%" height="85%">
+              <PieChart>
+                <Pie
+                  data={donut.length ? donut : [{ name: 'N/D', value: 1, fill: '#9333ea' }]}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={80}
+                >
+                  {(donut.length ? donut : [{ name: 'N/D', value: 1, fill: '#9333ea' }]).map((e, i) => (
+                    <Cell key={i} fill={'fill' in e ? e.fill : '#9333ea'} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => fmt(v)} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
     </>
   );

@@ -2,9 +2,22 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { MessageCircle, Send } from 'lucide-react';
+import LoyaltyCard from '@/app/demo/barber/LoyaltyCard';
+import type { LoyaltyCardData } from '@/app/demo/barber/LoyaltyCard';
 
-type ChatMsg = { role: 'user' | 'assistant'; content: string };
+type ChatMsg = { role: 'user' | 'assistant'; content: string; loyaltyCard?: LoyaltyCardData };
 type Mode = 'staff' | 'cliente';
+
+const DEMO_LOYALTY_SPA: LoyaltyCardData = {
+  clienteNombre: 'Sofía Ramírez',
+  clienteId: 'S-0033',
+  negocio: 'Lumina Spa',
+  giro: 'spa',
+  visitas: 350,
+  meta: 500,
+  ultimoServicio: 'Masaje de tejido profundo',
+  recompensaNombre: 'tratamiento facial',
+};
 
 const ACCENT = '#9333ea';
 const PINK = '#ec4899';
@@ -18,10 +31,10 @@ const CHIPS_STAFF = [
 ];
 
 const CHIPS_CLIENTE = [
+  '⭐ Mis puntos de lealtad',
   '¿Qué facial me recomiendan para piel sensible?',
   'Precios de masajes y duración',
   '¿Hacen depilación y cejas el mismo día?',
-  'Quiero agendar manicure y pedicure',
   '¿Tienen promociones mid-week?',
 ];
 
@@ -35,6 +48,17 @@ function ChatInner() {
   const sendMessage = useCallback(
     async (text: string, history: ChatMsg[]) => {
       if (!text.trim()) return;
+
+      // Local intercept: loyalty card
+      if (/mis\s*puntos?|mi\s*tarjeta|lealtad|puntos/i.test(text)) {
+        setMessages((m) => [
+          ...m,
+          { role: 'user', content: text.trim() },
+          { role: 'assistant', content: '', loyaltyCard: DEMO_LOYALTY_SPA },
+        ]);
+        return;
+      }
+
       setLoading(true);
       setMessages((m) => [...m, { role: 'user', content: text.trim() }, { role: 'assistant', content: '' }]);
       try {
@@ -168,27 +192,38 @@ function ChatInner() {
             ))}
           </div>
         )}
-        {messages.map((m, i) => (
-          <div key={`${i}-${m.role}`} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                m.role === 'user'
-                  ? isCliente
-                    ? 'text-white rounded-tr-sm'
-                    : 'text-white'
-                  : isCliente
-                    ? 'bg-[#202c33] text-slate-100 border border-white/5 rounded-tl-sm'
-                    : 'bg-slate-800/90 text-slate-100 border border-white/10'
-              }`}
-              style={m.role === 'user' ? { background: isCliente ? PINK : ACCENT } : undefined}
-            >
-              {m.content ||
-                (loading && i === messages.length - 1 && m.role === 'assistant' && !m.content ? (
-                  <span className="text-slate-400 italic">Escribiendo…</span>
-                ) : null)}
+        {messages.map((m, i) => {
+          if (m.loyaltyCard && m.role === 'assistant') {
+            return (
+              <div key={`${i}-loyalty`} className="flex justify-start">
+                <div className="w-full max-w-[85%]">
+                  <LoyaltyCard data={m.loyaltyCard} compact={false} />
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div key={`${i}-${m.role}`} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                  m.role === 'user'
+                    ? isCliente
+                      ? 'text-white rounded-tr-sm'
+                      : 'text-white'
+                    : isCliente
+                      ? 'bg-[#202c33] text-slate-100 border border-white/5 rounded-tl-sm'
+                      : 'bg-slate-800/90 text-slate-100 border border-white/10'
+                }`}
+                style={m.role === 'user' ? { background: isCliente ? PINK : ACCENT } : undefined}
+              >
+                {m.content ||
+                  (loading && i === messages.length - 1 && m.role === 'assistant' && !m.content ? (
+                    <span className="text-slate-400 italic">Escribiendo…</span>
+                  ) : null)}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={endRef} />
       </div>
 

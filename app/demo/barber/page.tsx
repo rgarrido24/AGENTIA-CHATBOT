@@ -102,6 +102,7 @@ export default function DemoBarberPage() {
 
   const { events, setEvents, paidIds, setPaidIds, lastAddedEventId, setLastAddedEventId, giro } = useBarber();
   const giroCfg = giro ? GIRO_CONFIGS[giro] : null;
+  const isNail = giro === 'nail';
 
   // Build initial messages: returning client recognition + welcome
   const buildInitialMessages = useCallback((): ChatMessage[] => {
@@ -368,7 +369,11 @@ export default function DemoBarberPage() {
 
   return (
     <div className={`${styles.page} flex flex-col w-full min-h-screen overflow-y-auto relative`}>
-      <div className={styles.meshBg} aria-hidden />
+      <div
+        className={styles.meshBg}
+        style={isNail ? { background: 'linear-gradient(165deg, #fff0f7 0%, #fce7f3 35%, #fbcfe8 70%, #fce7f3 100%)' } : undefined}
+        aria-hidden
+      />
 
       <section className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh] px-2 md:px-6 py-12">
         <div className="flex flex-col gap-6">
@@ -377,7 +382,7 @@ export default function DemoBarberPage() {
             <span className="text-green-400 text-sm font-medium">IA activa — Responde en segundos</span>
           </div>
 
-          <h1 className="text-4xl font-bold text-white leading-tight">
+          <h1 className={`text-4xl font-bold leading-tight ${isNail ? 'text-pink-900' : 'text-white'}`}>
             Prueba el asistente de
             <br />
             <span style={{ color: giroCfg?.acento ?? '#0d9488' }}>
@@ -385,7 +390,7 @@ export default function DemoBarberPage() {
             </span>
           </h1>
 
-          <p className="text-slate-400 text-lg">
+          <p className={`text-lg ${isNail ? 'text-zinc-600' : 'text-slate-400'}`}>
             {giroCfg?.id === 'nail'
               ? 'Agenda citas de uñas — el sistema detecta disponibilidad en tiempo real y confirma automáticamente. Pruébalo ahora.'
               : 'Intenta agendar una cita — el sistema detecta horarios ocupados en tiempo real y ofrece alternativas automáticamente.'}
@@ -398,7 +403,7 @@ export default function DemoBarberPage() {
               'La cita aparece en el calendario al instante',
               'Confirmación automática por WhatsApp',
             ].map((item) => (
-              <li key={item} className="flex items-center gap-3 text-slate-300">
+              <li key={item} className={`flex items-center gap-3 ${isNail ? 'text-zinc-700' : 'text-slate-300'}`}>
                 <span className="text-green-400 font-bold">✓</span>
                 {item}
               </li>
@@ -432,7 +437,7 @@ export default function DemoBarberPage() {
               giroCfg
                 ? [
                     `🔄 Repetir ${giroCfg.clienteRegreso.ultimoServicio}`,
-                    ...giroCfg.chipsCliente.slice(0, 3),
+                    ...giroCfg.chipsCliente.slice(0, 4),
                   ]
                 : ['Quiero cita mañana', '¿Qué horarios tienen?', '¿Cuánto cuesta?']
             }
@@ -488,9 +493,9 @@ export default function DemoBarberPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="rounded-xl border border-white/10 bg-white/[0.03] p-5"
+            className={`rounded-xl border p-5 ${isNail ? 'border-pink-200 bg-white shadow-sm' : 'border-white/10 bg-white/[0.03]'}`}
           >
-            <p className="text-slate-500 text-sm">{k.label}</p>
+            <p className={`text-sm ${isNail ? 'text-zinc-500' : 'text-slate-500'}`}>{k.label}</p>
             <p className={`text-2xl font-bold tabular-nums mt-1 ${k.color}`}>{k.node}</p>
           </motion.div>
         ))}

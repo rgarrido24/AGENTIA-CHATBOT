@@ -2,9 +2,22 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { MessageCircle, Send } from 'lucide-react';
+import LoyaltyCard from '@/app/demo/barber/LoyaltyCard';
+import type { LoyaltyCardData } from '@/app/demo/barber/LoyaltyCard';
 
-type ChatMsg = { role: 'user' | 'assistant'; content: string };
+type ChatMsg = { role: 'user' | 'assistant'; content: string; loyaltyCard?: LoyaltyCardData };
 type Mode = 'staff' | 'cliente';
+
+const DEMO_LOYALTY_REST: LoyaltyCardData = {
+  clienteNombre: 'Juan Torres',
+  clienteId: 'R-0077',
+  negocio: 'La Séptima',
+  giro: 'restaurante',
+  visitas: 7,
+  meta: 10,
+  ultimoServicio: 'Costillas BBQ + margarita',
+  recompensaNombre: 'platillo de temporada',
+};
 
 const CHIPS_STAFF = [
   '¿Cuáles son los productos más vendidos hoy?',
@@ -15,9 +28,9 @@ const CHIPS_STAFF = [
 ];
 
 const CHIPS_CLIENTE = [
+  '⭐ Mis puntos de lealtad',
   '¿Cuál es el menú?',
   '¿Hacen entregas a domicilio?',
-  '¿Cuánto tarda un pedido?',
   'Quiero hacer un pedido',
   '¿Tienen promociones hoy?',
 ];
@@ -32,6 +45,17 @@ function ChatInner() {
   const sendMessage = useCallback(
     async (text: string, history: ChatMsg[]) => {
       if (!text.trim()) return;
+
+      // Local intercept: loyalty card
+      if (/mis\s*puntos?|mi\s*tarjeta|lealtad|puntos/i.test(text)) {
+        setMessages((m) => [
+          ...m,
+          { role: 'user', content: text.trim() },
+          { role: 'assistant', content: '', loyaltyCard: DEMO_LOYALTY_REST },
+        ]);
+        return;
+      }
+
       setLoading(true);
       setMessages((m) => [...m, { role: 'user', content: text.trim() }, { role: 'assistant', content: '' }]);
       try {
@@ -107,25 +131,15 @@ function ChatInner() {
       <div className="flex gap-2 mb-4">
         <button
           type="button"
-          onClick={() => {
-            setMode('staff');
-            setMessages([]);
-          }}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-            mode === 'staff' ? 'bg-red-600 text-white' : 'bg-white/10 text-slate-400'
-          }`}
+          onClick={() => { setMode('staff'); setMessages([]); }}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold ${mode === 'staff' ? 'bg-red-600 text-white' : 'bg-white/10 text-slate-400'}`}
         >
           👨‍💼 Modo Staff
         </button>
         <button
           type="button"
-          onClick={() => {
-            setMode('cliente');
-            setMessages([]);
-          }}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-            mode === 'cliente' ? 'bg-emerald-600 text-white' : 'bg-white/10 text-slate-400'
-          }`}
+          onClick={() => { setMode('cliente'); setMessages([]); }}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold ${mode === 'cliente' ? 'bg-emerald-600 text-white' : 'bg-white/10 text-slate-400'}`}
         >
           👤 Modo Cliente
         </button>
@@ -161,29 +175,37 @@ function ChatInner() {
             ))}
           </div>
         )}
-        {messages.map((m, i) => (
-          <div
-            key={`${i}-${m.role}`}
-            className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                m.role === 'user'
-                  ? isWa
-                    ? 'bg-emerald-700 text-white rounded-tr-sm'
-                    : 'bg-red-600 text-white'
-                  : isWa
-                    ? 'bg-[#202c33] text-slate-100 border border-white/5 rounded-tl-sm'
-                    : 'bg-slate-800/90 text-slate-100 border border-white/10'
-              }`}
-            >
-              {m.content ||
-                (loading && i === messages.length - 1 && m.role === 'assistant' && !m.content ? (
-                  <span className="text-slate-400 italic">Escribiendo…</span>
-                ) : null)}
+        {messages.map((m, i) => {
+          if (m.loyaltyCard && m.role === 'assistant') {
+            return (
+              <div key={`${i}-loyalty`} className="flex justify-start">
+                <div className="w-full max-w-[85%]">
+                  <LoyaltyCard data={m.loyaltyCard} compact={false} />
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div key={`${i}-${m.role}`} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                  m.role === 'user'
+                    ? isWa
+                      ? 'bg-emerald-700 text-white rounded-tr-sm'
+                      : 'bg-red-600 text-white'
+                    : isWa
+                      ? 'bg-[#202c33] text-slate-100 border border-white/5 rounded-tl-sm'
+                      : 'bg-slate-800/90 text-slate-100 border border-white/10'
+                }`}
+              >
+                {m.content ||
+                  (loading && i === messages.length - 1 && m.role === 'assistant' && !m.content ? (
+                    <span className="text-slate-400 italic">Escribiendo…</span>
+                  ) : null)}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={endRef} />
       </div>
 

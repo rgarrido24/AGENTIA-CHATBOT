@@ -2,32 +2,163 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import type { GiroId } from './giro-config';
+
+export type LoyaltyGiro = 'barberia' | 'nail' | 'spa' | 'restaurante' | 'nutricion';
 
 export type LoyaltyCardData = {
   clienteNombre: string;
   clienteId: string;
   negocio: string;
-  giro: GiroId;
+  giro: LoyaltyGiro;
+  /** Visitas/consultas (o monto gastado en el ciclo para spa) */
   visitas: number;
+  /** Meta del ciclo: visitas/consultas necesarias o monto ($) */
   meta: number;
   ultimoServicio: string;
-  recompensaNombre: string; // "corte de cabello" | "manicure"
+  recompensaNombre: string;
 };
 
 type Props = {
   data: LoyaltyCardData;
-  compact?: boolean; // compact=true for phone mockup (smaller)
+  compact?: boolean;
 };
 
-function buildVisitBar(visitas: number, meta: number): { filled: number; empty: number; cycle: number } {
+const THEMES = {
+  barberia: {
+    bg: 'linear-gradient(135deg, #0a0f1a 0%, #0f2020 60%, #0d9488 200%)',
+    border: 'rgba(13,148,136,0.4)',
+    shadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 24px rgba(13,148,136,0.2)',
+    stripe: 'linear-gradient(90deg, #0d9488, #5eead4, #0d9488)',
+    accent: '#0d9488',
+    accentSoft: 'rgba(13,148,136,0.15)',
+    accentSoftBorder: 'rgba(13,148,136,0.3)',
+    textPrimary: '#ffffff',
+    textSecondary: '#94a3b8',
+    textAccentLight: '#5eead4',
+    textMeta: '#475569',
+    qrDark: '#0d9488',
+    qrLight: '#0a0f1a',
+    emoji: '✂️',
+    rewardEmoji: '🎁',
+    fillColor: '#0d9488',
+    emptyColor: 'rgba(255,255,255,0.1)',
+    isDark: true,
+    progressType: 'dots' as const,
+  },
+  nail: {
+    bg: 'linear-gradient(135deg, #fff0f7 0%, #fce7f3 60%, #fbcfe8 100%)',
+    border: 'rgba(236,72,153,0.3)',
+    shadow: '0 8px 24px rgba(236,72,153,0.18)',
+    stripe: 'linear-gradient(90deg, #ec4899, #f9a8d4, #ec4899)',
+    accent: '#ec4899',
+    accentSoft: 'rgba(236,72,153,0.1)',
+    accentSoftBorder: 'rgba(236,72,153,0.25)',
+    textPrimary: '#831843',
+    textSecondary: '#be185d',
+    textAccentLight: '#be185d',
+    textMeta: '#f9a8d4',
+    qrDark: '#be185d',
+    qrLight: '#fce7f3',
+    emoji: '💅',
+    rewardEmoji: '🎀',
+    fillColor: '#ec4899',
+    emptyColor: 'rgba(236,72,153,0.15)',
+    isDark: false,
+    progressType: 'dots' as const,
+  },
+  spa: {
+    bg: 'linear-gradient(135deg, #1a0a2e 0%, #1e0e3a 60%, #7c3aed 200%)',
+    border: 'rgba(124,58,237,0.45)',
+    shadow: '0 8px 32px rgba(0,0,0,0.65), 0 0 28px rgba(124,58,237,0.3)',
+    stripe: 'linear-gradient(90deg, #7c3aed, #c4b5fd, #7c3aed)',
+    accent: '#7c3aed',
+    accentSoft: 'rgba(124,58,237,0.18)',
+    accentSoftBorder: 'rgba(124,58,237,0.4)',
+    textPrimary: '#ffffff',
+    textSecondary: '#a78bfa',
+    textAccentLight: '#c4b5fd',
+    textMeta: '#4c1d95',
+    qrDark: '#a78bfa',
+    qrLight: '#1a0a2e',
+    emoji: '🌸',
+    rewardEmoji: '✨',
+    fillColor: '#8b5cf6',
+    emptyColor: 'rgba(139,92,246,0.2)',
+    isDark: true,
+    progressType: 'bar' as const,
+  },
+  restaurante: {
+    bg: 'linear-gradient(135deg, #1a0600 0%, #2d0f00 60%, #ea580c 200%)',
+    border: 'rgba(234,88,12,0.4)',
+    shadow: '0 8px 32px rgba(0,0,0,0.65), 0 0 24px rgba(234,88,12,0.25)',
+    stripe: 'linear-gradient(90deg, #ea580c, #fbbf24, #ea580c)',
+    accent: '#ea580c',
+    accentSoft: 'rgba(234,88,12,0.15)',
+    accentSoftBorder: 'rgba(234,88,12,0.35)',
+    textPrimary: '#ffffff',
+    textSecondary: '#fb923c',
+    textAccentLight: '#fdba74',
+    textMeta: '#7c2d12',
+    qrDark: '#f97316',
+    qrLight: '#1a0600',
+    emoji: '🍽️',
+    rewardEmoji: '🎁',
+    fillColor: '#f97316',
+    emptyColor: 'rgba(249,115,22,0.15)',
+    isDark: true,
+    progressType: 'dots' as const,
+  },
+  nutricion: {
+    bg: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 60%, #bbf7d0 100%)',
+    border: 'rgba(22,163,74,0.3)',
+    shadow: '0 8px 24px rgba(22,163,74,0.18)',
+    stripe: 'linear-gradient(90deg, #16a34a, #86efac, #16a34a)',
+    accent: '#16a34a',
+    accentSoft: 'rgba(22,163,74,0.12)',
+    accentSoftBorder: 'rgba(22,163,74,0.3)',
+    textPrimary: '#14532d',
+    textSecondary: '#166534',
+    textAccentLight: '#15803d',
+    textMeta: '#86efac',
+    qrDark: '#16a34a',
+    qrLight: '#dcfce7',
+    emoji: '🥗',
+    rewardEmoji: '🌱',
+    fillColor: '#22c55e',
+    emptyColor: 'rgba(34,197,94,0.18)',
+    isDark: false,
+    progressType: 'dots' as const,
+  },
+} satisfies Record<LoyaltyGiro, {
+  bg: string; border: string; shadow: string; stripe: string; accent: string;
+  accentSoft: string; accentSoftBorder: string; textPrimary: string; textSecondary: string;
+  textAccentLight: string; textMeta: string; qrDark: string; qrLight: string;
+  emoji: string; rewardEmoji: string; fillColor: string; emptyColor: string;
+  isDark: boolean; progressType: 'dots' | 'bar';
+}>;
+
+function progressLabel(giro: LoyaltyGiro, visitas: number, meta: number): string {
   const cycle = visitas % meta;
-  return { filled: cycle, empty: meta - cycle, cycle };
+  if (giro === 'spa') return `$${visitas} acumulados · $${cycle}/$${meta}`;
+  if (giro === 'nutricion') return `${visitas} consultas · ${cycle}/${meta} ciclo`;
+  return `${visitas} visitas · ${cycle}/${meta} ciclo`;
+}
+
+function progressUnit(giro: LoyaltyGiro): string {
+  if (giro === 'spa') return ' pesos más';
+  if (giro === 'nutricion') return ' consulta más';
+  return ' visita más';
 }
 
 export default function LoyaltyCard({ data, compact = false }: Props) {
   const [qrUrl, setQrUrl] = useState<string>('');
-  const isBarberia = data.giro === 'barberia';
+  const theme = THEMES[data.giro] ?? THEMES.barberia;
+
+  const cycle = data.visitas % data.meta;
+  const filled = cycle;
+  const remaining = data.meta - cycle;
+  const completedCycles = Math.floor(data.visitas / data.meta);
+  const pct = Math.round((cycle / data.meta) * 100);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,122 +166,29 @@ export default function LoyaltyCard({ data, compact = false }: Props) {
       try {
         const QRCode = await import('qrcode');
         const origin = typeof window !== 'undefined' ? window.location.origin : '';
-        const url = `${origin}/loyalty/${encodeURIComponent(data.clienteId)}`;
+        const payload = encodeURIComponent(
+          JSON.stringify({
+            clientId: data.clienteId,
+            nombre: data.clienteNombre,
+            puntos: data.visitas,
+            negocio: data.negocio,
+          })
+        );
+        const url = `${origin}/loyalty/${encodeURIComponent(data.clienteId)}?d=${payload}`;
         const dataUrl = await QRCode.toDataURL(url, {
           width: compact ? 72 : 100,
           margin: 1,
-          color: isBarberia
-            ? { dark: '#0d9488', light: '#0a0f1a' }
-            : { dark: '#be185d', light: '#fce7f3' },
+          color: { dark: theme.qrDark, light: theme.qrLight },
         });
         if (!cancelled) setQrUrl(dataUrl);
       } catch {
-        // qrcode unavailable in SSR — silently skip
+        // SSR silent skip
       }
     }
     void gen();
     return () => { cancelled = true; };
-  }, [data.clienteId, data.giro, compact, isBarberia]);
+  }, [data, compact, theme]);
 
-  const { filled, empty, cycle } = buildVisitBar(data.visitas, data.meta);
-  const remaining = data.meta - cycle;
-  const completedCycles = Math.floor(data.visitas / data.meta);
-
-  // ── Barbería: dark elegant card ──────────────────────────────
-  if (isBarberia) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-        className={`rounded-2xl overflow-hidden ${compact ? 'text-[10px]' : 'text-xs'}`}
-        style={{
-          background: 'linear-gradient(135deg, #0a0f1a 0%, #0f2020 60%, #0d9488 200%)',
-          border: '1px solid rgba(13,148,136,0.4)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 24px rgba(13,148,136,0.2)',
-          width: compact ? '100%' : '280px',
-        }}
-      >
-        {/* Top stripe */}
-        <div
-          className="h-1.5 w-full"
-          style={{ background: 'linear-gradient(90deg, #0d9488, #5eead4, #0d9488)' }}
-        />
-
-        <div className={`${compact ? 'p-3' : 'p-4'}`}>
-          {/* Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <p className="text-teal-400 font-bold tracking-wide uppercase" style={{ fontSize: compact ? 9 : 11 }}>
-                ✂️ {data.negocio}
-              </p>
-              <p className="text-white font-bold mt-0.5" style={{ fontSize: compact ? 13 : 16 }}>
-                {data.clienteNombre}
-              </p>
-              <p className="text-slate-500 font-mono" style={{ fontSize: compact ? 8 : 10 }}>
-                ID: {data.clienteId}
-              </p>
-            </div>
-            {qrUrl && (
-              <img
-                src={qrUrl}
-                alt="QR código de lealtad"
-                className="rounded"
-                style={{ width: compact ? 44 : 60, height: compact ? 44 : 60 }}
-              />
-            )}
-          </div>
-
-          {/* Progress bar */}
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-slate-400">Visitas</span>
-              <span className="text-teal-300 font-bold">{data.visitas} totales · {cycle}/{data.meta} ciclo</span>
-            </div>
-            <div className="flex gap-1">
-              {Array.from({ length: data.meta }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-full transition-all"
-                  style={{
-                    height: compact ? 5 : 6,
-                    background: i < filled ? '#0d9488' : 'rgba(255,255,255,0.1)',
-                    boxShadow: i < filled ? '0 0 6px rgba(13,148,136,0.7)' : 'none',
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Reward info */}
-          <div
-            className="rounded-xl px-3 py-2 mb-2"
-            style={{ background: 'rgba(13,148,136,0.15)', border: '1px solid rgba(13,148,136,0.3)' }}
-          >
-            {cycle === 0 && completedCycles > 0 ? (
-              <p className="text-teal-300 font-bold">
-                🏆 ¡Tienes {completedCycles} {data.recompensaNombre} gratis pendiente{completedCycles > 1 ? 's' : ''}!
-              </p>
-            ) : remaining === 1 ? (
-              <p className="text-teal-200 font-semibold">
-                🔥 ¡Solo {remaining} visita más para tu {data.recompensaNombre} gratis!
-              </p>
-            ) : (
-              <p className="text-slate-300">
-                🎁 {remaining} visitas más = <span className="text-teal-300 font-bold">{data.recompensaNombre} gratis</span>
-              </p>
-            )}
-          </div>
-
-          <p className="text-slate-600" style={{ fontSize: compact ? 8 : 9 }}>
-            Último servicio: {data.ultimoServicio}
-          </p>
-        </div>
-      </motion.div>
-    );
-  }
-
-  // ── Nail Studio: light colorful card ─────────────────────────
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.92 }}
@@ -158,84 +196,121 @@ export default function LoyaltyCard({ data, compact = false }: Props) {
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className={`rounded-2xl overflow-hidden ${compact ? 'text-[10px]' : 'text-xs'}`}
       style={{
-        background: 'linear-gradient(135deg, #fff0f7 0%, #fce7f3 60%, #fbcfe8 100%)',
-        border: '1px solid rgba(236,72,153,0.3)',
-        boxShadow: '0 8px 24px rgba(236,72,153,0.18)',
+        background: theme.bg,
+        border: `1px solid ${theme.border}`,
+        boxShadow: theme.shadow,
         width: compact ? '100%' : '280px',
       }}
     >
-      {/* Top stripe */}
-      <div
-        className="h-1.5 w-full"
-        style={{ background: 'linear-gradient(90deg, #ec4899, #f9a8d4, #ec4899)' }}
-      />
+      {/* Accent stripe */}
+      <div className="h-1.5 w-full" style={{ background: theme.stripe }} />
 
-      <div className={`${compact ? 'p-3' : 'p-4'}`}>
-        {/* Header */}
+      <div className={compact ? 'p-3' : 'p-4'}>
+        {/* Header row */}
         <div className="flex items-start justify-between mb-3">
-          <div>
-            <p className="text-pink-600 font-bold tracking-wide uppercase" style={{ fontSize: compact ? 9 : 11 }}>
-              💅 {data.negocio}
+          <div className="flex-1 min-w-0">
+            <p
+              className="font-bold tracking-wide uppercase truncate"
+              style={{ fontSize: compact ? 9 : 11, color: theme.accent }}
+            >
+              {theme.emoji} {data.negocio}
             </p>
-            <p className="text-pink-900 font-bold mt-0.5" style={{ fontSize: compact ? 13 : 16 }}>
+            <p
+              className="font-bold mt-0.5"
+              style={{ fontSize: compact ? 13 : 16, color: theme.textPrimary }}
+            >
               {data.clienteNombre}
             </p>
-            <p className="text-pink-400 font-mono" style={{ fontSize: compact ? 8 : 10 }}>
+            <p
+              className="font-mono"
+              style={{
+                fontSize: compact ? 8 : 10,
+                color: theme.isDark ? '#475569' : theme.textMeta,
+              }}
+            >
               ID: {data.clienteId}
             </p>
           </div>
           {qrUrl && (
             <img
               src={qrUrl}
-              alt="QR código de lealtad"
-              className="rounded"
+              alt="QR lealtad"
+              className="rounded ml-2 shrink-0"
               style={{ width: compact ? 44 : 60, height: compact ? 44 : 60 }}
             />
           )}
         </div>
 
-        {/* Progress bar */}
+        {/* Progress section */}
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-pink-500">Visitas</span>
-            <span className="text-pink-700 font-bold">{data.visitas} totales · {cycle}/{data.meta} ciclo</span>
+            <span style={{ color: theme.textSecondary }}>
+              {data.giro === 'spa' ? 'Gasto ciclo' : data.giro === 'nutricion' ? 'Consultas' : 'Visitas'}
+            </span>
+            <span className="font-bold" style={{ color: theme.textAccentLight, fontSize: compact ? 8 : 10 }}>
+              {progressLabel(data.giro, data.visitas, data.meta)}
+            </span>
           </div>
-          <div className="flex gap-1">
-            {Array.from({ length: data.meta }).map((_, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-full"
+
+          {theme.progressType === 'bar' ? (
+            // Continuous bar for spa (money-based)
+            <div
+              className="w-full rounded-full overflow-hidden"
+              style={{ height: compact ? 6 : 8, background: theme.emptyColor }}
+            >
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                className="h-full rounded-full"
                 style={{
-                  height: compact ? 5 : 6,
-                  background: i < filled ? '#ec4899' : 'rgba(236,72,153,0.15)',
-                  boxShadow: i < filled ? '0 0 6px rgba(236,72,153,0.5)' : 'none',
+                  background: `linear-gradient(90deg, ${theme.fillColor}, ${theme.textAccentLight})`,
+                  boxShadow: `0 0 8px ${theme.fillColor}99`,
                 }}
               />
-            ))}
-          </div>
+            </div>
+          ) : (
+            // Discrete dots for visit-based giros
+            <div className="flex gap-1">
+              {Array.from({ length: data.meta }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-1 rounded-full transition-all"
+                  style={{
+                    height: compact ? 5 : 6,
+                    background: i < filled ? theme.fillColor : theme.emptyColor,
+                    boxShadow: i < filled ? `0 0 6px ${theme.fillColor}99` : 'none',
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Reward */}
+        {/* Reward banner */}
         <div
           className="rounded-xl px-3 py-2 mb-2"
-          style={{ background: 'rgba(236,72,153,0.1)', border: '1px solid rgba(236,72,153,0.25)' }}
+          style={{ background: theme.accentSoft, border: `1px solid ${theme.accentSoftBorder}` }}
         >
           {cycle === 0 && completedCycles > 0 ? (
-            <p className="text-pink-600 font-bold">
-              🏆 ¡Tienes {completedCycles} {data.recompensaNombre} gratis!
+            <p className="font-bold" style={{ color: theme.textAccentLight }}>
+              🏆 ¡Tienes {completedCycles} {data.recompensaNombre} gratis{completedCycles > 1 ? ' pendientes' : ''}!
             </p>
           ) : remaining === 1 ? (
-            <p className="text-pink-700 font-semibold">
-              💖 ¡Solo {remaining} visita más para tu {data.recompensaNombre} gratis!
+            <p className="font-semibold" style={{ color: theme.textAccentLight }}>
+              {theme.rewardEmoji} ¡Solo {remaining}{progressUnit(data.giro)} para tu {data.recompensaNombre} gratis!
             </p>
           ) : (
-            <p className="text-pink-700">
-              🎀 {remaining} visitas más = <span className="text-pink-600 font-bold">{data.recompensaNombre} gratis</span>
+            <p style={{ color: theme.isDark ? '#cbd5e1' : theme.textSecondary }}>
+              {theme.rewardEmoji} {remaining}{progressUnit(data.giro)} ={' '}
+              <span className="font-bold" style={{ color: theme.textAccentLight }}>
+                {data.recompensaNombre} gratis
+              </span>
             </p>
           )}
         </div>
 
-        <p className="text-pink-400" style={{ fontSize: compact ? 8 : 9 }}>
+        <p style={{ fontSize: compact ? 8 : 9, color: theme.isDark ? '#475569' : theme.textMeta }}>
           Último servicio: {data.ultimoServicio}
         </p>
       </div>

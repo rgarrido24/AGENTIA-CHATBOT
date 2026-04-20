@@ -5,8 +5,21 @@ import { useSearchParams } from 'next/navigation';
 import { MessageCircle, Send } from 'lucide-react';
 import { MOCK_PACIENTES } from '@/lib/mock-data-nutricion';
 import { useNutricionTheme } from '../nutricion-theme-context';
+import LoyaltyCard from '@/app/demo/barber/LoyaltyCard';
+import type { LoyaltyCardData } from '@/app/demo/barber/LoyaltyCard';
 
-type ChatMsg = { role: 'user' | 'assistant'; content: string };
+type ChatMsg = { role: 'user' | 'assistant'; content: string; loyaltyCard?: LoyaltyCardData };
+
+const DEMO_LOYALTY_NUTRI: LoyaltyCardData = {
+  clienteNombre: 'Lucía Flores',
+  clienteId: 'Nu-0055',
+  negocio: 'NutriVida',
+  giro: 'nutricion',
+  visitas: 2,
+  meta: 4,
+  ultimoServicio: 'Consulta de seguimiento',
+  recompensaNombre: 'consulta nutricional',
+};
 type Mode = 'nutriologa' | 'paciente';
 
 const ACCENT = '#16a34a';
@@ -21,6 +34,7 @@ const CHIPS_NUTRI = [
 ];
 
 const CHIPS_PAC = [
+  '⭐ Mis puntos de lealtad',
   '¿Puedo sustituir el pollo por atún?',
   '¿Qué pasa si me como una tortilla?',
   'Tengo hambre, ¿qué puedo comer?',
@@ -48,6 +62,17 @@ function ChatInner() {
   const sendMessage = useCallback(
     async (text: string, history: ChatMsg[]) => {
       if (!text.trim()) return;
+
+      // Local intercept: loyalty card
+      if (/mis\s*puntos?|mi\s*tarjeta|lealtad|puntos/i.test(text)) {
+        setMessages((m) => [
+          ...m,
+          { role: 'user', content: text.trim() },
+          { role: 'assistant', content: '', loyaltyCard: DEMO_LOYALTY_NUTRI },
+        ]);
+        return;
+      }
+
       setLoading(true);
       setMessages((m) => [...m, { role: 'user', content: text.trim() }, { role: 'assistant', content: '' }]);
       try {
@@ -216,23 +241,34 @@ function ChatInner() {
             ))}
           </div>
         )}
-        {messages.map((m, i) => (
-          <div key={`${i}-${m.role}`} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed"
-              style={
-                m.role === 'user'
-                  ? { background: isPac ? AMBER : ACCENT, color: '#fff', borderRadius: '1rem 1rem 0.25rem 1rem' }
-                  : { ...assistantBubbleStyle, borderRadius: '1rem 1rem 1rem 0.25rem' }
-              }
-            >
-              {m.content ||
-                (loading && i === messages.length - 1 && m.role === 'assistant' && !m.content ? (
-                  <span style={{ color: colors.textMuted }} className="italic">Escribiendo…</span>
-                ) : null)}
+        {messages.map((m, i) => {
+          if (m.loyaltyCard && m.role === 'assistant') {
+            return (
+              <div key={`${i}-loyalty`} className="flex justify-start">
+                <div className="w-full max-w-[85%]">
+                  <LoyaltyCard data={m.loyaltyCard} compact={false} />
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div key={`${i}-${m.role}`} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className="max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed"
+                style={
+                  m.role === 'user'
+                    ? { background: isPac ? AMBER : ACCENT, color: '#fff', borderRadius: '1rem 1rem 0.25rem 1rem' }
+                    : { ...assistantBubbleStyle, borderRadius: '1rem 1rem 1rem 0.25rem' }
+                }
+              >
+                {m.content ||
+                  (loading && i === messages.length - 1 && m.role === 'assistant' && !m.content ? (
+                    <span style={{ color: colors.textMuted }} className="italic">Escribiendo…</span>
+                  ) : null)}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={endRef} />
       </div>
 
