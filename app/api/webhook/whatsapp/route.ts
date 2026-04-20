@@ -18,6 +18,8 @@ export async function POST(request: NextRequest) {
     const mediaBase64 = typeof body?.mediaBase64 === 'string' ? body.mediaBase64 : undefined;
     const mediaType = typeof body?.mediaType === 'string' ? body.mediaType : undefined;
     const leadData = (body?.leadData && typeof body.leadData === 'object') ? body.leadData : {};
+    // clientId dinámico: el bridge lo envía; default 'izzi' para compatibilidad hacia atrás
+    const clientId = (typeof body?.clientId === 'string' && body.clientId.trim()) ? body.clientId.trim() : 'izzi';
 
     if (!leadId) {
       return NextResponse.json({ ok: false, error: 'leadId requerido' }, { status: 400 });
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        clientId: 'izzi',
+        clientId,
         platform: 'whatsapp',
         entryType: 'dm',
         message: mensaje,

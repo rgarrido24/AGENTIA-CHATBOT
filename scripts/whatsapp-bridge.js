@@ -51,6 +51,7 @@ async function callChatApi(message, senderId, senderName, mediaBase64, mimeType)
   const webhookUrl = (getEnv('CHATBOT_WEBHOOK_URL', '') || `${API_URL}/api/webhook/whatsapp`).replace(/\/$/, '');
   const url = webhookUrl;
   const payload = {
+    clientId: CLIENT_ID,
     leadId: normalizeLeadId(senderId),
     mensaje: message || (mediaBase64 ? '[imagen/documento adjunto]' : ''),
     mediaBase64: mediaBase64 || undefined,
@@ -323,6 +324,62 @@ async function main() {
     }
   }
 
+  // ─── Agentia Ventas: Follow-up automático de prospectos (solo agentia-ventas) ───
+  async function pollAndSendAgentiaFollowup() {
+    if (!whatsappReady || !client) return;
+    if (CLIENT_ID !== 'agentia-ventas') return;
+    try {
+      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
+      };
+
+      // 1. Generar nuevos follow-ups pendientes
+      await fetch(`${API_URL}/api/agentia/followup`, { method: 'POST', headers, body: '{}' }).catch(() => {});
+
+      // 2. Detectar prospectos que respondieron con interés
+      await fetch(`${API_URL}/api/agentia/followup`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ detectInterest: true }),
+      }).catch(() => {});
+
+      // 3. Obtener mensajes pendientes de envío
+      const res = await fetch(`${API_URL}/api/agentia/followup`, { headers });
+      const data = await res.json().catch(() => ({}));
+      const messages = data.messages || [];
+
+      const sentIds = [];
+      for (const m of messages) {
+        try {
+          const digits = (m.senderId || '').replace(/\D/g, '');
+          if (!digits || digits.length < 10) {
+            sentIds.push(String(m._id));
+            continue;
+          }
+          const chatId = m.senderId.includes('@') ? m.senderId : `${digits}@c.us`;
+          await client.sendMessage(chatId, m.message);
+          sentIds.push(String(m._id));
+          console.log(`[Agentia] Follow-up #${m.followupNumber} enviado a ${digits}`);
+        } catch (e) {
+          console.error('[Agentia] Error enviando follow-up:', e.message);
+        }
+      }
+
+      // 4. Marcar como enviados
+      if (sentIds.length > 0) {
+        await fetch(`${API_URL}/api/agentia/followup`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ sentIds }),
+        }).catch(() => {});
+      }
+    } catch (e) {
+      console.error('[Agentia] Error poll followup:', e.message);
+    }
+  }
+
   // ─── Retención: Solicitudes de reseña (cada 15 min) ─────────────
   async function pollAndSendReviews() {
     if (!whatsappReady || !client) return;
@@ -576,6 +633,12 @@ async function main() {
 
   setTimeout(pollAndSendReviews, 3 * 60 * 1000);
   setInterval(pollAndSendReviews, 15 * 60 * 1000);
+
+  // Follow-up de prospectos Agentia Ventas: solo cuando CLIENT_ID === 'agentia-ventas'
+  if (CLIENT_ID === 'agentia-ventas') {
+    setTimeout(pollAndSendAgentiaFollowup, 10 * 60 * 1000);        // primera ejecución a los 10 min
+    setInterval(pollAndSendAgentiaFollowup, 6 * 60 * 60 * 1000);   // cada 6 horas
+  }
 }
 
 main();

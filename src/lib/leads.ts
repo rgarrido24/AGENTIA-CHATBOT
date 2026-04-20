@@ -28,6 +28,16 @@ export type DocumentExpedient = {
   promocion: string;
 };
 
+export type AgentiaVentasStatusVendedor =
+  | 'nuevo'
+  | 'contactado'
+  | 'interesado'
+  | 'vio_demo'
+  | 'en_negociacion'
+  | 'cerrado'
+  | 'sin_respuesta'
+  | 'perdido';
+
 export type Lead = {
   leadId: string;
   clientId: string;
@@ -48,6 +58,13 @@ export type Lead = {
   messageCount: number;
   tags: string[];
   documentExpedient?: DocumentExpedient;
+  // Campos exclusivos del pipeline de ventas Agentia
+  giro_interes?: string;
+  demo_enviada?: boolean;
+  demo_vista?: boolean;
+  follow_up_count?: number;
+  ultimo_contacto?: Date;
+  status_vendedor?: AgentiaVentasStatusVendedor;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -218,6 +235,18 @@ export async function deleteLead(leadId: string): Promise<boolean> {
   const db = await getMongoDb();
   const result = await db.collection<Lead>('leads').deleteOne({ leadId });
   return (result.deletedCount ?? 0) > 0;
+}
+
+export async function updateAgentiaLeadFields(
+  leadId: string,
+  fields: Partial<Pick<Lead, 'giro_interes' | 'demo_enviada' | 'demo_vista' | 'follow_up_count' | 'ultimo_contacto' | 'status_vendedor'>>
+): Promise<boolean> {
+  const db = await getMongoDb();
+  const result = await db.collection<Lead>('leads').updateOne(
+    { leadId },
+    { $set: { ...fields, updatedAt: new Date() } }
+  );
+  return result.modifiedCount > 0 || result.matchedCount > 0;
 }
 
 export async function updateLeadDocumentExpedient(
