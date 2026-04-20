@@ -129,18 +129,20 @@ export default function DemoLucianoPage() {
   const [simulating, setSimulating] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [seeded, setSeeded] = useState(false);
+  const [seedError, setSeedError] = useState<string | null>(null);
   const [showAdminBar, setShowAdminBar] = useState(false);
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevIds = useRef<Set<string>>(new Set());
 
-  const { data, mutate, isLoading } = useSWR<{ leads: Lead[] }>(
+  const { data, mutate, isLoading, error: swrError } = useSWR<{ leads: Lead[]; ok: boolean; error?: string }>(
     '/api/demo-luciano/leads',
     fetcher,
-    { refreshInterval: 3000 }
+    { refreshInterval: 3000, shouldRetryOnError: true }
   );
 
   const leads = data?.leads ?? [];
+  const fetchError = swrError || (data && !data.ok ? data.error : null);
 
   // Detect newly arrived leads between polls
   useEffect(() => {
@@ -154,9 +156,24 @@ export default function DemoLucianoPage() {
 
   // Seed mock data
   const handleSeed = useCallback(async () => {
+    setSeedError(null);
     setSeeding(true);
-    await fetch('/api/demo-luciano/seed', { method: 'POST' });
-    setSeeded(true);
+    try {
+      const res = await fetch('/api/demo-luciano/seed', { method: 'POST' });
+      const body = await res.json();
+      console.log('[demo-luciano] seed response:', res.status, body);
+      if (!res.ok || !body.ok) {
+        setSeedError(body.error ?? `HTTP ${res.status}`);
+        setSeeding(false);
+        return;
+      }
+      setSeeded(true);
+    } catch (err) {
+      console.error('[demo-luciano] seed fetch error:', err);
+      setSeedError(String(err));
+      setSeeding(false);
+      return;
+    }
     setNewIds(new Set());
     prevIds.current = new Set();
     await mutate();
@@ -273,6 +290,13 @@ export default function DemoLucianoPage() {
           </div>
         </div>
 
+        {/* Fetch / seed error */}
+        {(fetchError || seedError) && (
+          <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/5 p-3 text-xs text-red-400 font-mono break-all">
+            {seedError ? `Seed error: ${seedError}` : `API error: ${String(fetchError)}`}
+          </div>
+        )}
+
         {/* Empty state */}
         {!isLoading && leads.length === 0 && (
           <div className="text-center py-16 space-y-4">
@@ -280,11 +304,11 @@ export default function DemoLucianoPage() {
             <button
               onClick={handleSeed}
               disabled={seeding}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white transition"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white transition disabled:opacity-50"
               style={{ background: '#22c55e' }}
             >
               <RefreshCw className={`w-4 h-4 ${seeding ? 'animate-spin' : ''}`} />
-              Cargar datos demo
+              {seeding ? 'Insertando...' : 'Cargar datos demo'}
             </button>
           </div>
         )}
