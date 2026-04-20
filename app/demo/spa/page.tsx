@@ -33,6 +33,18 @@ import {
   type Cita,
 } from '@/lib/mock-data-spa';
 import { useSpa } from './spa-context';
+import type { LoyaltyCardData } from '@/app/demo/barber/LoyaltyCard';
+
+const DEMO_LOYALTY_SPA: LoyaltyCardData = {
+  clienteNombre: 'Sofía Ramírez',
+  clienteId: 'S-0033',
+  negocio: 'Lumina Spa',
+  giro: 'spa',
+  visitas: 350,
+  meta: 500,
+  ultimoServicio: 'Masaje de tejido profundo',
+  recompensaNombre: 'tratamiento facial',
+};
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
@@ -91,7 +103,8 @@ export default function SpaDashboardPage() {
             accentColor="#9333ea"
             apiRoute="/api/demo/spa/chat"
             initialMessage="¡Hola! 💜 Soy la asistente de Lumina Spa. ¿Te gustaría conocer nuestros servicios o agendar una cita?"
-            suggestedChips={['💆 Ver servicios', '📅 Agendar cita', '💰 Ver precios', '🎁 Promociones del mes']}
+            suggestedChips={['⭐ Mis puntos de lealtad', '💆 Ver servicios', '📅 Agendar cita', '💰 Ver precios']}
+            loyaltyCardData={DEMO_LOYALTY_SPA}
           />
         </div>
       </section>

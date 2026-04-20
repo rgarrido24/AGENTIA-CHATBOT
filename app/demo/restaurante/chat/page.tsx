@@ -163,7 +163,12 @@ function ChatInner() {
               <button
                 key={s}
                 type="button"
-                onClick={() => setInput(s)}
+                onClick={() => {
+                  const history = messages.filter(
+                    (m) => m.role === 'user' || (m.role === 'assistant' && m.content.trim())
+                  ) as ChatMsg[];
+                  void sendMessage(s, history);
+                }}
                 className={`text-xs px-3 py-1.5 rounded-full border ${
                   isWa
                     ? 'border-emerald-700 text-emerald-200 hover:bg-emerald-900/40'

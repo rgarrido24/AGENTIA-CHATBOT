@@ -28,6 +28,18 @@ import {
   ordenesCompletadas,
 } from '@/lib/mock-data-restaurante';
 import { useRestaurante } from './restaurante-context';
+import type { LoyaltyCardData } from '@/app/demo/barber/LoyaltyCard';
+
+const DEMO_LOYALTY_REST: LoyaltyCardData = {
+  clienteNombre: 'Juan Torres',
+  clienteId: 'R-0077',
+  negocio: 'La Séptima',
+  giro: 'restaurante',
+  visitas: 7,
+  meta: 10,
+  ultimoServicio: 'Costillas BBQ + margarita',
+  recompensaNombre: 'platillo de temporada',
+};
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
@@ -83,7 +95,8 @@ export default function RestauranteDashboardPage() {
             accentColor="#ef4444"
             apiRoute="/api/demo/restaurante/chat"
             initialMessage="¡Hola! 🍔 Bienvenido a La Séptima. ¿Quieres ver el menú, hacer un pedido o conocer nuestras promos del día?"
-            suggestedChips={['🍔 Ver menú', '🛵 Pedir a domicilio', '🍹 Promos del día', '⏰ Horarios']}
+            suggestedChips={['⭐ Mis puntos de lealtad', '🍔 Ver menú', '🛵 Pedir a domicilio', '🍹 Promos del día']}
+            loyaltyCardData={DEMO_LOYALTY_REST}
           />
         </div>
       </section>

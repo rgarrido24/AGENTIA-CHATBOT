@@ -33,6 +33,18 @@ import {
 } from '@/lib/mock-data-nutricion';
 import { useNutricion } from './nutricion-context';
 import { useNutricionTheme } from './nutricion-theme-context';
+import type { LoyaltyCardData } from '@/app/demo/barber/LoyaltyCard';
+
+const DEMO_LOYALTY_NUTRI: LoyaltyCardData = {
+  clienteNombre: 'Lucía Flores',
+  clienteId: 'Nu-0055',
+  negocio: 'NutriVida',
+  giro: 'nutricion',
+  visitas: 2,
+  meta: 4,
+  ultimoServicio: 'Consulta de seguimiento',
+  recompensaNombre: 'consulta nutricional',
+};
 import { useEffect, useRef, useState } from 'react';
 
 const ACCENT = '#16a34a';
@@ -342,7 +354,8 @@ export default function NutricionDashboardPage() {
         <div className="flex-shrink-0">
           <PhoneMockup businessName="NutriVida" businessEmoji="💚" accentColor={ACCENT} apiRoute="/api/demo/nutricion/chat"
             initialMessage={'¡Hola! 💚 Soy tu asistente de NutriVida.\nPuedo ayudarte con tu dieta, sustituciones de alimentos\ny a mantenerte motivado/a. ¿En qué te ayudo hoy?'}
-            suggestedChips={['🥗 ¿Puedo comer aguacate?','💪 ¿Cuánto he bajado?','🍕 Me antojó pizza, ¿qué hago?','⭐ Ver mi progreso']}
+            suggestedChips={['⭐ Mis puntos de lealtad','🥗 ¿Puedo comer aguacate?','💪 ¿Cuánto he bajado?','🍕 Me antojó pizza, ¿qué hago?']}
+            loyaltyCardData={DEMO_LOYALTY_NUTRI}
           />
         </div>
       </section>

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, Phone, Send, Video } from 'lucide-react';
+import LoyaltyCard, { type LoyaltyCardData } from '@/app/demo/barber/LoyaltyCard';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -10,6 +11,7 @@ type Message = {
   role: 'bot' | 'user';
   text: string;
   time: string;
+  loyaltyCard?: LoyaltyCardData;
 };
 
 export type PhoneMockupProps = {
@@ -19,6 +21,7 @@ export type PhoneMockupProps = {
   apiRoute: string;
   initialMessage: string;
   suggestedChips: string[];
+  loyaltyCardData?: LoyaltyCardData;
 };
 
 type ApiMessage = { role: 'user' | 'assistant'; content: string };
@@ -47,6 +50,7 @@ export default function PhoneMockup({
   apiRoute,
   initialMessage,
   suggestedChips,
+  loyaltyCardData,
 }: PhoneMockupProps) {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'bot', text: initialMessage, time: getCurrentTime() },
@@ -64,6 +68,17 @@ export default function PhoneMockup({
   const sendMessage = useCallback(
     async (text: string) => {
       if (!text.trim() || isLoading) return;
+
+      // Loyalty card local intercept — no API call needed
+      if (loyaltyCardData && /mis\s*puntos?|mi\s*tarjeta|lealtad|puntos/i.test(text.trim())) {
+        setMessages((prev) => [
+          ...prev,
+          { role: 'user', text: text.trim(), time: getCurrentTime() },
+          { role: 'bot', text: '', time: getCurrentTime(), loyaltyCard: loyaltyCardData },
+        ]);
+        setInput('');
+        return;
+      }
 
       const userMsg: Message = { role: 'user', text: text.trim(), time: getCurrentTime() };
       setMessages((prev) => [...prev, userMsg]);
@@ -208,30 +223,36 @@ export default function PhoneMockup({
                 transition={{ duration: 0.18 }}
                 className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-[82%] text-white text-[11px] leading-relaxed px-3 py-2 ${
-                    m.role === 'user'
-                      ? 'bg-[#005c4b] rounded-2xl rounded-tr-sm'
-                      : 'bg-[#1f2c34] rounded-2xl rounded-tl-sm'
-                  }`}
-                >
-                  {/* Show ellipsis while streaming an empty message */}
-                  {m.text === '' && m.role === 'bot' ? (
-                    <span className="text-slate-500 italic text-[10px]">...</span>
-                  ) : (
-                    <p style={{ whiteSpace: 'pre-wrap' }}>{m.text}</p>
-                  )}
+                {m.loyaltyCard && m.role === 'bot' ? (
+                  <div className="w-full px-1">
+                    <LoyaltyCard data={m.loyaltyCard} compact />
+                    <p className="text-[9px] text-slate-500 mt-1 pl-1">{m.time} ✓✓</p>
+                  </div>
+                ) : (
                   <div
-                    className={`flex items-center gap-1 mt-0.5 ${
-                      m.role === 'user' ? 'justify-end' : 'justify-start'
+                    className={`max-w-[82%] text-white text-[11px] leading-relaxed px-3 py-2 ${
+                      m.role === 'user'
+                        ? 'bg-[#005c4b] rounded-2xl rounded-tr-sm'
+                        : 'bg-[#1f2c34] rounded-2xl rounded-tl-sm'
                     }`}
                   >
-                    <span className="text-[9px] text-slate-500">{m.time}</span>
-                    {m.role === 'user' && (
-                      <span className="text-[9px] text-blue-400">✓✓</span>
+                    {m.text === '' && m.role === 'bot' ? (
+                      <span className="text-slate-500 italic text-[10px]">...</span>
+                    ) : (
+                      <p style={{ whiteSpace: 'pre-wrap' }}>{m.text}</p>
                     )}
+                    <div
+                      className={`flex items-center gap-1 mt-0.5 ${
+                        m.role === 'user' ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
+                      <span className="text-[9px] text-slate-500">{m.time}</span>
+                      {m.role === 'user' && (
+                        <span className="text-[9px] text-blue-400">✓✓</span>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </motion.div>
             ))}
 
