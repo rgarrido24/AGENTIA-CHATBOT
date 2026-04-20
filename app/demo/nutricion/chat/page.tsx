@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { MessageCircle, Send } from 'lucide-react';
+import { Camera, MessageCircle, Send } from 'lucide-react';
 import { MOCK_PACIENTES } from '@/lib/mock-data-nutricion';
 import { useNutricionTheme } from '../nutricion-theme-context';
 import LoyaltyCard from '@/app/demo/barber/LoyaltyCard';
@@ -53,6 +53,7 @@ function ChatInner() {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -127,6 +128,41 @@ function ChatInner() {
     },
     [mode, pacienteId]
   );
+
+  const simulatePhotoAnalysis = async () => {
+    if (analyzingPhoto || loading) return;
+    setAnalyzingPhoto(true);
+    setMessages((m) => [
+      ...m,
+      { role: 'user', content: '📸 [Foto de mi comida]' },
+      { role: 'assistant', content: '' },
+    ]);
+    try {
+      const res = await fetch('/api/demo/nutricion/calorias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patientId: pacienteId, simulate: true, tiempo: 'Comida' }),
+      });
+      const data = await res.json();
+      const reply: string = res.ok ? (data.reply ?? 'No se pudo analizar.') : 'Error al analizar la foto.';
+      setMessages((m) => {
+        const c = [...m];
+        const last = c[c.length - 1];
+        if (last?.role === 'assistant') last.content = reply;
+        return [...c];
+      });
+    } catch {
+      setMessages((m) => {
+        const c = [...m];
+        const last = c[c.length - 1];
+        if (last?.role === 'assistant') last.content = 'No pudimos analizar la foto. Intenta de nuevo.';
+        return [...c];
+      });
+    } finally {
+      setAnalyzingPhoto(false);
+      endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const handleSend = async () => {
     const text = input.trim();
@@ -278,11 +314,27 @@ function ChatInner() {
       </div>
 
       <div className="mt-3 flex gap-2">
+        {isPac && (
+          <button
+            type="button"
+            title="Simular foto de comida"
+            disabled={analyzingPhoto || loading}
+            onClick={() => void simulatePhotoAnalysis()}
+            className="px-3 rounded-xl flex items-center justify-center text-white disabled:opacity-50"
+            style={{ background: '#374151' }}
+          >
+            {analyzingPhoto ? (
+              <span className="text-xs animate-pulse">…</span>
+            ) : (
+              <Camera className="w-5 h-5" />
+            )}
+          </button>
+        )}
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && void handleSend()}
-          placeholder="Escribe un mensaje…"
+          placeholder={isPac ? 'Escribe o usa 📷 para analizar tu comida…' : 'Escribe un mensaje…'}
           className="flex-1 rounded-xl px-4 py-3 text-sm focus:outline-none"
           style={
             isPac

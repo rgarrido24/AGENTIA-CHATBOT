@@ -45,7 +45,7 @@ const DEMO_LOYALTY_NUTRI: LoyaltyCardData = {
   ultimoServicio: 'Consulta de seguimiento',
   recompensaNombre: 'consulta nutricional',
 };
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const ACCENT = '#16a34a';
 const AMBER = '#f59e0b';
@@ -320,6 +320,116 @@ function nombreCorto(id: string) {
   return MOCK_PACIENTES.find((p) => p.id === id)?.nombre.split(' ')[0] ?? '';
 }
 
+type CaloriaLog = { tiempo: string; calorias_estimadas: number; geminiRaw: string };
+
+function RegistroCalorico() {
+  const { colors } = useNutricionTheme();
+  const [patientId, setPatientId] = useState('p01');
+  const [logs, setLogs] = useState<CaloriaLog[]>([]);
+  const [totalDia, setTotalDia] = useState(0);
+  const [meta, setMeta] = useState(1800);
+  const [fetched, setFetched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+
+  const fetchLogs = useCallback(async (pid: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/demo/nutricion/calorias?patientId=${pid}`);
+      const data = await res.json();
+      setLogs(data.logs ?? []);
+      setTotalDia(data.totalDia ?? 0);
+      setMeta(data.meta ?? 1800);
+      setFetched(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void fetchLogs(patientId); }, [patientId, fetchLogs]);
+
+  const simulate = async () => {
+    setSimulating(true);
+    try {
+      const res = await fetch('/api/demo/nutricion/calorias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patientId, simulate: true, tiempo: 'Comida' }),
+      });
+      if (res.ok) await fetchLogs(patientId);
+    } finally {
+      setSimulating(false);
+    }
+  };
+
+  const pct = Math.min(100, Math.round((totalDia / meta) * 100));
+  const barColor = pct >= 100 ? '#ef4444' : pct >= 75 ? '#f59e0b' : '#16a34a';
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <h2 className="text-sm font-semibold" style={{ color: colors.textPrimary }}>📸 Registro calórico por foto</h2>
+          <p className="text-xs mt-0.5" style={{ color: colors.textMuted }}>El paciente envía foto de su comida y la IA estima las calorías automáticamente.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={patientId}
+            onChange={(e) => { setPatientId(e.target.value); setFetched(false); }}
+            className="rounded-lg px-2 py-1 text-xs"
+            style={{ background: colors.inputBg, border: `1px solid ${colors.border}`, color: colors.textPrimary }}
+          >
+            {MOCK_PACIENTES.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+          </select>
+          <button
+            onClick={() => void simulate()}
+            disabled={simulating}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+            style={{ background: simulating ? colors.border : '#16a34a' }}
+          >
+            {simulating ? <><span className="animate-spin inline-block w-3 h-3 border border-white/40 border-t-white rounded-full" />Analizando…</> : '📸 Simular foto'}
+          </button>
+        </div>
+      </div>
+      <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${colors.border}`, background: colors.cardBg }}>
+        <div className="p-4" style={{ borderBottom: `1px solid ${colors.border}` }}>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+              {MOCK_PACIENTES.find((p) => p.id === patientId)?.nombre} — Hoy
+            </span>
+            <span className="text-sm font-bold tabular-nums" style={{ color: barColor }}>{totalDia} / {meta} kcal ({pct}%)</span>
+          </div>
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: colors.cardBgAlt }}>
+            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: barColor }} />
+          </div>
+        </div>
+        {loading && !fetched ? (
+          <p className="text-center text-xs py-6" style={{ color: colors.textMuted }}>Cargando…</p>
+        ) : logs.length === 0 ? (
+          <p className="text-center text-xs py-6" style={{ color: colors.textMuted }}>
+            Sin registros hoy. Usa &quot;Simular foto&quot; o envía una foto al chat del paciente.
+          </p>
+        ) : (
+          <div className="divide-y" style={{ borderColor: colors.divider }}>
+            {logs.map((l, i) => (
+              <div key={i} className="px-4 py-3 flex items-start gap-3">
+                <span className="text-lg flex-shrink-0">🍽️</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold" style={{ color: colors.textPrimary }}>{l.tiempo}</p>
+                  <p className="text-xs mt-0.5 whitespace-pre-line" style={{ color: colors.textSecondary }}>
+                    {l.geminiRaw.split('\n').filter((x) => x.trim().startsWith('-')).join('\n') || l.geminiRaw}
+                  </p>
+                </div>
+                <span className="text-sm font-bold flex-shrink-0 tabular-nums" style={{ color: ACCENT }}>~{l.calorias_estimadas} kcal</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function NutricionDashboardPage() {
   const { mediciones, logros } = useNutricion();
   const { colors, theme } = useNutricionTheme();
@@ -486,6 +596,8 @@ export default function NutricionDashboardPage() {
             ))}
           </div>
         </div>
+
+        <RegistroCalorico />
 
         <div className="rounded-xl p-4 h-[300px]"
           style={{ border: `1px solid ${colors.border}`, background: colors.cardBg, boxShadow: isLight ? '0 1px 3px rgba(0,0,0,0.06)' : 'none' }}>
