@@ -46,6 +46,12 @@ export type Lead = {
   senderName?: string;
   platform: string;
   source?: 'whatsapp' | 'facebook' | 'instagram';
+  // Facebook Lead Ads
+  campana?: string;
+  adset?: string;
+  form_id?: string;
+  leadgen_id?: string;
+  source_meta?: boolean;
   status: PipelineStatus | string;
   assignedTo?: string;
   bot_status?: 'active' | 'paused';

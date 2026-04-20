@@ -9,6 +9,8 @@ const REQUIRED_VARS: { name: string; description: string }[] = [
   { name: 'MONGODB_URI',                 description: 'MongoDB Atlas connection string' },
   { name: 'ADMIN_PASSWORD',              description: 'Dashboard admin password' },
   { name: 'CRON_SECRET',                 description: 'Shared secret for cron/webhook endpoints' },
+  { name: 'FB_VERIFY_TOKEN',             description: 'Facebook webhook verify token' },
+  { name: 'FB_APP_SECRET',               description: 'Facebook app secret for signature verification' },
 ];
 
 export function checkEnvVars(): void {
