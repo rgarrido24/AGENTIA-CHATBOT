@@ -66,13 +66,22 @@ export default function AnalyticsDashboardPage() {
   const [range, setRange] = useState<Range>('7d');
   const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`/api/analytics/stats?range=${range}`);
-      if (res.ok) setData(await res.json());
+      if (res.ok) {
+        setData(await res.json());
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setError(`Error ${res.status}: ${body.error ?? 'respuesta inesperada'}`);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error de red');
     } finally {
       setLoading(false);
       setLastRefresh(new Date());
@@ -118,7 +127,13 @@ export default function AnalyticsDashboardPage() {
         </div>
       </div>
 
-      {loading && !data && (
+      {error && (
+        <div className="rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 px-5 py-4 text-sm mb-6">
+          Error al cargar stats: <strong>{error}</strong>
+        </div>
+      )}
+
+      {loading && !data && !error && (
         <div className="flex items-center justify-center h-64 text-slate-500">Cargando datos…</div>
       )}
 

@@ -89,11 +89,11 @@ export async function GET(req: NextRequest) {
               {
                 $switch: {
                   branches: [
-                    { case: { $regexMatch: { input: '$referrer', regex: /whatsapp/i } }, then: 'WhatsApp' },
-                    { case: { $regexMatch: { input: '$referrer', regex: /instagram/i } }, then: 'Instagram' },
-                    { case: { $regexMatch: { input: '$referrer', regex: /facebook/i } }, then: 'Facebook' },
-                    { case: { $regexMatch: { input: '$referrer', regex: /google/i } }, then: 'Google' },
-                    { case: { $regexMatch: { input: '$referrer', regex: /linkedin/i } }, then: 'LinkedIn' },
+                    { case: { $regexMatch: { input: '$referrer', regex: 'whatsapp', options: 'i' } }, then: 'WhatsApp' },
+                    { case: { $regexMatch: { input: '$referrer', regex: 'instagram', options: 'i' } }, then: 'Instagram' },
+                    { case: { $regexMatch: { input: '$referrer', regex: 'facebook', options: 'i' } }, then: 'Facebook' },
+                    { case: { $regexMatch: { input: '$referrer', regex: 'google', options: 'i' } }, then: 'Google' },
+                    { case: { $regexMatch: { input: '$referrer', regex: 'linkedin', options: 'i' } }, then: 'LinkedIn' },
                   ],
                   default: 'Otro',
                 },
