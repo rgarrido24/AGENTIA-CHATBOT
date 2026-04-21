@@ -46,10 +46,41 @@ function hasCronSecret(req: NextRequest): boolean {
   return authHeader === `Bearer ${cronSecret}` || queryToken === cronSecret;
 }
 
+// ─── Bot UA patterns ─────────────────────────────────────────────────────────
+const BOT_UA_PATTERNS = [
+  /curl\//i, /wget\//i, /python-requests/i, /go-http-client/i,
+  /java\/\d/i, /scrapy/i, /mechanize/i, /nikto/i, /nmap/i,
+  /masscan/i, /zgrab/i, /sqlmap/i, /hydra/i, /libwww-perl/i,
+];
+// SEO crawlers we WANT to allow
+const ALLOWED_BOTS = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp/i;
+
+function isMaliciousBot(ua: string | null): boolean {
+  if (!ua || ua.trim().length === 0) return true;
+  if (ALLOWED_BOTS.test(ua)) return false;
+  return BOT_UA_PATTERNS.some((p) => p.test(ua));
+}
+
+async function logBlocked(req: NextRequest, ip: string): Promise<void> {
+  try {
+    fetch(new URL('/api/security/log-blocked', req.url).toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ip, ua: req.headers.get('user-agent'), path: req.nextUrl.pathname }),
+    }).catch(() => {});
+  } catch { /* fire-and-forget */ }
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = clientIP(request);
+
+  // ── Bot blocking on API routes ────────────────────────────────────────────
+  if (pathname.startsWith('/api/') && isMaliciousBot(request.headers.get('user-agent'))) {
+    await logBlocked(request, ip);
+    return new NextResponse(null, { status: 403 });
+  }
 
   // ── Rate limiting: /api/agentia/followup (CRON_SECRET only) ─────────────────
   if (pathname.startsWith('/api/agentia/followup')) {

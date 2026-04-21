@@ -11,6 +11,7 @@ const REQUIRED_VARS: { name: string; description: string }[] = [
   { name: 'CRON_SECRET',                 description: 'Shared secret for cron/webhook endpoints' },
   { name: 'FB_VERIFY_TOKEN',             description: 'Facebook webhook verify token' },
   { name: 'FB_APP_SECRET',               description: 'Facebook app secret for signature verification' },
+  { name: 'TURNSTILE_SECRET_KEY',        description: 'Cloudflare Turnstile secret key (anti-bot)' },
 ];
 
 export function checkEnvVars(): void {
