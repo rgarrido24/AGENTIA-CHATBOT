@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import useSWR from 'swr';
-import { MessageCircle, ChevronDown, ChevronUp, Zap, Users, Calendar, CalendarDays, TrendingUp } from 'lucide-react';
+import { MessageCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Estado = 'nuevo' | 'contactado' | 'en_seguimiento' | 'cerrado';
+type Estado = 'nuevo' | 'contactado' | 'en_seguimiento';
 
 type Lead = {
   id: string;
@@ -18,33 +18,39 @@ type Lead = {
   createdAt: string;
 };
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Campaign config ──────────────────────────────────────────────────────────
 
-const ESTADO_CYCLE: Estado[] = ['nuevo', 'contactado', 'en_seguimiento', 'cerrado'];
+const CAMPAIGN: Record<string, { color: string; bg: string; text: string }> = {
+  'Emprendedores Córdoba 2026': { color: '#16a34a', bg: '#dcfce7', text: '#15803d' },
+  'Inmuebles Centro':           { color: '#2563eb', bg: '#dbeafe', text: '#1d4ed8' },
+  'Servicios Profesionales':    { color: '#ea580c', bg: '#ffedd5', text: '#c2410c' },
+};
+
+function campaignStyle(name: string) {
+  return CAMPAIGN[name] ?? { color: '#6b7280', bg: '#f3f4f6', text: '#374151' };
+}
+
+// ─── Estado config ────────────────────────────────────────────────────────────
+
+const ESTADO_NEXT: Record<Estado, Estado> = {
+  nuevo: 'contactado',
+  contactado: 'en_seguimiento',
+  en_seguimiento: 'nuevo',
+};
 
 const ESTADO_LABEL: Record<Estado, string> = {
-  nuevo:          'Nuevo',
-  contactado:     'Contactado',
+  nuevo: 'Nuevo',
+  contactado: 'Contactado',
   en_seguimiento: 'En seguimiento',
-  cerrado:        'Cerrado',
 };
 
 const ESTADO_STYLE: Record<Estado, string> = {
-  nuevo:          'bg-green-500 text-white',
-  contactado:     'bg-blue-500 text-white',
-  en_seguimiento: 'bg-amber-500 text-white',
-  cerrado:        'bg-slate-400 text-white',
+  nuevo:          'bg-green-100 text-green-700',
+  contactado:     'bg-blue-100  text-blue-700',
+  en_seguimiento: 'bg-amber-100 text-amber-700',
 };
 
-// Deterministic color from campaign name
-function campaignColor(name: string): string {
-  const palette = ['#3b82f6', '#a855f7', '#f97316', '#ef4444', '#0ea5e9', '#16a34a'];
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0x7fffffff;
-  return palette[h % palette.length];
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -54,49 +60,61 @@ function waUrl(tel: string) {
 
 function formatPhone(tel: string) {
   const d = tel.replace(/\D/g, '');
+  // 5493517XXXXXX → +54 351 XXX-XXXX
   if (d.startsWith('5493') && d.length === 13) {
-    return `+54 9 ${d.slice(4, 7)} ${d.slice(7, 10)}-${d.slice(10)}`;
+    return `+54 351 ${d.slice(7, 10)}-${d.slice(10)}`;
   }
   return `+${d}`;
 }
 
 function timeAgo(iso: string) {
   const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 60) return 'hace un momento';
-  if (s < 3600) return `hace ${Math.floor(s / 60)} min`;
-  if (s < 86400) return `hace ${Math.floor(s / 3600)} h`;
-  return `hace ${Math.floor(s / 86400)} d`;
+  if (s < 90)     return 'hace un momento';
+  if (s < 3600)   return `hace ${Math.floor(s / 60)} min`;
+  if (s < 86400)  return `hace ${Math.floor(s / 3600)} h`;
+  if (s < 172800) return 'ayer';
+  return `hace ${Math.floor(s / 86400)} días`;
 }
 
-function startOfToday() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+function initials(name: string) {
+  return name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 }
 
-function startOfWeek() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - d.getDay());
-  return d;
-}
-
-// Short Web Audio beep — no file needed
 function playBeep() {
   try {
-    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    type WinWithWebkit = typeof window & { webkitAudioContext?: typeof AudioContext };
+    const AC = window.AudioContext || (window as WinWithWebkit).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.type = 'sine';
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.25, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+    osc.frequency.value = 820;
+    gain.gain.setValueAtTime(0.22, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
     osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.18);
+    osc.stop(ctx.currentTime + 0.22);
     ctx.close();
-  } catch { /* silent fail on browsers that block audio */ }
+  } catch { /* silent */ }
+}
+
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
+
+function KpiBox({ label, value, bump }: { label: string; value: number; bump: boolean }) {
+  return (
+    <div className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm px-3 py-3 text-center">
+      <p
+        key={bump ? value : undefined}
+        className="text-2xl font-extrabold text-gray-900 leading-none tabular-nums"
+        style={bump ? { animation: 'countBump 0.4s ease' } : undefined}
+      >
+        {value}
+      </p>
+      <p className="text-[10px] text-gray-400 mt-1 leading-tight">{label}</p>
+    </div>
+  );
 }
 
 // ─── Lead Card ────────────────────────────────────────────────────────────────
@@ -112,72 +130,72 @@ function LeadCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [localEstado, setLocalEstado] = useState<Estado>(lead.estado);
-  const color = campaignColor(lead.utm_campaign);
-
-  // Sync if SWR updates the lead
   useEffect(() => { setLocalEstado(lead.estado); }, [lead.estado]);
+
+  const cs = campaignStyle(lead.utm_campaign);
 
   const cycleEstado = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const next = ESTADO_CYCLE[(ESTADO_CYCLE.indexOf(localEstado) + 1) % ESTADO_CYCLE.length];
+    const next = ESTADO_NEXT[localEstado];
     setLocalEstado(next);
     onEstadoChange(lead.id, next);
   };
 
-  const initials = lead.nombre.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
-
   return (
     <div
-      className={`bg-white rounded-2xl border overflow-hidden transition-all duration-300 ${
-        isNew ? 'border-green-400 shadow-green-100 shadow-md' : 'border-gray-100 shadow-sm'
+      className={`bg-white rounded-2xl border overflow-hidden transition-shadow duration-300 ${
+        isNew
+          ? 'border-green-300 shadow-[0_0_0_3px_rgba(22,163,74,0.12)]'
+          : 'border-gray-100 shadow-sm'
       }`}
-      style={isNew ? { animation: 'slideDown 0.35s cubic-bezier(0.34,1.56,0.64,1)' } : undefined}
+      style={isNew ? { animation: 'slideDown 0.4s cubic-bezier(0.34,1.5,0.64,1)' } : undefined}
     >
       {/* Main row */}
       <button
-        className="w-full text-left p-4 flex items-center gap-3"
+        className="w-full text-left p-4 flex items-start gap-3"
         onClick={() => setExpanded((p) => !p)}
       >
         {/* Avatar */}
         <div
-          className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-          style={{ background: color }}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5"
+          style={{ background: cs.color }}
         >
-          {initials}
+          {initials(lead.nombre)}
         </div>
 
-        {/* Center info */}
+        {/* Content */}
         <div className="flex-1 min-w-0">
+          {/* Name row */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-gray-900 font-bold text-base leading-tight">{lead.nombre}</span>
+            <span className="text-gray-900 font-bold text-[15px] leading-snug">{lead.nombre}</span>
             {isNew && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-500 text-white animate-pulse">
-                NUEVO
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-500 text-white animate-pulse">
+                ● NUEVO
               </span>
             )}
           </div>
 
-          {/* Phone + WhatsApp */}
-          <div className="flex items-center gap-2 mt-0.5">
+          {/* Phone + WA */}
+          <div className="flex items-center gap-2 mt-1">
             <span className="text-gray-500 text-xs">{formatPhone(lead.telefono)}</span>
             <a
               href={waUrl(lead.telefono)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold text-white transition active:scale-95"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold text-white transition-opacity hover:opacity-80 active:scale-95"
               style={{ background: '#16a34a' }}
             >
               <MessageCircle className="w-3 h-3" />
-              WA
+              WhatsApp
             </a>
           </div>
 
-          {/* Campaign badge + time */}
+          {/* Campaign + time */}
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <span
-              className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
-              style={{ background: color }}
+              className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: cs.bg, color: cs.text }}
             >
               {lead.utm_campaign}
             </span>
@@ -185,80 +203,50 @@ function LeadCard({
           </div>
         </div>
 
-        {/* Right: estado + chevron */}
+        {/* Estado + chevron */}
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <button
             onClick={cycleEstado}
-            className={`text-[10px] font-bold px-2.5 py-1 rounded-full transition active:scale-95 ${ESTADO_STYLE[localEstado]}`}
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-opacity hover:opacity-70 ${ESTADO_STYLE[localEstado]}`}
           >
             {ESTADO_LABEL[localEstado]}
           </button>
           {expanded
-            ? <ChevronUp className="w-4 h-4 text-gray-400" />
-            : <ChevronDown className="w-4 h-4 text-gray-400" />
+            ? <ChevronUp className="w-4 h-4 text-gray-300 mt-0.5" />
+            : <ChevronDown className="w-4 h-4 text-gray-300 mt-0.5" />
           }
         </div>
       </button>
 
-      {/* Expanded detail */}
+      {/* Expanded */}
       {expanded && (
-        <div className="px-4 pb-4 pt-0 border-t border-gray-50">
-          <div className="mt-3 space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Email</span>
-              <span className="text-gray-700 font-medium">{lead.correo}</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Anuncio</span>
-              <span className="text-gray-700 font-medium text-right max-w-[180px] truncate" title={lead.utm_campaign}>
-                {lead.utm_campaign}
-              </span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Llegó</span>
-              <span className="text-gray-700 font-medium">
-                {new Date(lead.createdAt).toLocaleString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-3 flex gap-2">
-            <a
-              href={waUrl(lead.telefono)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-bold text-white transition active:scale-95"
-              style={{ background: '#16a34a' }}
-            >
-              <MessageCircle className="w-4 h-4" />
-              Abrir WhatsApp
-            </a>
-          </div>
+        <div className="px-4 pb-4 border-t border-gray-50">
+          <dl className="mt-3 space-y-1.5">
+            {[
+              ['Email',   lead.correo],
+              ['Anuncio', lead.utm_campaign],
+              ['Llegó',   new Date(lead.createdAt).toLocaleString('es-AR', {
+                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+              })],
+            ].map(([k, v]) => (
+              <div key={k} className="flex justify-between gap-3 text-xs">
+                <dt className="text-gray-400 shrink-0">{k}</dt>
+                <dd className="text-gray-700 font-medium text-right truncate max-w-[200px]" title={v}>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <a
+            href={waUrl(lead.telefono)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold text-white"
+            style={{ background: '#16a34a' }}
+          >
+            <MessageCircle className="w-4 h-4" />
+            Abrir WhatsApp
+          </a>
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
-
-function KpiCard({ icon: Icon, label, value, sub, color }: {
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-  label: string;
-  value: number | string;
-  sub?: string;
-  color: string;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: color + '18' }}>
-          <Icon className="w-3.5 h-3.5" style={{ color }} />
-        </div>
-        <span className="text-gray-500 text-xs font-medium">{label}</span>
-      </div>
-      <p className="text-3xl font-extrabold text-gray-900 leading-none">{value}</p>
-      {sub && <p className="text-gray-400 text-[11px] mt-1">{sub}</p>}
     </div>
   );
 }
@@ -266,23 +254,21 @@ function KpiCard({ icon: Icon, label, value, sub, color }: {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DemoLucianoPage() {
-  const [newIds, setNewIds] = useState<Set<string>>(new Set());
-  const [simulating, setSimulating] = useState(false);
-  const [showAdminBar, setShowAdminBar] = useState(false);
-  const seedAttempted = useRef(false);
-  const prevIds = useRef<Set<string>>(new Set());
-  const tapCount = useRef(0);
-  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [newIds, setNewIds]     = useState<Set<string>>(new Set());
+  const [totalBump, setTotalBump] = useState(false);
+  const seedAttempted           = useRef(false);
+  const prevIds                 = useRef<Set<string>>(new Set());
+  const autoTimer               = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data, mutate } = useSWR<{ ok: boolean; leads: Lead[] }>(
     '/api/demo-luciano/leads',
     fetcher,
-    { refreshInterval: 3000 }
+    { refreshInterval: 4000 }
   );
 
   const leads = data?.leads ?? [];
 
-  // Auto-seed on first empty load
+  // ── Auto-seed on first empty load ────────────────────────────────────────────
   useEffect(() => {
     if (!data) return;
     if (data.leads.length === 0 && !seedAttempted.current) {
@@ -293,154 +279,108 @@ export default function DemoLucianoPage() {
     }
   }, [data, mutate]);
 
-  // Detect new leads between polls → beep + highlight
+  // ── Auto-simulate: 8s first, then 25-35s interval ────────────────────────────
+  useEffect(() => {
+    const fire = (delay: number) => {
+      autoTimer.current = setTimeout(async () => {
+        try {
+          await fetch('/api/demo-luciano/simulate', { method: 'POST' });
+          await mutate();
+        } catch { /* ignore */ }
+        fire(25_000 + Math.random() * 10_000);
+      }, delay);
+    };
+
+    fire(8_000);
+    return () => { if (autoTimer.current) clearTimeout(autoTimer.current); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Detect new leads → highlight + beep ──────────────────────────────────────
   useEffect(() => {
     const incoming = leads.map((l) => l.id);
-    const fresh = incoming.filter((id) => !prevIds.current.has(id));
+    const fresh    = incoming.filter((id) => !prevIds.current.has(id));
+
     if (fresh.length > 0 && prevIds.current.size > 0) {
+      // Animate counter
+      setTotalBump(true);
+      setTimeout(() => setTotalBump(false), 400);
+
+      // Highlight + sound
       setNewIds((prev) => new Set([...prev, ...fresh]));
       playBeep();
-      // Clear highlight after 5 s
+
+      // Clear highlight after 6s
       setTimeout(() => {
         setNewIds((prev) => {
           const next = new Set(prev);
           fresh.forEach((id) => next.delete(id));
           return next;
         });
-      }, 5000);
+      }, 6000);
     }
+
     prevIds.current = new Set(incoming);
   }, [leads]);
 
-  // Optimistic estado change
+  // ── Estado change ─────────────────────────────────────────────────────────────
   const handleEstadoChange = useCallback(async (id: string, estado: Estado) => {
-    await fetch(`/api/demo-luciano/leads/${id}`, {
+    fetch(`/api/demo-luciano/leads/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ estado }),
-    });
-    mutate();
+    }).then(() => mutate()).catch(console.error);
   }, [mutate]);
 
-  // Simulate new lead
-  const handleSimulate = useCallback(async () => {
-    setSimulating(true);
-    await fetch('/api/demo-luciano/simulate', { method: 'POST' });
-    await mutate();
-    setSimulating(false);
-  }, [mutate]);
-
-  // Triple-tap header → show admin bar
-  const handleHeaderTap = () => {
-    tapCount.current += 1;
-    if (tapTimer.current) clearTimeout(tapTimer.current);
-    tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 600);
-    if (tapCount.current >= 3) {
-      setShowAdminBar((p) => !p);
-      tapCount.current = 0;
-    }
-  };
-
-  // KPI calculations
-  const today = startOfToday();
-  const week  = startOfWeek();
+  // ── KPIs ──────────────────────────────────────────────────────────────────────
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const week  = new Date(); week.setHours(0, 0, 0, 0); week.setDate(week.getDate() - week.getDay());
   const totalHoy     = leads.filter((l) => new Date(l.createdAt) >= today).length;
   const totalSemana  = leads.filter((l) => new Date(l.createdAt) >= week).length;
   const contactados  = leads.filter((l) => l.estado !== 'nuevo').length;
-  const tasaContacto = leads.length ? Math.round((contactados / leads.length) * 100) : 0;
-
-  // Unique campaigns for the header
-  const campaigns = [...new Set(leads.map((l) => l.utm_campaign))];
 
   return (
     <>
-      {/* Slide-down animation */}
       <style>{`
         @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-16px) scale(0.97); }
+          from { opacity: 0; transform: translateY(-18px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes countBump {
+          0%   { transform: scale(1.35); color: #16a34a; }
+          100% { transform: scale(1);    color: inherit; }
         }
       `}</style>
 
       <div className="min-h-screen bg-gray-50">
 
-        {/* Hidden admin bar (triple-tap) */}
-        {showAdminBar && (
-          <div className="sticky top-0 z-50 flex items-center justify-between px-4 py-2 bg-gray-900 text-xs">
-            <span className="text-gray-400 font-mono">modo demo</span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => { seedAttempted.current = false; fetch('/api/demo-luciano/seed', { method: 'POST' }).then(() => mutate()); }}
-                className="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 transition"
-              >
-                ↺ Reiniciar
-              </button>
-              <button
-                onClick={handleSimulate}
-                disabled={simulating}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-black transition disabled:opacity-60"
-                style={{ background: '#4ade80' }}
-              >
-                <Zap className="w-3 h-3" />
-                {simulating ? 'Llegando…' : '+ Nuevo lead'}
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Header */}
-        <header
-          className="bg-white border-b border-gray-100 px-4 pt-5 pb-4 cursor-pointer select-none"
-          onClick={handleHeaderTap}
-        >
-          <div className="max-w-lg mx-auto">
-            {/* Logo placeholder + title */}
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm" style={{ background: '#16a34a' }}>
-                L
-              </div>
-              <div>
-                <p className="text-gray-900 font-bold text-base leading-tight">Panel de Leads</p>
-                <p className="text-gray-400 text-xs">Luciano Trafficker · Córdoba, Argentina</p>
-              </div>
-              {/* Live dot */}
-              <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-green-700 text-[10px] font-semibold">En vivo</span>
-              </div>
+        <header className="bg-white border-b border-gray-100 px-4 py-4 sticky top-0 z-10">
+          <div className="max-w-lg mx-auto flex items-center justify-between">
+            <div>
+              <h1 className="text-gray-900 font-bold text-base leading-tight">Panel de Leads — Demo</h1>
+              <p className="text-gray-400 text-xs">Córdoba, Argentina · actualización automática</p>
             </div>
-
-            {/* Campaign pills */}
-            {campaigns.length > 0 && (
-              <div className="flex gap-1.5 flex-wrap">
-                {campaigns.map((c) => (
-                  <span
-                    key={c}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
-                    style={{ background: campaignColor(c) }}
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            )}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 border border-green-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-green-700 text-xs font-semibold">{leads.length} leads</span>
+            </div>
           </div>
         </header>
 
-        <div className="max-w-lg mx-auto px-4 py-5 pb-24 space-y-4">
+        <div className="max-w-lg mx-auto px-4 py-4 pb-16 space-y-4">
 
-          {/* KPI Grid 2×2 */}
-          <div className="grid grid-cols-2 gap-3">
-            <KpiCard icon={Users}       label="Total leads"      value={leads.length}    color="#16a34a" />
-            <KpiCard icon={Calendar}    label="Hoy"              value={totalHoy}         color="#3b82f6" sub={totalHoy === 1 ? '1 nuevo hoy' : `${totalHoy} nuevos hoy`} />
-            <KpiCard icon={CalendarDays}label="Esta semana"      value={totalSemana}      color="#a855f7" />
-            <KpiCard icon={TrendingUp}  label="Tasa contacto"    value={`${tasaContacto}%`} color="#f97316" sub={`${contactados} de ${leads.length} contactados`} />
+          {/* KPIs */}
+          <div className="flex gap-2">
+            <KpiBox label="Total"      value={leads.length}   bump={totalBump} />
+            <KpiBox label="Hoy"        value={totalHoy}        bump={false} />
+            <KpiBox label="Esta semana" value={totalSemana}    bump={false} />
+            <KpiBox label="Contactados" value={contactados}    bump={false} />
           </div>
 
-          {/* Skeleton while loading */}
+          {/* Skeleton */}
           {leads.length === 0 && (
             <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
+              {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="bg-white rounded-2xl border border-gray-100 h-24 animate-pulse" />
               ))}
             </div>
@@ -459,20 +399,6 @@ export default function DemoLucianoPage() {
           </div>
 
         </div>
-
-        {/* Floating simulate button — low opacity, reveal on hover */}
-        <button
-          onClick={handleSimulate}
-          disabled={simulating}
-          title="Simular nuevo lead"
-          className="fixed bottom-6 right-5 w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all duration-200 active:scale-90 disabled:opacity-40 group"
-          style={{ background: '#16a34a', opacity: 0.18 }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.18')}
-        >
-          <Zap className={`w-6 h-6 text-white ${simulating ? 'animate-pulse' : ''}`} />
-        </button>
-
       </div>
     </>
   );
