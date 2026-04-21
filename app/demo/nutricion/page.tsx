@@ -46,6 +46,7 @@ const DEMO_LOYALTY_NUTRI: LoyaltyCardData = {
   recompensaNombre: 'consulta nutricional',
 };
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const ACCENT = '#16a34a';
 const AMBER = '#f59e0b';
@@ -431,6 +432,7 @@ function RegistroCalorico() {
 }
 
 export default function NutricionDashboardPage() {
+  useAnalytics('nutricion');
   const { mediciones, logros } = useNutricion();
   const { colors, theme } = useNutricionTheme();
   const activos = pacientesActivos().length;

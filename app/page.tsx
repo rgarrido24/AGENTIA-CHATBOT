@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { HeroPhoneMockup } from '@/components/HeroPhoneMockup';
 import { IndustrySelectorGrid } from '@/components/IndustrySelectorGrid';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 // ─── Star Rating ──────────────────────────────────────────────────────────────
 function Stars({ n = 5 }: { n?: number }) {
@@ -83,6 +84,7 @@ function initials(name: string) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  useAnalytics();
   return (
     <main
       className="min-h-screen text-white relative overflow-hidden"

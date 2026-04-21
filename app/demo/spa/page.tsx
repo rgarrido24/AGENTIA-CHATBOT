@@ -34,6 +34,7 @@ import {
 } from '@/lib/mock-data-spa';
 import { useSpa } from './spa-context';
 import type { LoyaltyCardData } from '@/app/demo/barber/LoyaltyCard';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const DEMO_LOYALTY_SPA: LoyaltyCardData = {
   clienteNombre: 'Sofía Ramírez',
@@ -68,6 +69,7 @@ function statusBadge(s: Cita['status']) {
 }
 
 export default function SpaDashboardPage() {
+  useAnalytics('spa');
   const { citas } = useSpa();
   const hoy = citasHoy(citas, FECHA_REF_DASHBOARD);
   const ordenadas = [...hoy].sort((a, b) => a.hora.localeCompare(b.hora));

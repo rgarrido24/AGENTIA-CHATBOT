@@ -32,6 +32,7 @@ import {
   type CitaGrooming,
 } from '@/lib/mock-data-grooming';
 import { useGrooming } from './grooming-context';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const ACCENT = '#f97316';
 
@@ -61,6 +62,7 @@ function statusBadge(s: CitaGrooming['status']) {
 }
 
 export default function GroomingDashboardPage() {
+  useAnalytics('grooming');
   const { citas } = useGrooming();
   const hoy = citasHoyG(citas, FECHA_REF_GROOMING);
   const ordenadas = [...hoy].sort((a, b) => a.hora.localeCompare(b.hora));

@@ -12,6 +12,7 @@ import { useBarber } from './barber-context';
 import { GIRO_CONFIGS } from './giro-config';
 import type { ChatMessage, CitaData } from './barber-chat-types';
 import type { LoyaltyCardData } from './LoyaltyCard';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 export type { CitaData } from './barber-chat-types';
 
@@ -94,6 +95,7 @@ function precioServicio(servicio: string, cfg: DemoBusinessConfig): number {
 }
 
 export default function DemoBarberPage() {
+  useAnalytics('barber');
   const cfgStatic = getStoredConfig() || getDefaultConfig();
   const [config, setConfig] = useState<DemoBusinessConfig>(cfgStatic);
   useEffect(() => {

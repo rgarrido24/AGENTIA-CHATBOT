@@ -27,6 +27,7 @@ import {
   type TipoOrden,
 } from '@/lib/mock-data-taller';
 import { useTaller } from './taller-context';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
@@ -48,6 +49,7 @@ const STATUS_LABEL: Record<StatusOrden, string> = {
 };
 
 export default function TallerDashboardPage() {
+  useAnalytics('taller');
   const { ordenes, movimientosCaja } = useTaller();
   const ingresos = ingresosDelDia(movimientosCaja);
   const activas = ordenes.filter((o) => o.status !== 'entregado');

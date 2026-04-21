@@ -26,6 +26,7 @@ import {
   type Cita,
 } from '@/lib/mock-data-medico';
 import { useMedico } from './medico-context';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
@@ -41,6 +42,7 @@ function badgeStatus(c: Cita['status']) {
 }
 
 export default function MedicoDashboardPage() {
+  useAnalytics('medico');
   const { pacientes, consultas, citas } = useMedico();
   const getP = (id: string) => pacientes.find((x) => x.id === id);
   const hoy = citasHoyM(citas, HOY_MED);

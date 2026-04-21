@@ -28,11 +28,13 @@ import {
   kpisFromMock,
 } from '@/lib/mock-data-cobranza';
 import { AnimatedNumber } from './components/AnimatedNumber';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
 
 export default function CobranzaDashboardPage() {
+  useAnalytics('cobranza');
   const k = kpisFromMock();
   const porAsesor = cobranzaPorAsesor();
   const porCiclo = estadoPorCiclo();

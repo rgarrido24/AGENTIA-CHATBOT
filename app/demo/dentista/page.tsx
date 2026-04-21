@@ -26,6 +26,7 @@ import {
   type Cita,
 } from '@/lib/mock-data-dentista';
 import { useDentista } from './dentista-context';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
@@ -41,6 +42,7 @@ function badgeStatus(c: Cita['status']) {
 }
 
 export default function DentistaDashboardPage() {
+  useAnalytics('dentista');
   const { pacientes, consultas, citas } = useDentista();
   const getP = (id: string) => pacientes.find((x) => x.id === id);
   const hoy = citasHoyD(citas, HOY_DENT);

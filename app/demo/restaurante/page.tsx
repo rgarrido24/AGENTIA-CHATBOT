@@ -29,6 +29,7 @@ import {
 } from '@/lib/mock-data-restaurante';
 import { useRestaurante } from './restaurante-context';
 import type { LoyaltyCardData } from '@/app/demo/barber/LoyaltyCard';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const DEMO_LOYALTY_REST: LoyaltyCardData = {
   clienteNombre: 'Juan Torres',
@@ -45,6 +46,7 @@ const fmt = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
 
 export default function RestauranteDashboardPage() {
+  useAnalytics('restaurante');
   const { mesas, ordenes, movimientosCaja } = useRestaurante();
   const ventas = ingresosDelDia(movimientosCaja);
   const completadas = ordenesCompletadas(ordenes);

@@ -1,257 +1,347 @@
 'use client';
 
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, Legend,
+} from 'recharts';
+import {
+  Globe, Monitor, Smartphone, Tablet, TrendingUp,
+  Clock, Users, ArrowUp, ArrowDown, Minus, RefreshCw,
+} from 'lucide-react';
 
-type AnalyticsData = {
-  citasRecuperadas: { total: number; estimatedRevenue: number; servicePrice: number };
-  tasaRespuesta: { avgSeconds: number; maxSeconds: number; targetSeconds: number };
-  prevencionAusentismo: { remindersSent: number; confirmedAfterReminder: number; tasaConfirmacion: number };
-  cierresPorVendedor?: { vendedor: string; cierres: number }[];
-};
+type Range = 'today' | '7d' | 'month';
 
-function AnimatedNumber({ value, suffix = '', delay = 0 }: { value: number; suffix?: string; delay?: number }) {
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    setDisplay(0);
-    let intervalId: ReturnType<typeof setInterval> | null = null;
-    const timeoutId = setTimeout(() => {
-      let v = 0;
-      const steps = Math.max(20, Math.min(50, Math.ceil(value / 10)));
-      const step = value / steps;
-      intervalId = setInterval(() => {
-        v += step;
-        if (v >= value) {
-          setDisplay(value);
-          if (intervalId) clearInterval(intervalId);
-        } else setDisplay(Math.round(v));
-      }, 25);
-    }, delay);
-    return () => {
-      clearTimeout(timeoutId);
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [value, delay]);
-  return <span>{display.toLocaleString('es-MX')}{suffix}</span>;
+interface StatsData {
+  hoy:          { visitas: number; topDemo: string | null; topPais: string | null };
+  ayer:         { visitas: number };
+  demos:        { demo: string; visitas: number; avgSegundos: number }[];
+  paises:       { pais: string; visitas: number; pct: number }[];
+  fuentes:      { fuente: string; visitas: number }[];
+  dispositivos: { dispositivo: string; visitas: number }[];
+  recientes:    { page: string; demo: string | null; pais: string; ciudad: string; dispositivo: string; navegador: string; createdAt: string }[];
 }
 
-export default function AnalyticsPage() {
-  const [data, setData] = useState<AnalyticsData | null>(null);
+const DEMO_COLORS: Record<string, string> = {
+  barber: '#a78bfa', cobranza: '#60a5fa', dentista: '#34d399',
+  grooming: '#fb923c', medico: '#f472b6', nutricion: '#facc15',
+  restaurante: '#f87171', spa: '#818cf8', taller: '#4ade80',
+};
+
+const DEVICE_COLORS = ['#60a5fa', '#a78bfa', '#34d399'];
+
+function fmtTime(s: number): string {
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}m ${s % 60}s`;
+}
+
+function DeltaBadge({ hoy, ayer }: { hoy: number; ayer: number }) {
+  if (ayer === 0) return <span className="text-slate-500 text-xs">—</span>;
+  const pct = Math.round(((hoy - ayer) / ayer) * 100);
+  if (pct > 0) return <span className="flex items-center gap-0.5 text-emerald-400 text-xs font-semibold"><ArrowUp size={12} />+{pct}% vs ayer</span>;
+  if (pct < 0) return <span className="flex items-center gap-0.5 text-red-400 text-xs font-semibold"><ArrowDown size={12} />{pct}% vs ayer</span>;
+  return <span className="flex items-center gap-0.5 text-slate-400 text-xs"><Minus size={12} />igual que ayer</span>;
+}
+
+function KpiCard({ label, value, sub, icon: Icon, color }: {
+  label: string;
+  value: string | number;
+  sub?: React.ReactNode;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  color: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col gap-2">
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${color}`}>
+        <Icon size={18} className="text-white" />
+      </div>
+      <div className="text-2xl font-bold text-white">{value}</div>
+      <div className="text-xs text-slate-400">{label}</div>
+      {sub && <div>{sub}</div>}
+    </div>
+  );
+}
+
+export default function AnalyticsDashboardPage() {
+  const [range, setRange] = useState<Range>('7d');
+  const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [clientId, setClientId] = useState('');
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/analytics/stats?range=${range}`);
+      if (res.ok) setData(await res.json());
+    } finally {
+      setLoading(false);
+      setLastRefresh(new Date());
+    }
+  }, [range]);
+
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    const params = clientId ? `?clientId=${encodeURIComponent(clientId)}` : '';
-    fetch(`/api/analytics${params}`)
-      .then((r) => r.json())
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
-  }, [clientId]);
+    const t = setInterval(load, 30_000);
+    return () => clearInterval(t);
+  }, [load]);
 
-  if (loading) {
-    return (
-      <main className="min-h-screen p-8 bg-luxury">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-slate-400">Cargando analítica...</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  const d = data ?? {
-    citasRecuperadas: { total: 0, estimatedRevenue: 0, servicePrice: 500 },
-    tasaRespuesta: { avgSeconds: 2.3, maxSeconds: 5, targetSeconds: 5 },
-    prevencionAusentismo: { remindersSent: 0, confirmedAfterReminder: 0, tasaConfirmacion: 72 },
-    cierresPorVendedor: [],
-  };
-  const cierres = d.cierresPorVendedor ?? [];
-
-  const speedPercent = Math.min(100, ((d.tasaRespuesta.targetSeconds - d.tasaRespuesta.avgSeconds) / d.tasaRespuesta.targetSeconds) * 100 + 20);
+  const rangeLabels: Record<Range, string> = { today: 'Hoy', '7d': '7 días', month: 'Este mes' };
 
   return (
-    <main className="min-h-screen p-8 bg-luxury">
-      <div className="max-w-6xl mx-auto">
-        <Link href="/dashboard" className="text-slate-400 hover:text-emerald-400 mb-6 inline-block transition">
-          ← Volver
-        </Link>
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <h1 className="text-2xl font-bold title-tracking text-white font-heading">
-            Analítica de Valor
-          </h1>
-          <select
-            value={clientId}
-            onChange={(e) => setClientId(e.target.value)}
-            className="rounded-lg border border-white/10 bg-slate-900/60 backdrop-blur-xl px-4 py-2 text-white"
-          >
-            <option value="">Todos los clientes</option>
-            <option value="izzi">izzi</option>
-            <option value="demo-inmobiliaria">Inmobiliaria</option>
-            <option value="agentia">Agentia</option>
-          </select>
+    <div className="min-h-screen bg-[#0a0a0f] text-white p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold">Analytics</h1>
+          <p className="text-slate-400 text-sm mt-0.5">
+            Actualizado {lastRefresh.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+          </p>
         </div>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* KPI 1: Citas Recuperadas (ROI) */}
-          <div
-            className="card-glass p-6 overflow-hidden"
-            style={{
-              animation: 'neonGlow 0.6s ease-out',
-              boxShadow: '0 0 20px rgba(16, 185, 129, 0.15), inset 0 0 20px rgba(16, 185, 129, 0.03)',
-            }}
+        <div className="flex items-center gap-3">
+          <div className="flex rounded-xl bg-white/5 border border-white/10 overflow-hidden text-sm">
+            {(['today', '7d', 'month'] as Range[]).map((r) => (
+              <button
+                key={r}
+                onClick={() => setRange(r)}
+                className={`px-4 py-2 transition-colors ${range === r ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                {rangeLabels[r]}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={load}
+            className="p-2 rounded-xl border border-white/10 bg-white/5 text-slate-400 hover:text-white transition-colors"
           >
-            <h3 className="text-sm font-medium mb-4 text-slate-400 subtitle-tracking">
-              Citas Recuperadas (ROI)
-            </h3>
-            <div className="mb-4">
-              <p className="text-3xl font-bold text-emerald-400" style={{ textShadow: '0 0 20px rgba(16,185,129,0.5)' }}>
-                <AnimatedNumber value={d.citasRecuperadas.total} delay={200} />
-              </p>
-              <p className="text-xs text-slate-400 mt-1">citas agendadas (30 días)</p>
-            </div>
-            <div className="h-2 rounded-full bg-[rgba(16,185,129,0.1)] overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 origin-left"
-                style={{
-                  width: `${Math.min(100, (d.citasRecuperadas.total / 50) * 100)}%`,
-                  animation: 'barGrow 1s ease-out 0.3s both',
-                  boxShadow: '0 0 10px var(--brand-primary)',
-                }}
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+      </div>
+
+      {loading && !data && (
+        <div className="flex items-center justify-center h-64 text-slate-500">Cargando datos…</div>
+      )}
+
+      {data && (
+        <div className="space-y-8">
+          {/* Section 1: Hoy vs Ayer */}
+          <section>
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Hoy vs Ayer</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <KpiCard
+                label="Visitas hoy"
+                value={data.hoy.visitas}
+                sub={<DeltaBadge hoy={data.hoy.visitas} ayer={data.ayer.visitas} />}
+                icon={Users}
+                color="bg-indigo-600"
+              />
+              <KpiCard
+                label="Demo más visto hoy"
+                value={data.hoy.topDemo ?? '—'}
+                icon={TrendingUp}
+                color="bg-violet-600"
+              />
+              <KpiCard
+                label="País #1 hoy"
+                value={data.hoy.topPais ?? '—'}
+                icon={Globe}
+                color="bg-sky-600"
               />
             </div>
-            <p className="mt-4 text-lg font-semibold text-emerald-400">
-              $<AnimatedNumber value={d.citasRecuperadas.estimatedRevenue} delay={600} />
-            </p>
-            <p className="text-xs text-slate-400">
-              Est. {d.citasRecuperadas.total} × ${d.citasRecuperadas.servicePrice}/cita
-            </p>
-          </div>
+          </section>
 
-          {/* KPI 2: Tasa de Respuesta */}
-          <div
-            className="card-glass p-6 overflow-hidden"
-            style={{
-              animation: 'neonGlow 0.6s ease-out 0.2s both',
-              boxShadow: '0 0 20px rgba(16, 185, 129, 0.15)',
-            }}
-          >
-            <h3 className="text-sm font-medium mb-4 text-slate-400 subtitle-tracking">
-              Tasa de Respuesta
-            </h3>
-            <div className="relative w-32 h-32 mx-auto mb-4">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="rgba(16,185,129,0.15)"
-                  strokeWidth="8"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="url(#speedGrad)"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  strokeDasharray="283"
-                  strokeDashoffset={283 - (speedPercent / 100) * 283}
-                  style={{
-                    transition: 'stroke-dashoffset 1s ease-out',
-                    filter: 'drop-shadow(0 0 6px var(--brand-primary))',
-                  }}
-                />
-                <defs>
-                  <linearGradient id="speedGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="var(--brand-primary)" />
-                    <stop offset="100%" stopColor="var(--brand-accent)" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-bold text-emerald-400 font-heading">
-                  {d.tasaRespuesta.avgSeconds}s
-                </span>
-                <span className="text-xs text-slate-400">promedio</span>
-              </div>
+          {/* Section 2: Demo popularity */}
+          <section>
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Demos más populares</h2>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              {data.demos.length === 0 ? (
+                <p className="text-slate-500 text-sm text-center py-8">Sin datos para este período</p>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={data.demos.length * 48 + 20}>
+                    <BarChart
+                      data={data.demos}
+                      layout="vertical"
+                      margin={{ left: 16, right: 48, top: 4, bottom: 4 }}
+                    >
+                      <XAxis type="number" hide />
+                      <YAxis
+                        type="category"
+                        dataKey="demo"
+                        tick={{ fill: '#94a3b8', fontSize: 13 }}
+                        width={90}
+                      />
+                      <Tooltip
+                        contentStyle={{ background: '#1e1e2e', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 13 }}
+                        formatter={(val: number, _n: string, item: { payload?: { avgSegundos?: number } }) => [
+                          `${val} visitas — avg ${fmtTime(item.payload?.avgSegundos ?? 0)}`, '',
+                        ]}
+                      />
+                      <Bar dataKey="visitas" radius={[0, 6, 6, 0]} label={{ position: 'right', fill: '#94a3b8', fontSize: 12 }}>
+                        {data.demos.map((entry) => (
+                          <Cell key={entry.demo} fill={DEMO_COLORS[entry.demo] ?? '#6366f1'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
+                    {data.demos.map((d) => (
+                      <div key={d.demo} className="flex items-center gap-1.5 text-xs text-slate-400">
+                        <Clock size={11} className="text-slate-500" />
+                        <span className="capitalize">{d.demo}</span>
+                        <span className="text-slate-500">{fmtTime(d.avgSegundos)} prom.</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
-            <p className="text-center text-sm">
-              <span className="text-emerald-400 font-medium">&lt; 5 segundos</span>
-              <br />
-              <span className="text-slate-400 text-xs">Lo que un humano no puede hacer</span>
-            </p>
+          </section>
+
+          {/* Section 3+4: Countries + Sources */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <section>
+              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Países</h2>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                {data.paises.length === 0 ? (
+                  <p className="text-slate-500 text-sm text-center py-8">Sin datos</p>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-slate-500 text-xs uppercase">
+                        <th className="text-left pb-3">País</th>
+                        <th className="text-right pb-3">Visitas</th>
+                        <th className="text-right pb-3">%</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {data.paises.map((p) => (
+                        <tr key={p.pais}>
+                          <td className="py-2 text-slate-300">{p.pais}</td>
+                          <td className="py-2 text-right text-white font-medium">{p.visitas}</td>
+                          <td className="py-2 text-right text-slate-400">{p.pct}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Fuentes de tráfico</h2>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                {data.fuentes.length === 0 ? (
+                  <p className="text-slate-500 text-sm text-center py-8">Sin datos</p>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-slate-500 text-xs uppercase">
+                        <th className="text-left pb-3">Fuente</th>
+                        <th className="text-right pb-3">Visitas</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {data.fuentes.map((f) => (
+                        <tr key={f.fuente}>
+                          <td className="py-2 text-slate-300">{f.fuente}</td>
+                          <td className="py-2 text-right text-white font-medium">{f.visitas}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </section>
           </div>
 
-          {/* KPI 3: Prevención de Ausentismo */}
-          <div
-            className="card-glass p-6 overflow-hidden"
-            style={{
-              animation: 'neonGlow 0.6s ease-out 0.4s both',
-              boxShadow: '0 0 20px rgba(16, 185, 129, 0.15)',
-            }}
-          >
-            <h3 className="text-sm font-medium mb-4 text-slate-400 subtitle-tracking">
-              Prevención de Ausentismo
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-2xl font-bold text-emerald-400">
-                  <AnimatedNumber value={d.prevencionAusentismo.remindersSent} delay={500} />
-                </p>
-                <p className="text-xs text-slate-400">Recordatorios enviados</p>
-              </div>
-              <div className="h-px bg-white/10" />
-              <div>
-                <p className="text-2xl font-bold text-emerald-400 font-heading">
-                  <AnimatedNumber value={d.prevencionAusentismo.confirmedAfterReminder} delay={700} />
-                </p>
-                <p className="text-xs text-slate-400">Confirmaron asistencia</p>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex-1 h-2 rounded-full bg-[rgba(16,185,129,0.2)] overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400"
-                    style={{
-                      width: `${d.prevencionAusentismo.tasaConfirmacion}%`,
-                      animation: 'barGrow 1s ease-out 0.6s both',
-                      boxShadow: '0 0 8px var(--brand-accent)',
-                    }}
-                  />
+          {/* Section 5: Devices */}
+          <section>
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Dispositivos</h2>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              {data.dispositivos.length === 0 ? (
+                <p className="text-slate-500 text-sm text-center py-8">Sin datos</p>
+              ) : (
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <ResponsiveContainer width={220} height={200}>
+                    <PieChart>
+                      <Pie
+                        data={data.dispositivos}
+                        dataKey="visitas"
+                        nameKey="dispositivo"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={52}
+                        outerRadius={82}
+                        paddingAngle={3}
+                      >
+                        {data.dispositivos.map((entry, i) => (
+                          <Cell key={entry.dispositivo} fill={DEVICE_COLORS[i % DEVICE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ background: '#1e1e2e', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 13 }}
+                      />
+                      <Legend formatter={(val) => <span className="text-slate-300 text-xs capitalize">{val}</span>} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex flex-col gap-3">
+                    {data.dispositivos.map((d, i) => {
+                      const Icon = d.dispositivo === 'mobile' ? Smartphone : d.dispositivo === 'tablet' ? Tablet : Monitor;
+                      return (
+                        <div key={d.dispositivo} className="flex items-center gap-3">
+                          <Icon size={16} style={{ color: DEVICE_COLORS[i % DEVICE_COLORS.length] }} />
+                          <span className="text-slate-300 capitalize text-sm w-16">{d.dispositivo}</span>
+                          <span className="text-white font-bold text-sm">{d.visitas}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <span className="text-sm font-medium text-emerald-400 font-heading">
-                  {d.prevencionAusentismo.tasaConfirmacion}%
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">
-                gracias al mensaje automático
-              </p>
+              )}
             </div>
-          </div>
+          </section>
+
+          {/* Section 6: Recent activity */}
+          <section>
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Actividad reciente</h2>
+            <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+              {data.recientes.length === 0 ? (
+                <p className="text-slate-500 text-sm text-center py-8">Sin eventos recientes</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-white/5">
+                      <tr className="text-slate-500 text-xs uppercase">
+                        <th className="text-left px-4 py-3">Página</th>
+                        <th className="text-left px-4 py-3">País / Ciudad</th>
+                        <th className="text-left px-4 py-3">Dispositivo</th>
+                        <th className="text-left px-4 py-3">Navegador</th>
+                        <th className="text-right px-4 py-3">Hora</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {data.recientes.map((r, i) => (
+                        <tr key={i} className="hover:bg-white/[0.03] transition-colors">
+                          <td className="px-4 py-2.5 text-slate-300 font-mono text-xs">{r.page}</td>
+                          <td className="px-4 py-2.5 text-slate-400 text-xs">
+                            {r.pais}{r.ciudad && r.ciudad !== r.pais ? ` · ${r.ciudad}` : ''}
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-400 text-xs capitalize">{r.dispositivo}</td>
+                          <td className="px-4 py-2.5 text-slate-400 text-xs">{r.navegador}</td>
+                          <td className="px-4 py-2.5 text-right text-slate-500 text-xs whitespace-nowrap">
+                            {new Date(r.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
-
-        {cierres.length > 0 && (
-          <div className="mt-8 card-glass p-6">
-            <h3 className="text-lg font-semibold mb-4 text-emerald-400 font-heading">
-              Cierres por vendedor
-            </h3>
-            <div className="space-y-3">
-              {cierres.map((item, i) => (
-                <div key={item.vendedor} className="flex items-center justify-between py-2 border-b border-white/10 last:border-0">
-                  <span className="font-medium">{item.vendedor}</span>
-                  <span className="text-xl font-bold text-emerald-400 font-heading">
-                    <AnimatedNumber value={item.cierres} delay={100 * i} />
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </main>
+      )}
+    </div>
   );
 }
