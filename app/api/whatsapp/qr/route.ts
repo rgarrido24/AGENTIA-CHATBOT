@@ -13,9 +13,15 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'html';
+    const clientId = (searchParams.get('clientId') ?? 'agentia').trim().toLowerCase() || 'agentia';
 
     const db = await getMongoDb();
-    const doc = await db.collection<{ qr?: string; updatedAt?: Date }>('whatsapp_qr').findOne({ _id: 'current' as any });
+    // Try clientId first, fall back to legacy 'current' doc for backwards compat
+    const doc = await db.collection<{ qr?: string; updatedAt?: Date }>('whatsapp_qr').findOne(
+      { _id: clientId as any }
+    ) ?? (clientId === 'agentia'
+      ? await db.collection<{ qr?: string; updatedAt?: Date }>('whatsapp_qr').findOne({ _id: 'current' as any })
+      : null);
     const qrData = doc?.qr;
 
     if (!qrData) {

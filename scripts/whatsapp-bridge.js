@@ -428,7 +428,7 @@ async function main() {
       // Envía el QR al API (reintentos por si el Web Service está arrancando en cold start)
       const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
       const url = `${API_URL}/api/whatsapp/qr-store`;
-      const payload = JSON.stringify({ qr });
+      const payload = JSON.stringify({ qr, clientId: CLIENT_ID });
       const headers = {
         'Content-Type': 'application/json',
         ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}),
@@ -474,6 +474,12 @@ async function main() {
       reconnectAttempt = 0;
       whatsappReady = true;
       console.log('[Agentia] WhatsApp conectado correctamente.');
+      const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
+      fetch(`${API_URL}/api/whatsapp/qr-store`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}) },
+        body: JSON.stringify({ clientId: CLIENT_ID, connected: true }),
+      }).catch(() => {});
     });
 
     nextClient.on('authenticated', () => {
@@ -492,6 +498,12 @@ async function main() {
       lastState = 'disconnected';
       whatsappReady = false;
       console.warn('[Agentia] WhatsApp desconectado:', reason);
+      const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
+      fetch(`${API_URL}/api/whatsapp/qr-store`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}) },
+        body: JSON.stringify({ clientId: CLIENT_ID, connected: false }),
+      }).catch(() => {});
       const delay = Math.min(30_000, 3_000 * Math.max(1, reconnectAttempt + 1));
       reconnectAttempt += 1;
       console.log(`[Agentia] Reintentando conexión en ${Math.round(delay / 1000)}s...`);
