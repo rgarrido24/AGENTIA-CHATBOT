@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Wifi, WifiOff, RefreshCw, QrCode, Clock } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, QrCode, Clock, Trash2 } from 'lucide-react';
 
 interface Bridge {
   clientId: string;
@@ -20,8 +20,9 @@ function timeAgo(iso: string | null): string {
   return `hace ${Math.floor(diff / 3600)}h`;
 }
 
-function BridgeCard({ bridge, onRefresh }: { bridge: Bridge; onRefresh: () => void }) {
+function BridgeCard({ bridge, onRefresh, onDelete }: { bridge: Bridge; onRefresh: () => void; onDelete: (clientId: string) => Promise<void> }) {
   const [expanded, setExpanded] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
@@ -49,15 +50,33 @@ function BridgeCard({ bridge, onRefresh }: { bridge: Bridge; onRefresh: () => vo
             <Clock size={11} />
             {timeAgo(bridge.updatedAt)}
           </div>
-          {bridge.hasQr && !bridge.connected && (
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 transition-colors text-xs font-medium"
-            >
-              <QrCode size={13} />
-              {expanded ? 'Ocultar' : 'Ver QR'}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {bridge.hasQr && !bridge.connected && (
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 transition-colors text-xs font-medium"
+              >
+                <QrCode size={13} />
+                {expanded ? 'Ocultar' : 'Ver QR'}
+              </button>
+            )}
+            {!bridge.connected && (
+              <button
+                onClick={async () => {
+                  if (!confirm(`¿Eliminar bridge "${bridge.clientId}" de la base de datos?`)) return;
+                  setDeleting(true);
+                  await onDelete(bridge.clientId);
+                  setDeleting(false);
+                }}
+                disabled={deleting}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-xs"
+                title="Eliminar bridge"
+              >
+                <Trash2 size={12} />
+                {deleting ? '…' : 'Eliminar'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -128,6 +147,11 @@ export default function WhatsAppDashboardPage() {
     return () => clearInterval(t);
   }, [load]);
 
+  const deleteBridge = useCallback(async (clientId: string) => {
+    await fetch(`/api/whatsapp/status?clientId=${encodeURIComponent(clientId)}`, { method: 'DELETE' });
+    await load();
+  }, [load]);
+
   const connectedCount = bridges.filter((b) => b.connected).length;
   const pendingCount   = bridges.filter((b) => !b.connected && b.hasQr).length;
 
@@ -194,7 +218,7 @@ export default function WhatsAppDashboardPage() {
 
       <div className="space-y-4">
         {bridges.map((bridge) => (
-          <BridgeCard key={bridge.clientId} bridge={bridge} onRefresh={load} />
+          <BridgeCard key={bridge.clientId} bridge={bridge} onRefresh={load} onDelete={deleteBridge} />
         ))}
       </div>
 
