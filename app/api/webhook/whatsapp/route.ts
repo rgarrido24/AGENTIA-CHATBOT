@@ -9,6 +9,44 @@ function normalizeLeadId(raw: unknown): string | undefined {
   return digits || trimmed;
 }
 
+// ─── Deduplicación de mensajes ────────────────────────────────────────────────
+// Cuando dos bridges están vinculados al mismo número de WhatsApp actúan como
+// dispositivos distintos y ambos reciben el mismo mensaje. El primero en llegar
+// procesa; el segundo recibe 200 pero se descarta silenciosamente.
+//
+// Clave: leadId + primeros 120 chars del mensaje + ventana de 10 segundos.
+// En Render (proceso persistente) el Map vive en memoria del proceso — correcto.
+// En serverless sería por instancia, pero el middleware de dedup en BD sería
+// el siguiente paso si escala a múltiples instancias.
+
+const DEDUP_WINDOW_MS = 10_000;
+const DEDUP_MAX_ENTRIES = 2_000;
+
+const dedupStore = new Map<string, number>(); // key → expiresAt
+
+function dedupKey(leadId: string, mensaje: string): string {
+  // Fingerprint del mensaje: leadId + primeros 120 chars normalizados
+  const msgSlug = mensaje.trim().slice(0, 120).replace(/\s+/g, ' ');
+  return `${leadId}:${msgSlug}`;
+}
+
+function isDuplicate(key: string): boolean {
+  const now = Date.now();
+  const exp = dedupStore.get(key);
+  if (exp && exp > now) return true;
+
+  // Registrar como procesado
+  dedupStore.set(key, now + DEDUP_WINDOW_MS);
+
+  // Limpiar entradas expiradas si la store crece demasiado
+  if (dedupStore.size > DEDUP_MAX_ENTRIES) {
+    for (const [k, expAt] of dedupStore) {
+      if (expAt <= now) dedupStore.delete(k);
+    }
+  }
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -25,13 +63,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'leadId requerido' }, { status: 400 });
     }
 
+    // Descartar duplicados (mismo mensaje de dos bridges en los últimos 10s)
+    const key = dedupKey(leadId, mensaje + (mediaBase64 ? ':media' : ''));
+    if (isDuplicate(key)) {
+      console.log(`[webhook/whatsapp] DEDUP descartado — leadId:${leadId} clientId:${clientId}`);
+      return NextResponse.json({ ok: true, skipped: true });
+    }
+
     const baseUrl =
       process.env.AGENTIA_CHATBOT_API_URL?.replace(/\/$/, '') ||
       process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ||
       process.env.LEADS_API_BASE_URL?.replace(/\/$/, '') ||
       'https://agentia-chatbot-ventas.onrender.com';
 
-    console.log('[webhook/whatsapp] baseUrl:', baseUrl, 'leadId:', leadId, 'hasMedia:', !!mediaBase64);
+    console.log('[webhook/whatsapp] baseUrl:', baseUrl, 'leadId:', leadId, 'clientId:', clientId, 'hasMedia:', !!mediaBase64);
 
     const chatRes = await fetch(`${baseUrl}/api/chat`, {
       method: 'POST',
@@ -55,4 +100,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }
-
