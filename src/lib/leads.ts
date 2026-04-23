@@ -46,6 +46,10 @@ export type Lead = {
   senderName?: string;
   platform: string;
   source?: 'whatsapp' | 'facebook' | 'instagram';
+  pipeline?: string;
+  canal_origen?: string;
+  nombre?: string;
+  telefono?: string;
   // Facebook Lead Ads
   campana?: string;
   adset?: string;
@@ -116,6 +120,8 @@ export async function upsertLead(params: {
       return;
     }
 
+    const isAgentiaVentas = params.clientId === 'agentia-ventas';
+
     await coll.updateOne(
       { leadId },
       {
@@ -127,7 +133,9 @@ export async function upsertLead(params: {
           lastReply: params.reply,
           lastMessageAt: now,
           tags: params.tags,
-          updatedAt: now
+          updatedAt: now,
+          // Para agentia-ventas: mantener nombre y telefono actualizados si llegan
+          ...(isAgentiaVentas && params.senderName ? { nombre: params.senderName } : {}),
         },
         $setOnInsert: {
           leadId,
@@ -136,7 +144,15 @@ export async function upsertLead(params: {
           senderId: params.senderId,
           status: "nuevos",
           bot_status: "active",
-          createdAt: now
+          createdAt: now,
+          // Campos requeridos para el pipeline de agentia-ventas
+          ...(isAgentiaVentas ? {
+            pipeline: 'agentia',
+            canal_origen: normalizeSource(params.platform),
+            status_vendedor: 'nuevo' as AgentiaVentasStatusVendedor,
+            telefono: params.senderId,
+            nombre: params.senderName ?? params.senderId,
+          } : {}),
         },
         $inc: { messageCount: 1 }
       },

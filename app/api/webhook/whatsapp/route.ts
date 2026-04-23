@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getMongoDb } from '@/lib/mongodb';
 
 function normalizeLeadId(raw: unknown): string | undefined {
   if (typeof raw !== 'string') return undefined;
@@ -13,11 +14,6 @@ function normalizeLeadId(raw: unknown): string | undefined {
 // Cuando dos bridges están vinculados al mismo número de WhatsApp actúan como
 // dispositivos distintos y ambos reciben el mismo mensaje. El primero en llegar
 // procesa; el segundo recibe 200 pero se descarta silenciosamente.
-//
-// Clave: leadId + primeros 120 chars del mensaje + ventana de 10 segundos.
-// En Render (proceso persistente) el Map vive en memoria del proceso — correcto.
-// En serverless sería por instancia, pero el middleware de dedup en BD sería
-// el siguiente paso si escala a múltiples instancias.
 
 const DEDUP_WINDOW_MS = 10_000;
 const DEDUP_MAX_ENTRIES = 2_000;
@@ -25,7 +21,6 @@ const DEDUP_MAX_ENTRIES = 2_000;
 const dedupStore = new Map<string, number>(); // key → expiresAt
 
 function dedupKey(leadId: string, mensaje: string): string {
-  // Fingerprint del mensaje: leadId + primeros 120 chars normalizados
   const msgSlug = mensaje.trim().slice(0, 120).replace(/\s+/g, ' ');
   return `${leadId}:${msgSlug}`;
 }
@@ -35,16 +30,80 @@ function isDuplicate(key: string): boolean {
   const exp = dedupStore.get(key);
   if (exp && exp > now) return true;
 
-  // Registrar como procesado
   dedupStore.set(key, now + DEDUP_WINDOW_MS);
 
-  // Limpiar entradas expiradas si la store crece demasiado
   if (dedupStore.size > DEDUP_MAX_ENTRIES) {
     for (const [k, expAt] of dedupStore) {
       if (expAt <= now) dedupStore.delete(k);
     }
   }
   return false;
+}
+
+// ─── Upsert de seguridad para agentia-ventas ──────────────────────────────────
+// Persiste el lead en MongoDB ANTES de llamar al chat API, de modo que si el
+// chat falla (Gemini error, config ausente, timeout) el contacto queda
+// registrado con los campos mínimos requeridos por el pipeline.
+
+async function ensureAgentiaVentasLead(params: {
+  leadId: string;
+  senderId: string;
+  senderName: string | undefined;
+  mensaje: string;
+}): Promise<void> {
+  try {
+    const db = await getMongoDb();
+    const now = new Date();
+    const leadMongoId = `${params.senderId}_whatsapp-bridge_agentia-ventas`;
+
+    await db.collection('leads').updateOne(
+      { leadId: leadMongoId },
+      {
+        $set: {
+          lastMessage: params.mensaje,
+          lastMessageAt: now,
+          updatedAt: now,
+          platform: 'whatsapp',
+          source: 'whatsapp',
+          ...(params.senderName ? { nombre: params.senderName, senderName: params.senderName } : {}),
+        },
+        $setOnInsert: {
+          leadId: leadMongoId,
+          clientId: 'agentia-ventas',
+          pageId: 'whatsapp-bridge',
+          senderId: params.senderId,
+          telefono: params.senderId,
+          nombre: params.senderName ?? params.senderId,
+          pipeline: 'agentia',
+          canal_origen: 'whatsapp',
+          status: 'nuevos',
+          status_vendedor: 'nuevo',
+          bot_status: 'active',
+          messageCount: 0,
+          tags: [],
+          createdAt: now,
+        },
+        $inc: { messageCount: 1 },
+      },
+      { upsert: true }
+    );
+
+    // Guardar mensaje en colección de mensajes para historial
+    await db.collection('messages').insertOne({
+      leadId: leadMongoId,
+      clientId: 'agentia-ventas',
+      senderId: params.senderId,
+      canal: 'whatsapp',
+      direccion: 'entrante',
+      contenido: params.mensaje,
+      createdAt: now,
+    });
+
+    console.log('[webhook/whatsapp] Lead agentia-ventas upserted:', leadMongoId);
+  } catch (err) {
+    // No bloquear el flujo principal si esto falla
+    console.error('[webhook/whatsapp] Error al persistir lead agentia-ventas:', err instanceof Error ? err.message : err);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -56,6 +115,7 @@ export async function POST(request: NextRequest) {
     const mediaBase64 = typeof body?.mediaBase64 === 'string' ? body.mediaBase64 : undefined;
     const mediaType = typeof body?.mediaType === 'string' ? body.mediaType : undefined;
     const leadData = (body?.leadData && typeof body.leadData === 'object') ? body.leadData : {};
+    const senderName: string | undefined = typeof (leadData as any)?.nombre === 'string' ? (leadData as any).nombre : undefined;
     // clientId dinámico: el bridge lo envía; default 'izzi' para compatibilidad hacia atrás
     const clientId = (typeof body?.clientId === 'string' && body.clientId.trim()) ? body.clientId.trim() : 'izzi';
 
@@ -68,6 +128,11 @@ export async function POST(request: NextRequest) {
     if (isDuplicate(key)) {
       console.log(`[webhook/whatsapp] DEDUP descartado — leadId:${leadId} clientId:${clientId}`);
       return NextResponse.json({ ok: true, skipped: true });
+    }
+
+    // Persistir lead de agentia-ventas antes del chat (seguro ante fallos del chat API)
+    if (clientId === 'agentia-ventas') {
+      await ensureAgentiaVentasLead({ leadId, senderId: leadId, senderName, mensaje });
     }
 
     const baseUrl =
@@ -87,7 +152,7 @@ export async function POST(request: NextRequest) {
         entryType: 'dm',
         message: mensaje,
         senderId: leadId,
-        senderName: (leadData as any)?.nombre,
+        senderName,
         pageId: 'whatsapp-bridge',
         ...(mediaBase64 ? { mediaBase64, mimeType: mediaType || 'image/jpeg' } : {}),
       }),
