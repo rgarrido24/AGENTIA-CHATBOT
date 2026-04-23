@@ -60,6 +60,7 @@ async function ensureAgentiaVentasLead(params: {
       { leadId: leadMongoId },
       {
         $set: {
+          // Campos que se actualizan en CADA mensaje
           lastMessage: params.mensaje,
           lastMessageAt: now,
           updatedAt: now,
@@ -70,6 +71,8 @@ async function ensureAgentiaVentasLead(params: {
           senderName: params.senderName ?? params.senderId,
         },
         $setOnInsert: {
+          // Campos que se escriben UNA SOLA VEZ al crear el documento
+          // Ninguno de estos campos puede repetirse en $set ni en $inc
           leadId: leadMongoId,
           clientId: 'agentia-ventas',
           pageId: 'whatsapp-bridge',
@@ -79,10 +82,10 @@ async function ensureAgentiaVentasLead(params: {
           status: 'nuevos',
           status_vendedor: 'nuevo',
           bot_status: 'active',
-          messageCount: 0,
           tags: [],
           createdAt: now,
         },
+        // messageCount solo en $inc, nunca en $set ni $setOnInsert
         $inc: { messageCount: 1 },
       },
       { upsert: true }

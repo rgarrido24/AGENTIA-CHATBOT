@@ -126,6 +126,7 @@ export async function upsertLead(params: {
       { leadId },
       {
         $set: {
+          // Campos que se actualizan en CADA mensaje — nunca deben estar en $setOnInsert
           senderName: params.senderName ?? undefined,
           platform: params.platform,
           source: normalizeSource(params.platform),
@@ -134,10 +135,13 @@ export async function upsertLead(params: {
           lastMessageAt: now,
           tags: params.tags,
           updatedAt: now,
-          // Para agentia-ventas: mantener nombre y telefono actualizados si llegan
-          ...(isAgentiaVentas && params.senderName ? { nombre: params.senderName } : {}),
+          ...(isAgentiaVentas ? {
+            nombre: params.senderName ?? params.senderId,
+            telefono: params.senderId,
+          } : {}),
         },
         $setOnInsert: {
+          // Campos que se escriben UNA SOLA VEZ al crear — ninguno puede estar en $set ni $inc
           leadId,
           clientId: params.clientId,
           pageId: params.pageId,
@@ -145,15 +149,13 @@ export async function upsertLead(params: {
           status: "nuevos",
           bot_status: "active",
           createdAt: now,
-          // Campos requeridos para el pipeline de agentia-ventas
           ...(isAgentiaVentas ? {
             pipeline: 'agentia',
             canal_origen: normalizeSource(params.platform),
             status_vendedor: 'nuevo' as AgentiaVentasStatusVendedor,
-            telefono: params.senderId,
-            nombre: params.senderName ?? params.senderId,
           } : {}),
         },
+        // messageCount solo en $inc, nunca en $set ni $setOnInsert
         $inc: { messageCount: 1 }
       },
       { upsert: true }
