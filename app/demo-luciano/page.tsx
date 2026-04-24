@@ -26,8 +26,8 @@ const ACCENT = '#CCFF00';
 
 // ─── Campaigns — color per known campaign name ────────────────────────────────
 
-const CAMPAIGN_COLORS: Record<string, { bg: string; text: string }> = {
-  default: { bg: '#1e2800', text: ACCENT },
+const CAMPAIGN_COLORS: Record<string, { backgroundColor: string; color: string }> = {
+  default: { backgroundColor: '#1e2800', color: ACCENT },
 };
 
 function campaignStyle(name: string) {
