@@ -6,7 +6,10 @@ import {
   Bell,
   BookOpen,
   CalendarDays,
+  ClipboardList,
   CreditCard,
+  FlaskConical,
+  Heart,
   LayoutDashboard,
   Menu,
   MessageCircle,
@@ -17,6 +20,7 @@ import {
   TrendingUp,
   UtensilsCrossed,
   Users,
+  Wallet,
   X,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -39,7 +43,11 @@ const NAV = [
   { href: '/demo/nutricion/inbody', label: 'Registro InBody', icon: ScanLine },
   { href: '/demo/nutricion/recordatorios', label: 'Recordatorios', icon: Bell },
   { href: '/demo/nutricion/chat', label: 'Asistente IA', icon: MessageCircle },
-  { href: '/demo/nutricion/precios', label: '💼 Planes y Precios', icon: CreditCard },
+  { href: '/demo/nutricion/laboratorio',    label: 'Laboratorio',           icon: FlaskConical   },
+  { href: '/demo/nutricion/cardiovascular', label: 'Riesgo Cardiovascular',  icon: Heart          },
+  { href: '/demo/nutricion/expediente',     label: 'Expediente',             icon: ClipboardList  },
+  { href: '/demo/nutricion/finanzas',       label: 'Finanzas',               icon: Wallet         },
+  { href: '/demo/nutricion/precios',        label: '💼 Planes y Precios',    icon: CreditCard     },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {
@@ -52,6 +60,10 @@ const TITLE_MAP: Record<string, string> = {
   '/demo/nutricion/inbody': 'Registro InBody',
   '/demo/nutricion/recordatorios': 'Recordatorios',
   '/demo/nutricion/chat': 'Asistente IA',
+  '/demo/nutricion/laboratorio': 'Análisis de Laboratorio',
+  '/demo/nutricion/cardiovascular': 'Riesgo Cardiovascular',
+  '/demo/nutricion/expediente': 'Expediente del Paciente',
+  '/demo/nutricion/finanzas': 'Finanzas',
   '/demo/nutricion/precios': 'Planes y Precios',
 };
 
