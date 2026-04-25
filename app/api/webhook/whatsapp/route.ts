@@ -44,6 +44,20 @@ function isDuplicate(key: string): boolean {
 // Persiste el lead en MongoDB ANTES de llamar al chat API, de modo que si el
 // chat falla (Gemini error, config ausente, timeout) el contacto queda
 // registrado con los campos mínimos requeridos por el pipeline.
+//
+// Regla: si el senderId es el admin NO se crea lead.
+// Regla: si ya existe un lead fb-ads para este teléfono se actualiza ese en lugar
+//        de crear uno nuevo con canal_origen=whatsapp.
+
+function isAdminNumber(senderId: string): boolean {
+  const adminRaw = process.env.AGENTIA_ADMIN_NUMBERS || process.env.ALERT_WHATSAPP_NUMBER || '';
+  if (!adminRaw) return false;
+  const senderDigits = senderId.replace(/\D/g, '');
+  return adminRaw.split(',').some((n) => {
+    const d = n.trim().replace(/\D/g, '');
+    return d && (senderDigits.endsWith(d) || d.endsWith(senderDigits));
+  });
+}
 
 async function ensureAgentiaVentasLead(params: {
   leadId: string;
@@ -51,9 +65,55 @@ async function ensureAgentiaVentasLead(params: {
   senderName: string | undefined;
   mensaje: string;
 }): Promise<void> {
+  // Never create a lead for the admin number
+  if (isAdminNumber(params.senderId)) {
+    console.log('[webhook/whatsapp] Admin number — skipping lead creation:', params.senderId);
+    return;
+  }
+
   try {
     const db = await getMongoDb();
     const now = new Date();
+
+    // If an fb-ads lead already exists for this phone, update it instead of creating
+    // a duplicate with canal_origen=whatsapp (happens when the welcome outbound lands
+    // and the contact replies via WhatsApp).
+    const senderDigits = params.senderId.replace(/\D/g, '');
+    const existingFbLead = await db.collection('leads').findOne({
+      clientId:     'agentia-ventas',
+      canal_origen: 'fb-ads',
+      $or: [
+        { telefono: { $regex: senderDigits.slice(-10) } },
+        { senderId: { $regex: senderDigits.slice(-10) } },
+      ],
+    });
+
+    if (existingFbLead) {
+      await db.collection('leads').updateOne(
+        { leadId: existingFbLead.leadId },
+        {
+          $set: {
+            lastMessage:   params.mensaje,
+            lastMessageAt: now,
+            updatedAt:     now,
+            ...(params.senderName ? { senderName: params.senderName, nombre: params.senderName } : {}),
+          },
+          $inc: { messageCount: 1 },
+        }
+      );
+      await db.collection('messages').insertOne({
+        leadId:    existingFbLead.leadId,
+        clientId:  'agentia-ventas',
+        senderId:  params.senderId,
+        canal:     'whatsapp',
+        direccion: 'entrante',
+        contenido: params.mensaje,
+        createdAt: now,
+      });
+      console.log('[webhook/whatsapp] FB lead actualizado con reply WhatsApp:', existingFbLead.leadId);
+      return;
+    }
+
     const leadMongoId = `${params.senderId}_whatsapp-bridge_agentia-ventas`;
 
     await db.collection('leads').updateOne(

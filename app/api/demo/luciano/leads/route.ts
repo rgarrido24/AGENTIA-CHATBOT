@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const filterFormId = searchParams.get('formId') || '';
 
     const db = await getMongoDb();
-    const query: Record<string, unknown> = { clientId: 'agentia-ventas' };
+    const query: Record<string, unknown> = { clientId: 'agentia-ventas', canal_origen: 'fb-ads' };
     if (filterFormId) query.form_id = filterFormId;
 
     const docs = await db
@@ -36,9 +36,9 @@ export async function GET(req: NextRequest) {
       })
       .toArray();
 
-    // Collect unique form_ids across ALL agentia-ventas leads (not just filtered)
+    // Collect unique form_ids across all fb-ads leads (not just filtered page)
     const allDocs = filterFormId
-      ? await db.collection('leads').find({ clientId: 'agentia-ventas' }).project({ form_id: 1, _id: 0 }).toArray()
+      ? await db.collection('leads').find({ clientId: 'agentia-ventas', canal_origen: 'fb-ads' }).project({ form_id: 1, _id: 0 }).toArray()
       : docs;
     const formIdSet = new Set<string>();
     for (const d of allDocs) {
