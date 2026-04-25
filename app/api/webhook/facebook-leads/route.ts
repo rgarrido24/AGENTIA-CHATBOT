@@ -119,51 +119,44 @@ async function processZapierLead(data: Record<string, unknown>) {
   const clientId = process.env.FB_CLIENT_ID ?? 'agentia-ventas';
   const phone    = phone_raw ? normalizePhone(phone_raw) : '';
   const senderId = phone || `fb_form_${form_id || Date.now()}`;
-  const leadId   = `${senderId}_fb-zapier_${clientId}`;
+  // Unique per submission — never overwrite a previous lead
+  const leadId   = `${senderId}_fb-zapier_${clientId}_${Date.now()}`;
   const now      = new Date();
   const db       = await getMongoDb();
 
-  await db.collection('leads').updateOne(
-    { leadId },
-    {
-      $set: {
-        senderName:    full_name || undefined,
-        nombre:        full_name || undefined,
-        telefono:      phone    || undefined,
-        email:         email    || undefined,
-        platform:      'facebook',
-        source:        'facebook',
-        source_meta:   true,
-        pipeline:      'agentia',
-        canal_origen:  'fb-ads',
-        campana:       campaign_name || undefined,
-        adset:         adset_name   || undefined,
-        form_id:       form_id       || undefined,
-        form_name:     form_name     || undefined,
-        page_name:     page_name     || undefined,
-        platform_src:  platform_src  || undefined,
-        ...(Object.keys(form_fields).length > 0 ? { form_fields } : {}),
-        lastMessage:   `Lead desde FB Ads — ${campaign_name || ad_name || 'Sin campaña'}`,
-        lastMessageAt: now,
-        tags:          ['fb-ads', campaign_name].filter(Boolean),
-        updatedAt:     now,
-      },
-      $setOnInsert: {
-        leadId,
-        clientId,
-        pageId:          'fb-zapier',
-        senderId,
-        status:          'nuevos',
-        status_vendedor: 'nuevo',
-        bot_status:      'active',
-        createdAt:       now,
-      },
-      $inc: { messageCount: 1 },
-    },
-    { upsert: true }
-  );
+  await db.collection('leads').insertOne({
+    leadId,
+    clientId,
+    pageId:          'fb-zapier',
+    senderId,
+    senderName:      full_name    || undefined,
+    nombre:          full_name    || undefined,
+    telefono:        phone        || undefined,
+    email:           email        || undefined,
+    platform:        'facebook',
+    source:          'facebook',
+    source_meta:     true,
+    pipeline:        'agentia',
+    canal_origen:    'fb-ads',
+    campana:         campaign_name || undefined,
+    adset:           adset_name    || undefined,
+    form_id:         form_id       || undefined,
+    form_name:       form_name     || undefined,
+    page_name:       page_name     || undefined,
+    platform_src:    platform_src  || undefined,
+    ...(Object.keys(form_fields).length > 0 ? { form_fields } : {}),
+    lastMessage:     `Lead desde FB Ads — ${campaign_name || ad_name || 'Sin campaña'}`,
+    lastMessageAt:   now,
+    tags:            ['fb-ads', campaign_name].filter(Boolean),
+    status:          'nuevos',
+    status_vendedor: 'nuevo',
+    bot_status:      'active',
+    messageCount:    1,
+    createdAt:       now,
+    updatedAt:       now,
+  });
 
-  console.log(`[fb-leads/zapier] Lead guardado: ${leadId}`);
+  console.log(`[fb-leads/zapier] Lead insertado: ${leadId}`);
 
   if (phone) {
     await db.collection('outbound_queue').insertOne({
