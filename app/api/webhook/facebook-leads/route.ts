@@ -77,6 +77,12 @@ async function processLead(payload: Record<string, unknown>) {
 }
 
 // ─── Formato Zapier: JSON plano ───────────────────────────────────────────────
+const ZAPIER_STANDARD_KEYS = new Set([
+  'full_name','nombre','phone_number','phone','telefono','email','correo',
+  'campaign_name','campaña','ad_name','anuncio','form_id','adset_name',
+  'id','time','created_time',
+]);
+
 async function processZapierLead(data: Record<string, unknown>) {
   const full_name     = String(data.full_name     ?? data.nombre    ?? '').trim();
   const phone_raw     = String(data.phone_number  ?? data.phone     ?? data.telefono ?? '').trim();
@@ -85,6 +91,14 @@ async function processZapierLead(data: Record<string, unknown>) {
   const ad_name       = String(data.ad_name       ?? data.anuncio   ?? '').trim();
   const form_id       = String(data.form_id       ?? '').trim();
   const adset_name    = String(data.adset_name    ?? '').trim();
+
+  // Collect all non-standard fields as form_fields
+  const form_fields: Record<string, string> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (!ZAPIER_STANDARD_KEYS.has(k) && v !== null && v !== undefined && v !== '') {
+      form_fields[k] = String(v);
+    }
+  }
 
   console.log(`[fb-leads/zapier] nombre="${full_name}" tel="${phone_raw}" campaña="${campaign_name}"`);
 
@@ -116,6 +130,7 @@ async function processZapierLead(data: Record<string, unknown>) {
         campana:       campaign_name || undefined,
         adset:         adset_name   || undefined,
         form_id:       form_id      || undefined,
+        ...(Object.keys(form_fields).length > 0 ? { form_fields } : {}),
         lastMessage:   `Lead desde FB Ads — ${campaign_name || ad_name || 'Sin campaña'}`,
         lastMessageAt: now,
         tags:          ['fb-ads', campaign_name].filter(Boolean),
@@ -181,6 +196,15 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
       const phone_raw = field('phone_number') || field('telefono') || field('phone');
       const email     = field('email') || field('correo');
 
+      // Save ALL field_data entries (excluding the three standard ones)
+      const STANDARD_META = new Set(['full_name','nombre_completo','name','phone_number','telefono','phone','email','correo']);
+      const form_fields: Record<string, string> = {};
+      for (const fd of fieldData) {
+        if (!STANDARD_META.has(fd.name) && fd.values?.[0]) {
+          form_fields[fd.name] = fd.values[0];
+        }
+      }
+
       if (!phone_raw && !email && !full_name) {
         console.warn('[fb-leads/meta] Sin datos en leadgen_id:', leadgen_id);
         continue;
@@ -209,6 +233,7 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
             adset:         adset_name   || undefined,
             form_id:       form_id      || undefined,
             leadgen_id:    leadgen_id   || undefined,
+            ...(Object.keys(form_fields).length > 0 ? { form_fields } : {}),
             lastMessage:   `Lead desde FB Ads — ${campaign_name || ad_name || 'Sin campaña'}`,
             lastMessageAt: now,
             tags:          ['fb-ads', campaign_name].filter(Boolean),

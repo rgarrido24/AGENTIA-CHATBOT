@@ -1,16 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = req.nextUrl;
+    const filterFormId = searchParams.get('formId') || '';
+
     const db = await getMongoDb();
+    const query: Record<string, unknown> = { clientId: 'agentia-ventas' };
+    if (filterFormId) query.form_id = filterFormId;
+
     const docs = await db
       .collection('leads')
-      .find({ clientId: 'agentia-ventas' })
+      .find(query)
       .sort({ createdAt: -1 })
-      .limit(100)
+      .limit(200)
       .project({
         leadId: 1,
         nombre: 1,
@@ -21,12 +27,24 @@ export async function GET() {
         campana: 1,
         adset: 1,
         canal_origen: 1,
+        form_id: 1,
+        form_fields: 1,
         status_vendedor: 1,
         status: 1,
         createdAt: 1,
         _id: 0,
       })
       .toArray();
+
+    // Collect unique form_ids across ALL agentia-ventas leads (not just filtered)
+    const allDocs = filterFormId
+      ? await db.collection('leads').find({ clientId: 'agentia-ventas' }).project({ form_id: 1, _id: 0 }).toArray()
+      : docs;
+    const formIdSet = new Set<string>();
+    for (const d of allDocs) {
+      if (d.form_id) formIdSet.add(String(d.form_id));
+    }
+    const formIds = Array.from(formIdSet).sort();
 
     const leads = docs.map((d) => ({
       id:           d.leadId as string,
@@ -36,14 +54,16 @@ export async function GET() {
       campana:      (d.campana || '') as string,
       adset:        (d.adset || '') as string,
       canal_origen: (d.canal_origen || 'whatsapp') as string,
+      form_id:      (d.form_id || '') as string,
+      form_fields:  (d.form_fields || {}) as Record<string, string>,
       estado:       mapEstado(d.status_vendedor as string | undefined),
       createdAt:    (d.createdAt as Date).toISOString(),
     }));
 
-    return NextResponse.json({ leads });
+    return NextResponse.json({ leads, formIds });
   } catch (err) {
     console.error('[demo/luciano/leads] Error:', err);
-    return NextResponse.json({ leads: [] }, { status: 500 });
+    return NextResponse.json({ leads: [], formIds: [] }, { status: 500 });
   }
 }
 
