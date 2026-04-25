@@ -14,17 +14,20 @@ const ACCENT      = '#CCFF00';
 type Estado = 'nuevo' | 'contactado' | 'en_seguimiento';
 
 type Lead = {
-  id:          string;
-  nombre:      string;
-  telefono:    string;
-  email:       string;
-  campana:     string;
-  adset:       string;
+  id:           string;
+  nombre:       string;
+  telefono:     string;
+  email:        string;
+  campana:      string;
+  adset:        string;
   canal_origen: string;
-  form_id:     string;
-  form_fields: Record<string, string>;
-  estado:      Estado;
-  createdAt:   string;
+  form_id:      string;
+  form_name:    string;
+  page_name:    string;
+  platform_src: string;
+  form_fields:  Record<string, string>;
+  estado:       Estado;
+  createdAt:    string;
 };
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
@@ -128,17 +131,22 @@ function LeadCard({ lead, isNew }: { lead: Lead; isNew: boolean }) {
 
   const estStyle = ESTADO_STYLE[estado];
 
-  // Build detail rows: standard fields + all form_fields entries
+  // Build detail rows for expanded card
+  const FORM_FIELDS_STANDARD = new Set(['Dni', 'Confirma Tu Edad', 'Con Que Contas']);
   const detailRows: [string, string][] = [
-    ['Email',   lead.email    || '—'],
-    ['Campaña', lead.campana  || lead.canal_origen || '—'],
-    ['Adset',   lead.adset    || '—'],
-    ['Form ID', lead.form_id  || '—'],
-    ['Llegó',   fmtDate(lead.createdAt)],
+    ['Nombre',          lead.nombre                                      || '—'],
+    ['WhatsApp',        lead.telefono ? formatPhone(lead.telefono)       : '—'],
+    ['Email',           lead.email                                       || '—'],
+    ['DNI',             lead.form_fields['Dni']                          || '—'],
+    ['Edad',            lead.form_fields['Confirma Tu Edad']             || '—'],
+    ['Con qué cuenta',  lead.form_fields['Con Que Contas']               || '—'],
+    ['Plataforma',      lead.platform_src                                || '—'],
+    ['Formulario',      lead.form_name                                   || lead.form_id || '—'],
+    ['Fecha',           fmtDate(lead.createdAt)],
   ];
-  // Append extra form fields
+  // Append any remaining extra form fields not already shown
   for (const [k, v] of Object.entries(lead.form_fields)) {
-    if (v) detailRows.push([humanLabel(k), v]);
+    if (v && !FORM_FIELDS_STANDARD.has(k)) detailRows.push([humanLabel(k), v]);
   }
 
   return (

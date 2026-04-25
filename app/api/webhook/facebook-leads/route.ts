@@ -65,7 +65,9 @@ function normalizePhone(raw: string): string {
 
 // ─── Router: detecta formato y deriva ────────────────────────────────────────
 async function processLead(payload: Record<string, unknown>) {
-  const isZapier = 'full_name' in payload || 'phone_number' in payload || 'email' in payload;
+  const isZapier =
+    'full_name' in payload || 'phone_number' in payload || 'email' in payload ||
+    'Nombre' in payload || 'Whatsapp' in payload || 'Email' in payload;
 
   if (isZapier) {
     await processZapierLead(payload);
@@ -81,16 +83,23 @@ const ZAPIER_STANDARD_KEYS = new Set([
   'full_name','nombre','phone_number','phone','telefono','email','correo',
   'campaign_name','campaña','ad_name','anuncio','form_id','adset_name',
   'id','time','created_time',
+  // Real Zapier format (capitalized/spaced keys)
+  'Nombre','Whatsapp','Email','Form Id','Lead Id','Platform','Page Name','Form Name',
 ]);
 
 async function processZapierLead(data: Record<string, unknown>) {
-  const full_name     = String(data.full_name     ?? data.nombre    ?? '').trim();
-  const phone_raw     = String(data.phone_number  ?? data.phone     ?? data.telefono ?? '').trim();
-  const email         = String(data.email         ?? data.correo    ?? '').trim();
-  const campaign_name = String(data.campaign_name ?? data.campaña   ?? '').trim();
-  const ad_name       = String(data.ad_name       ?? data.anuncio   ?? '').trim();
-  const form_id       = String(data.form_id       ?? '').trim();
-  const adset_name    = String(data.adset_name    ?? '').trim();
+  const full_name     = String(data['Nombre']       ?? data.full_name     ?? data.nombre    ?? '').trim();
+  const phone_raw     = String(data['Whatsapp']     ?? data.phone_number  ?? data.phone     ?? data.telefono ?? '').trim();
+  const email         = String(data['Email']        ?? data.email         ?? data.correo    ?? '').trim();
+  const campaign_name = String(data.campaign_name   ?? data.campaña       ?? '').trim();
+  const ad_name       = String(data.ad_name         ?? data.anuncio       ?? '').trim();
+  const form_id       = String(data['Form Id']      ?? data.form_id       ?? '').trim();
+  const adset_name    = String(data.adset_name      ?? '').trim();
+  const lead_id_meta  = String(data['Lead Id']      ?? '').trim();
+  const platform_src  = String(data['Platform']     ?? 'facebook').trim();
+  const page_name     = String(data['Page Name']    ?? '').trim();
+  const form_name     = String(data['Form Name']    ?? '').trim();
+  void lead_id_meta; // stored in form_fields if present
 
   // Collect all non-standard fields as form_fields
   const form_fields: Record<string, string> = {};
@@ -129,7 +138,10 @@ async function processZapierLead(data: Record<string, unknown>) {
         canal_origen:  'fb-ads',
         campana:       campaign_name || undefined,
         adset:         adset_name   || undefined,
-        form_id:       form_id      || undefined,
+        form_id:       form_id       || undefined,
+        form_name:     form_name     || undefined,
+        page_name:     page_name     || undefined,
+        platform_src:  platform_src  || undefined,
         ...(Object.keys(form_fields).length > 0 ? { form_fields } : {}),
         lastMessage:   `Lead desde FB Ads — ${campaign_name || ad_name || 'Sin campaña'}`,
         lastMessageAt: now,
