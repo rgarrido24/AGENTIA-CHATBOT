@@ -88,18 +88,23 @@ const ZAPIER_STANDARD_KEYS = new Set([
 ]);
 
 async function processZapierLead(data: Record<string, unknown>) {
+  console.log('[fb-leads/zapier] keys recibidos:', Object.keys(data).join(', '));
+
   const full_name     = String(data['Nombre']       ?? data.full_name     ?? data.nombre    ?? '').trim();
-  const phone_raw     = String(data['Whatsapp']     ?? data.phone_number  ?? data.phone     ?? data.telefono ?? '').trim();
+  // Try all known Whatsapp key variants from Zapier
+  const phone_raw     = String(
+    data['Whatsapp'] ?? data['whatsapp'] ?? data['WhatsApp'] ??
+    data.phone_number ?? data.phone ?? data.telefono ?? ''
+  ).trim();
   const email         = String(data['Email']        ?? data.email         ?? data.correo    ?? '').trim();
   const campaign_name = String(data.campaign_name   ?? data.campaña       ?? '').trim();
   const ad_name       = String(data.ad_name         ?? data.anuncio       ?? '').trim();
   const form_id       = String(data['Form Id']      ?? data.form_id       ?? '').trim();
   const adset_name    = String(data.adset_name      ?? '').trim();
-  const lead_id_meta  = String(data['Lead Id']      ?? '').trim();
+  const lead_id_meta  = String(data['Lead Id']      ?? data['lead_id']    ?? '').trim();
   const platform_src  = String(data['Platform']     ?? 'facebook').trim();
   const page_name     = String(data['Page Name']    ?? '').trim();
   const form_name     = String(data['Form Name']    ?? '').trim();
-  void lead_id_meta; // stored in form_fields if present
 
   // Collect all non-standard fields as form_fields
   const form_fields: Record<string, string> = {};
@@ -118,8 +123,9 @@ async function processZapierLead(data: Record<string, unknown>) {
 
   const clientId = process.env.FB_CLIENT_ID ?? 'agentia-ventas';
   const phone    = phone_raw ? normalizePhone(phone_raw) : '';
-  const senderId = phone || `fb_form_${form_id || Date.now()}`;
-  // Unique per submission — never overwrite a previous lead
+  // senderId: prefer real phone, then Zapier Lead Id, never Form Id
+  const senderId = phone || (lead_id_meta ? `fb_lead_${lead_id_meta}` : `fb_ts_${Date.now()}`);
+  // leadId: unique per submission — phone (or Lead Id) + timestamp
   const leadId   = `${senderId}_fb-zapier_${clientId}_${Date.now()}`;
   const now      = new Date();
   const db       = await getMongoDb();
