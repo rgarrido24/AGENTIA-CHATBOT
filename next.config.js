@@ -14,8 +14,27 @@ const nextConfig = {
     return config;
   },
 
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 86400,
+  },
+
   async headers() {
     return [
+      // Long-lived cache for static assets (Next.js hashes filenames)
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      // Cache for public images and fonts
+      {
+        source: '/(.*)\\.(jpg|jpeg|png|webp|avif|svg|ico|woff|woff2)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [
