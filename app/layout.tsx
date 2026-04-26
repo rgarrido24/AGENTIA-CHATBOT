@@ -69,6 +69,51 @@ export const metadata: Metadata = {
   },
 };
 
+const schemaApp = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Agentia',
+  description: 'Plataforma de chatbots con IA para automatizar negocios en WhatsApp',
+  url: 'https://agentia.software',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  offers: [
+    { '@type': 'Offer', name: 'Starter',      price: '399', priceCurrency: 'MXN', billingPeriod: 'P1M' },
+    { '@type': 'Offer', name: 'Profesional',  price: '599', priceCurrency: 'MXN', billingPeriod: 'P1M' },
+    { '@type': 'Offer', name: 'Premium',      price: '899', priceCurrency: 'MXN', billingPeriod: 'P1M' },
+  ],
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.9',
+    reviewCount: '6',
+  },
+};
+
+const schemaOrg = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Agentia',
+  url: 'https://agentia.software',
+  logo: 'https://agentia.software/logo-agentia-2026.png',
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: '+52-999-808-0265',
+    contactType: 'sales',
+    areaServed: 'MX',
+    availableLanguage: 'Spanish',
+  },
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Mérida',
+    addressRegion: 'Yucatán',
+    addressCountry: 'MX',
+  },
+  sameAs: [
+    'https://www.instagram.com/agentia.software',
+    'https://www.tiktok.com/@agentia.software',
+  ],
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -76,6 +121,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${jakarta.variable} ${montserrat.variable} ${roboto.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaApp) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
+        />
+      </head>
       <body className="min-h-screen antialiased font-sans bg-luxury text-white">
         {children}
       </body>
