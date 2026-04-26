@@ -21,34 +21,52 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://agentia-chatbot-ventas.onrender.com'),
-  title: 'Agentia | Automatización con IA para Negocios — Chatbots, CRM y Cobranza',
+  metadataBase: new URL('https://agentia.software'),
+  title: 'Agentia | Chatbots con IA para Negocios — WhatsApp 24/7',
   description:
-    'Automatiza tu negocio con chatbots inteligentes, CRM integrado y cobranza automatizada. Demos en vivo de barbería, cobranza educativa e inmobiliaria. Desarrollado en México para empresas que quieren crecer sin aumentar su equipo.',
-  keywords: [
-    'chatbot con inteligencia artificial México',
-    'automatización de cobranza',
-    'CRM para pequeñas empresas México',
-    'chatbot para negocios',
-    'sistema de cobranza automatizado',
-    'software cobranza colegiaturas',
-    'chatbot WhatsApp empresas',
-    'automatización para escuelas',
-    'agencia automatización México',
-    'inteligencia artificial para negocios Mérida',
-    'chatbot reservas barbería',
-    'portal inmobiliario con IA',
-  ],
+    'Automatiza tu negocio con IA. Chatbots para barberías, restaurantes, spas, dentistas y más. Agenda citas, cobra y fideliza clientes desde WhatsApp sin esfuerzo.',
+  keywords:
+    'chatbot IA, automatización WhatsApp, chatbot para barbería, chatbot para restaurante, agente IA negocio, chatbot México, automatización negocios México, WhatsApp bot, CRM con IA',
+  authors: [{ name: 'Agentia' }],
+  creator: 'Agentia',
+  publisher: 'Agentia',
+  alternates: {
+    canonical: 'https://agentia.software',
+  },
   openGraph: {
-    title: 'Agentia | Automatización Inteligente para tu Negocio',
-    description: 'Chatbots con IA, CRM y cobranza automatizada. Demos en vivo disponibles.',
-    url: 'https://agentia-chatbot-ventas.onrender.com',
+    title: 'Agentia | Tu negocio automatizado en WhatsApp',
+    description:
+      'Chatbots con IA que agendan, cobran y fidelizan clientes 24/7. Para barberías, restaurantes, spas, dentistas y más.',
+    url: 'https://agentia.software',
     siteName: 'Agentia',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Agentia — Chatbots con IA para negocios',
+      },
+    ],
     locale: 'es_MX',
     type: 'website',
   },
-  robots: { index: true, follow: true },
-  alternates: { canonical: 'https://agentia-chatbot-ventas.onrender.com' },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Agentia | Chatbots con IA para Negocios',
+    description: 'Automatiza tu WhatsApp con IA. Agenda, cobra y fideliza sin esfuerzo.',
+    images: ['/opengraph-image'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({
