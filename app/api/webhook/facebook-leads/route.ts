@@ -78,6 +78,46 @@ async function processLead(payload: Record<string, unknown>) {
   }
 }
 
+// ─── Alerta WhatsApp al admin cuando llega un lead FB ────────────────────────
+async function enqueueAdminAlert(
+  db: Awaited<ReturnType<typeof getMongoDb>>,
+  lead: {
+    full_name: string;
+    phone: string;
+    email: string;
+    form_name: string;
+    form_fields: Record<string, string>;
+    clientId: string;
+  }
+) {
+  const alertNumber = process.env.FB_ALERT_NUMBER;
+  if (!alertNumber) return;
+
+  const v = (key: string) => lead.form_fields[key] || '-';
+  const message =
+    `🚨 *ALERTA - LLEGÓ UN NUEVO LEAD, NO LO HAGAMOS ESPERAR* 🚨\n\n` +
+    `👤 *Nombre:* ${lead.full_name || '-'}\n` +
+    `📱 *WhatsApp:* ${lead.phone || '-'}\n` +
+    `📧 *Email:* ${lead.email || '-'}\n` +
+    `🪪 *DNI:* ${v('dni')}\n` +
+    `🎂 *Edad:* ${v('confirma_tu_edad')}\n` +
+    `💼 *Con qué cuenta:* ${v('con_que_contas')}\n` +
+    `📋 *Formulario:* ${lead.form_name || '-'}\n` +
+    `🕐 *Llegó:* hace un momento\n\n` +
+    `¡Contáctalo ahora para no perder el lead! 💪`;
+
+  await db.collection('outbound_queue').insertOne({
+    to:        alertNumber,
+    clientId:  lead.clientId,
+    type:      'admin_alert_fb_lead',
+    message,
+    status:    'pending',
+    attempts:  0,
+    createdAt: new Date(),
+  });
+  console.log(`[fb-leads] Alerta admin encolada para ${alertNumber}`);
+}
+
 // ─── Formato Zapier: JSON plano ───────────────────────────────────────────────
 const ZAPIER_STANDARD_KEYS = new Set([
   'full_name','nombre','phone_number','phone','telefono','email','correo',
@@ -177,6 +217,8 @@ async function processZapierLead(data: Record<string, unknown>) {
     });
     console.log(`[fb-leads/zapier] Bienvenida encolada para ${phone}`);
   }
+
+  await enqueueAdminAlert(db, { full_name, phone, email, form_name, form_fields, clientId });
 }
 
 // ─── Formato Meta nativo (entry.changes[].field === 'leadgen') ────────────────
@@ -275,6 +317,8 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
           createdAt: now,
         });
       }
+
+      await enqueueAdminAlert(db, { full_name, phone, email, form_name: form_id, form_fields, clientId });
 
       console.log(`[fb-leads/meta] Lead guardado: ${leadId} | campaña: ${campaign_name}`);
     }
