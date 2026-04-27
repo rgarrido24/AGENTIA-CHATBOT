@@ -22,6 +22,9 @@ const RESELLER = {
   whatsappNumber: '5493515920758',
   alertNumber:   '5493515920758',
   comisionPct:   20,
+  brandLogo:     '/luciano-logo.png',
+  brandName:     'Luciano Ads Mánager',
+  brandColor:    '#CCFF00',
 };
 
 const CLIENT = {

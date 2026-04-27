@@ -113,7 +113,9 @@ async function enqueueAdminAlert(
   }
 ) {
   const alertNumber = process.env.FB_ALERT_NUMBER;
+  console.log('[fb-leads] FB_ALERT_NUMBER:', alertNumber ?? '(no definido)');
   if (!alertNumber) return;
+  console.log('[fb-leads] encolando alerta para:', alertNumber);
 
   const v = (key: string) => lead.form_fields[key] || '-';
   const message =

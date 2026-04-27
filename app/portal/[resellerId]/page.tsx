@@ -1,8 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+
+type Brand = { brandLogo: string | null; brandName: string | null; brandColor: string | null };
+
+const DEFAULT_BRAND: Brand = {
+  brandLogo:  '/logo-agentia-2026.png',
+  brandName:  'Portal Agentia',
+  brandColor: '#22c55e',
+};
 
 export default function PortalLoginPage({ params }: { params: { resellerId: string } }) {
   const { resellerId } = params;
@@ -10,6 +18,22 @@ export default function PortalLoginPage({ params }: { params: { resellerId: stri
   const [password, setPassword] = useState('');
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
+  const [brand,    setBrand]    = useState<Brand>(DEFAULT_BRAND);
+
+  useEffect(() => {
+    fetch(`/api/portal/${resellerId}/brand`)
+      .then((r) => r.json())
+      .then((data: Partial<Brand>) => {
+        setBrand({
+          brandLogo:  data.brandLogo  || DEFAULT_BRAND.brandLogo,
+          brandName:  data.brandName  || DEFAULT_BRAND.brandName,
+          brandColor: data.brandColor || DEFAULT_BRAND.brandColor,
+        });
+      })
+      .catch(() => {/* use defaults */});
+  }, [resellerId]);
+
+  const accent = brand.brandColor ?? '#22c55e';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,18 +58,19 @@ export default function PortalLoginPage({ params }: { params: { resellerId: stri
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#000' }}>
       <div className="w-full max-w-sm">
-        {/* Logo */}
+        {/* Brand header */}
         <div className="flex flex-col items-center mb-8 gap-3">
           <Image
-            src="/logo-agentia-2026.png"
-            alt="Agentia"
-            width={48}
-            height={48}
-            className="rounded-xl"
+            src={brand.brandLogo ?? DEFAULT_BRAND.brandLogo!}
+            alt={brand.brandName ?? 'Portal'}
+            width={56}
+            height={56}
+            className="rounded-2xl object-contain"
+            style={{ background: '#111', padding: 4 }}
           />
           <div className="text-center">
-            <h1 className="text-xl font-bold text-white">Portal Agentia</h1>
-            <p className="text-xs mt-1" style={{ color: '#555' }}>Panel de revendedor · {resellerId}</p>
+            <h1 className="text-xl font-bold text-white">{brand.brandName}</h1>
+            <p className="text-xs mt-1" style={{ color: '#555' }}>Panel de gestión de leads</p>
           </div>
         </div>
 
@@ -80,16 +105,16 @@ export default function PortalLoginPage({ params }: { params: { resellerId: stri
               type="submit"
               disabled={loading || !password}
               className="w-full py-3 rounded-xl text-sm font-bold transition-opacity disabled:opacity-40"
-              style={{ background: '#22c55e', color: '#000' }}
+              style={{ background: accent, color: '#000' }}
             >
               {loading ? 'Verificando…' : 'Entrar al portal'}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-[11px] mt-6" style={{ color: '#333' }}>
+        <p className="text-center text-[11px] mt-6" style={{ color: '#1e1e1e' }}>
           Powered by{' '}
-          <a href="https://agentia.software" className="hover:underline" style={{ color: '#444' }}>
+          <a href="https://agentia.software" className="hover:underline" style={{ color: '#2a2a2a' }}>
             agentia.software
           </a>
         </p>

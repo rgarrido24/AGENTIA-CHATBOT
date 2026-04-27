@@ -20,6 +20,9 @@ export interface Reseller {
   whatsappNumber?: string;
   alertNumber?:  string;
   comisionPct?:  number;
+  brandLogo?:    string;
+  brandName?:    string;
+  brandColor?:   string;
   createdAt:     Date;
   updatedAt:     Date;
 }

@@ -15,11 +15,17 @@ export async function POST(req: NextRequest) {
   const db       = await getMongoDb();
   const reseller = await db.collection('resellers').findOne({ resellerId });
 
+  console.log('[portal/login] reseller encontrado:', JSON.stringify(reseller));
+
   if (!reseller || reseller.status !== 'activo') {
+    console.log('[portal/login] fallo: reseller nulo o status !== activo, status=', reseller?.status);
     return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 });
   }
 
   const hash = hashPassword(password);
+  console.log('[portal/login] hash recibido:', hash);
+  console.log('[portal/login] hash en DB:   ', reseller.passwordHash);
+
   if (hash !== reseller.passwordHash) {
     return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 });
   }
