@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getMongoDb } from '@/lib/mongodb';
+import { MongoClient } from 'mongodb';
 import { hashPassword, buildCookieValue, COOKIE_NAME, COOKIE_MAX_AGE } from '@/lib/reseller-auth';
 
 export async function POST(req: NextRequest) {
@@ -16,16 +16,25 @@ export async function POST(req: NextRequest) {
   console.log('[portal/login] MONGODB_DB:', process.env.MONGODB_DB);
   console.log('[portal/login] buscando resellerId:', resellerId);
 
-  const db = await getMongoDb();
+  // Conexión fresca — bypassa el cliente cacheado de getMongoDb()
+  const uri = process.env.MONGODB_URI!;
+  const mongoClient = new MongoClient(uri);
+  let reseller: Record<string, unknown> | null = null;
+  try {
+    await mongoClient.connect();
+    const db = mongoClient.db('agentia_chatbot_ventas');
 
-  const collections = await db.listCollections().toArray();
-  console.log('[portal/login] colecciones:', collections.map((c) => c.name));
+    const collections = await db.listCollections().toArray();
+    console.log('[portal/login] colecciones:', collections.map((c) => c.name));
 
-  const all = await db.collection('resellers').find({}).toArray();
-  console.log('[portal/login] todos los docs en resellers:', JSON.stringify(all));
+    const all = await db.collection('resellers').find({}).toArray();
+    console.log('[portal/login] todos los docs en resellers:', JSON.stringify(all));
 
-  const reseller = await db.collection('resellers').findOne({ resellerId });
-  console.log('[portal/login] reseller encontrado:', JSON.stringify(reseller));
+    reseller = await db.collection('resellers').findOne({ resellerId }) as Record<string, unknown> | null;
+    console.log('[portal/login] reseller encontrado:', JSON.stringify(reseller));
+  } finally {
+    await mongoClient.close();
+  }
 
   if (!reseller || reseller.status !== 'activo') {
     console.log('[portal/login] fallo: reseller nulo o status !== activo, status=', reseller?.status);
