@@ -25,10 +25,15 @@ export async function POST(req: NextRequest) {
   const total = await db.collection('leads').countDocuments();
   console.log('[portal/login] total docs en leads:', total);
 
-  const sample = await db.collection('leads').find({}).sort({ _id: -1 }).limit(5).toArray();
-  console.log('[portal/login] ultimos 5 docs:', JSON.stringify(sample.map((d: Record<string, unknown>) => ({ id: (d._id as { toString(): string }).toString(), resellerId: d.resellerId, type: d._collection_type, nombre: d.nombre }))));
+  const pipeline = [{ $limit: 5 }, { $project: { _id: 1, resellerId: 1, nombre: 1 } }];
+  const sample = await db.collection('leads').aggregate(pipeline).toArray();
+  console.log('[portal/login] aggregate sample:', JSON.stringify(sample));
 
-  const reseller: Record<string, unknown> | null = await db.collection('leads').findOne({ resellerId });
+  const resellerPipeline = [{ $match: { resellerId: 'luciano' } }, { $limit: 1 }];
+  const resellerArr = await db.collection('leads').aggregate(resellerPipeline).toArray();
+  console.log('[portal/login] aggregate reseller:', JSON.stringify(resellerArr));
+
+  const reseller: Record<string, unknown> | null = resellerArr[0] ?? null;
   console.log('[portal/login] reseller sin filtro:', JSON.stringify(reseller));
   await mc.close();
 
