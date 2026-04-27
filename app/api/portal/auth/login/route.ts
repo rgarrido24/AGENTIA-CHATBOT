@@ -16,9 +16,15 @@ export async function POST(req: NextRequest) {
   console.log('[portal/login] MONGODB_DB:', process.env.MONGODB_DB);
   console.log('[portal/login] buscando resellerId:', resellerId);
 
-  const db       = await getMongoDb();
-  const reseller = await db.collection('resellers').findOne({ resellerId });
+  const db = await getMongoDb();
 
+  const collections = await db.listCollections().toArray();
+  console.log('[portal/login] colecciones:', collections.map((c) => c.name));
+
+  const all = await db.collection('resellers').find({}).toArray();
+  console.log('[portal/login] todos los docs en resellers:', JSON.stringify(all));
+
+  const reseller = await db.collection('resellers').findOne({ resellerId });
   console.log('[portal/login] reseller encontrado:', JSON.stringify(reseller));
 
   if (!reseller || reseller.status !== 'activo') {
