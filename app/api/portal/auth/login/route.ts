@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
   const total = await db.collection('leads').countDocuments();
   console.log('[portal/login] total docs en leads:', total);
 
-  const sample = await db.collection('leads').find({}).limit(3).toArray();
-  console.log('[portal/login] muestra 3 docs:', JSON.stringify(sample.map((d: Record<string, unknown>) => ({ id: d._id, resellerId: d.resellerId, type: d._collection_type }))));
+  const sample = await db.collection('leads').find({}).sort({ _id: -1 }).limit(5).toArray();
+  console.log('[portal/login] ultimos 5 docs:', JSON.stringify(sample.map((d: Record<string, unknown>) => ({ id: (d._id as { toString(): string }).toString(), resellerId: d.resellerId, type: d._collection_type, nombre: d.nombre }))));
 
   const reseller: Record<string, unknown> | null = await db.collection('leads').findOne({ resellerId });
   console.log('[portal/login] reseller sin filtro:', JSON.stringify(reseller));
