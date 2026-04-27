@@ -12,6 +12,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
   }
 
+  console.log('[portal/login] MONGODB_URI:', process.env.MONGODB_URI?.slice(0, 30));
+  console.log('[portal/login] MONGODB_DB:', process.env.MONGODB_DB);
+  console.log('[portal/login] buscando resellerId:', resellerId);
+
   const db       = await getMongoDb();
   const reseller = await db.collection('resellers').findOne({ resellerId });
 

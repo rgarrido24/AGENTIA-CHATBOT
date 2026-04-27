@@ -130,13 +130,10 @@ async function enqueueAdminAlert(
     `🕐 *Llegó:* hace un momento\n\n` +
     `¡Contáctalo ahora para no perder el lead! 💪`;
 
-  await db.collection('outbound_queue').insertOne({
-    to:        alertNumber,
+  await db.collection('outbound_messages').insertOne({
+    senderId:  alertNumber,
     clientId:  lead.clientId,
-    type:      'admin_alert_fb_lead',
     message,
-    status:    'pending',
-    attempts:  0,
     createdAt: new Date(),
   });
   console.log(`[fb-leads] Alerta admin encolada para ${alertNumber}`);
@@ -239,14 +236,16 @@ async function processZapierLead(data: Record<string, unknown>) {
   console.log(`[fb-leads/zapier] Lead insertado: ${leadId}`);
 
   if (phone) {
-    await db.collection('outbound_queue').insertOne({
-      to:        phone,
+    const firstName = full_name ? full_name.split(' ')[0] : '';
+    const welcomeMsg =
+      `Hola${firstName ? ` ${firstName}` : ''}! 👋 Recibimos tu consulta` +
+      `${campaign_name ? ` desde *${campaign_name}*` : ''}. ` +
+      `En breve un asesor te va a contactar. ¡Gracias por tu interés! 🙏`;
+    await db.collection('outbound_messages').insertOne({
+      senderId:  phone,
       clientId,
       leadId,
-      type:      'welcome_fb_lead',
-      context:   { full_name, campaign_name, ad_name, form_id },
-      status:    'pending',
-      attempts:  0,
+      message:   welcomeMsg,
       createdAt: now,
     });
     console.log(`[fb-leads/zapier] Bienvenida encolada para ${phone}`);
@@ -345,12 +344,16 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
       );
 
       if (phone) {
-        await db.collection('outbound_queue').insertOne({
-          to: phone, clientId, leadId,
-          type:      'welcome_fb_lead',
-          context:   { full_name, campaign_name, ad_name, ad_id, form_id, leadgen_id },
-          status:    'pending',
-          attempts:  0,
+        const firstName = full_name ? full_name.split(' ')[0] : '';
+        const welcomeMsg =
+          `Hola${firstName ? ` ${firstName}` : ''}! 👋 Recibimos tu consulta` +
+          `${campaign_name ? ` desde *${campaign_name}*` : ''}. ` +
+          `En breve un asesor te va a contactar. ¡Gracias por tu interés! 🙏`;
+        await db.collection('outbound_messages').insertOne({
+          senderId:  phone,
+          clientId,
+          leadId,
+          message:   welcomeMsg,
           createdAt: now,
         });
       }
