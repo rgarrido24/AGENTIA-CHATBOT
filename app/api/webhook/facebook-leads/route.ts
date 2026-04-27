@@ -55,6 +55,28 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
+// ─── Lookup de reseller/cliente por formId ───────────────────────────────────
+type ResellerMatch = { resellerId: string; clientSlug: string; alertNumber?: string } | null;
+
+async function resolveResellerByFormId(formId: string): Promise<ResellerMatch> {
+  if (!formId) return null;
+  try {
+    const db     = await getMongoDb();
+    const client = await db.collection('reseller_clients').findOne({
+      'formularios.formId': formId,
+      'formularios.activo': true,
+    });
+    if (!client) return null;
+    return {
+      resellerId:  String(client.resellerId),
+      clientSlug:  String(client.clientSlug),
+      alertNumber: client.alertNumber ? String(client.alertNumber) : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ─── Normalización de teléfono ────────────────────────────────────────────────
 function normalizePhone(raw: string): string {
   const d = raw.replace(/\D/g, '');
@@ -170,6 +192,14 @@ async function processZapierLead(data: Record<string, unknown>) {
   const now      = new Date();
   const db       = await getMongoDb();
 
+  // Resolve reseller/client from form_id
+  const resellerMatch = await resolveResellerByFormId(form_id);
+  if (resellerMatch) {
+    console.log(`[fb-leads/zapier] Reseller match: ${resellerMatch.resellerId}/${resellerMatch.clientSlug}`);
+  } else if (form_id) {
+    console.warn(`[fb-leads/zapier] form_id "${form_id}" no tiene reseller → resellerId: "unknown"`);
+  }
+
   await db.collection('leads').insertOne({
     leadId,
     clientId,
@@ -191,6 +221,8 @@ async function processZapierLead(data: Record<string, unknown>) {
     page_name:       page_name     || undefined,
     platform_src:    platform_src  || undefined,
     ...(Object.keys(form_fields).length > 0 ? { form_fields } : {}),
+    resellerId:      resellerMatch?.resellerId  ?? 'unknown',
+    clientSlug:      resellerMatch?.clientSlug  ?? undefined,
     lastMessage:     `Lead desde FB Ads — ${campaign_name || ad_name || 'Sin campaña'}`,
     lastMessageAt:   now,
     tags:            ['fb-ads', campaign_name].filter(Boolean),
@@ -263,11 +295,12 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
         continue;
       }
 
-      const clientId = process.env.FB_CLIENT_ID ?? 'agentia-ventas';
-      const phone    = phone_raw ? normalizePhone(phone_raw) : '';
-      const senderId = phone || `fb_${leadgen_id}`;
-      const leadId   = `${senderId}_${page_id}_${clientId}`;
-      const now      = new Date();
+      const clientId      = process.env.FB_CLIENT_ID ?? 'agentia-ventas';
+      const phone         = phone_raw ? normalizePhone(phone_raw) : '';
+      const senderId      = phone || `fb_${leadgen_id}`;
+      const leadId        = `${senderId}_${page_id}_${clientId}`;
+      const now           = new Date();
+      const resellerMatch = await resolveResellerByFormId(form_id);
 
       await db.collection('leads').updateOne(
         { leadId },
@@ -286,6 +319,8 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
             adset:         adset_name   || undefined,
             form_id:       form_id      || undefined,
             leadgen_id:    leadgen_id   || undefined,
+            resellerId:    resellerMatch?.resellerId ?? 'unknown',
+            clientSlug:    resellerMatch?.clientSlug ?? undefined,
             ...(Object.keys(form_fields).length > 0 ? { form_fields } : {}),
             lastMessage:   `Lead desde FB Ads — ${campaign_name || ad_name || 'Sin campaña'}`,
             lastMessageAt: now,
