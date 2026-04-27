@@ -11,9 +11,9 @@ export async function GET(
   try {
     const db       = await getMongoDb();
     const reseller = await db
-      .collection('resellers')
+      .collection('business_configs')
       .findOne(
-        { resellerId: params.resellerId, status: 'activo' },
+        { resellerId: params.resellerId, collection_type: 'reseller', status: 'activo' },
         { projection: { brandLogo: 1, brandName: 1, brandColor: 1, _id: 0 } }
       );
     if (!reseller) return NextResponse.json({});

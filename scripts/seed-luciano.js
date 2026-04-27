@@ -89,16 +89,17 @@ async function main() {
     const passwordHash = hashPassword(DEFAULT_PASSWORD);
     const now = new Date();
 
-    const resExisting = await db.collection('resellers').findOne({ resellerId: RESELLER.resellerId });
+    const resExisting = await db.collection('business_configs').findOne({ resellerId: RESELLER.resellerId, collection_type: 'reseller' });
     if (resExisting) {
       console.log(`⚠️  Reseller "${RESELLER.resellerId}" ya existe — actualizando campos (passwordHash NO se toca)`);
-      await db.collection('resellers').updateOne(
-        { resellerId: RESELLER.resellerId },
-        { $set: { ...RESELLER, updatedAt: now } }
+      await db.collection('business_configs').updateOne(
+        { resellerId: RESELLER.resellerId, collection_type: 'reseller' },
+        { $set: { ...RESELLER, collection_type: 'reseller', updatedAt: now } }
       );
     } else {
-      await db.collection('resellers').insertOne({
+      await db.collection('business_configs').insertOne({
         ...RESELLER,
+        collection_type: 'reseller',
         passwordHash,
         createdAt: now,
         updatedAt: now,
@@ -108,28 +109,30 @@ async function main() {
     }
 
     // ── Client ──
-    const cliExisting = await db.collection('reseller_clients').findOne({
+    const cliExisting = await db.collection('business_configs').findOne({
       resellerId: CLIENT.resellerId,
       clientSlug: CLIENT.clientSlug,
+      collection_type: 'reseller_client',
     });
     if (cliExisting) {
       console.log(`⚠️  Cliente "${CLIENT.clientSlug}" ya existe — actualizando`);
-      await db.collection('reseller_clients').updateOne(
-        { resellerId: CLIENT.resellerId, clientSlug: CLIENT.clientSlug },
-        { $set: { ...CLIENT, updatedAt: now } }
+      await db.collection('business_configs').updateOne(
+        { resellerId: CLIENT.resellerId, clientSlug: CLIENT.clientSlug, collection_type: 'reseller_client' },
+        { $set: { ...CLIENT, collection_type: 'reseller_client', updatedAt: now } }
       );
     } else {
-      await db.collection('reseller_clients').insertOne({
+      await db.collection('business_configs').insertOne({
         ...CLIENT,
+        collection_type: 'reseller_client',
         createdAt: now,
       });
       console.log(`✅  Cliente "${CLIENT.clientSlug}" creado`);
     }
 
     // ── Índices ──
-    await db.collection('resellers').createIndex({ resellerId: 1 }, { unique: true });
-    await db.collection('reseller_clients').createIndex({ resellerId: 1, clientSlug: 1 }, { unique: true });
-    await db.collection('reseller_clients').createIndex({ 'formularios.formId': 1 });
+    await db.collection('business_configs').createIndex({ resellerId: 1, collection_type: 1 }, { unique: true });
+    await db.collection('business_configs').createIndex({ resellerId: 1, clientSlug: 1, collection_type: 1 });
+    await db.collection('business_configs').createIndex({ 'formularios.formId': 1 });
     console.log('✅  Índices creados/verificados');
 
     console.log('');

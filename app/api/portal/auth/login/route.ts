@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
     const collections = await db.listCollections().toArray();
     console.log('[portal/login] colecciones:', collections.map((c) => c.name));
 
-    const all = await db.collection('resellers').find({}).toArray();
-    console.log('[portal/login] todos los docs en resellers:', JSON.stringify(all));
+    const all = await db.collection('business_configs').find({ collection_type: 'reseller' }).toArray();
+    console.log('[portal/login] todos los docs en business_configs(reseller):', JSON.stringify(all));
 
-    reseller = await db.collection('resellers').findOne({ resellerId }) as Record<string, unknown> | null;
+    reseller = await db.collection('business_configs').findOne({ resellerId, collection_type: 'reseller' }) as Record<string, unknown> | null;
     console.log('[portal/login] reseller encontrado:', JSON.stringify(reseller));
   } finally {
     await mongoClient.close();

@@ -16,7 +16,7 @@ export async function GET(
   }
 
   const db     = await getMongoDb();
-  const client = await db.collection<ResellerClient>('reseller_clients').findOne({ resellerId, clientSlug });
+  const client = await db.collection<ResellerClient>('business_configs').findOne({ resellerId, clientSlug, collection_type: 'reseller_client' });
   if (!client) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
 
   const filterFormId = req.nextUrl.searchParams.get('formId') ?? '';
