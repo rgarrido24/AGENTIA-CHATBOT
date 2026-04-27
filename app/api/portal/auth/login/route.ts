@@ -25,11 +25,8 @@ export async function POST(req: NextRequest) {
   const total = await db.collection('leads').countDocuments();
   console.log('[portal/login] total docs en leads:', total);
 
-  const reseller: Record<string, unknown> | null = await db.collection('leads').findOne({
-    _collection_type: 'reseller',
-    resellerId,
-  });
-  console.log('[portal/login] reseller:', JSON.stringify(reseller));
+  const reseller: Record<string, unknown> | null = await db.collection('leads').findOne({ resellerId });
+  console.log('[portal/login] reseller sin filtro:', JSON.stringify(reseller));
   await mc.close();
 
   if (!reseller || reseller.status !== 'activo') {
