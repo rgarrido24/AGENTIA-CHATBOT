@@ -17,11 +17,14 @@ export async function GET(
 
   const db     = await getMongoDb();
   const client = await db.collection<ResellerClient>('leads').findOne({ resellerId, clientSlug, _collection_type: 'reseller_client' });
+  console.log('[leads-route] client doc:', JSON.stringify({ clientSlug, legacyQuery: client?.legacyQuery }));
   if (!client) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
 
   const filterFormId = req.nextUrl.searchParams.get('formId') ?? '';
   const base = buildLeadQuery(resellerId, clientSlug, client.legacyQuery);
   const query = filterFormId ? { ...base, form_id: filterFormId } : base;
+  const totalCount = await db.collection('leads').countDocuments(base);
+  console.log('[leads-route] query:', JSON.stringify(base), '→ total:', totalCount);
 
   const docs = await db
     .collection('leads')
