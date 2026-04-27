@@ -58,7 +58,28 @@
       "Bash(sed -n '52,56p' \"E:/AGENTIA-CHATBOT-LIMPIO/app/demo/dentista/DentistaShell.tsx\")",
       "Bash(sed -n '48,52p' \"E:/AGENTIA-CHATBOT-LIMPIO/app/demo/grooming/GroomingShell.tsx\")",
       "Bash(sed -n '55,59p' \"E:/AGENTIA-CHATBOT-LIMPIO/app/demo/medico/MedicoShell.tsx\")",
-      "Bash(powershell.exe -Command \"netstat -ano | Select-String '3010'\")"
+      "Bash(powershell.exe -Command \"netstat -ano | Select-String '3010'\")",
+      "Bash(sed -n '96,100p' E:/AGENTIA-CHATBOT-LIMPIO/app/demo/barber/page.tsx)",
+      "Bash(sed -n '35,38p' E:/AGENTIA-CHATBOT-LIMPIO/app/demo/cobranza/page.tsx)",
+      "Bash(sed -n '85,89p' E:/AGENTIA-CHATBOT-LIMPIO/app/page.tsx)",
+      "Bash(sed -n '95,115p' E:/AGENTIA-CHATBOT-LIMPIO/scripts/whatsapp-bridge.js)",
+      "Bash(sed -n '469,500p' E:/AGENTIA-CHATBOT-LIMPIO/scripts/whatsapp-bridge.js)",
+      "Bash(sed -n '1,30p' E:/AGENTIA-CHATBOT-LIMPIO/src/lib/leads.ts)",
+      "Bash(sed -n '96,145p' E:/AGENTIA-CHATBOT-LIMPIO/src/lib/leads.ts)",
+      "Bash(mv \"combo sinaloense.jpg\"                   combo_sinaloense.jpg)",
+      "Bash(mv \"COMBO VEGETARIANO PREMIUM.jpg\"          COMBO_VEGETARIANO_PREMIUM.jpg)",
+      "Bash(mv \"COMBO TORTA SUPREMA.jpg\"               COMBO_TORTA_SUPREMA.jpg)",
+      "Bash(mv \"TORTA SINALOENSE PREMIUM.jpg\"           TORTA_SINALOENSE_PREMIUM.jpg)",
+      "Bash(mv \"TORTA VEGETARIANA PREMIUM.jpg\"          TORTA_VEGETARIANA_PREMIUM.jpg)",
+      "PowerShell(Get-ChildItem -Path \"E:\\\\AGENTIA-CHATBOT-LIMPIO\\\\app\\\\api\" -Recurse 2>$null | Where-Object {$_.Name -match \"leads|route\"} | Select-Object FullName)",
+      "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/api/portal/[resellerId]/stats\")",
+      "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/api/portal/[resellerId]/clients\")",
+      "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/api/portal/[resellerId]/client/[clientSlug]/leads\")",
+      "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/portal/[resellerId]/dashboard\")",
+      "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/portal/[resellerId]/clientes\")",
+      "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/portal/[resellerId]/cliente/[clientSlug]\")",
+      "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/api/leads/[leadId]/notes\")",
+      "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/api/leads/[leadId]/status\")"
     ]
   }
 }
