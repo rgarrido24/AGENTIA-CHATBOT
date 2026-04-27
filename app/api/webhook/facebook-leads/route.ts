@@ -62,8 +62,8 @@ async function resolveResellerByFormId(formId: string): Promise<ResellerMatch> {
   if (!formId) return null;
   try {
     const db     = await getMongoDb();
-    const client = await db.collection('business_configs').findOne({
-      collection_type:      'reseller_client',
+    const client = await db.collection('leads').findOne({
+      _collection_type:     'reseller_client',
       'formularios.formId': formId,
       'formularios.activo': true,
     });

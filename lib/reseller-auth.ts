@@ -74,7 +74,7 @@ export async function verifyResellerCookie(cookieValue: string | undefined): Pro
   if (!parsed) return null;
   try {
     const db = await getMongoDb();
-    const reseller = await db.collection<Reseller>('business_configs').findOne({ resellerId: parsed.resellerId, collection_type: 'reseller' });
+    const reseller = await db.collection<Reseller>('leads').findOne({ resellerId: parsed.resellerId, _collection_type: 'reseller' });
     if (!reseller || reseller.status !== 'activo') return null;
     const expected = buildCookieValue(parsed.resellerId, reseller.passwordHash);
     if (cookieValue !== expected) return null;

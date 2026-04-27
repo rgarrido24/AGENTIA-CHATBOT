@@ -17,8 +17,8 @@ export async function GET(
 
   const db = await getMongoDb();
   const clients = await db
-    .collection<ResellerClient>('business_configs')
-    .find({ resellerId, collection_type: 'reseller_client' })
+    .collection<ResellerClient>('leads')
+    .find({ resellerId, _collection_type: 'reseller_client' })
     .sort({ nombre: 1 })
     .toArray();
 
