@@ -3,6 +3,7 @@ import { getMongoDb } from '@/lib/mongodb';
 import type { ResellerClient } from '@/lib/reseller-auth';
 import Link from 'next/link';
 import Image from 'next/image';
+import AddClientModal from './AddClientModal';
 
 export default async function DashboardPage({ params }: { params: { resellerId: string } }) {
   const { resellerId } = params;
@@ -95,13 +96,12 @@ export default async function DashboardPage({ params }: { params: { resellerId: 
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold" style={{ color: '#555' }}>Mis clientes</p>
-            <Link
-              href={`/portal/${resellerId}/clientes`}
-              className="text-xs"
-              style={{ color: '#22c55e' }}
-            >
-              Ver todos →
-            </Link>
+            <div className="flex items-center gap-3">
+              <AddClientModal resellerId={resellerId} />
+              <Link href={`/portal/${resellerId}/clientes`} className="text-xs" style={{ color: '#555' }}>
+                Ver todos →
+              </Link>
+            </div>
           </div>
 
           {clientsWithStats.length === 0 ? (
@@ -110,7 +110,7 @@ export default async function DashboardPage({ params }: { params: { resellerId: 
               style={{ background: '#0d0d0d', borderColor: '#1e1e1e' }}
             >
               <p className="text-sm" style={{ color: '#444' }}>No tienes clientes aún.</p>
-              <p className="text-xs mt-1" style={{ color: '#333' }}>Contacta a Agentia para agregar tu primer cliente.</p>
+              <p className="text-xs mt-1" style={{ color: '#333' }}>Usá el botón "+ Agregar cliente" para crear el primero.</p>
             </div>
           ) : (
             <div className="space-y-2">
