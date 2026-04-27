@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { MongoClient } from 'mongodb';
 import { hashPassword, buildCookieValue, COOKIE_NAME, COOKIE_MAX_AGE } from '@/lib/reseller-auth';
 
 export async function POST(req: NextRequest) {
@@ -16,25 +15,22 @@ export async function POST(req: NextRequest) {
   console.log('[portal/login] MONGODB_DB:', process.env.MONGODB_DB);
   console.log('[portal/login] buscando resellerId:', resellerId);
 
-  // Conexión fresca — bypassa el cliente cacheado de getMongoDb()
-  const uri = process.env.MONGODB_URI!;
-  const mongoClient = new MongoClient(uri);
-  let reseller: Record<string, unknown> | null = null;
-  try {
-    await mongoClient.connect();
-    const db = mongoClient.db('agentia_chatbot_ventas');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { MongoClient: MC } = require('mongodb');
+  const uri = process.env.MONGODB_URI;
+  const mc = new MC(uri);
+  await mc.connect();
+  const db = mc.db('agentia_chatbot_ventas');
 
-    const collections = await db.listCollections().toArray();
-    console.log('[portal/login] colecciones:', collections.map((c) => c.name));
+  const total = await db.collection('leads').countDocuments();
+  console.log('[portal/login] total docs en leads:', total);
 
-    const all = await db.collection('leads').find({ _collection_type: 'reseller' }).toArray();
-    console.log('[portal/login] todos los docs en leads(reseller):', JSON.stringify(all));
-
-    reseller = await db.collection('leads').findOne({ resellerId, _collection_type: 'reseller' }) as Record<string, unknown> | null;
-    console.log('[portal/login] reseller encontrado:', JSON.stringify(reseller));
-  } finally {
-    await mongoClient.close();
-  }
+  const reseller: Record<string, unknown> | null = await db.collection('leads').findOne({
+    _collection_type: 'reseller',
+    resellerId,
+  });
+  console.log('[portal/login] reseller:', JSON.stringify(reseller));
+  await mc.close();
 
   if (!reseller || reseller.status !== 'activo') {
     console.log('[portal/login] fallo: reseller nulo o status !== activo, status=', reseller?.status);
