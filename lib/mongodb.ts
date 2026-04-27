@@ -59,7 +59,7 @@ export async function getMongoClient(): Promise<MongoClient> {
 
 export async function getMongoDb(): Promise<Db> {
   const client = await getMongoClient();
-  const dbName = process.env.MONGODB_DB;
-  return dbName ? client.db(dbName) : client.db(); // si no hay DB, usa la del URI
+  const dbName = process.env.MONGODB_DB ?? 'agentia_chatbot_ventas';
+  return client.db(dbName);
 }
 
