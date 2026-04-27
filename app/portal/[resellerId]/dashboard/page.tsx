@@ -4,6 +4,7 @@ import type { ResellerClient } from '@/lib/reseller-auth';
 import Link from 'next/link';
 import Image from 'next/image';
 import AddClientModal from './AddClientModal';
+import ClientsList from './ClientsList';
 
 export default async function DashboardPage({ params }: { params: { resellerId: string } }) {
   const { resellerId } = params;
@@ -104,46 +105,14 @@ export default async function DashboardPage({ params }: { params: { resellerId: 
             </div>
           </div>
 
-          {clientsWithStats.length === 0 ? (
-            <div
-              className="rounded-xl p-8 text-center border"
-              style={{ background: '#0d0d0d', borderColor: '#1e1e1e' }}
-            >
-              <p className="text-sm" style={{ color: '#444' }}>No tienes clientes aún.</p>
-              <p className="text-xs mt-1" style={{ color: '#333' }}>Usá el botón "+ Agregar cliente" para crear el primero.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {clientsWithStats.map((c) => (
-                <Link
-                  key={c.clientSlug}
-                  href={`/portal/${resellerId}/cliente/${c.clientSlug}`}
-                  className="flex items-center justify-between rounded-xl px-4 py-3 border transition"
-                  style={{ background: '#0d0d0d', borderColor: '#1e1e1e' }}
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-white">{c.nombre}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#555' }}>{c.negocio}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-xs font-bold" style={{ color: '#22c55e' }}>{c.leadsHoy} hoy</p>
-                      <p className="text-[10px]" style={{ color: '#444' }}>{c.total} total</p>
-                    </div>
-                    <span
-                      className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={c.status === 'activo'
-                        ? { background: '#0d2200', color: '#22c55e' }
-                        : { background: '#1a0000', color: '#ef4444' }}
-                    >
-                      {c.status}
-                    </span>
-                    <span style={{ color: '#333' }}>→</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          <ClientsList resellerId={resellerId} clients={clientsWithStats.map((c) => ({
+            clientSlug: c.clientSlug,
+            nombre:     c.nombre,
+            negocio:    c.negocio,
+            status:     String(c.status ?? ''),
+            leadsHoy:   c.leadsHoy,
+            total:      c.total,
+          }))} />
         </div>
       </main>
     </div>
