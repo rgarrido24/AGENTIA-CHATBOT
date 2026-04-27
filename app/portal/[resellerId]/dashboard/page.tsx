@@ -15,8 +15,8 @@ export default async function DashboardPage({ params }: { params: { resellerId: 
   const mes    = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const clients = await db
-    .collection<ResellerClient>('reseller_clients')
-    .find({ resellerId })
+    .collection<ResellerClient>('leads')
+    .find({ resellerId, _collection_type: 'reseller_client' })
     .sort({ nombre: 1 })
     .toArray();
 
@@ -45,9 +45,17 @@ export default async function DashboardPage({ params }: { params: { resellerId: 
       <header className="sticky top-0 z-10 border-b px-4 py-3" style={{ background: '#000', borderColor: '#1a1a1a' }}>
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image src="/logo-agentia-2026.png" alt="Agentia" width={32} height={32} className="rounded-lg" />
+            <Image
+              src={reseller.brandLogo ?? '/logo-agentia-2026.png'}
+              alt={reseller.brandName ?? 'Portal'}
+              width={32} height={32}
+              className="rounded-lg object-contain"
+              style={{ background: '#111', padding: 2 }}
+            />
             <div>
-              <p className="text-xs font-semibold" style={{ color: '#22c55e' }}>Portal Agentia</p>
+              <p className="text-xs font-semibold" style={{ color: reseller.brandColor ?? '#22c55e' }}>
+                {reseller.brandName ?? 'Portal Agentia'}
+              </p>
               <p className="text-sm font-bold text-white">{reseller.nombre}</p>
             </div>
           </div>

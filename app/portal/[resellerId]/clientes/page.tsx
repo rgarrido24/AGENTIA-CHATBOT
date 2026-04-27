@@ -14,8 +14,8 @@ export default async function ClientesPage({ params }: { params: { resellerId: s
   const mes = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const clients = await db
-    .collection<ResellerClient>('reseller_clients')
-    .find({ resellerId })
+    .collection<ResellerClient>('leads')
+    .find({ resellerId, _collection_type: 'reseller_client' })
     .sort({ nombre: 1 })
     .toArray();
 
@@ -41,7 +41,13 @@ export default async function ClientesPage({ params }: { params: { resellerId: s
             ← Dashboard
           </Link>
           <div className="flex items-center gap-2 ml-2">
-            <Image src="/logo-agentia-2026.png" alt="Agentia" width={24} height={24} className="rounded" />
+            <Image
+              src={reseller.brandLogo ?? '/logo-agentia-2026.png'}
+              alt={reseller.brandName ?? 'Portal'}
+              width={24} height={24}
+              className="rounded object-contain"
+              style={{ background: '#111' }}
+            />
             <p className="text-sm font-bold text-white">Mis clientes · {reseller.nombre}</p>
           </div>
         </div>
