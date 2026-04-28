@@ -80,7 +80,15 @@
       "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/portal/[resellerId]/cliente/[clientSlug]\")",
       "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/api/leads/[leadId]/notes\")",
       "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/api/leads/[leadId]/status\")",
-      "Bash(awk '{print $5, $NF}')"
+      "Bash(awk '{print $5, $NF}')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('types:',d.get\\('types'\\),'main:',d.get\\('main'\\),'typings:',d.get\\('typings'\\)\\)\")",
+      "Bash(Get-Content \"E:\\\\AGENTIA-CHATBOT-LIMPIO\\\\node_modules\\\\stripe\\\\package.json\")",
+      "Bash(Select-String -Pattern '\"types\"|\"main\"|\"typings\"')",
+      "Bash(Select-Object -First 5)",
+      "Bash(npm list *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('main:', d.get\\('main'\\)\\); print\\('types:', d.get\\('types'\\)\\); print\\('typings:', d.get\\('typings'\\)\\)\")",
+      "Bash(PowerShell *)",
+      "PowerShell(Get-WmiObject *)"
     ]
   }
 }
