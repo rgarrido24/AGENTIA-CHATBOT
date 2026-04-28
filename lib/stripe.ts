@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-01-27.acacia',
+  apiVersion: '2026-04-22.dahlia',
 });
 
 export type PlanKey = 'starter' | 'profesional' | 'premium';

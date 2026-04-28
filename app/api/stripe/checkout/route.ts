@@ -60,12 +60,14 @@ export async function POST(req: NextRequest) {
         },
       }];
 
+  // In Checkout subscription mode, one-time prices go in line_items (charged on first invoice only)
+  const allLineItems = [...lineItems, ...addInvoiceItems];
+
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
-    line_items: lineItems,
+    line_items: allLineItems,
     subscription_data: {
-      add_invoice_items: addInvoiceItems,
       metadata,
     },
     customer_email: email || undefined,

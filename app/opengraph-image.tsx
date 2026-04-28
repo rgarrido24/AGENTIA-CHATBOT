@@ -99,28 +99,33 @@ export default function OgImage() {
         {/* Tagline */}
         <div
           style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'baseline',
+            justifyContent: 'center',
+            gap: 10,
             fontSize: 36,
             fontWeight: 700,
             color: '#ffffff',
-            textAlign: 'center',
             lineHeight: 1.2,
             maxWidth: 860,
           }}
         >
-          Tu negocio automatizado en{' '}
+          <span>Tu negocio automatizado en</span>
           <span style={{ color: '#22c55e' }}>WhatsApp</span>
         </div>
 
         {/* Sub tagline */}
         <div
           style={{
+            display: 'flex',
+            justifyContent: 'center',
             fontSize: 22,
             color: 'rgba(255,255,255,0.5)',
             marginTop: 20,
-            textAlign: 'center',
           }}
         >
-          Chatbots con IA · Agenda · Cobranza · CRM
+          <span>Chatbots con IA · Agenda · Cobranza · CRM</span>
         </div>
 
         {/* Bottom divider */}

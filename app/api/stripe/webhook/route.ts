@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getMongoDb } from '@/lib/mongodb';
-import type Stripe from 'stripe';
-
-export const config = { api: { bodyParser: false } };
 
 function slugify(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -30,7 +27,7 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get('stripe-signature') ?? '';
   const secret    = process.env.STRIPE_WEBHOOK_SECRET ?? '';
 
-  let event: Stripe.Event;
+  let event: ReturnType<typeof stripe.webhooks.constructEvent>;
   try {
     event = stripe.webhooks.constructEvent(body, signature, secret);
   } catch (err) {
@@ -43,7 +40,7 @@ export async function POST(req: NextRequest) {
   switch (event.type) {
 
     case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session;
+      const session = event.data.object as { metadata?: Record<string,string>|null; customer?: string|null; subscription?: string|null };
       const meta = (session.metadata ?? {}) as Record<string, string>;
       const { plan, moneda, negocio, nombre, giro, pais, telefono, email } = meta;
       const clientId = slugify(negocio || nombre || `cliente-${Date.now()}`);
@@ -75,8 +72,8 @@ export async function POST(req: NextRequest) {
     }
 
     case 'invoice.payment_succeeded': {
-      const invoice = event.data.object as Stripe.Invoice;
-      const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id ?? '';
+      const invoice = event.data.object as { customer?: string|{id:string}|null; amount_paid: number; currency: string };
+      const customerId = typeof invoice.customer === 'string' ? invoice.customer : (invoice.customer as {id:string}|null)?.id ?? '';
       await db.collection('agentia_clients').updateOne(
         { stripeCustomerId: customerId },
         {
@@ -89,8 +86,8 @@ export async function POST(req: NextRequest) {
     }
 
     case 'invoice.payment_failed': {
-      const invoice = event.data.object as Stripe.Invoice;
-      const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id ?? '';
+      const invoice = event.data.object as { customer?: string|{id:string}|null; amount_due: number; currency: string };
+      const customerId = typeof invoice.customer === 'string' ? invoice.customer : (invoice.customer as {id:string}|null)?.id ?? '';
       const client = await db.collection('agentia_clients').findOne({ stripeCustomerId: customerId });
 
       await alertRodolfo(db,
@@ -109,8 +106,8 @@ export async function POST(req: NextRequest) {
     }
 
     case 'customer.subscription.deleted': {
-      const sub = event.data.object as Stripe.Subscription;
-      const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer?.id ?? '';
+      const sub = event.data.object as { customer?: string|{id:string}|null };
+      const customerId = typeof sub.customer === 'string' ? sub.customer : (sub.customer as {id:string}|null)?.id ?? '';
       const client = await db.collection('agentia_clients').findOneAndUpdate(
         { stripeCustomerId: customerId },
         { $set: { status: 'cancelado', updatedAt: new Date() } },
