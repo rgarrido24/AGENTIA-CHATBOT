@@ -318,7 +318,12 @@ export default function LandingPage() {
             className="pt-8 text-center text-slate-500 text-sm"
             style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
           >
-            © {new Date().getFullYear()} Agentia · CRM & Chatbot con IA
+            <p>© {new Date().getFullYear()} Agentia · CRM & Chatbot con IA</p>
+            <div className="flex items-center justify-center gap-4 mt-2 text-xs">
+              <Link href="/legal/terminos" className="hover:text-slate-300 transition-colors">Términos y Condiciones</Link>
+              <span>·</span>
+              <Link href="/legal/privacidad" className="hover:text-slate-300 transition-colors">Aviso de Privacidad</Link>
+            </div>
           </footer>
 
         </div>
