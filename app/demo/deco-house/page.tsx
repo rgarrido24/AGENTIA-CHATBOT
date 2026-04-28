@@ -35,12 +35,12 @@ type QuoteValues = {
 const FLOW: { key: keyof QuoteValues; botText: string; chips: string[] }[] = [
   {
     key: 'producto',
-    botText: '¿Qué necesitas cotizar hoy? 😄',
+    botText: '¿Qué necesitas cotizar hoy? 🙂',
     chips: ['Mampara de baño', 'Ventana', 'Shower Door', 'Puerta de cristal', 'Vidrio para proyecto', 'PVC (ventanas/puertas)'],
   },
   {
     key: 'medidas',
-    botText: '¿Tienes las medidas aproximadas?\n(ideal: ancho × alto en cm)',
+    botText: '¿Tienes las medidas aproximadas?\n(Si las tienes: ancho × alto en cm)',
     chips: ['80 × 200 cm', '120 × 200 cm', '150 × 220 cm', 'No sé aún'],
   },
   {
@@ -50,12 +50,12 @@ const FLOW: { key: keyof QuoteValues; botText: string; chips: string[] }[] = [
   },
   {
     key: 'ciudad',
-    botText: '¿En qué comuna/sector es la instalación? (Región Metropolitana)',
+    botText: '¿En qué comuna/sector es la instalación? (RM)',
     chips: ['Santiago Centro', 'Las Condes', 'Providencia', 'Vitacura', 'Otra comuna RM'],
   },
   {
     key: 'direccion',
-    botText: 'Genial. ¿Me compartes la dirección completa? (calle, número, depto/casa, y comuna) 📍',
+    botText: 'Buenísimo. ¿Me compartes la dirección completa? (calle, número, depto/casa y comuna) 📍',
     chips: ['Av. Apoquindo 1234, Depto 56, Las Condes'],
   },
   {
@@ -65,17 +65,17 @@ const FLOW: { key: keyof QuoteValues; botText: string; chips: string[] }[] = [
   },
   {
     key: 'material',
-    botText: '¿El perfil lo prefieres en aluminio o PVC?',
+    botText: '¿El perfil lo prefieres en aluminio o en PVC?',
     chips: ['Aluminio', 'PVC', 'No estoy seguro/a'],
   },
   {
     key: 'color',
-    botText: '¿Qué color de perfil prefieres?',
+    botText: 'Y de color, ¿cuál te gusta más? 😄',
     chips: ['Negro', 'Blanco', 'Gris titanio', 'Roble dorado', 'Nogal', 'Antracita'],
   },
   {
     key: 'contacto',
-    botText: 'Perfecto 🙌 Ya tengo lo necesario.\n¿Me dejas tu nombre y WhatsApp para enviarte la cotización?',
+    botText: 'Listo 🙌 Con eso ya puedo armar la cotización.\n¿Me dejas tu nombre y tu WhatsApp?',
     chips: ['María González — +56 9 1234 5678'],
   },
 ];
@@ -397,6 +397,7 @@ export default function DecoHouseDemoPage() {
   const [summary, setSummary]         = useState('');
   const [paused, setPaused]           = useState(false);
   const [leadStage, setLeadStage]     = useState<'Nuevo' | 'En flujo' | 'Alerta enviada' | 'Cotización en preparación' | 'Seguimiento'>('Nuevo');
+  const [autoScroll, setAutoScroll]   = useState(false);
   const [advisor, setAdvisor]         = useState<AdvisorForm>({
     precioM2: '', costoInstalacion: '', descuento: '0',
     tiempoEntrega: '5-7 días hábiles', notas: '',
@@ -408,7 +409,10 @@ export default function DecoHouseDemoPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  useEffect(() => { scrollToBottom(); }, [messages, typing, scrollToBottom]);
+  useEffect(() => {
+    if (!autoScroll) return;
+    scrollToBottom();
+  }, [messages, typing, scrollToBottom, autoScroll]);
 
   // Auto-start: show initial client message + bot welcome
   useEffect(() => {
@@ -484,7 +488,7 @@ export default function DecoHouseDemoPage() {
             {
               from: 'bot',
               text:
-                'No hay problema 🙂\nSi estás en la Región Metropolitana, podemos coordinar visita de un técnico especializado para tomar medidas.\n¿Seguimos con unos datitos para la cotización?',
+                'Tranqui 🙂\nSi estás dentro de la RM, podemos coordinar una visita de un técnico para tomar medidas.\nIgual sigamos y te armamos la cotización base, ¿ya?',
               ts: nowTs(),
             },
             { from: 'bot', text: FLOW[nextStep].botText, ts: nowTs() },
@@ -610,6 +614,15 @@ export default function DecoHouseDemoPage() {
                     title={paused ? 'Reanudar chat' : 'Pausar chat'}
                   >
                     {paused ? 'Reanudar' : 'Pausar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToBottom()}
+                    className="text-[10px] px-2 py-1 rounded-full font-semibold"
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.15)', color: '#e2e8f0' }}
+                    title="Ir al final del chat"
+                  >
+                    Ir al final
                   </button>
                   <span style={{ fontSize: 14 }}>⋮</span>
                 </div>
