@@ -20,50 +20,62 @@ const C = {
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Msg  = { from: 'bot' | 'client'; text: string; ts: string };
 type QuoteValues = {
-  producto: string; uso: string;    medidas: string; piso: string;
-  ciudad:   string; cantidad: string; color: string; contacto: string;
+  producto: string;
+  medidas: string;
+  piso: string;
+  ciudad: string;
+  direccion: string;
+  cantidad: string;
+  material: string;
+  color: string;
+  contacto: string;
 };
 
 // ─── Flow ─────────────────────────────────────────────────────────────────────
 const FLOW: { key: keyof QuoteValues; botText: string; chips: string[] }[] = [
   {
     key: 'producto',
-    botText: '¿Qué tipo de producto necesitas?\n¿Mampara, ventana, shower door, puerta, vidrio para proyecto, o algo más específico?',
-    chips: ['Mampara de baño', 'Ventana', 'Shower Door', 'Puerta de cristal', 'Vidrio para proyecto'],
-  },
-  {
-    key: 'uso',
-    botText: '¿Es para uso residencial, comercial o industrial?',
-    chips: ['Residencial 🏠', 'Comercial 🏢', 'Industrial 🏭'],
+    botText: '¿Qué necesitas cotizar hoy? 😄',
+    chips: ['Mampara de baño', 'Ventana', 'Shower Door', 'Puerta de cristal', 'Vidrio para proyecto', 'PVC (ventanas/puertas)'],
   },
   {
     key: 'medidas',
-    botText: '¿Tienes las medidas aproximadas?\n(ancho × alto en metros o centímetros)',
-    chips: ['0.80 × 2.00 m', '1.20 × 2.00 m', '1.50 × 2.20 m', 'No sé aún'],
+    botText: '¿Tienes las medidas aproximadas?\n(ideal: ancho × alto en cm)',
+    chips: ['80 × 200 cm', '120 × 200 cm', '150 × 220 cm', 'No sé aún'],
   },
   {
     key: 'piso',
-    botText: '¿En qué piso se instalará?\n(Afecta el costo de instalación y tipo de vidrio recomendado)',
+    botText: '¿En qué piso se instalará?',
     chips: ['Primer piso', 'Segundo piso', 'Tercer piso', '4to piso o más'],
   },
   {
     key: 'ciudad',
-    botText: '¿En qué ciudad y comuna es la instalación?',
-    chips: ['Santiago Centro', 'Las Condes', 'Providencia', 'Vitacura', 'Otra ciudad'],
+    botText: '¿En qué comuna/sector es la instalación? (Región Metropolitana)',
+    chips: ['Santiago Centro', 'Las Condes', 'Providencia', 'Vitacura', 'Otra comuna RM'],
+  },
+  {
+    key: 'direccion',
+    botText: 'Genial. ¿Me compartes la dirección completa? (calle, número, depto/casa, y comuna) 📍',
+    chips: ['Av. Apoquindo 1234, Depto 56, Las Condes'],
   },
   {
     key: 'cantidad',
-    botText: '¿Cuántas unidades o metros cuadrados necesitas aproximadamente?',
-    chips: ['1 unidad', '2 unidades', '3 o más unidades', 'Cotizar por m²'],
+    botText: '¿Cuántas unidades necesitas?',
+    chips: ['1 unidad', '2 unidades', '3 unidades', '4+ unidades'],
+  },
+  {
+    key: 'material',
+    botText: '¿El perfil lo prefieres en aluminio o PVC?',
+    chips: ['Aluminio', 'PVC', 'No estoy seguro/a'],
   },
   {
     key: 'color',
-    botText: '¿Qué color de perfil prefieres?\n(Negro · Blanco · Mate/Gris · Roble dorado · Titanio)',
-    chips: ['Negro', 'Blanco', 'Mate/Gris', 'Roble dorado', 'Titanio'],
+    botText: '¿Qué color de perfil prefieres?',
+    chips: ['Negro', 'Blanco', 'Gris titanio', 'Roble dorado', 'Nogal', 'Antracita'],
   },
   {
     key: 'contacto',
-    botText: 'Perfecto, ya tengo todo lo que necesito 📋\n¿Me das tu nombre y teléfono para enviarte la cotización?',
+    botText: 'Perfecto 🙌 Ya tengo lo necesario.\n¿Me dejas tu nombre y WhatsApp para enviarte la cotización?',
     chips: ['María González — +56 9 1234 5678'],
   },
 ];
@@ -72,15 +84,15 @@ function buildSummary(q: Partial<QuoteValues>): string {
   return (
     '✅ *RESUMEN DE TU SOLICITUD:*\n\n' +
     `PRODUCTO: ${q.producto ?? '-'}\n` +
-    `USO: ${q.uso ?? '-'}\n` +
     `MEDIDAS: ${q.medidas ?? '-'}\n` +
     `PISO: ${q.piso ?? '-'}\n` +
-    `CIUDAD/COMUNA: ${q.ciudad ?? '-'}\n` +
+    `COMUNA/SECTOR: ${q.ciudad ?? '-'}\n` +
+    `DIRECCIÓN: ${q.direccion ?? '-'}\n` +
     `CANTIDAD: ${q.cantidad ?? '-'}\n` +
-    `ESPECIFICACIONES: Perfil ${q.color ?? '-'}\n` +
+    `PERFIL: ${q.material ?? '-'} · ${q.color ?? '-'}\n` +
     `CONTACTO: ${q.contacto ?? '-'}\n\n` +
-    'EN BREVE RECIBIRÁS TU COTIZACIÓN EN PDF\n' +
-    '¡GRACIAS POR CONTACTAR A DECO HOUSE! 🪟'
+    'En breve te enviamos la cotización en PDF ✨\n' +
+    '¡Gracias por escribirnos a Deco House! 🪟'
   );
 }
 
@@ -259,11 +271,12 @@ async function generatePDF(q: Partial<QuoteValues>, advisor: AdvisorForm) {
     head: [['Campo', 'Detalle']],
     body: [
       ['Producto', q.producto ?? '-'],
-      ['Uso', q.uso ?? '-'],
       ['Medidas', q.medidas ?? '-'],
       ['Piso de instalación', q.piso ?? '-'],
+      ['Comuna / Sector', q.ciudad ?? '-'],
+      ['Dirección', q.direccion ?? '-'],
       ['Cantidad', q.cantidad ?? '-'],
-      ['Color de perfil', q.color ?? '-'],
+      ['Perfil', `${q.material ?? '-'} · ${q.color ?? '-'}`],
     ],
     headStyles: { fillColor: accent, textColor: [10, 10, 15], fontStyle: 'bold', fontSize: 8 },
     bodyStyles: { fontSize: 8, textColor: [30, 30, 50] },
@@ -382,6 +395,8 @@ export default function DecoHouseDemoPage() {
   const [quoteData, setQuoteData]     = useState<Partial<QuoteValues>>({});
   const [done, setDone]               = useState(false);
   const [summary, setSummary]         = useState('');
+  const [paused, setPaused]           = useState(false);
+  const [leadStage, setLeadStage]     = useState<'Nuevo' | 'En flujo' | 'Alerta enviada' | 'Cotización en preparación' | 'Seguimiento'>('Nuevo');
   const [advisor, setAdvisor]         = useState<AdvisorForm>({
     precioM2: '', costoInstalacion: '', descuento: '0',
     tiempoEntrega: '5-7 días hábiles', notas: '',
@@ -405,7 +420,7 @@ export default function DecoHouseDemoPage() {
       setTyping(false);
       setMessages(prev => [
         ...prev,
-        { from: 'bot', text: '¡Hola! Bienvenido a Deco House 🪟\nSomos especialistas en vidrio y aluminio para espacios modernos. ¿En qué te puedo ayudar?', ts: nowTs() },
+        { from: 'bot', text: '¡Hola! Bienvenido a Deco House 🪟\nSomos especialistas en vidrio, aluminio y PVC para espacios modernos. ¿En qué te puedo ayudar?', ts: nowTs() },
       ]);
       setTyping(true);
     }, 1800);
@@ -413,14 +428,34 @@ export default function DecoHouseDemoPage() {
       setTyping(false);
       setMessages(prev => [...prev, { from: 'bot', text: FLOW[0].botText, ts: nowTs() }]);
       setStep(0);
+      setLeadStage('En flujo');
     }, 3200);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   function handleChip(chip: string) {
-    if (typing || step < 0 || done) return;
+    if (paused || typing || step < 0 || done) return;
     const currentStep = FLOW[step];
-    const newData = { ...quoteData, [currentStep.key]: chip.replace(/[🏠🏢🏭]/g, '').trim() };
+    const cleaned = chip.replace(/[🏠🏢🏭]/g, '').trim();
+    let newData: Partial<QuoteValues> = { ...quoteData, [currentStep.key]: cleaned };
+
+    // Reglas específicas
+    if (currentStep.key === 'medidas' && cleaned.toLowerCase().includes('no sé')) {
+      newData = { ...newData, medidas: 'Sin medidas (solicitar visita técnica RM)' };
+    }
+
+    if (currentStep.key === 'material' && cleaned === 'No estoy seguro/a') {
+      newData = { ...newData, material: 'Por definir' };
+    }
+
+    if (currentStep.key === 'color') {
+      // Colores por material (solo guía; no bloqueamos en demo)
+      const material = String(newData.material ?? '').toLowerCase();
+      const pvcColors = new Set(['Blanco', 'Negro', 'Antracita', 'Roble dorado', 'Nogal']);
+      const aluColors = new Set(['Blanco', 'Negro', 'Gris titanio', 'Roble dorado']);
+      if (material.includes('pvc') && !pvcColors.has(cleaned)) newData = { ...newData, color: cleaned };
+      if (material.includes('alumin') && !aluColors.has(cleaned)) newData = { ...newData, color: cleaned };
+    }
     setQuoteData(newData);
 
     setMessages(prev => [...prev, { from: 'client', text: chip, ts: nowTs() }]);
@@ -438,11 +473,25 @@ export default function DecoHouseDemoPage() {
         setSummary(s);
         setDone(true);
         setStep(nextStep);
+        setLeadStage('Alerta enviada');
       }, delay);
     } else {
       setTimeout(() => {
         setTyping(false);
-        setMessages(prev => [...prev, { from: 'bot', text: FLOW[nextStep].botText, ts: nowTs() }]);
+        if (currentStep.key === 'medidas' && cleaned.toLowerCase().includes('no sé')) {
+          setMessages(prev => [
+            ...prev,
+            {
+              from: 'bot',
+              text:
+                'No hay problema 🙂\nSi estás en la Región Metropolitana, podemos coordinar visita de un técnico especializado para tomar medidas.\n¿Seguimos con unos datitos para la cotización?',
+              ts: nowTs(),
+            },
+            { from: 'bot', text: FLOW[nextStep].botText, ts: nowTs() },
+          ]);
+        } else {
+          setMessages(prev => [...prev, { from: 'bot', text: FLOW[nextStep].botText, ts: nowTs() }]);
+        }
         setStep(nextStep);
       }, delay);
     }
@@ -455,6 +504,8 @@ export default function DecoHouseDemoPage() {
     setQuoteData({});
     setDone(false);
     setSummary('');
+    setPaused(false);
+    setLeadStage('Nuevo');
 
     const t0 = setTimeout(() => {
       setMessages([{ from: 'client', text: 'Hola, necesito una mampara para mi baño', ts: nowTs() }]);
@@ -462,13 +513,14 @@ export default function DecoHouseDemoPage() {
     }, 300);
     const t1 = setTimeout(() => {
       setTyping(false);
-      setMessages(prev => [...prev, { from: 'bot', text: '¡Hola! Bienvenido a Deco House 🪟\nSomos especialistas en vidrio y aluminio para espacios modernos. ¿En qué te puedo ayudar?', ts: nowTs() }]);
+      setMessages(prev => [...prev, { from: 'bot', text: '¡Hola! Bienvenido a Deco House 🪟\nSomos especialistas en vidrio, aluminio y PVC para espacios modernos. ¿En qué te puedo ayudar?', ts: nowTs() }]);
       setTyping(true);
     }, 1400);
     const t2 = setTimeout(() => {
       setTyping(false);
       setMessages(prev => [...prev, { from: 'bot', text: FLOW[0].botText, ts: nowTs() }]);
       setStep(0);
+      setLeadStage('En flujo');
     }, 2600);
     return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
   }
@@ -518,7 +570,7 @@ export default function DecoHouseDemoPage() {
             <span style={{ color: C.accent }}>vende más rápido</span>
           </h1>
           <p style={{ color: C.silver }} className="text-sm max-w-lg mx-auto">
-            El chatbot recopila todos los datos que necesitas para cotizar: producto, medidas, piso, comuna y contacto — sin formularios aburridos.
+            El chatbot recopila los datos clave para cotizar: producto, medidas (o visita técnica), piso, comuna, dirección y contacto — sin formularios lateros.
           </p>
         </div>
 
@@ -546,11 +598,19 @@ export default function DecoHouseDemoPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-white">Asistente Deco House</p>
                   <p style={{ fontSize: 10, color: '#aaa' }}>
-                    {typing ? 'escribiendo...' : 'en línea'}
+                    {paused ? 'en pausa' : (typing ? 'escribiendo...' : 'en línea')}
                   </p>
                 </div>
-                <div className="flex gap-3" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  <span style={{ fontSize: 14 }}>📞</span>
+                <div className="flex gap-2 items-center" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                  <button
+                    type="button"
+                    onClick={() => setPaused(p => !p)}
+                    className="text-[10px] px-2 py-1 rounded-full font-semibold"
+                    style={{ background: paused ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.15)', color: '#e2e8f0' }}
+                    title={paused ? 'Reanudar chat' : 'Pausar chat'}
+                  >
+                    {paused ? 'Reanudar' : 'Pausar'}
+                  </button>
                   <span style={{ fontSize: 14 }}>⋮</span>
                 </div>
               </div>
@@ -573,11 +633,13 @@ export default function DecoHouseDemoPage() {
                       <button
                         key={chip}
                         onClick={() => handleChip(chip)}
+                        disabled={paused}
                         className="text-xs px-2.5 py-1 rounded-full font-medium transition-all active:scale-95"
                         style={{
                           background: 'rgba(79,195,247,0.1)',
                           border: `1px solid rgba(79,195,247,0.35)`,
                           color: C.accent,
+                          opacity: paused ? 0.5 : 1,
                         }}
                       >
                         {chip}
@@ -613,12 +675,12 @@ export default function DecoHouseDemoPage() {
               <p className="text-sm font-bold text-white mb-4">Catálogo de productos</p>
               <div className="grid grid-cols-2 gap-2 text-xs" style={{ color: C.silver }}>
                 {[
-                  ['🪟', 'Mamparas aluminio', 'Negro, Blanco, Titanio...'],
+                  ['🪟', 'Mamparas aluminio', 'Blanco, Negro, Gris titanio, Roble dorado'],
                   ['🚿', 'Shower Door', 'Herrajes inoxidable'],
                   ['🪞', 'Espejos', 'Laminados, biselados'],
                   ['🏢', 'Puertas Protex', 'Cristal 1 y 2 hojas'],
                   ['🔶', 'Vidrios especiales', 'Solar Cool, Bronce'],
-                  ['🔒', 'Seguridad', '30mm-50mm para joyerías'],
+                  ['🧱', 'PVC', 'Blanco, Negro, Antracita, Roble dorado, Nogal'],
                 ].map(([icon, name, sub]) => (
                   <div key={name} className="rounded-xl p-2.5" style={{ background: C.card2, border: `1px solid ${C.border}` }}>
                     <span className="text-lg">{icon}</span>
@@ -627,6 +689,53 @@ export default function DecoHouseDemoPage() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Mini pipeline + control */}
+            <div className="rounded-2xl p-5" style={{ background: C.card, border: `1px solid ${C.border}` }}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-bold text-white">Pipeline de leads</p>
+                <button
+                  type="button"
+                  onClick={() => setPaused(p => !p)}
+                  className="text-xs px-2 py-1 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.border}`, color: C.silver }}
+                >
+                  {paused ? 'Reanudar chat' : 'Pausar chat'}
+                </button>
+              </div>
+              {(
+                [
+                  'Nuevo',
+                  'En flujo',
+                  'Alerta enviada',
+                  'Cotización en preparación',
+                  'Seguimiento',
+                  'Visita técnica (RM)',
+                  'Anticipo 50%',
+                  'Contraentrega 50%',
+                ] as const
+              ).map((s) => {
+                const activeStage = s === leadStage;
+                return (
+                  <div
+                    key={s}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2 mb-2"
+                    style={{
+                      background: activeStage ? 'rgba(79,195,247,0.08)' : C.card2,
+                      border: `1px solid ${activeStage ? C.borderA : C.border}`,
+                    }}
+                  >
+                    <span className="w-2 h-2 rounded-full" style={{ background: activeStage ? C.accent : '#334' }} />
+                    <p className="text-xs" style={{ color: activeStage ? C.accent : C.dim }}>
+                      {s}
+                    </p>
+                  </div>
+                );
+              })}
+              <p className="text-[10px] mt-2" style={{ color: C.dim }}>
+                Próximos pasos típicos: visita técnica (si falta medir), 50% anticipo y 50% contra entrega.
+              </p>
             </div>
 
             {/* Owner alert — shown after demo completes */}
@@ -670,9 +779,10 @@ export default function DecoHouseDemoPage() {
                     ['Producto solicitado', quoteData.producto],
                     ['Medidas', quoteData.medidas],
                     ['Piso de instalación', quoteData.piso],
-                    ['Ciudad / Comuna', quoteData.ciudad],
+                    ['Comuna / Sector', quoteData.ciudad],
+                    ['Dirección completa', quoteData.direccion],
                     ['Cantidad', quoteData.cantidad],
-                    ['Especificaciones', `Perfil ${quoteData.color ?? '-'}`],
+                    ['Perfil', `${quoteData.material ?? '-'} · ${quoteData.color ?? '-'}`],
                     ['Contacto', quoteData.contacto],
                   ] as [string, string | undefined][]
                 ).map(([label, val]) => (
