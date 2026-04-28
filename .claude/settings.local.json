@@ -79,7 +79,8 @@
       "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/portal/[resellerId]/clientes\")",
       "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/portal/[resellerId]/cliente/[clientSlug]\")",
       "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/api/leads/[leadId]/notes\")",
-      "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/api/leads/[leadId]/status\")"
+      "Bash(mkdir -p \"E:/AGENTIA-CHATBOT-LIMPIO/app/api/leads/[leadId]/status\")",
+      "Bash(awk '{print $5, $NF}')"
     ]
   }
 }
