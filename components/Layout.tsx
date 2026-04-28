@@ -16,6 +16,8 @@ import {
   Smartphone,
   LayoutDashboard,
   Target,
+  DollarSign,
+  Building2,
 } from 'lucide-react';
 
 export type BrandConfig = {
@@ -45,6 +47,8 @@ const navLinks = [
   { href: '/dashboard/settings', label: 'Configuración', icon: Settings },
   { href: '/dashboard/analytics', label: 'Analítica', icon: BarChart3 },
   { href: '/dashboard/whatsapp', label: 'Vincular WhatsApp', icon: Smartphone },
+  { href: '/dashboard/finanzas', label: 'Finanzas', icon: DollarSign },
+  { href: '/dashboard/clientes', label: 'Clientes', icon: Building2 },
 ];
 
 export default function Layout({
