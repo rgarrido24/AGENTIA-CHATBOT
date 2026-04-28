@@ -40,13 +40,18 @@ export async function GET(
     })
     .toArray();
 
-  // Unique form IDs for the filter dropdown (from all leads, not just filtered)
+  // Unique form IDs for the filter dropdown — client formularios config has priority for names
+  const formMap = new Map<string, string>();
+  for (const f of (client.formularios ?? [])) {
+    if (f.formId) formMap.set(String(f.formId), String(f.formName || f.formId));
+  }
   const allDocs = filterFormId
     ? await db.collection('leads').find(base).project({ form_id: 1, form_name: 1, _id: 0 }).toArray()
     : docs;
-  const formMap = new Map<string, string>();
   for (const d of allDocs) {
-    if (d.form_id) formMap.set(String(d.form_id), String(d.form_name || d.form_id));
+    if (d.form_id && !formMap.has(String(d.form_id))) {
+      formMap.set(String(d.form_id), String(d.form_name || d.form_id));
+    }
   }
   const formIds = Array.from(formMap.entries()).map(([id, name]) => ({ id, name }));
 

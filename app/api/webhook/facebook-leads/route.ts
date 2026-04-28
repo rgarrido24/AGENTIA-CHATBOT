@@ -105,39 +105,45 @@ async function processLead(payload: Record<string, unknown>) {
 async function enqueueAdminAlert(
   db: Awaited<ReturnType<typeof getMongoDb>>,
   lead: {
-    full_name: string;
-    phone: string;
-    email: string;
-    form_name: string;
-    form_fields: Record<string, string>;
-    clientId: string;
+    leadId:       string;
+    clientId:     string;
+    resellerMatch: { resellerId: string; clientSlug: string; alertNumber?: string } | null;
   }
 ) {
-  const alertNumber = process.env.FB_ALERT_NUMBER;
-  console.log('[fb-leads] FB_ALERT_NUMBER:', alertNumber ?? '(no definido)');
+  const alertNumber = lead.resellerMatch?.alertNumber ?? process.env.FB_ALERT_NUMBER;
+  console.log('[fb-leads] alertNumber:', alertNumber ?? '(no definido)');
   if (!alertNumber) return;
-  console.log('[fb-leads] encolando alerta para:', alertNumber);
 
-  const v = (key: string) => lead.form_fields[key] || '-';
+  // Deduplicación: no enviar si ya hay una alerta para este lead en los últimos 5 min
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const existing = await db.collection('outbound_messages').findOne({
+    leadId: lead.leadId,
+    createdAt: { $gte: fiveMinAgo },
+  });
+  if (existing) {
+    console.log(`[fb-leads] Alerta duplicada ignorada para leadId: ${lead.leadId}`);
+    return;
+  }
+
+  const { resellerId, clientSlug } = lead.resellerMatch ?? { resellerId: '', clientSlug: '' };
+  const portalUrl = resellerId && clientSlug
+    ? `https://agentia.software/portal/${resellerId}/cliente/${clientSlug}`
+    : `https://agentia.software/portal`;
+
   const message =
-    `🚨 *ALERTA - LLEGÓ UN NUEVO LEAD, NO LO HAGAMOS ESPERAR* 🚨\n\n` +
-    `👤 *Nombre:* ${lead.full_name || '-'}\n` +
-    `📱 *WhatsApp:* ${lead.phone || '-'}\n` +
-    `📧 *Email:* ${lead.email || '-'}\n` +
-    `🪪 *DNI:* ${v('dni')}\n` +
-    `🎂 *Edad:* ${v('confirma_tu_edad')}\n` +
-    `💼 *Con qué cuenta:* ${v('con_que_contas')}\n` +
-    `📋 *Formulario:* ${lead.form_name || '-'}\n` +
-    `🕐 *Llegó:* hace un momento\n\n` +
-    `¡Contáctalo ahora para no perder el lead! 💪`;
+    `🚨 ATENCION🚨\n` +
+    `¡Nuevo ingreso de LEAD!\n\n` +
+    `Visita tu panel para contactarlo👇\n` +
+    portalUrl;
 
   await db.collection('outbound_messages').insertOne({
     senderId:  alertNumber,
     clientId:  lead.clientId,
+    leadId:    lead.leadId,
     message,
     createdAt: new Date(),
   });
-  console.log(`[fb-leads] Alerta admin encolada para ${alertNumber}`);
+  console.log(`[fb-leads] Alerta encolada para ${alertNumber} → ${portalUrl}`);
 }
 
 // ─── Formato Zapier: JSON plano ───────────────────────────────────────────────
@@ -252,7 +258,7 @@ async function processZapierLead(data: Record<string, unknown>) {
     console.log(`[fb-leads/zapier] Bienvenida encolada para ${phone}`);
   }
 
-  await enqueueAdminAlert(db, { full_name, phone, email, form_name, form_fields, clientId });
+  await enqueueAdminAlert(db, { leadId, clientId, resellerMatch });
 }
 
 // ─── Formato Meta nativo (entry.changes[].field === 'leadgen') ────────────────
@@ -359,7 +365,7 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
         });
       }
 
-      await enqueueAdminAlert(db, { full_name, phone, email, form_name: form_id, form_fields, clientId });
+      await enqueueAdminAlert(db, { leadId, clientId, resellerMatch });
 
       console.log(`[fb-leads/meta] Lead guardado: ${leadId} | campaña: ${campaign_name}`);
     }
