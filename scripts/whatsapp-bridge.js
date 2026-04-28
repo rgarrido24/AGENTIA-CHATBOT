@@ -404,6 +404,28 @@ async function main() {
     }
   }
 
+  // ─── Billing: suspender clientes vencidos (día 6 de cada mes) ──
+  async function pollAndCheckPayments() {
+    const today = new Date();
+    if (today.getDate() !== 6) return; // only run on the 6th
+    try {
+      const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+      const res = await fetch(`${API_URL}/api/billing/check-payments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
+        },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.suspended > 0) {
+        console.log(`[Agentia] Billing: ${data.suspended} cliente(s) suspendido(s):`, data.clients);
+      }
+    } catch (e) {
+      console.error('[Agentia] Error poll billing:', e.message);
+    }
+  }
+
   // ────────────────────────────────────────────────────────────────
 
   function initClient() {
@@ -651,6 +673,10 @@ async function main() {
     setTimeout(pollAndSendAgentiaFollowup, 10 * 60 * 1000);        // primera ejecución a los 10 min
     setInterval(pollAndSendAgentiaFollowup, 6 * 60 * 60 * 1000);   // cada 6 horas
   }
+
+  // Billing check: runs every 12 hours but only acts on day 6 of the month
+  setTimeout(pollAndCheckPayments, 30 * 60 * 1000);
+  setInterval(pollAndCheckPayments, 12 * 60 * 60 * 1000);
 }
 
 main();
