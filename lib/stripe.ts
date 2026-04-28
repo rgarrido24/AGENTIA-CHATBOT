@@ -1,8 +1,26 @@
 import Stripe from 'stripe';
 
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-04-22.dahlia',
+// Lazy singleton — defer construction to request time so the build never needs
+// STRIPE_SECRET_KEY. The key is validated on first actual API call.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _stripeInstance: any;
+function getInstance() {
+  if (!_stripeInstance) {
+    _stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2026-04-22.dahlia',
+    });
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return _stripeInstance;
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const stripe: any = new Proxy({} as object, {
+  get(_, prop) {
+    const inst = getInstance();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+    const v = inst[prop];
+    return typeof v === 'function' ? v.bind(inst) : v;
+  },
 });
 
 export type PlanKey = 'starter' | 'profesional' | 'premium';

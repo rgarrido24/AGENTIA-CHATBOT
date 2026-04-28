@@ -1,3 +1,68 @@
+// exFAT fix: EISDIR → EINVAL for readlink on USB/SD card drives.
+// exFAT returns EISDIR where NTFS/ext4 return EINVAL; build tools crash on EISDIR.
+// Patches both callback and promise APIs, and webpack's inputFileSystem.
+// This is a no-op on Linux/Render (readlink never returns EISDIR there).
+const nodefs = require('fs');
+
+// 1. Patch fs.readlink (callback) — used by graceful-fs / enhanced-resolve
+const _rlCb = nodefs.readlink.bind(nodefs);
+nodefs.readlink = function (p, opts, cb) {
+  if (typeof opts === 'function') { cb = opts; opts = null; }
+  const done = cb;
+  const args = opts ? [p, opts, handler] : [p, handler];
+  _rlCb(...args);
+  function handler(err, link) {
+    if (err && err.code === 'EISDIR') {
+      const e = new Error(`EINVAL: invalid argument, readlink '${p}'`); e.code = 'EINVAL'; e.syscall = 'readlink'; e.path = p;
+      done(e);
+    } else done(err, link);
+  }
+};
+
+// 2. Patch fs.readlinkSync
+const _rlSync = nodefs.readlinkSync.bind(nodefs);
+nodefs.readlinkSync = function (p, opts) {
+  try { return _rlSync(p, opts); } catch (err) {
+    if (err && err.code === 'EISDIR') { const e = new Error(`EINVAL: invalid argument, readlink '${p}'`); e.code = 'EINVAL'; e.syscall = 'readlink'; e.path = p; throw e; }
+    throw err;
+  }
+};
+
+// 3. Patch fs.promises.readlink — used by @vercel/nft (collect-build-traces)
+const _rlPromise = nodefs.promises.readlink.bind(nodefs.promises);
+nodefs.promises.readlink = async function (p, opts) {
+  try { return await _rlPromise(p, opts); } catch (err) {
+    if (err && err.code === 'EISDIR') { const e = new Error(`EINVAL: invalid argument, readlink '${p}'`); e.code = 'EINVAL'; e.syscall = 'readlink'; e.path = p; throw e; }
+    throw err;
+  }
+};
+
+// 4. Patch webpack's compiler.inputFileSystem (captured before our module-level patch)
+function patchFsForExFat(fsObj) {
+  if (!fsObj || !fsObj.readlink || fsObj.__exfat_patched) return;
+  fsObj.__exfat_patched = true;
+  const _orig = fsObj.readlink.bind(fsObj);
+  fsObj.readlink = function (p, opts, cb) {
+    if (typeof opts === 'function') { cb = opts; opts = null; }
+    _orig(...(opts ? [p, opts, done] : [p, done]));
+    function done(err, link) {
+      if (err && err.code === 'EISDIR') {
+        const e = new Error(`EINVAL: invalid argument, readlink '${p}'`); e.code = 'EINVAL'; e.syscall = 'readlink'; e.path = p;
+        cb(e);
+      } else cb(err, link);
+    }
+  };
+}
+
+class ExFatReadlinkPlugin {
+  apply(compiler) {
+    compiler.hooks.beforeRun.tap('ExFatReadlinkPlugin', () => {
+      patchFsForExFat(compiler.inputFileSystem);
+      patchFsForExFat(compiler.inputFileSystem && compiler.inputFileSystem._fileSystem);
+    });
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   productionBrowserSourceMaps: false,
@@ -6,11 +71,10 @@ const nextConfig = {
   },
   transpilePackages: ['lucide-react'],
 
-  // Fix for EISDIR/readlink error on Windows with Next.js 14 + webpack cache
   webpack: (config) => {
     config.resolve.symlinks = false;
-    // Disable persistent filesystem cache (triggers readlink on Windows NTFS)
     config.cache = { type: 'memory' };
+    config.plugins.push(new ExFatReadlinkPlugin());
     return config;
   },
 
