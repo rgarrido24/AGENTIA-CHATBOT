@@ -114,14 +114,16 @@ async function enqueueAdminAlert(
   console.log('[fb-leads] alertNumber:', alertNumber ?? '(no definido)');
   if (!alertNumber) return;
 
-  // Deduplicación: no enviar si ya hay una alerta para este lead en los últimos 5 min
+  // Deduplicación: solo bloquear si ya existe OTRA ALERTA ADMIN para este leadId
+  // (no confundir con el mensaje de bienvenida, que también lleva leadId)
   const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
   const existing = await db.collection('outbound_messages').findOne({
     leadId: lead.leadId,
+    source: 'admin-alert',
     createdAt: { $gte: fiveMinAgo },
   });
   if (existing) {
-    console.log(`[fb-leads] Alerta duplicada ignorada para leadId: ${lead.leadId}`);
+    console.log(`[fb-leads] alerta bloqueada por duplicado — leadId: ${lead.leadId}`);
     return;
   }
 
@@ -140,10 +142,11 @@ async function enqueueAdminAlert(
     senderId:  alertNumber,
     clientId:  lead.clientId,
     leadId:    lead.leadId,
+    source:    'admin-alert',
     message,
     createdAt: new Date(),
   });
-  console.log(`[fb-leads] Alerta encolada para ${alertNumber} → ${portalUrl}`);
+  console.log(`[fb-leads] alerta encolada para ${alertNumber} → ${portalUrl}`);
 }
 
 // ─── Formato Zapier: JSON plano ───────────────────────────────────────────────
