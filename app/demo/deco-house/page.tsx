@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
@@ -166,7 +165,7 @@ function OwnerAlert({ summary }: { summary: string }) {
         <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: C.green + '44', color: C.green }}>J</div>
         <div>
           <p className="text-xs font-bold text-white">Jorfran · Deco House</p>
-          <p style={{ fontSize: 10, color: C.green }}>+56 9 3531 1883</p>
+          <p style={{ fontSize: 10, color: C.green }}>+56 9 5497 0745</p>
         </div>
         <div className="ml-auto px-2 py-0.5 rounded-full text-xs font-bold animate-pulse" style={{ background: C.green + '33', color: C.green }}>
           Nueva cotización
@@ -391,7 +390,7 @@ async function generatePDF(q: Partial<QuoteValues>, advisor: AdvisorForm) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...gray);
-  doc.text('📞 +56 9 3531 1883  |  📧 contacto@decohouse.cl  |  Chile', 14, y);
+  doc.text('📞 +56 9 5497 0745  |  📧 contacto@decohouse.cl  |  Chile', 14, y);
 
   // ── Footer ──
   const pageH = 297;
@@ -412,6 +411,18 @@ type AdvisorForm = {
   tiempoEntrega: string; notas: string;
 };
 
+type ApiMsg = { role: 'user' | 'assistant'; content: string };
+
+async function callChat(message: string, history: ApiMsg[]): Promise<{ reply: string; done?: boolean }> {
+  const res = await fetch('/api/demo/deco-house/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, messages: history }),
+  });
+  if (!res.ok) throw new Error('Error de red');
+  return res.json() as Promise<{ reply: string; done?: boolean }>;
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DecoHouseDemoPage() {
   const [messages, setMessages]       = useState<Msg[]>([]);
@@ -423,6 +434,7 @@ export default function DecoHouseDemoPage() {
   const [paused, setPaused]           = useState(false);
   const [leadStage, setLeadStage]     = useState<'Nuevo' | 'En flujo' | 'Alerta enviada' | 'Cotización en preparación' | 'Seguimiento'>('Nuevo');
   const [autoScroll, setAutoScroll]   = useState(false);
+  const [apiHistory, setApiHistory]   = useState<ApiMsg[]>([]);
   const [advisor, setAdvisor]         = useState<AdvisorForm>({
     precioM2: '', costoInstalacion: '', descuento: '0',
     tiempoEntrega: '5-7 días hábiles', notas: '',
@@ -439,51 +451,39 @@ export default function DecoHouseDemoPage() {
     scrollToBottom();
   }, [messages, typing, scrollToBottom, autoScroll]);
 
-  // Auto-start: show initial client message + bot welcome
+  // Auto-start: show initial client message + Valentina's welcome
   useEffect(() => {
+    const INIT_USER = 'Hola, necesito una mampara para mi baño';
+    const INIT_BOT  = '¡Hola po! Bienvenida/o a Deco House 🪟 Soy Valentina, tu asistente de cotizaciones. Trabajamos con vidrio, aluminio y PVC para espacios modernos en la RM — ¿qué necesitas cotizar hoy?';
+
     const t0 = setTimeout(() => {
-      setMessages([{ from: 'client', text: 'Hola, necesito una mampara para mi baño', ts: nowTs() }]);
+      setMessages([{ from: 'client', text: INIT_USER, ts: nowTs() }]);
       setTyping(true);
     }, 600);
     const t1 = setTimeout(() => {
       setTyping(false);
-      setMessages(prev => [
-        ...prev,
-        { from: 'bot', text: '¡Hola! Bienvenido a Deco House 🪟\nSomos especialistas en vidrio, aluminio y PVC para espacios modernos. ¿En qué te puedo ayudar?', ts: nowTs() },
+      setMessages(prev => [...prev, { from: 'bot', text: INIT_BOT, ts: nowTs() }]);
+      setApiHistory([
+        { role: 'user',      content: INIT_USER },
+        { role: 'assistant', content: INIT_BOT  },
       ]);
-      setTyping(true);
-    }, 1800);
-    const t2 = setTimeout(() => {
-      setTyping(false);
-      setMessages(prev => [...prev, { from: 'bot', text: FLOW[0].botText, ts: nowTs() }]);
       setStep(0);
       setLeadStage('En flujo');
-    }, 3200);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
+    }, 1800);
+    return () => { clearTimeout(t0); clearTimeout(t1); };
   }, []);
 
-  function handleChip(chip: string) {
+  async function handleChip(chip: string) {
     if (paused || typing || step < 0 || done) return;
     const currentStep = FLOW[step];
     const cleaned = chip.replace(/[🏠🏢🏭]/g, '').trim();
-    let newData: Partial<QuoteValues> = { ...quoteData, [currentStep.key]: cleaned };
 
-    // Reglas específicas
+    let newData: Partial<QuoteValues> = { ...quoteData, [currentStep.key]: cleaned };
     if (currentStep.key === 'medidas' && cleaned.toLowerCase().includes('no sé')) {
       newData = { ...newData, medidas: 'Sin medidas (solicitar visita técnica RM)' };
     }
-
     if (currentStep.key === 'material' && cleaned === 'No estoy seguro/a') {
       newData = { ...newData, material: 'Por definir' };
-    }
-
-    if (currentStep.key === 'color') {
-      // Colores por material (solo guía; no bloqueamos en demo)
-      const material = String(newData.material ?? '').toLowerCase();
-      const pvcColors = new Set(['Blanco', 'Negro', 'Antracita', 'Roble dorado', 'Nogal']);
-      const aluColors = new Set(['Blanco', 'Negro', 'Gris titanio', 'Roble dorado']);
-      if (material.includes('pvc') && !pvcColors.has(cleaned)) newData = { ...newData, color: cleaned };
-      if (material.includes('alumin') && !aluColors.has(cleaned)) newData = { ...newData, color: cleaned };
     }
     setQuoteData(newData);
 
@@ -491,38 +491,31 @@ export default function DecoHouseDemoPage() {
     setTyping(true);
 
     const nextStep = step + 1;
-    const delay = 900 + Math.random() * 400;
+    const newHistory: ApiMsg[] = [...apiHistory, { role: 'user', content: chip }];
 
-    if (nextStep >= FLOW.length) {
-      // Done — show summary
-      setTimeout(() => {
-        setTyping(false);
-        const s = buildSummary(newData);
-        setMessages(prev => [...prev, { from: 'bot', text: s, ts: nowTs() }]);
-        setSummary(s);
+    try {
+      const { reply, done: isDone } = await callChat(chip, apiHistory);
+      setApiHistory([...newHistory, { role: 'assistant', content: reply }]);
+      setTyping(false);
+      setMessages(prev => [...prev, { from: 'bot', text: reply, ts: nowTs() }]);
+
+      if (isDone || nextStep >= FLOW.length) {
+        setSummary(reply);
         setDone(true);
         setStep(nextStep);
         setLeadStage('Alerta enviada');
-      }, delay);
-    } else {
-      setTimeout(() => {
-        setTyping(false);
-        if (currentStep.key === 'medidas' && cleaned.toLowerCase().includes('no sé')) {
-          setMessages(prev => [
-            ...prev,
-            {
-              from: 'bot',
-              text:
-                'Tranqui 🙂\nSi estás dentro de la RM, podemos coordinar una visita de un técnico para tomar medidas.\nIgual sigamos y te armamos la cotización base, ¿ya?',
-              ts: nowTs(),
-            },
-            { from: 'bot', text: FLOW[nextStep].botText, ts: nowTs() },
-          ]);
-        } else {
-          setMessages(prev => [...prev, { from: 'bot', text: FLOW[nextStep].botText, ts: nowTs() }]);
-        }
+      } else {
         setStep(nextStep);
-      }, delay);
+      }
+    } catch {
+      setTyping(false);
+      // Fallback to hardcoded flow text if API fails
+      const fallback = nextStep < FLOW.length ? FLOW[nextStep].botText : buildSummary(newData);
+      setMessages(prev => [...prev, { from: 'bot', text: fallback, ts: nowTs() }]);
+      if (nextStep >= FLOW.length) {
+        setSummary(fallback); setDone(true); setLeadStage('Alerta enviada');
+      }
+      setStep(nextStep);
     }
   }
 
@@ -535,23 +528,26 @@ export default function DecoHouseDemoPage() {
     setSummary('');
     setPaused(false);
     setLeadStage('Nuevo');
+    setApiHistory([]);
+
+    const INIT_USER = 'Hola, necesito una mampara para mi baño';
+    const INIT_BOT  = '¡Hola po! Bienvenida/o a Deco House 🪟 Soy Valentina, tu asistente de cotizaciones. Trabajamos con vidrio, aluminio y PVC para espacios modernos en la RM — ¿qué necesitas cotizar hoy?';
 
     const t0 = setTimeout(() => {
-      setMessages([{ from: 'client', text: 'Hola, necesito una mampara para mi baño', ts: nowTs() }]);
+      setMessages([{ from: 'client', text: INIT_USER, ts: nowTs() }]);
       setTyping(true);
     }, 300);
     const t1 = setTimeout(() => {
       setTyping(false);
-      setMessages(prev => [...prev, { from: 'bot', text: '¡Hola! Bienvenido a Deco House 🪟\nSomos especialistas en vidrio, aluminio y PVC para espacios modernos. ¿En qué te puedo ayudar?', ts: nowTs() }]);
-      setTyping(true);
-    }, 1400);
-    const t2 = setTimeout(() => {
-      setTyping(false);
-      setMessages(prev => [...prev, { from: 'bot', text: FLOW[0].botText, ts: nowTs() }]);
+      setMessages(prev => [...prev, { from: 'bot', text: INIT_BOT, ts: nowTs() }]);
+      setApiHistory([
+        { role: 'user',      content: INIT_USER },
+        { role: 'assistant', content: INIT_BOT  },
+      ]);
       setStep(0);
       setLeadStage('En flujo');
-    }, 2600);
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2); };
+    }, 1400);
+    return () => { clearTimeout(t0); clearTimeout(t1); };
   }
 
   const currentChips = !done && step >= 0 && step < FLOW.length && !typing
@@ -580,7 +576,7 @@ export default function DecoHouseDemoPage() {
             <p style={{ fontSize: 10, color: C.dim }}>Vidrio · Aluminio · Chile</p>
           </div>
         </div>
-        <Link href="/" className="text-xs" style={{ color: C.dim }}>← Inicio</Link>
+        <span />
       </nav>
 
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
@@ -913,7 +909,7 @@ export default function DecoHouseDemoPage() {
           </p>
           <p className="text-xs mt-1" style={{ color: '#333' }}>
             Demo desarrollada por{' '}
-            <Link href="/" style={{ color: C.accent }}>Agentia</Link>
+            <a href="/" style={{ color: C.accent }}>Agentia</a>
             {' '}— Chatbots con IA para negocios
           </p>
         </footer>
