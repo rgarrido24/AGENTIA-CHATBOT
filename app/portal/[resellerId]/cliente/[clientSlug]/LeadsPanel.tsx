@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { MessageCircle, RefreshCw, Plus, X } from 'lucide-react';
+import { MessageCircle, RefreshCw, Plus, X, Send } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -177,15 +177,24 @@ function LeadDetail({
     setNotaText('');
   }, [lead.id, lead.status_seguimiento, lead.notas]);
 
+  const ff = lead.form_fields || {};
+  const getField = (...keys: string[]) => {
+    for (const k of keys) {
+      const v = ff[k];
+      if (typeof v === 'string' && v.trim()) return v.trim();
+    }
+    return '—';
+  };
+
   const detailRows: [string, string][] = [
     ['NOMBRE',            lead.nombre || '—'],
     ['WHATSAPP',          lead.telefono ? formatPhone(lead.telefono) : '—'],
     ['EMAIL',             lead.email || '—'],
     ['FECHA',             fmtDate(lead.createdAt)],
-    ['CON QUE CUENTAS',   lead.form_fields['Con Que Contas'] || '—'],
-    ['CONFIRMA TU EDAD',  lead.form_fields['Confirma Tu Edad'] || '—'],
-    ['DNI',               lead.form_fields['Dni'] || '—'],
-  ].filter(([, v]) => v && v !== '—') as [string, string][];
+    ['CON QUE CUENTAS',   getField('Con Que Contas?', 'Con Que Contas', 'Con qué contas?', 'Con qué cuentas', 'Con Que Cuentas', 'Con que cuentas')],
+    ['CONFIRMA TU EDAD',  getField('Confirma Tu Edad', 'Confirma tu edad', 'Confirma Tu edad')],
+    ['DNI',               getField('Dni', 'DNI', 'dni')],
+  ];
 
   async function changeStatus(s: StatusSeg) {
     setStatus(s);
@@ -438,6 +447,23 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
     }
   }, [apiBase, clientSlug]);
 
+  const sendTestAlert = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/portal/${resellerId}/client/${clientSlug}/test-alert`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        window.alert(data?.error || 'No se pudo enviar la alerta de prueba');
+        return;
+      }
+      window.alert(
+        `Alerta de prueba encolada a ${data.alertNumber || 'WhatsApp'}.\n\n` +
+        `Si el WhatsApp Bridge está conectado, debería llegar en segundos.`
+      );
+    } catch {
+      window.alert('Error de red enviando alerta de prueba');
+    }
+  }, [resellerId, clientSlug]);
+
   useEffect(() => { fetchLeads(true, selectedForm); }, [fetchLeads]);
 
   useEffect(() => {
@@ -530,6 +556,15 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
                 style={{ background: '#0d0d0d', color: '#444', border: '1px solid #1e1e1e' }}
               >
                 <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={sendTestAlert}
+                className="p-2 rounded-lg"
+                style={{ background: '#0d0d0d', color: '#444', border: '1px solid #1e1e1e' }}
+                title="Enviar alerta de prueba por WhatsApp"
+              >
+                <Send className="w-3.5 h-3.5" />
               </button>
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{ background: '#0d1f00', borderColor: `${ACCENT}44` }}>
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: ACCENT }} />
