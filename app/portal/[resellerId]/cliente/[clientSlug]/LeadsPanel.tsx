@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { MessageCircle, RefreshCw, Plus, X, Send } from 'lucide-react';
 
@@ -21,6 +21,7 @@ type Lead = {
   canal_origen:       string;
   form_id:            string;
   form_name:          string;
+  form_display?:      string;
   page_name:          string;
   platform_src:       string;
   form_fields:        Record<string, string>;
@@ -178,10 +179,29 @@ function LeadDetail({
   }, [lead.id, lead.status_seguimiento, lead.notas]);
 
   const ff = lead.form_fields || {};
+  const normalizeKey = (s: string) =>
+    (s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  const normMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const [k, v] of Object.entries(ff)) {
+      if (typeof v !== 'string') continue;
+      const vv = v.trim();
+      if (!vv) continue;
+      m.set(normalizeKey(k), vv);
+    }
+    return m;
+  }, [ff]);
   const getField = (...keys: string[]) => {
     for (const k of keys) {
-      const v = ff[k];
-      if (typeof v === 'string' && v.trim()) return v.trim();
+      const direct = ff[k];
+      if (typeof direct === 'string' && direct.trim()) return direct.trim();
+      const vv = normMap.get(normalizeKey(k));
+      if (vv) return vv;
     }
     return '—';
   };
@@ -191,8 +211,8 @@ function LeadDetail({
     ['WHATSAPP',          lead.telefono ? formatPhone(lead.telefono) : '—'],
     ['EMAIL',             lead.email || '—'],
     ['FECHA',             fmtDate(lead.createdAt)],
-    ['CON QUE CUENTAS',   getField('Con Que Contas?', 'Con Que Contas', 'Con qué contas?', 'Con qué cuentas', 'Con Que Cuentas', 'Con que cuentas')],
-    ['CONFIRMA TU EDAD',  getField('Confirma Tu Edad', 'Confirma tu edad', 'Confirma Tu edad')],
+    ['CON QUE CUENTAS',   getField('Con Que Contas?', 'Con Que Contas', 'Con qué contas?', 'Con qué cuentas', 'Con Que Cuentas', 'Con que cuentas', 'Con que contas')],
+    ['CONFIRMA TU EDAD',  getField('Confirma Tu Edad', 'Confirma tu edad', 'Confirma Tu edad', 'Rango de edad', 'Rango Edad', 'Edad')],
     ['DNI',               getField('Dni', 'DNI', 'dni')],
   ];
 
@@ -241,7 +261,7 @@ function LeadDetail({
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="font-bold text-lg text-white truncate">{lead.nombre}</h2>
-          <p className="text-sm" style={{ color: '#555' }}>{lead.form_name || lead.form_id || lead.campana || lead.platform_src || 'Lead'}</p>
+          <p className="text-sm" style={{ color: '#555' }}>{lead.form_display || lead.form_name || lead.form_id || lead.campana || lead.platform_src || 'Lead'}</p>
         </div>
         <span className="shrink-0 text-xs font-semibold px-3 py-1 rounded-full" style={{ background: cfg.bg, color: cfg.color }}>
           {cfg.label}
@@ -455,9 +475,14 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
         window.alert(data?.error || 'No se pudo enviar la alerta de prueba');
         return;
       }
+      const st = await fetch(`/api/portal/${resellerId}/client/${clientSlug}/outbound-status`, { cache: 'no-store' })
+        .then((r) => r.json())
+        .catch(() => null);
+      const pending = st && typeof st.pendingCount === 'number' ? st.pendingCount : null;
       window.alert(
-        `Alerta de prueba encolada a ${data.alertNumber || 'WhatsApp'}.\n\n` +
-        `Si el WhatsApp Bridge está conectado, debería llegar en segundos.`
+        `Alerta de prueba encolada a ${data.alertNumber || 'WhatsApp'}.\n` +
+        (pending === null ? '' : `Pendientes en cola para ese número: ${pending}\n`) +
+        `\nSi el WhatsApp Bridge está conectado, debería llegar en segundos.`
       );
     } catch {
       window.alert('Error de red enviando alerta de prueba');

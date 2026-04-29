@@ -65,6 +65,7 @@ export async function GET(
     canal_origen:       (d.canal_origen || '') as string,
     form_id:            (d.form_id || '') as string,
     form_name:          (d.form_name || '') as string,
+    form_display:       (formMap.get(String(d.form_id || '')) || d.form_name || d.form_id || '') as string,
     page_name:          (d.page_name || '') as string,
     platform_src:       (d.platform_src || '') as string,
     form_fields:        (d.form_fields || {}) as Record<string, string>,
