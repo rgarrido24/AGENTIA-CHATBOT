@@ -232,7 +232,7 @@ function LeadDetail({
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="font-bold text-lg text-white truncate">{lead.nombre}</h2>
-          <p className="text-sm" style={{ color: '#555' }}>{lead.campana || lead.platform_src || 'Lead'}</p>
+          <p className="text-sm" style={{ color: '#555' }}>{lead.form_name || lead.form_id || lead.campana || lead.platform_src || 'Lead'}</p>
         </div>
         <span className="shrink-0 text-xs font-semibold px-3 py-1 rounded-full" style={{ background: cfg.bg, color: cfg.color }}>
           {cfg.label}
