@@ -177,23 +177,15 @@ function LeadDetail({
     setNotaText('');
   }, [lead.id, lead.status_seguimiento, lead.notas]);
 
-  const STANDARD = new Set(['Dni', 'Confirma Tu Edad', 'Con Que Contas']);
   const detailRows: [string, string][] = [
-    ['Nombre',         lead.nombre                          || '—'],
-    ['WhatsApp',       lead.telefono ? formatPhone(lead.telefono) : '—'],
-    ['Email',          lead.email                           || '—'],
-    ['DNI',            lead.form_fields['Dni']              || '—'],
-    ['Edad',           lead.form_fields['Confirma Tu Edad'] || '—'],
-    ['Con qué cuenta', lead.form_fields['Con Que Contas']   || '—'],
-    ['Campaña',        lead.campana                         || '—'],
-    ['Plataforma',     lead.platform_src                    || '—'],
-    ['Formulario',     lead.form_name || lead.form_id       || '—'],
-    ['Fecha',          fmtDate(lead.createdAt)],
+    ['NOMBRE',            lead.nombre || '—'],
+    ['WHATSAPP',          lead.telefono ? formatPhone(lead.telefono) : '—'],
+    ['EMAIL',             lead.email || '—'],
+    ['FECHA',             fmtDate(lead.createdAt)],
+    ['CON QUE CUENTAS',   lead.form_fields['Con Que Contas'] || '—'],
+    ['CONFIRMA TU EDAD',  lead.form_fields['Confirma Tu Edad'] || '—'],
+    ['DNI',               lead.form_fields['Dni'] || '—'],
   ].filter(([, v]) => v && v !== '—') as [string, string][];
-
-  for (const [k, v] of Object.entries(lead.form_fields)) {
-    if (v && !STANDARD.has(k)) detailRows.push([humanLabel(k), v]);
-  }
 
   async function changeStatus(s: StatusSeg) {
     setStatus(s);
@@ -575,7 +567,7 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
 
           {/* Left: Lead list (hidden on mobile when detail is open) */}
           <div
-            className={`flex flex-col overflow-hidden border-r ${selectedLead ? 'hidden lg:flex' : 'flex'}`}
+            className={`leads-list flex flex-col overflow-hidden border-r ${selectedLead ? 'hidden lg:flex' : 'flex'}`}
             style={{
               width: '100%',
               borderColor: '#1a1a1a',
@@ -584,8 +576,8 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
           >
             <style>{`@media (min-width: 1024px) { .leads-list { width: 380px !important; min-width: 380px; } }`}</style>
             <div
-              className="leads-list flex flex-col overflow-hidden border-r"
-              style={{ width: '100%', height: '100%', borderColor: '#1a1a1a', background: '#000' }}
+              className="flex flex-col overflow-hidden"
+              style={{ width: '100%', height: '100%', background: '#000' }}
             >
               {loading ? (
                 <div className="flex-1 flex items-center justify-center">
