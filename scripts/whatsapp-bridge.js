@@ -38,7 +38,15 @@ function getEnv(key, def) {
 }
 
 const API_URL = (getEnv('AGENTIA_CHATBOT_API_URL', '') || 'http://localhost:3010').replace(/\/$/, '');
+const CLIENT_IDS = String(
+  getEnv('AGENTIA_WHATSAPP_CLIENT_IDS', '') || process.env.AGENTIA_WHATSAPP_CLIENT_IDS || ''
+)
+  .split(',')
+  .map((s) => s.trim().toLowerCase())
+  .filter(Boolean);
 const CLIENT_ID = getEnv('AGENTIA_WHATSAPP_CLIENT_ID', 'agentia').trim().toLowerCase();
+const ACTIVE_CLIENT_IDS = (CLIENT_IDS.length > 0 ? CLIENT_IDS : [CLIENT_ID])
+  .filter(Boolean);
 const PAGE_ID = 'whatsapp-bridge';
 
 function getApiBase() {
@@ -59,11 +67,11 @@ function normalizeLeadId(senderId) {
   return digits || raw;
 }
 
-async function callChatApi(message, senderId, senderName, mediaBase64, mimeType) {
+async function callChatApi(clientId, message, senderId, senderName, mediaBase64, mimeType) {
   const webhookUrl = (getEnv('CHATBOT_WEBHOOK_URL', '') || `${getApiBase()}/api/webhook/whatsapp`).replace(/\/$/, '');
   const url = webhookUrl;
   const payload = {
-    clientId: CLIENT_ID,
+    clientId,
     leadId: normalizeLeadId(senderId),
     mensaje: message || (mediaBase64 ? '[imagen/documento adjunto]' : ''),
     mediaBase64: mediaBase64 || undefined,
@@ -91,18 +99,12 @@ async function callChatApi(message, senderId, senderName, mediaBase64, mimeType)
 async function main() {
   console.log('[Agentia] WhatsApp Puente iniciando...');
   console.log('[Agentia] API URL:', API_URL);
-  console.log('[Agentia] ClientId:', CLIENT_ID);
-  console.log('[Agentia] Sesión:', `.wwebjs_auth_${CLIENT_ID}`);
+  console.log('[Agentia] Clients:', ACTIVE_CLIENT_IDS.join(', ') || '(none)');
   console.log('');
 
-  // Carpeta de sesión por cliente (evita conflicto con navegador bloqueado)
-  const sessionDir = path.join(__dirname, '..', `.wwebjs_auth_${CLIENT_ID}`);
-  let client = null;
-  let whatsappReady = false;
-  let lastQr = null;
-  let lastQrDataURL = null;
-  let lastState = 'boot';
-  let reconnectAttempt = 0;
+  // Estado por clientId
+  const clients = new Map(); // clientId -> { client, ready, state, reconnectAttempt }
+  const lastQrByClient = new Map(); // clientId -> { qr, dataUrl }
 
   const bridgePort = Number(getEnv('PORT', process.env.PORT || '10000')) || 10000;
   const server = http.createServer((req, res) => {
@@ -112,26 +114,37 @@ async function main() {
       return;
     }
     if (req.url.startsWith('/health')) {
+      const all = ACTIVE_CLIENT_IDS.map((id) => {
+        const st = clients.get(id);
+        return {
+          clientId: id,
+          ready: !!st?.ready,
+          state: st?.state || 'boot',
+          hasQr: !!lastQrByClient.get(id)?.qr,
+        };
+      });
+      const ok = all.some((c) => c.ready);
       const body = JSON.stringify({
-        ok: whatsappReady,
-        whatsapp: whatsappReady ? 'connected' : 'disconnected',
-        state: lastState,
-        hasQr: !!lastQr,
+        ok,
+        clients: all,
         timestamp: new Date().toISOString(),
       });
-      res.statusCode = whatsappReady ? 200 : 503;
+      res.statusCode = ok ? 200 : 503;
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       res.end(body);
       return;
     }
     if (req.url.startsWith('/qr')) {
+      const url = new URL(req.url, 'http://localhost');
+      const clientId = (url.searchParams.get('clientId') || ACTIVE_CLIENT_IDS[0] || 'agentia').trim().toLowerCase();
       res.statusCode = 200;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      if (!lastQrDataURL) {
+      const qr = lastQrByClient.get(clientId)?.dataUrl || null;
+      if (!qr) {
         res.end('<html><body style="background:#000;color:#fff;padding:24px">Esperando QR... recarga en 10 segundos</body></html>');
         return;
       }
-      res.end('<html><body style="background:#000"><img src="' + lastQrDataURL + '" style="width:300px"/></body></html>');
+      res.end('<html><body style="background:#000"><img src="' + qr + '" style="width:300px"/></body></html>');
       return;
     }
     res.statusCode = 404;
@@ -143,8 +156,27 @@ async function main() {
 
   // ─── Funciones de polling (definidas en main() para que setInterval las vea) ───
 
+  function getClientState(id) {
+    return clients.get(String(id || '').trim().toLowerCase());
+  }
+
+  function getAnyReadyClient() {
+    for (const id of ACTIVE_CLIENT_IDS) {
+      const st = getClientState(id);
+      if (st?.ready && st?.client) return st.client;
+    }
+    return null;
+  }
+
+  function getReadyClientForClientId(id) {
+    const st = getClientState(id);
+    if (st?.ready && st?.client) return st.client;
+    return getAnyReadyClient();
+  }
+
   async function pollAndSendAlerts() {
-    if (!whatsappReady || !client) return;
+    const client = getAnyReadyClient();
+    if (!client) return;
     const alertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER;
     if (!alertNumber) {
       console.warn('[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas desactivadas.');
@@ -201,16 +233,18 @@ async function main() {
   }
 
   async function pollAndSendReminders() {
-    if (!whatsappReady || !client) return;
+    const client = getAnyReadyClient();
+    if (!client) return;
     try {
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
       const headers = { 'Content-Type': 'application/json', ...(secret ? { Authorization: `Bearer ${secret}` } : {}) };
+      const apiBase = getApiBase();
 
       // 1. Generar recordatorios de seguimiento para leads sin respuesta 2h+
-      await fetch(`${API_URL}/api/reminders/generate`, { method: 'POST', headers }).catch(() => {});
+      await fetch(`${apiBase}/api/reminders/generate`, { method: 'POST', headers }).catch(() => {});
 
       // 2. Enviar los recordatorios pendientes
-      const res = await fetch(`${API_URL}/api/reminders/pending`, {
+      const res = await fetch(`${apiBase}/api/reminders/pending`, {
         headers: secret ? { Authorization: `Bearer ${secret}` } : {},
       });
       const data = await res.json().catch(() => ({}));
@@ -233,7 +267,7 @@ async function main() {
         }
       }
       if (sentIds.length > 0) {
-        await fetch(`${API_URL}/api/reminders/sent`, {
+        await fetch(`${apiBase}/api/reminders/sent`, {
           method: 'POST',
           headers,
           body: JSON.stringify({ ids: sentIds }),
@@ -245,9 +279,7 @@ async function main() {
   }
 
   async function pollAndSendOutboundMessages() {
-    if (!whatsappReady || !client) return;
     try {
-      if (!client.info) return;
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
       const apiBase = getApiBase();
       const res = await fetch(`${apiBase}/api/chat/outbound`, {
@@ -257,6 +289,9 @@ async function main() {
       const items = data.messages || [];
       for (const m of items) {
         try {
+          const msgClientId = String(m.clientId || '').trim().toLowerCase();
+          const client = getReadyClientForClientId(msgClientId);
+          if (!client || !client.info) continue;
           const raw = (m.senderId && typeof m.senderId === 'string') ? m.senderId.trim() : '';
           const chatId = raw.includes('@') ? raw : `${raw.replace(/\D/g, '')}@c.us`;
           if (!chatId || chatId === '@c.us' || chatId.length < 15) continue;
@@ -303,17 +338,20 @@ async function main() {
 
   // ─── Retención: Reactivación de inactivos (cada hora) ───────────
   async function pollAndSendReactivation() {
-    if (!whatsappReady || !client) return;
+    const featureClientId = ACTIVE_CLIENT_IDS[0] || 'agentia';
+    const client = getReadyClientForClientId(featureClientId);
+    if (!client) return;
     try {
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
       const headers = {
         'Content-Type': 'application/json',
         ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
       };
-      const res = await fetch(`${API_URL}/api/barber/reactivation`, {
+      const apiBase = getApiBase();
+      const res = await fetch(`${apiBase}/api/barber/reactivation`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ clientId: CLIENT_ID, daysThreshold: 20 }),
+        body: JSON.stringify({ clientId: featureClientId, daysThreshold: 20 }),
       });
       const data = await res.json().catch(() => ({}));
       if (data.enqueued > 0) {
@@ -326,14 +364,17 @@ async function main() {
 
   // ─── Retención: Confirmaciones anti no-show (cada 10 min) ───────
   async function pollAndSendConfirmations() {
-    if (!whatsappReady || !client) return;
+    const featureClientId = ACTIVE_CLIENT_IDS[0] || 'agentia';
+    const client = getReadyClientForClientId(featureClientId);
+    if (!client) return;
     try {
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
       const headers = {
         'Content-Type': 'application/json',
         ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
       };
-      const res = await fetch(`${API_URL}/api/barber/confirmations`, {
+      const apiBase = getApiBase();
+      const res = await fetch(`${apiBase}/api/barber/confirmations`, {
         method: 'POST',
         headers,
         body: JSON.stringify({}),
@@ -349,27 +390,29 @@ async function main() {
 
   // ─── Agentia Ventas: Follow-up automático de prospectos (solo agentia-ventas) ───
   async function pollAndSendAgentiaFollowup() {
-    if (!whatsappReady || !client) return;
-    if (CLIENT_ID !== 'agentia-ventas') return;
+    const client = getReadyClientForClientId('agentia-ventas');
+    if (!client) return;
+    if (!ACTIVE_CLIENT_IDS.includes('agentia-ventas')) return;
     try {
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
       const headers = {
         'Content-Type': 'application/json',
         ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
       };
+      const apiBase = getApiBase();
 
       // 1. Generar nuevos follow-ups pendientes
-      await fetch(`${API_URL}/api/agentia/followup`, { method: 'POST', headers, body: '{}' }).catch(() => {});
+      await fetch(`${apiBase}/api/agentia/followup`, { method: 'POST', headers, body: '{}' }).catch(() => {});
 
       // 2. Detectar prospectos que respondieron con interés
-      await fetch(`${API_URL}/api/agentia/followup`, {
+      await fetch(`${apiBase}/api/agentia/followup`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ detectInterest: true }),
       }).catch(() => {});
 
       // 3. Obtener mensajes pendientes de envío
-      const res = await fetch(`${API_URL}/api/agentia/followup`, { headers });
+      const res = await fetch(`${apiBase}/api/agentia/followup`, { headers });
       const data = await res.json().catch(() => ({}));
       const messages = data.messages || [];
 
@@ -392,7 +435,7 @@ async function main() {
 
       // 4. Marcar como enviados
       if (sentIds.length > 0) {
-        await fetch(`${API_URL}/api/agentia/followup`, {
+        await fetch(`${apiBase}/api/agentia/followup`, {
           method: 'POST',
           headers,
           body: JSON.stringify({ sentIds }),
@@ -405,7 +448,9 @@ async function main() {
 
   // ─── Retención: Solicitudes de reseña (cada 15 min) ─────────────
   async function pollAndSendReviews() {
-    if (!whatsappReady || !client) return;
+    const featureClientId = ACTIVE_CLIENT_IDS[0] || 'agentia';
+    const client = getReadyClientForClientId(featureClientId);
+    if (!client) return;
     try {
       const reviewUrl = getEnv('GOOGLE_MAPS_REVIEW_URL', '') || process.env.GOOGLE_MAPS_REVIEW_URL || '';
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
@@ -413,10 +458,11 @@ async function main() {
         'Content-Type': 'application/json',
         ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
       };
-      const res = await fetch(`${API_URL}/api/barber/reviews`, {
+      const apiBase = getApiBase();
+      const res = await fetch(`${apiBase}/api/barber/reviews`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ clientId: CLIENT_ID, reviewUrl }),
+        body: JSON.stringify({ clientId: featureClientId, reviewUrl }),
       });
       const data = await res.json().catch(() => ({}));
       if (data.enqueued > 0) {
@@ -451,223 +497,174 @@ async function main() {
 
   // ────────────────────────────────────────────────────────────────
 
-  function initClient() {
-    lastState = 'initializing';
-    whatsappReady = false;
-    const nextClient = new Client({
-      authStrategy: new LocalAuth({ dataPath: sessionDir }),
-      puppeteer: { headless: true, args: ['--no-sandbox'] },
-    });
-    client = nextClient;
-
-    nextClient.on('qr', async (qr) => {
-      lastState = 'qr';
-      lastQr = qr;
-      try {
-        lastQrDataURL = await qrcode.toDataURL(qr);
-      } catch (e) {
-        lastQrDataURL = null;
-      }
-      console.log('\n[Agentia] Escanea el QR con WhatsApp:\n');
-
-      // Envía el QR al API (reintentos por si el Web Service está arrancando en cold start)
-      const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
-      const url = `${API_URL}/api/whatsapp/qr-store`;
-      const payload = JSON.stringify({ qr, clientId: CLIENT_ID });
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}),
-      };
-      let lastError = '';
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          const res = await fetch(url, { method: 'POST', headers, body: payload });
-          if (res.ok) {
-            console.log('[Agentia] QR enviado al API para vincular desde la web.');
-            console.log('[Agentia] En tu celular abre esta URL para ver el QR:', `${API_URL}/api/whatsapp/qr`);
-            break;
-          }
-          const text = await res.text();
-          try {
-            const data = JSON.parse(text);
-            lastError = data.error || text;
-          } catch {
-            lastError = text.slice(0, 200);
-          }
-          if (attempt < 3) {
-            console.log('[Agentia] QR no enviado al API:', res.status, '- reintento en 8s...');
-            await new Promise((r) => setTimeout(r, 8000));
-          } else {
-            console.log('[Agentia] QR no enviado al API:', res.status, lastError ? `- ${lastError}` : '');
-            console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
-          }
-        } catch (e) {
-          lastError = e.message || String(e);
-          if (attempt < 3) {
-            console.log('[Agentia] No se pudo enviar QR al API:', lastError, '- reintento en 8s...');
-            await new Promise((r) => setTimeout(r, 8000));
-          } else {
-            console.log('[Agentia] No se pudo enviar QR al API:', lastError);
-            console.log('[Agentia] Abre en tu celular para ver el QR:', `${API_URL}/api/whatsapp/qr`);
-          }
-        }
-      }
-    });
-
-    nextClient.on('ready', () => {
-      lastState = 'ready';
-      reconnectAttempt = 0;
-      whatsappReady = true;
-      console.log('[Agentia] WhatsApp conectado correctamente.');
-      const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
-      fetch(`${API_URL}/api/whatsapp/qr-store`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}) },
-        body: JSON.stringify({ clientId: CLIENT_ID, connected: true }),
-      }).catch(() => {});
-    });
-
-    nextClient.on('authenticated', () => {
-      lastState = 'authenticated';
-      console.log('[Agentia] Autenticado.');
-    });
-
-    nextClient.on('auth_failure', (msg) => {
-      lastState = 'auth_failure';
-      whatsappReady = false;
-      console.error('[Agentia] Error de autenticación:', msg);
-      // En auth_failure normalmente se requiere borrar sesión y re-escanear
-    });
-
-    nextClient.on('disconnected', (reason) => {
-      lastState = 'disconnected';
-      whatsappReady = false;
-      console.warn('[Agentia] WhatsApp desconectado:', reason);
-      const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
-      fetch(`${API_URL}/api/whatsapp/qr-store`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}) },
-        body: JSON.stringify({ clientId: CLIENT_ID, connected: false }),
-      }).catch(() => {});
-      const delay = Math.min(30_000, 3_000 * Math.max(1, reconnectAttempt + 1));
-      reconnectAttempt += 1;
-      console.log(`[Agentia] Reintentando conexión en ${Math.round(delay / 1000)}s...`);
-      setTimeout(() => {
-        try {
-          initClient();
-        } catch (e) {
-          console.error('[Agentia] Error reintentando init:', e?.message || String(e));
-        }
-      }, delay);
-    });
-
   // Cola por remitente: evita race condition cuando envían 2+ imágenes seguidas (frente/reverso INE)
-  const senderQueue = new Map();
+  const senderQueue = new Map(); // key = `${clientId}:${senderId}`
 
-  function enqueueAndProcess(senderId, fn) {
-    const prev = senderQueue.get(senderId) || Promise.resolve();
+  function enqueueAndProcess(key, fn) {
+    const prev = senderQueue.get(key) || Promise.resolve();
     const next = prev.then(() => fn()).catch((e) => {
-      console.error('[Agentia] Error en cola:', e.message);
+      console.error('[Agentia] Error en cola:', e?.message || String(e));
     });
-    senderQueue.set(senderId, next);
+    senderQueue.set(key, next);
     next.finally(() => {
-      if (senderQueue.get(senderId) === next) senderQueue.delete(senderId);
+      if (senderQueue.get(key) === next) senderQueue.delete(key);
     });
     return next;
   }
 
-  client.on('message', async (msg) => {
-    if (msg.fromMe) return;
-    if (msg.from === 'status@broadcast' || msg.isStatus || (msg.id && msg.id.remote === 'status@broadcast')) return;
+  function initClientFor(clientId) {
+    const id = String(clientId || '').trim().toLowerCase() || 'agentia';
+    const apiBase = getApiBase();
+    const sessionDir = path.join(__dirname, '..', `.wwebjs_auth_${id}`);
 
-    let chat;
-    try {
-      chat = await msg.getChat();
-    } catch (e) {
-      console.error('[Agentia] Error obteniendo chat:', e?.message || String(e));
-      return;
-    }
-    if (chat && chat.isGroup) return;
+    const state = clients.get(id) || { client: null, ready: false, state: 'boot', reconnectAttempt: 0 };
+    state.state = 'initializing';
+    state.ready = false;
 
-    const contact = await msg.getContact();
-    const body = msg.body?.trim() || '';
-    const senderId = msg.from;
-    const senderName = contact.pushname || contact.name || undefined;
+    const nextClient = new Client({
+      authStrategy: new LocalAuth({ dataPath: sessionDir }),
+      puppeteer: { headless: true, args: ['--no-sandbox'] },
+    });
+    state.client = nextClient;
+    clients.set(id, state);
 
-    if (!body && !msg.hasMedia) return;
+    nextClient.on('qr', async (qr) => {
+      state.state = 'qr';
+      let dataUrl = null;
+      try { dataUrl = await qrcode.toDataURL(qr); } catch { dataUrl = null; }
+      lastQrByClient.set(id, { qr, dataUrl });
+      console.log(`\n[Agentia] (${id}) QR recibido — escanea desde: ${apiBase}/api/whatsapp/qr?clientId=${encodeURIComponent(id)}\n`);
 
-    let mediaBase64 = null;
-    let mimeType = null;
-    if (msg.hasMedia) {
-      try {
-        const media = await msg.downloadMedia();
-        if (media && media.data) {
-          mediaBase64 = media.data;
-          mimeType = media.mimetype || 'image/jpeg';
-          console.log(`[Agentia] Media recibido: ${mimeType}, ${mediaBase64.length} chars base64`);
-        }
-      } catch (e) {
-        console.error('[Agentia] Error descargando media:', e.message);
+      const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
+      const url = `${apiBase}/api/whatsapp/qr-store`;
+      const payload = JSON.stringify({ qr, clientId: id });
+      const headers = { 'Content-Type': 'application/json', ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}) };
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const r = await fetch(url, { method: 'POST', headers, body: payload });
+          if (r.ok) break;
+        } catch { /* ignore */ }
+        if (attempt < 3) await new Promise((r) => setTimeout(r, 3000));
       }
-    }
+    });
 
-    const displayMsg = body || (msg.hasMedia ? '[imagen/documento]' : '');
-    console.log(`[Agentia] Mensaje de ${senderName || senderId}: ${displayMsg.slice(0, 50)}...`);
+    nextClient.on('ready', () => {
+      state.state = 'ready';
+      state.reconnectAttempt = 0;
+      state.ready = true;
+      console.log(`[Agentia] (${id}) WhatsApp conectado correctamente.`);
+      const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
+      fetch(`${apiBase}/api/whatsapp/qr-store`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}) },
+        body: JSON.stringify({ clientId: id, connected: true }),
+      }).catch(() => {});
+      lastQrByClient.set(id, { qr: null, dataUrl: null });
+    });
 
-    const processMessage = async () => {
-      const { reply, mediaUrl, botPaused } = await callChatApi(body || '[imagen adjunta]', senderId, senderName, mediaBase64, mimeType);
-      return { reply, mediaUrl, botPaused };
-    };
+    nextClient.on('authenticated', () => {
+      state.state = 'authenticated';
+      console.log(`[Agentia] (${id}) Autenticado.`);
+    });
 
-    try {
-      const { reply, mediaUrl, botPaused } = msg.hasMedia
-        ? await enqueueAndProcess(senderId, processMessage)
-        : await processMessage();
-      if (botPaused) {
-        // Kill switch activo: no responder absolutamente nada
-      } else if (reply || mediaUrl) {
+    nextClient.on('auth_failure', (msg) => {
+      state.state = 'auth_failure';
+      state.ready = false;
+      console.error(`[Agentia] (${id}) Error de autenticación:`, msg);
+    });
+
+    nextClient.on('disconnected', (reason) => {
+      state.state = 'disconnected';
+      state.ready = false;
+      console.warn(`[Agentia] (${id}) WhatsApp desconectado:`, reason);
+      const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
+      fetch(`${apiBase}/api/whatsapp/qr-store`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(qrSecret ? { Authorization: `Bearer ${qrSecret}` } : {}) },
+        body: JSON.stringify({ clientId: id, connected: false }),
+      }).catch(() => {});
+      const delay = Math.min(30_000, 3_000 * Math.max(1, state.reconnectAttempt + 1));
+      state.reconnectAttempt += 1;
+      console.log(`[Agentia] (${id}) Reintentando conexión en ${Math.round(delay / 1000)}s...`);
+      setTimeout(() => initClientFor(id), delay);
+    });
+
+    nextClient.on('message', async (msg) => {
+      if (msg.fromMe) return;
+      if (msg.from === 'status@broadcast' || msg.isStatus || (msg.id && msg.id.remote === 'status@broadcast')) return;
+      let chat;
+      try { chat = await msg.getChat(); } catch { return; }
+      if (chat && chat.isGroup) return;
+
+      const contact = await msg.getContact();
+      const body = msg.body?.trim() || '';
+      const senderId = msg.from;
+      const senderName = contact.pushname || contact.name || undefined;
+      if (!body && !msg.hasMedia) return;
+
+      let mediaBase64 = null;
+      let mimeType = null;
+      if (msg.hasMedia) {
+        try {
+          const media = await msg.downloadMedia();
+          if (media && media.data) {
+            mediaBase64 = media.data;
+            mimeType = media.mimetype || 'image/jpeg';
+          }
+        } catch { /* ignore */ }
+      }
+
+      const key = `${id}:${senderId}`;
+      const processMessage = async () => {
+        const { reply, mediaUrl, botPaused } = await callChatApi(id, body || '[imagen adjunta]', senderId, senderName, mediaBase64, mimeType);
+        return { reply, mediaUrl, botPaused };
+      };
+
+      try {
+        const { reply, mediaUrl, botPaused } = msg.hasMedia
+          ? await enqueueAndProcess(key, processMessage)
+          : await processMessage();
+        if (botPaused) return;
+
         if (mediaUrl) {
           try {
-            const res = await fetch(mediaUrl);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const buf = await res.arrayBuffer();
+            const r = await fetch(mediaUrl);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const buf = await r.arrayBuffer();
             const base64 = Buffer.from(buf).toString('base64');
-            const mime = (res.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
+            const mime = (r.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
             const media = new MessageMedia(mime, base64);
-            const chatId = msg.from;
             const opts = reply ? { caption: reply } : {};
-            await client.sendMessage(chatId, media, opts);
-            console.log('[Agentia] Respuesta con imagen enviada.');
-          } catch (e) {
-            console.error('[Agentia] Error enviando imagen:', e);
-            console.error('[Agentia] Stack:', e instanceof Error ? e.stack : '(no stack)');
+            await nextClient.sendMessage(msg.from, media, opts);
+          } catch {
             if (reply) await msg.reply(reply);
           }
-        } else if (reply) {
-          await msg.reply(reply);
-          console.log('[Agentia] Respuesta enviada.');
+          return;
         }
-      } else {
-        console.log('[Agentia] API devolvió respuesta vacía.');
+
+        if (reply) {
+          await msg.reply(reply);
+          return;
+        }
+
         await msg.reply('Un momento, por favor. 🔄');
+      } catch (err) {
+        console.error('[Agentia] Error:', err?.message || String(err));
+        await msg.reply('Lo siento, hubo un error. Por favor intenta más tarde.');
       }
-    } catch (err) {
-      console.error('[Agentia] Error:', err.message);
-      await msg.reply('Lo siento, hubo un error. Por favor intenta más tarde.');
-    }
-  });
+    });
 
     nextClient.initialize().catch((err) => {
-      lastState = 'init_error';
-      whatsappReady = false;
-      console.error('[Agentia] Error al inicializar:', err);
-      const delay = Math.min(30_000, 3_000 * Math.max(1, reconnectAttempt + 1));
-      reconnectAttempt += 1;
-      setTimeout(() => initClient(), delay);
+      state.state = 'init_error';
+      state.ready = false;
+      console.error(`[Agentia] (${id}) Error al inicializar:`, err);
+      const delay = Math.min(30_000, 3_000 * Math.max(1, state.reconnectAttempt + 1));
+      state.reconnectAttempt += 1;
+      setTimeout(() => initClientFor(id), delay);
     });
   }
 
-  initClient();
+  for (const id of ACTIVE_CLIENT_IDS) initClientFor(id);
 
   // Registrar intervalos UNA SOLA VEZ — fuera de initClient para evitar duplicados en cada reconexión
   setTimeout(pollAndSendAlerts, 15 * 1000);
@@ -691,8 +688,8 @@ async function main() {
   setTimeout(pollAndSendReviews, 3 * 60 * 1000);
   setInterval(pollAndSendReviews, 15 * 60 * 1000);
 
-  // Follow-up de prospectos Agentia Ventas: solo cuando CLIENT_ID === 'agentia-ventas'
-  if (CLIENT_ID === 'agentia-ventas') {
+  // Follow-up de prospectos Agentia Ventas: solo cuando existe ese clientId en este worker
+  if (ACTIVE_CLIENT_IDS.includes('agentia-ventas')) {
     setTimeout(pollAndSendAgentiaFollowup, 10 * 60 * 1000);        // primera ejecución a los 10 min
     setInterval(pollAndSendAgentiaFollowup, 6 * 60 * 60 * 1000);   // cada 6 horas
   }
