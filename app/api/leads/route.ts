@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 import { toPipelineStatus } from '@/src/lib/leads';
 
@@ -9,11 +9,16 @@ function normalizeSource(p: string | undefined): 'whatsapp' | 'facebook' | 'inst
   return 'whatsapp';
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const clientIdParam = req.nextUrl.searchParams.get('clientId')?.trim();
     const db = await getMongoDb();
     const [leads, messages] = await Promise.all([
-      db.collection('leads').find({}).sort({ lastMessageAt: -1 }).limit(200).toArray(),
+      db.collection('leads')
+        .find(clientIdParam ? { clientId: clientIdParam } : {})
+        .sort({ lastMessageAt: -1 })
+        .limit(200)
+        .toArray(),
       db.collection('leads_agentia').find({}).sort({ createdAt: -1 }).limit(500).toArray(),
     ]);
     return NextResponse.json({
@@ -29,6 +34,7 @@ export async function GET() {
         is_being_handled_by: l.is_being_handled_by ?? null,
         bot_status: l.bot_status ?? 'active',
         assignedTo: l.assignedTo ?? null,
+        deco_stage: l.deco_stage ?? null,
         lastMessage: l.lastMessage ?? '',
         lastReply: l.lastReply ?? '',
         lastMessageAt: l.lastMessageAt ?? null,
