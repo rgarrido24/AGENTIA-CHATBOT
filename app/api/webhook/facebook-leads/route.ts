@@ -135,7 +135,7 @@ async function enqueueAdminAlert(
   const message =
     `🚨 ATENCION🚨\n` +
     `¡Nuevo ingreso de LEAD!\n\n` +
-    `Visita tu panel para contactarlo👇\n` +
+    `Vistita tu panel para contactarlo👇\n` +
     portalUrl;
 
   await db.collection('outbound_messages').insertOne({
