@@ -35,9 +35,16 @@ export function DecoHouseLogin() {
     <div className="min-h-screen bg-[#071414] text-white flex items-center justify-center px-4">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-6">
         <div className="mb-5">
-          <p className="text-xs text-white/60">Deco House</p>
-          <h1 className="text-xl font-bold tracking-tight">Acceso a Pipeline</h1>
-          <p className="text-sm text-white/60 mt-1">Ingresa usuario y contraseña para continuar.</p>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-white/10 border border-white/10 overflow-hidden flex items-center justify-center">
+              <img src="/deco-logo.png" alt="Deco House" className="h-full w-full object-contain p-1.5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-white/60">Deco House</p>
+              <h1 className="text-xl font-bold tracking-tight">Acceso a Pipeline</h1>
+            </div>
+          </div>
+          <p className="text-sm text-white/60 mt-2">Ingresa usuario y contraseña para continuar.</p>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-3">
