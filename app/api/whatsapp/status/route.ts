@@ -10,10 +10,15 @@ interface QrDoc {
   updatedAt?: Date;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const onlyClientId = (searchParams.get('clientId') || '').trim().toLowerCase();
     const db = await getMongoDb();
-    const docs = await db.collection<QrDoc>('whatsapp_qr').find({}).toArray();
+    const docs = await db
+      .collection<QrDoc>('whatsapp_qr')
+      .find(onlyClientId ? ({ _id: onlyClientId as any } as any) : {})
+      .toArray();
 
     const bridges = await Promise.all(
       docs.map(async (doc) => {

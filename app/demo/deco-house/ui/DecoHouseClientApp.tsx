@@ -287,10 +287,10 @@ export function DecoHouseClientApp() {
             </button>
 
             <Link
-              href="/dashboard/whatsapp"
+              href="/demo/deco-house/bridge"
               className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:text-white transition"
             >
-              WhatsApp Bridge
+              Bridge Deco House
             </Link>
             <button
               onClick={load}

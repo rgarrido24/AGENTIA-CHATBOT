@@ -41,6 +41,18 @@ const API_URL = (getEnv('AGENTIA_CHATBOT_API_URL', '') || 'http://localhost:3010
 const CLIENT_ID = getEnv('AGENTIA_WHATSAPP_CLIENT_ID', 'agentia').trim().toLowerCase();
 const PAGE_ID = 'whatsapp-bridge';
 
+function getApiBase() {
+  // Si el worker tiene CHATBOT_WEBHOOK_URL pero AGENTIA_CHATBOT_API_URL está mal,
+  // el inbound puede funcionar mientras outbound falla. Derivamos el origin del webhook.
+  const webhookUrl = (getEnv('CHATBOT_WEBHOOK_URL', '') || '').trim();
+  if (webhookUrl) {
+    try {
+      return new URL(webhookUrl).origin.replace(/\/$/, '');
+    } catch { /* ignore */ }
+  }
+  return API_URL;
+}
+
 function normalizeLeadId(senderId) {
   const raw = typeof senderId === 'string' ? senderId : '';
   const digits = raw.replace(/\D/g, '');
@@ -48,7 +60,7 @@ function normalizeLeadId(senderId) {
 }
 
 async function callChatApi(message, senderId, senderName, mediaBase64, mimeType) {
-  const webhookUrl = (getEnv('CHATBOT_WEBHOOK_URL', '') || `${API_URL}/api/webhook/whatsapp`).replace(/\/$/, '');
+  const webhookUrl = (getEnv('CHATBOT_WEBHOOK_URL', '') || `${getApiBase()}/api/webhook/whatsapp`).replace(/\/$/, '');
   const url = webhookUrl;
   const payload = {
     clientId: CLIENT_ID,
@@ -140,7 +152,8 @@ async function main() {
     }
     try {
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-      const res = await fetch(`${API_URL}/api/alerts/pending`, {
+      const apiBase = getApiBase();
+      const res = await fetch(`${apiBase}/api/alerts/pending`, {
         headers: secret ? { Authorization: `Bearer ${secret}` } : {},
       });
       const data = await res.json().catch(() => ({}));
@@ -176,7 +189,7 @@ async function main() {
       }
       if (sentIds.length > 0) {
         const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-        await fetch(`${API_URL}/api/alerts/sent`, {
+        await fetch(`${apiBase}/api/alerts/sent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}) },
           body: JSON.stringify({ ids: sentIds }),
@@ -236,7 +249,8 @@ async function main() {
     try {
       if (!client.info) return;
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-      const res = await fetch(`${API_URL}/api/chat/outbound`, {
+      const apiBase = getApiBase();
+      const res = await fetch(`${apiBase}/api/chat/outbound`, {
         headers: secret ? { Authorization: `Bearer ${secret}` } : {},
       });
       const data = await res.json().catch(() => ({}));
@@ -263,14 +277,23 @@ async function main() {
           }
 
           const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-          await fetch(`${API_URL}/api/chat/outbound`, {
+          await fetch(`${apiBase}/api/chat/outbound`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}) },
             body: JSON.stringify({ id: m._id }),
           });
           console.log('[Agentia] Outbound enviado a', m.senderId, m.mediaUrl ? '(con media)' : '');
         } catch (e) {
-          console.error('[Agentia] Error enviando outbound:', e.message, 'id=', m._id, 'senderId=', m.senderId);
+          const msg = e && e.message ? e.message : String(e);
+          console.error('[Agentia] Error enviando outbound:', msg, 'id=', m._id, 'senderId=', m.senderId);
+          try {
+            const secret3 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+            await fetch(`${apiBase}/api/chat/outbound/error`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...(secret3 ? { Authorization: `Bearer ${secret3}` } : {}) },
+              body: JSON.stringify({ id: m._id, error: msg }),
+            });
+          } catch { /* ignore */ }
         }
       }
     } catch (e) {

@@ -31,7 +31,7 @@ export async function GET(
     .find({ senderId: alertNumber })
     .sort({ createdAt: -1 })
     .limit(10)
-    .project({ _id: 1, source: 1, createdAt: 1, sentAt: 1, message: 1 })
+    .project({ _id: 1, source: 1, createdAt: 1, sentAt: 1, message: 1, attempts: 1, lastError: 1, lastAttemptAt: 1 })
     .toArray();
 
   const pendingCount = await db.collection('outbound_messages').countDocuments({ senderId: alertNumber, sentAt: { $exists: false } });
@@ -45,6 +45,9 @@ export async function GET(
       source: String(m.source || ''),
       createdAt: m.createdAt || null,
       sentAt: m.sentAt || null,
+      attempts: Number(m.attempts || 0),
+      lastAttemptAt: m.lastAttemptAt || null,
+      lastError: m.lastError ? String(m.lastError).slice(0, 500) : null,
       message: String(m.message || ''),
     })),
   });
