@@ -91,13 +91,25 @@ function buildSummary(q: Partial<QuoteValues>): string {
     `CANTIDAD: ${q.cantidad ?? '-'}\n` +
     `PERFIL: ${q.material ?? '-'} · ${q.color ?? '-'}\n` +
     `CONTACTO: ${q.contacto ?? '-'}\n\n` +
-    'En breve te enviamos la cotización en PDF ✨\n' +
+    'Con esto ya tenemos una base súper clara. Estamos revisando tus datos y te enviaremos un presupuesto lo más ajustado posible 🙂\n' +
     '¡Gracias por escribirnos a Deco House! 🪟'
   );
 }
 
 function nowTs() {
   return new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function imageUrlToDataUrl(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`No se pudo cargar la imagen: ${url}`);
+  const blob = await res.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(new Error(`Error leyendo imagen: ${url}`));
+    reader.readAsDataURL(blob);
+  });
 }
 
 // ─── Bubble ───────────────────────────────────────────────────────────────────
@@ -188,6 +200,14 @@ async function generatePDF(q: Partial<QuoteValues>, advisor: AdvisorForm) {
   const dark:   [number, number, number] = [10, 10, 15];
   const gray:   [number, number, number] = [176, 190, 197];
 
+  // Logo (si carga ok, se usa; si no, cae al placeholder)
+  let logoDataUrl: string | null = null;
+  try {
+    logoDataUrl = await imageUrlToDataUrl('/deco-logo.png');
+  } catch {
+    logoDataUrl = null;
+  }
+
   // ── Background header ──
   doc.setFillColor(...dark);
   doc.rect(0, 0, 210, 40, 'F');
@@ -195,12 +215,17 @@ async function generatePDF(q: Partial<QuoteValues>, advisor: AdvisorForm) {
   // ── Logo placeholder ──
   doc.setFillColor(...accent);
   doc.roundedRect(14, 10, 22, 22, 3, 3, 'F');
-  doc.setTextColor(10, 10, 15);
-  doc.setFontSize(7);
-  doc.setFont('helvetica', 'bold');
-  doc.text('DECO', 25, 18, { align: 'center' });
-  doc.text('HOUSE', 25, 23, { align: 'center' });
-  doc.text('🪟', 25, 29, { align: 'center' });
+  if (logoDataUrl) {
+    // Ajusta el logo para que quede centrado dentro del recuadro
+    doc.addImage(logoDataUrl, 'PNG', 16, 11, 18, 18);
+  } else {
+    doc.setTextColor(10, 10, 15);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DECO', 25, 18, { align: 'center' });
+    doc.text('HOUSE', 25, 23, { align: 'center' });
+    doc.text('🪟', 25, 29, { align: 'center' });
+  }
 
   // ── Company name ──
   doc.setTextColor(255, 255, 255);
