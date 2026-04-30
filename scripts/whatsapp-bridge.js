@@ -18,6 +18,54 @@ const path = require('path');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const http = require('http');
+const { execFile } = require('child_process');
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function execFileAsync(cmd, args, opts) {
+  return new Promise((resolve, reject) => {
+    execFile(cmd, args, opts || {}, (err, stdout, stderr) => {
+      if (err) reject(Object.assign(err, { stdout, stderr }));
+      else resolve({ stdout: String(stdout || ''), stderr: String(stderr || '') });
+    });
+  });
+}
+
+function isBrowserAlreadyRunningError(err) {
+  const msg = (err && (err.message || String(err))) || '';
+  return /browser is already running/i.test(msg) && /Use a different `userDataDir`/i.test(msg);
+}
+
+async function killOrphanChromeUsingProfile(profilePath) {
+  // En Render (Linux), a veces queda un Chrome huérfano tras restart; bloquea el userDataDir.
+  // Estrategia: listar procesos y matar los que tengan el profilePath en args.
+  try {
+    const { stdout } = await execFileAsync('ps', ['-eo', 'pid,args'], { timeout: 8000 });
+    const lines = stdout.split('\n').map((l) => l.trim()).filter(Boolean);
+    const pids = [];
+    for (const line of lines) {
+      const m = line.match(/^(\d+)\s+(.*)$/);
+      if (!m) continue;
+      const pid = Number(m[1]);
+      const args = m[2] || '';
+      if (!pid || pid === process.pid) continue;
+      if (!args.toLowerCase().includes('chrome') && !args.toLowerCase().includes('chrom')) continue;
+      if (args.includes(profilePath)) pids.push(pid);
+    }
+    if (pids.length === 0) return false;
+    for (const pid of pids) {
+      try { process.kill(pid, 'SIGKILL'); } catch { /* ignore */ }
+    }
+    console.warn(`[Agentia] Chrome huérfano matado para perfil: ${profilePath} (pids: ${pids.join(',')})`);
+    await sleep(1500);
+    return true;
+  } catch (e) {
+    console.warn('[Agentia] No se pudo limpiar Chrome huérfano:', e?.message || String(e));
+    return false;
+  }
+}
 
 function getEnv(key, def) {
   const envDir = path.join(__dirname, '..');
@@ -174,6 +222,14 @@ async function main() {
     return getAnyReadyClient();
   }
 
+  /** Solo el bridge del clientId pedido — sin “prestar” otro número (evita envíos cruzados). */
+  function getStrictReadyClientForClientId(id) {
+    const normalized = String(id || '').trim().toLowerCase();
+    if (!normalized) return null;
+    const st = getClientState(normalized);
+    return st?.ready && st?.client ? st.client : null;
+  }
+
   async function pollAndSendAlerts() {
     const client = getAnyReadyClient();
     if (!client) return;
@@ -290,11 +346,34 @@ async function main() {
       for (const m of items) {
         try {
           const msgClientId = String(m.clientId || '').trim().toLowerCase();
-          const client = getReadyClientForClientId(msgClientId);
-          if (!client || !client.info) continue;
+          const client = getStrictReadyClientForClientId(msgClientId);
+          if (!client || !client.info) {
+            const readyList = ACTIVE_CLIENT_IDS.filter((id) => getClientState(id)?.ready).join(', ') || 'ninguno';
+            const why = !msgClientId
+              ? `outbound sin clientId (definí clientId en el mensaje; bridges listos: ${readyList})`
+              : `bridge no listo para clientId=${msgClientId} — no se usa otro número (listos: ${readyList})`;
+            const secret0 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+            await fetch(`${apiBase}/api/chat/outbound/error`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...(secret0 ? { Authorization: `Bearer ${secret0}` } : {}) },
+              body: JSON.stringify({ id: m._id, error: why }),
+            }).catch(() => {});
+            continue;
+          }
           const raw = (m.senderId && typeof m.senderId === 'string') ? m.senderId.trim() : '';
           const chatId = raw.includes('@') ? raw : `${raw.replace(/\D/g, '')}@c.us`;
-          if (!chatId || chatId === '@c.us' || chatId.length < 15) continue;
+          if (!chatId || chatId === '@c.us' || chatId.length < 15) {
+            const secretBad = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
+            await fetch(`${apiBase}/api/chat/outbound/error`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...(secretBad ? { Authorization: `Bearer ${secretBad}` } : {}) },
+              body: JSON.stringify({
+                id: m._id,
+                error: `senderId inválido para @c.us: "${raw}" → ${chatId}`,
+              }),
+            }).catch(() => {});
+            continue;
+          }
           if (typeof client.sendMessage !== 'function') break;
 
           if (m.mediaUrl) {
@@ -516,6 +595,7 @@ async function main() {
     const id = String(clientId || '').trim().toLowerCase() || 'agentia';
     const apiBase = getApiBase();
     const sessionDir = path.join(__dirname, '..', `.wwebjs_auth_${id}`);
+    const profileDir = path.join(sessionDir, 'session');
 
     const state = clients.get(id) || { client: null, ready: false, state: 'boot', reconnectAttempt: 0 };
     state.state = 'initializing';
@@ -658,9 +738,21 @@ async function main() {
       state.state = 'init_error';
       state.ready = false;
       console.error(`[Agentia] (${id}) Error al inicializar:`, err);
-      const delay = Math.min(30_000, 3_000 * Math.max(1, state.reconnectAttempt + 1));
-      state.reconnectAttempt += 1;
-      setTimeout(() => initClientFor(id), delay);
+      // Caso común en Render: restart deja un Chrome vivo con el mismo perfil.
+      // Intentamos limpiar y reintentar una vez rápido para evitar loops eternos.
+      (async () => {
+        if (isBrowserAlreadyRunningError(err)) {
+          const cleaned = await killOrphanChromeUsingProfile(profileDir);
+          if (cleaned) {
+            console.log(`[Agentia] (${id}) Reintentando inicialización tras limpiar Chrome...`);
+            await sleep(1000);
+            return initClientFor(id);
+          }
+        }
+        const delay = Math.min(30_000, 3_000 * Math.max(1, state.reconnectAttempt + 1));
+        state.reconnectAttempt += 1;
+        setTimeout(() => initClientFor(id), delay);
+      })().catch(() => {});
     });
   }
 

@@ -211,7 +211,9 @@ export default function WhatsAppDashboardPage() {
           <p className="text-slate-500 text-sm mb-4">Ejecuta el bridge para que aparezca aquí:</p>
           <code className="inline-block bg-black/40 px-3 py-2 rounded-lg text-sm text-slate-300 font-mono">npm run whatsapp</code>
           <p className="text-slate-600 text-xs mt-3">
-            Configura <code className="text-slate-500">AGENTIA_WHATSAPP_CLIENT_ID</code> en .env para identificar este bridge.
+            En el worker de Render usa <code className="text-slate-500">AGENTIA_WHATSAPP_CLIENT_IDS</code> (lista separada por comas, ej.{' '}
+            <code className="text-slate-500">agentia-ventas,izzi,decohouse</code>) o un solo{' '}
+            <code className="text-slate-500">AGENTIA_WHATSAPP_CLIENT_ID</code> en local.
           </p>
         </div>
       )}
@@ -225,7 +227,11 @@ export default function WhatsAppDashboardPage() {
       {bridges.length > 0 && (
         <div className="mt-8 rounded-xl border border-white/5 bg-white/[0.02] p-4 text-xs text-slate-500">
           <p className="font-medium text-slate-400 mb-1">Agregar otro bridge</p>
-          <p>Configura <code className="text-slate-400">AGENTIA_WHATSAPP_CLIENT_ID=nombre-cliente</code> en el proceso nuevo y ejecuta <code className="text-slate-400">npm run whatsapp</code>.</p>
+          <p>
+            En <strong className="text-slate-400">un solo worker</strong> (Render): variable{' '}
+            <code className="text-slate-400">AGENTIA_WHATSAPP_CLIENT_IDS=cliente1,cliente2,…</code>. En local podés usar un proceso por cuenta con{' '}
+            <code className="text-slate-400">AGENTIA_WHATSAPP_CLIENT_ID=nombre</code> y <code className="text-slate-400">npm run whatsapp</code>.
+          </p>
         </div>
       )}
     </div>
