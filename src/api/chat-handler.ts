@@ -529,6 +529,15 @@ export async function handleChat(params: {
 
     const cfg = await resolveBusinessConfigByClientId(clientId);
     if (!cfg) {
+      // Fallback operativo: algunos tenants demo (ej. DecoHouse) pueden usar el bridge
+      // antes de que se cree su documento en `business_configs`. No debemos tumbar la operación.
+      if (clientId === 'decohouse') {
+        const reply =
+          '¡Hola! Soy el asistente de DecoHouse. 👋\n' +
+          'En este momento estamos terminando la configuración del bot.\n' +
+          '¿Me dices qué necesitas (muebles, decoración o asesoría)?';
+        return { status: 200, json: { clientId, reply } };
+      }
       return {
         status: 404,
         json: {

@@ -172,7 +172,9 @@ async function callChatApi(clientId, message, senderId, senderName, mediaBase64,
   if (!res.ok) {
     const errMsg = json.error || `HTTP ${res.status}`;
     console.error('[Agentia] API error:', res.status, json);
-    throw new Error(errMsg);
+    // No tumbar el bridge por un tenant sin config o error temporal.
+    // Devolvemos una respuesta segura (vacía) y dejamos que el caller maneje.
+    return { reply: '', mediaUrl: null, botPaused: false, error: errMsg, status: res.status };
   }
   const reply = typeof json.mensaje === 'string' ? json.mensaje : (typeof json.reply === 'string' ? json.reply : '');
   return { reply: String(reply || '').trim(), mediaUrl: json.mediaUrl || null, botPaused: !!json.botPaused };

@@ -181,6 +181,22 @@ async function main() {
         "- Ofrece agendar visita o llamada y pedir WhatsApp."
       ].join("\n")
     }
+    ,
+    {
+      clientId: "decohouse",
+      model: "gemini-2.5-flash",
+      systemPrompt: [
+        "Eres un asistente comercial de DecoHouse (muebles y decoración).",
+        "Hablas en español mexicano, tono cercano y profesional.",
+        "Responde en máximo 3 líneas por mensaje.",
+        "Objetivo: entender qué busca el cliente (mueble/espacio/medidas/presupuesto) y ofrecer el siguiente paso: catálogo, cotización o visita/asesoría."
+      ].join("\n"),
+      knowledge: [
+        "Alcance: DecoHouse (muebles, decoración y asesoría).",
+        "Preguntas clave: ¿qué espacio? (sala/comedor/recámara), ¿medidas aproximadas?, ¿color/estilo?, ¿presupuesto?, ¿en qué ciudad/colonia estás?",
+        "Cierre: ofrece cotización y pide nombre + WhatsApp + zona de entrega."
+      ].join("\n")
+    }
   ];
 
   const col = db.collection("business_configs");
