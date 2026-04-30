@@ -42,6 +42,11 @@ export async function createAlertIfUrgent(params: {
   const db = await getMongoDb();
   const col = db.collection<Alert>('lead_alerts');
 
+  // Regla de negocio: 1 alerta TOTAL por lead (para evitar spam).
+  // Si ya existe cualquier alerta (enviada o no), no crear más.
+  const anyExisting = await col.findOne({ leadId }, { projection: { _id: 1 } as any });
+  if (anyExisting) return;
+
   const recent = await col.findOne({
     leadId,
     sentAt: { $exists: false },
@@ -72,6 +77,8 @@ export async function createAlertForCPValidation(params: {
   const { leadId, clientId, senderName, lastMessage, platform, cp } = params;
   const db = await getMongoDb();
   const col = db.collection<Alert>('lead_alerts');
+  const anyExisting = await col.findOne({ leadId }, { projection: { _id: 1 } as any });
+  if (anyExisting) return;
   const recent = await col.findOne({
     leadId,
     reason: 'cp_validation',
@@ -106,6 +113,8 @@ export async function createAlertForLocationVerification(params: {
   const { leadId, clientId, senderName, lastMessage, platform } = params;
   const db = await getMongoDb();
   const col = db.collection<Alert>('lead_alerts');
+  const anyExisting = await col.findOne({ leadId }, { projection: { _id: 1 } as any });
+  if (anyExisting) return;
   const recent = await col.findOne({
     leadId,
     reason: 'location_verification',
@@ -140,6 +149,9 @@ export async function createAlertForSaleClosed(params: {
   const db = await getMongoDb();
   const col = db.collection<Alert>('lead_alerts');
 
+  const anyExisting = await col.findOne({ leadId }, { projection: { _id: 1 } as any });
+  if (anyExisting) return;
+
   const recent = await col.findOne({
     leadId,
     reason: 'sale_closed',
@@ -171,6 +183,9 @@ export async function createAlertForDocumentsConfirmed(params: {
   const db = await getMongoDb();
   const col = db.collection<Alert>('lead_alerts');
 
+  const anyExisting = await col.findOne({ leadId }, { projection: { _id: 1 } as any });
+  if (anyExisting) return;
+
   const toUpper = (s: string) => (s || '').toUpperCase();
   const formatted = [
     '📋 CAPTURAR EN IZZI - DOCUMENTOS CONFIRMADOS',
@@ -200,12 +215,43 @@ export async function createAlertForDocumentsConfirmed(params: {
 
 export async function getPendingAlerts(): Promise<Alert[]> {
   const db = await getMongoDb();
-  return db
-    .collection<Alert>('lead_alerts')
+  const col = db.collection<Alert>('lead_alerts');
+  // Devolver como máximo 1 alerta por leadId.
+  // Además, suprimir duplicados históricos para que no se envíen nunca.
+  const candidates = await col
     .find({ sentAt: { $exists: false } })
     .sort({ createdAt: 1 })
-    .limit(20)
+    .limit(200)
     .toArray();
+
+  const seen = new Set<string>();
+  const keep: Alert[] = [];
+  const suppressIds: string[] = [];
+
+  for (const a of candidates) {
+    if (!a.leadId) continue;
+    if (seen.has(a.leadId)) {
+      if (a._id) suppressIds.push(String(a._id));
+      continue;
+    }
+    seen.add(a.leadId);
+    keep.push(a);
+    if (keep.length >= 20) break;
+  }
+
+  if (suppressIds.length > 0) {
+    const { ObjectId } = await import('mongodb');
+    const oids = suppressIds
+      .map((id) => {
+        try { return new ObjectId(id); } catch { return null; }
+      })
+      .filter(Boolean);
+    if (oids.length > 0) {
+      await col.updateMany({ _id: { $in: oids as any } }, { $set: { sentAt: new Date() } });
+    }
+  }
+
+  return keep;
 }
 
 export async function markAlertSent(alertId: string): Promise<boolean> {
