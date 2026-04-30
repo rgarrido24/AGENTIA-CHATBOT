@@ -1,24 +1,22 @@
 /**
  * start-multi-bridge.js
  *
- * Corre dos bridges de WhatsApp (izzi + agentia-ventas) como procesos hijo
- * dentro de un solo Background Worker en Render.
+ * Render / worker: arranca el puente de WhatsApp.
  *
- * Cada bridge corre en su propio puerto interno (no expuesto al exterior):
- *   izzi          → :10001
- *   agentia-ventas → :10002
+ * - Si defines `AGENTIA_WHATSAPP_CLIENT_IDS` (lista separada por comas):
+ *   se ejecuta **un solo** `whatsapp-bridge.js` con esa lista (recomendado).
+ *   El hijo escucha `/health` en `PORT` (el que asigna Render).
  *
- * Este proceso padre expone un /health combinado en :10000 (puerto del worker).
+ * - Si **no** defines `AGENTIA_WHATSAPP_CLIENT_IDS` (modo legacy):
+ *   este script spawnea dos procesos hijo (izzi + agentia-ventas) en :10001 y :10002
+ *   y el padre expone `/health` combinado en `PORT` (o :10000 en local).
  *
  * Uso:
  *   node scripts/start-multi-bridge.js
  *
- * Variables de entorno requeridas en Render:
- *   AGENTIA_CHATBOT_API_URL   (ej: https://agentia.software)
- *   WHATSAPP_QR_SECRET
- *   MONGODB_URI
- *   CRON_SECRET
- *   ALERT_WHATSAPP_NUMBER
+ * Variables típicas en Render:
+ *   AGENTIA_CHATBOT_API_URL, WHATSAPP_QR_SECRET, MONGODB_URI, CRON_SECRET,
+ *   ALERT_WHATSAPP_NUMBER, y `AGENTIA_WHATSAPP_CLIENT_IDS` o `AGENTIA_WHATSAPP_CLIENT_ID`.
  */
 
 'use strict';
@@ -29,10 +27,25 @@ const http      = require('http');
 
 const BRIDGE_SCRIPT = path.join(__dirname, 'whatsapp-bridge.js');
 
-const BRIDGES = [
-  { clientId: 'izzi',           port: 10001, label: 'IZZI   ' },
-  { clientId: 'agentia-ventas', port: 10002, label: 'AGENTIA' },
-];
+function parseClientIdsList() {
+  const raw = String(process.env.AGENTIA_WHATSAPP_CLIENT_IDS || '').trim();
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+const CLIENT_IDS_LIST = parseClientIdsList();
+
+// Modo legacy (2 procesos): solo si NO estás usando AGENTIA_WHATSAPP_CLIENT_IDS.
+// Si usas AGENTIA_WHATSAPP_CLIENT_IDS, whatsapp-bridge.js ya levanta múltiples clientes en UN solo proceso.
+const BRIDGES = CLIENT_IDS_LIST.length
+  ? []
+  : [
+      { clientId: 'izzi',           port: 10001, label: 'IZZI   ' },
+      { clientId: 'agentia-ventas', port: 10002, label: 'AGENTIA' },
+    ];
 
 // Estado por bridge (para el health endpoint combinado)
 const state = {};
@@ -116,43 +129,70 @@ log('MULTI  ', ' Agentia Multi-Bridge Worker arrancando');
 log('MULTI  ', `════════════════════════════════════════`);
 log('MULTI  ', `API URL: ${process.env.AGENTIA_CHATBOT_API_URL || '(no configurado)'}`);
 
-// Escalonar el arranque 8 s entre bridges para no saturar Chromium simultáneo
 const children = [];
-BRIDGES.forEach((cfg, i) => {
-  setTimeout(() => {
-    const child = spawnBridge(cfg);
-    if (child) children.push(child);
-  }, i * 8_000);
-});
 
-// ─── Health endpoint combinado (PORT del worker en Render) ────────────────────
+if (CLIENT_IDS_LIST.length) {
+  // Un solo proceso: whatsapp-bridge.js ya soporta múltiples clientes con AGENTIA_WHATSAPP_CLIENT_IDS.
+  // IMPORTANTE: no spawneamos 2+ procesos porque cada uno intentaría levantar los mismos perfiles Chromium.
+  log('MULTI  ', `Modo multi-client en UN proceso — clients: ${CLIENT_IDS_LIST.join(', ')}`);
 
-const HEALTH_PORT = Number(process.env.PORT) || 10000;
+  const child = spawn('node', [BRIDGE_SCRIPT], {
+    env: {
+      ...process.env,
+      // No forzar AGENTIA_WHATSAPP_CLIENT_ID aquí: la lista manda.
+    },
+    stdio: 'inherit',
+  });
 
-http.createServer((req, res) => {
-  if (!req.url?.startsWith('/health')) {
-    res.statusCode = 404;
-    res.end('not found');
-    return;
-  }
+  children.push(child);
 
-  const payload = {
-    ok:      BRIDGES.every((b) => state[b.clientId].alive),
-    bridges: BRIDGES.map((b) => ({
-      clientId: b.clientId,
-      port:     b.port,
-      ...state[b.clientId],
-    })),
-    timestamp: new Date().toISOString(),
-  };
+  child.on('exit', (code, signal) => {
+    log('MULTI  ', `Bridge terminó (code=${code ?? signal}).`);
+    process.exit(typeof code === 'number' ? code : 1);
+  });
 
-  const allOk = payload.bridges.every((b) => b.alive);
-  res.statusCode = allOk ? 200 : 503;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(payload, null, 2));
-}).listen(HEALTH_PORT, () => {
-  log('MULTI  ', `Health endpoint escuchando en :${HEALTH_PORT}/health`);
-});
+  child.on('error', (err) => {
+    log('MULTI  ', `✗ Error al iniciar bridge: ${err.message}`);
+    process.exit(1);
+  });
+} else {
+  // Escalonar el arranque 8 s entre bridges para no saturar Chromium simultáneo
+  BRIDGES.forEach((cfg, i) => {
+    setTimeout(() => {
+      const child = spawnBridge(cfg);
+      if (child) children.push(child);
+    }, i * 8_000);
+  });
+
+  // ─── Health endpoint combinado (PORT del worker en Render) ────────────────────
+
+  const HEALTH_PORT = Number(process.env.PORT) || 10000;
+
+  http.createServer((req, res) => {
+    if (!req.url?.startsWith('/health')) {
+      res.statusCode = 404;
+      res.end('not found');
+      return;
+    }
+
+    const payload = {
+      ok:      BRIDGES.every((b) => state[b.clientId].alive),
+      bridges: BRIDGES.map((b) => ({
+        clientId: b.clientId,
+        port:     b.port,
+        ...state[b.clientId],
+      })),
+      timestamp: new Date().toISOString(),
+    };
+
+    const allOk = payload.bridges.every((b) => b.alive);
+    res.statusCode = allOk ? 200 : 503;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(payload, null, 2));
+  }).listen(HEALTH_PORT, () => {
+    log('MULTI  ', `Health endpoint escuchando en :${HEALTH_PORT}/health`);
+  });
+}
 
 // ─── Shutdown limpio ──────────────────────────────────────────────────────────
 
