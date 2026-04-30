@@ -97,6 +97,24 @@ const ACTIVE_CLIENT_IDS = (CLIENT_IDS.length > 0 ? CLIENT_IDS : [CLIENT_ID])
   .filter(Boolean);
 const PAGE_ID = 'whatsapp-bridge';
 
+// Seguridad: por defecto NO enviar mensajes automáticos a leads.
+// Solo se deben habilitar explícitamente en el worker (Render) si el negocio lo requiere.
+function isEnabled(envKey, defaultValue = false) {
+  const raw = String(getEnv(envKey, '') || '').trim().toLowerCase();
+  if (!raw) return defaultValue;
+  if (['1', 'true', 'yes', 'y', 'on', 'enable', 'enabled'].includes(raw)) return true;
+  if (['0', 'false', 'no', 'n', 'off', 'disable', 'disabled'].includes(raw)) return false;
+  return defaultValue;
+}
+
+const ENABLE_ALERTS = isEnabled('AGENTIA_ENABLE_ALERTS', true);
+const ENABLE_OUTBOUND_MESSAGES = isEnabled('AGENTIA_ENABLE_OUTBOUND_MESSAGES', false);
+const ENABLE_REMINDERS = isEnabled('AGENTIA_ENABLE_REMINDERS', false);
+const ENABLE_REACTIVATION = isEnabled('AGENTIA_ENABLE_REACTIVATION', false);
+const ENABLE_CONFIRMATIONS = isEnabled('AGENTIA_ENABLE_CONFIRMATIONS', false);
+const ENABLE_REVIEWS = isEnabled('AGENTIA_ENABLE_REVIEWS', false);
+const ENABLE_AGENTIA_FOLLOWUP = isEnabled('AGENTIA_ENABLE_AGENTIA_FOLLOWUP', false);
+
 function getApiBase() {
   // Si el worker tiene CHATBOT_WEBHOOK_URL pero AGENTIA_CHATBOT_API_URL está mal,
   // el inbound puede funcionar mientras outbound falla. Derivamos el origin del webhook.
@@ -247,6 +265,7 @@ async function main() {
   }
 
   async function pollAndSendAlerts() {
+    if (!ENABLE_ALERTS) return;
     const client = getAnyReadyClient();
     if (!client) return;
     const alertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER;
@@ -306,6 +325,7 @@ async function main() {
   }
 
   async function pollAndSendReminders() {
+    if (!ENABLE_REMINDERS) return;
     const client = getAnyReadyClient();
     if (!client) return;
     try {
@@ -352,6 +372,7 @@ async function main() {
   }
 
   async function pollAndSendOutboundMessages() {
+    if (!ENABLE_OUTBOUND_MESSAGES) return;
     try {
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
       const apiBase = getApiBase();
@@ -435,6 +456,7 @@ async function main() {
 
   // ─── Retención: Reactivación de inactivos (cada hora) ───────────
   async function pollAndSendReactivation() {
+    if (!ENABLE_REACTIVATION) return;
     const featureClientId = ACTIVE_CLIENT_IDS[0] || 'agentia';
     const client = getReadyClientForClientId(featureClientId);
     if (!client) return;
@@ -461,6 +483,7 @@ async function main() {
 
   // ─── Retención: Confirmaciones anti no-show (cada 10 min) ───────
   async function pollAndSendConfirmations() {
+    if (!ENABLE_CONFIRMATIONS) return;
     const featureClientId = ACTIVE_CLIENT_IDS[0] || 'agentia';
     const client = getReadyClientForClientId(featureClientId);
     if (!client) return;
@@ -487,6 +510,7 @@ async function main() {
 
   // ─── Agentia Ventas: Follow-up automático de prospectos (solo agentia-ventas) ───
   async function pollAndSendAgentiaFollowup() {
+    if (!ENABLE_AGENTIA_FOLLOWUP) return;
     const client = getReadyClientForClientId('agentia-ventas');
     if (!client) return;
     if (!ACTIVE_CLIENT_IDS.includes('agentia-ventas')) return;
@@ -545,6 +569,7 @@ async function main() {
 
   // ─── Retención: Solicitudes de reseña (cada 15 min) ─────────────
   async function pollAndSendReviews() {
+    if (!ENABLE_REVIEWS) return;
     const featureClientId = ACTIVE_CLIENT_IDS[0] || 'agentia';
     const client = getReadyClientForClientId(featureClientId);
     if (!client) return;
@@ -812,29 +837,45 @@ async function main() {
   for (const id of ACTIVE_CLIENT_IDS) initClientFor(id);
 
   // Registrar intervalos UNA SOLA VEZ — fuera de initClient para evitar duplicados en cada reconexión
-  setTimeout(pollAndSendAlerts, 15 * 1000);
-  setInterval(pollAndSendAlerts, 20 * 1000);
+  if (ENABLE_ALERTS) {
+    setTimeout(pollAndSendAlerts, 15 * 1000);
+    setInterval(pollAndSendAlerts, 20 * 1000);
+  } else {
+    console.warn('[Agentia] ALERTS deshabilitadas por env AGENTIA_ENABLE_ALERTS');
+  }
 
   // Recordatorios: primera ejecución a los 5 min (da tiempo al bridge de conectarse),
   // luego cada 30 min (ventana de detección es 2h, no necesita revisión más frecuente)
-  setTimeout(pollAndSendReminders, 5 * 60 * 1000);
-  setInterval(pollAndSendReminders, 30 * 60 * 1000);
+  if (ENABLE_REMINDERS) {
+    setTimeout(pollAndSendReminders, 5 * 60 * 1000);
+    setInterval(pollAndSendReminders, 30 * 60 * 1000);
+  }
 
-  setTimeout(pollAndSendOutboundMessages, 3 * 1000);
-  setInterval(pollAndSendOutboundMessages, 5 * 1000);
+  if (ENABLE_OUTBOUND_MESSAGES) {
+    setTimeout(pollAndSendOutboundMessages, 3 * 1000);
+    setInterval(pollAndSendOutboundMessages, 5 * 1000);
+  } else {
+    console.warn('[Agentia] OUTBOUND a leads deshabilitado (AGENTIA_ENABLE_OUTBOUND_MESSAGES=false)');
+  }
 
   // Retención: primera ejecución con retraso para que el bridge se establezca
-  setTimeout(pollAndSendReactivation, 10 * 60 * 1000);
-  setInterval(pollAndSendReactivation, 60 * 60 * 1000);
+  if (ENABLE_REACTIVATION) {
+    setTimeout(pollAndSendReactivation, 10 * 60 * 1000);
+    setInterval(pollAndSendReactivation, 60 * 60 * 1000);
+  }
 
-  setTimeout(pollAndSendConfirmations, 2 * 60 * 1000);
-  setInterval(pollAndSendConfirmations, 10 * 60 * 1000);
+  if (ENABLE_CONFIRMATIONS) {
+    setTimeout(pollAndSendConfirmations, 2 * 60 * 1000);
+    setInterval(pollAndSendConfirmations, 10 * 60 * 1000);
+  }
 
-  setTimeout(pollAndSendReviews, 3 * 60 * 1000);
-  setInterval(pollAndSendReviews, 15 * 60 * 1000);
+  if (ENABLE_REVIEWS) {
+    setTimeout(pollAndSendReviews, 3 * 60 * 1000);
+    setInterval(pollAndSendReviews, 15 * 60 * 1000);
+  }
 
   // Follow-up de prospectos Agentia Ventas: solo cuando existe ese clientId en este worker
-  if (ACTIVE_CLIENT_IDS.includes('agentia-ventas')) {
+  if (ENABLE_AGENTIA_FOLLOWUP && ACTIVE_CLIENT_IDS.includes('agentia-ventas')) {
     setTimeout(pollAndSendAgentiaFollowup, 10 * 60 * 1000);        // primera ejecución a los 10 min
     setInterval(pollAndSendAgentiaFollowup, 6 * 60 * 60 * 1000);   // cada 6 horas
   }
