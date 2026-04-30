@@ -8,6 +8,14 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { resellerId: string; clientSlug: string } }
 ) {
+  // Seguridad operativa: esto se usó solo para pruebas internas.
+  // En producción queda apagado a menos que se habilite explícitamente.
+  const enabled =
+    String(process.env.AGENTIA_ENABLE_PORTAL_TEST_ALERTS || '').trim().toLowerCase() === 'true';
+  if (process.env.NODE_ENV === 'production' && !enabled) {
+    return NextResponse.json({ error: 'No disponible' }, { status: 404 });
+  }
+
   const { resellerId, clientSlug } = params;
   const cookieValue = req.cookies.get(COOKIE_NAME)?.value;
   const reseller = await verifyResellerCookie(cookieValue);

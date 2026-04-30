@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { MessageCircle, RefreshCw, Plus, X, Send } from 'lucide-react';
+import { MessageCircle, RefreshCw, Plus, X } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -467,28 +467,6 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
     }
   }, [apiBase, clientSlug]);
 
-  const sendTestAlert = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/portal/${resellerId}/client/${clientSlug}/test-alert`, { method: 'POST' });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        window.alert(data?.error || 'No se pudo enviar la alerta de prueba');
-        return;
-      }
-      const st = await fetch(`/api/portal/${resellerId}/client/${clientSlug}/outbound-status`, { cache: 'no-store' })
-        .then((r) => r.json())
-        .catch(() => null);
-      const pending = st && typeof st.pendingCount === 'number' ? st.pendingCount : null;
-      window.alert(
-        `Alerta de prueba encolada a ${data.alertNumber || 'WhatsApp'}.\n` +
-        (pending === null ? '' : `Pendientes en cola para ese número: ${pending}\n`) +
-        `\nSi el WhatsApp Bridge está conectado, debería llegar en segundos.`
-      );
-    } catch {
-      window.alert('Error de red enviando alerta de prueba');
-    }
-  }, [resellerId, clientSlug]);
-
   useEffect(() => { fetchLeads(true, selectedForm); }, [fetchLeads]);
 
   useEffect(() => {
@@ -581,15 +559,6 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
                 style={{ background: '#0d0d0d', color: '#444', border: '1px solid #1e1e1e' }}
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={sendTestAlert}
-                className="p-2 rounded-lg"
-                style={{ background: '#0d0d0d', color: '#444', border: '1px solid #1e1e1e' }}
-                title="Enviar alerta de prueba por WhatsApp"
-              >
-                <Send className="w-3.5 h-3.5" />
               </button>
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{ background: '#0d1f00', borderColor: `${ACCENT}44` }}>
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: ACCENT }} />
