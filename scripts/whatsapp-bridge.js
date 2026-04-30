@@ -116,8 +116,13 @@ function normalizeLeadId(senderId) {
 }
 
 function normalizeWhatsappDigits(input) {
-  const digits = String(input || '').replace(/\D/g, '');
+  let digits = String(input || '').replace(/\D/g, '');
   if (!digits) return '';
+  // Si llega como número nacional (sin país), asumimos AR (la operación actual es AR-only).
+  // Ej: 351xxxxxxx o 11xxxxxxxxx → 54 + (móvil: 9) + ...
+  if (!digits.startsWith('54') && (digits.length === 10 || digits.length === 11)) {
+    digits = `54${digits}`;
+  }
   // WhatsApp (Argentina): para móviles suele requerir 54 + 9 + área + número.
   // Muchos leads llegan como 54 + área + número (sin 9), lo que puede fallar con "No LID for user".
   if (digits.startsWith('54') && !digits.startsWith('549') && digits.length >= 11) {
