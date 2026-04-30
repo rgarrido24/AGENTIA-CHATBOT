@@ -151,7 +151,7 @@ async function main() {
   console.log('');
 
   // Estado por clientId
-  const clients = new Map(); // clientId -> { client, ready, state, reconnectAttempt }
+  const clients = new Map(); // clientId -> { client, ready, state, reconnectAttempt, initInFlight, lastInitAt }
   const lastQrByClient = new Map(); // clientId -> { qr, dataUrl }
 
   const bridgePort = Number(getEnv('PORT', process.env.PORT || '10000')) || 10000;
@@ -597,13 +597,41 @@ async function main() {
     const sessionDir = path.join(__dirname, '..', `.wwebjs_auth_${id}`);
     const profileDir = path.join(sessionDir, 'session');
 
-    const state = clients.get(id) || { client: null, ready: false, state: 'boot', reconnectAttempt: 0 };
+    const state = clients.get(id) || { client: null, ready: false, state: 'boot', reconnectAttempt: 0, initInFlight: false, lastInitAt: 0 };
+    // Evita iniciar 2 veces el mismo clientId en paralelo (causa: loops + reintentos).
+    if (state.initInFlight) {
+      const since = Date.now() - (state.lastInitAt || 0);
+      if (since < 60_000) {
+        console.warn(`[Agentia] (${id}) init ya en curso (hace ${Math.round(since / 1000)}s) — omitido`);
+        clients.set(id, state);
+        return;
+      }
+      // Si quedó “clavado” más de 60s, permitimos reintento.
+      console.warn(`[Agentia] (${id}) init parecía clavado — reintentando`);
+    }
     state.state = 'initializing';
     state.ready = false;
+    state.initInFlight = true;
+    state.lastInitAt = Date.now();
+
+    // Si existe un cliente previo, intentamos destruirlo para no dejar Chromium vivo.
+    try {
+      if (state.client && typeof state.client.destroy === 'function') {
+        state.client.destroy().catch?.(() => {});
+      }
+    } catch { /* ignore */ }
 
     const nextClient = new Client({
       authStrategy: new LocalAuth({ dataPath: sessionDir }),
-      puppeteer: { headless: true, args: ['--no-sandbox'] },
+      puppeteer: {
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
+      },
     });
     state.client = nextClient;
     clients.set(id, state);
@@ -632,6 +660,7 @@ async function main() {
       state.state = 'ready';
       state.reconnectAttempt = 0;
       state.ready = true;
+      state.initInFlight = false;
       console.log(`[Agentia] (${id}) WhatsApp conectado correctamente.`);
       const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
       fetch(`${apiBase}/api/whatsapp/qr-store`, {
@@ -650,12 +679,14 @@ async function main() {
     nextClient.on('auth_failure', (msg) => {
       state.state = 'auth_failure';
       state.ready = false;
+      state.initInFlight = false;
       console.error(`[Agentia] (${id}) Error de autenticación:`, msg);
     });
 
     nextClient.on('disconnected', (reason) => {
       state.state = 'disconnected';
       state.ready = false;
+      state.initInFlight = false;
       console.warn(`[Agentia] (${id}) WhatsApp desconectado:`, reason);
       const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
       fetch(`${apiBase}/api/whatsapp/qr-store`, {
@@ -737,6 +768,7 @@ async function main() {
     nextClient.initialize().catch((err) => {
       state.state = 'init_error';
       state.ready = false;
+      state.initInFlight = false;
       console.error(`[Agentia] (${id}) Error al inicializar:`, err);
       // Caso común en Render: restart deja un Chrome vivo con el mismo perfil.
       // Intentamos limpiar y reintentar una vez rápido para evitar loops eternos.
@@ -749,9 +781,12 @@ async function main() {
             return initClientFor(id);
           }
         }
+        // TargetCloseError suele pasar cuando Chromium se cae por recursos; esperamos un poco más.
+        const msg = (err && (err.message || String(err))) || '';
+        const extra = /TargetCloseError|Target closed|Protocol error/i.test(msg) ? 15_000 : 0;
         const delay = Math.min(30_000, 3_000 * Math.max(1, state.reconnectAttempt + 1));
         state.reconnectAttempt += 1;
-        setTimeout(() => initClientFor(id), delay);
+        setTimeout(() => initClientFor(id), delay + extra);
       })().catch(() => {});
     });
   }
