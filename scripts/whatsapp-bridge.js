@@ -115,6 +115,17 @@ function normalizeLeadId(senderId) {
   return digits || raw;
 }
 
+function normalizeWhatsappDigits(input) {
+  const digits = String(input || '').replace(/\D/g, '');
+  if (!digits) return '';
+  // WhatsApp (Argentina): para móviles suele requerir 54 + 9 + área + número.
+  // Muchos leads llegan como 54 + área + número (sin 9), lo que puede fallar con "No LID for user".
+  if (digits.startsWith('54') && !digits.startsWith('549') && digits.length >= 11) {
+    return `549${digits.slice(2)}`;
+  }
+  return digits;
+}
+
 async function callChatApi(clientId, message, senderId, senderName, mediaBase64, mimeType) {
   const webhookUrl = (getEnv('CHATBOT_WEBHOOK_URL', '') || `${getApiBase()}/api/webhook/whatsapp`).replace(/\/$/, '');
   const url = webhookUrl;
@@ -249,7 +260,8 @@ async function main() {
       const sentIds = [];
       for (const a of alerts) {
         try {
-          const chatId = alertNumber.includes('@') ? alertNumber : `${alertNumber.replace(/\D/g, '')}@c.us`;
+          const normalized = normalizeWhatsappDigits(alertNumber);
+          const chatId = alertNumber.includes('@') ? alertNumber : `${normalized}@c.us`;
           const senderLine = a.senderId ? `📱 ${a.senderId.replace(/@.*$/, '')}` : '';
           let msg = '';
           switch (a.reason) {
@@ -308,7 +320,7 @@ async function main() {
       const sentIds = [];
       for (const r of reminders) {
         try {
-          const digits = (r.senderId || '').replace(/\D/g, '');
+          const digits = normalizeWhatsappDigits(r.senderId || '');
           if (!digits || digits.length < 10) {
             console.warn('[Agentia] Recordatorio sin senderId válido, omitiendo:', r._id);
             sentIds.push(r._id); // marcar como enviado para no reintentar
@@ -361,7 +373,8 @@ async function main() {
             continue;
           }
           const raw = (m.senderId && typeof m.senderId === 'string') ? m.senderId.trim() : '';
-          const chatId = raw.includes('@') ? raw : `${raw.replace(/\D/g, '')}@c.us`;
+          const digits = normalizeWhatsappDigits(raw);
+          const chatId = raw.includes('@') ? raw : `${digits}@c.us`;
           if (!chatId || chatId === '@c.us' || chatId.length < 15) {
             const secretBad = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
             await fetch(`${apiBase}/api/chat/outbound/error`, {
