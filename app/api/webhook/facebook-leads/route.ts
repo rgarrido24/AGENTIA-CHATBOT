@@ -245,22 +245,7 @@ async function processZapierLead(data: Record<string, unknown>) {
 
   console.log(`[fb-leads/zapier] Lead insertado: ${leadId}`);
 
-  if (phone) {
-    const firstName = full_name ? full_name.split(' ')[0] : '';
-    const welcomeMsg =
-      `Hola${firstName ? ` ${firstName}` : ''}! 👋 Recibimos tu consulta` +
-      `${campaign_name ? ` desde *${campaign_name}*` : ''}. ` +
-      `En breve un asesor te va a contactar. ¡Gracias por tu interés! 🙏`;
-    await db.collection('outbound_messages').insertOne({
-      senderId:  phone,
-      clientId,
-      leadId,
-      message:   welcomeMsg,
-      createdAt: now,
-    });
-    console.log(`[fb-leads/zapier] Bienvenida encolada para ${phone}`);
-  }
-
+  // NO enviar ningún mensaje al lead. Solo alerta al admin (Luciano).
   await enqueueAdminAlert(db, { leadId, clientId, resellerMatch });
 }
 
@@ -353,21 +338,7 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
         { upsert: true }
       );
 
-      if (phone) {
-        const firstName = full_name ? full_name.split(' ')[0] : '';
-        const welcomeMsg =
-          `Hola${firstName ? ` ${firstName}` : ''}! 👋 Recibimos tu consulta` +
-          `${campaign_name ? ` desde *${campaign_name}*` : ''}. ` +
-          `En breve un asesor te va a contactar. ¡Gracias por tu interés! 🙏`;
-        await db.collection('outbound_messages').insertOne({
-          senderId:  phone,
-          clientId,
-          leadId,
-          message:   welcomeMsg,
-          createdAt: now,
-        });
-      }
-
+      // NO enviar ningún mensaje al lead. Solo alerta al admin (Luciano).
       await enqueueAdminAlert(db, { leadId, clientId, resellerMatch });
 
       console.log(`[fb-leads/meta] Lead guardado: ${leadId} | campaña: ${campaign_name}`);
