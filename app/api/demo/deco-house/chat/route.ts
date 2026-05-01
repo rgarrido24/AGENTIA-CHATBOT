@@ -3,54 +3,52 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 
-const VALENTINA = `Eres Valentina, asistente de cotizaciones de Deco House (empresa de vidrio, aluminio y PVC ubicada en Chile, Región Metropolitana).
+const ELISA = `Eres Elisa, asistente de cotizaciones de Deco House (vidrios, aluminio y PVC, Chile, Región Metropolitana).
+Personalidad: chilena, cercana, natural y profesional. Nunca robótica.
+Objetivo: recopilar todos los datos necesarios en MÁXIMO 5-6 mensajes totales.
 
-PERSONALIDAD: Cercana, directa, chilena auténtica — usas "po", "cachai", "bacán", "al tiro", "súper". Cálida y profesional a la vez. Nunca robótica.
+SALUDO INICIAL (solo si es el primer mensaje del cliente):
+"¡Hola! Soy Elisa, de Deco House. ¿En qué te puedo ayudar hoy? Estamos aquí para darte las mejores soluciones en vidrios, aluminio y PVC. 🏠✨"
 
-OBJETIVO: Recopilar todos los datos necesarios para cotizar, haciendo UNA sola pregunta a la vez. Sé breve (máx. 2-3 líneas por mensaje).
+BLOQUE 1 — Tipo de producto y especificaciones (UN solo mensaje):
+Preguntar qué necesita. Según el producto, pedir en el MISMO mensaje:
+- Medidas (ancho × alto en cm)
+- Material del perfil (aluminio o PVC)
+- Tipo de apertura si aplica (corredera/abatible/fija)
 
-DATOS A RECOPILAR (en orden flexible según la conversación):
-1. Tipo de producto (ventana, mampara de baño, shower door, puerta de cristal, vidrio para proyecto, PVC)
-2. Medidas aproximadas (ancho × alto en cm — si no sabe, ofrecer visita técnica RM)
-3. Piso de instalación
-4. Comuna/sector de instalación (RM)
-5. Dirección completa (calle, número, depto/casa, comuna)
-6. Cantidad de unidades
-7. Tipo de perfil: aluminio o PVC
-8. Color del perfil
-9. Nombre y WhatsApp del cliente
+BLOQUE 2 — Vidrio y color (UN solo mensaje):
+- Tipo de vidrio (crudo/laminado/templado/termopanel/espejo)
+- Color del perfil. Disponibles: blanco, negro, mate/gris plata, titanio, madera
 
-COLORES DISPONIBLES:
-- Aluminio: Blanco, Negro, Gris titanio, Roble dorado
-- PVC: Blanco, Negro, Antracita, Roble dorado, Nogal
+BLOQUE 3 — Instalación y logística (UN solo mensaje):
+- ¿Necesita instalación? NUNCA mencionar que la instalación tiene costo adicional.
+- Si sí: ¿En qué comuna? ¿Primer piso o piso superior?
+  - Si piso superior: ¿hay ascensor donde quepan los vidrios o toca por escaleras? ¿Qué piso exacto?
 
-CATÁLOGO:
-- Ventanas aluminio / PVC
-- Mamparas de baño aluminio
-- Shower Door (herrajes inoxidable)
-- Puertas Protex cristal (1 y 2 hojas)
-- Vidrios especiales: Solar Cool, Bronce, templado, laminado
-- Espejos laminados y biselados
+BLOQUE 4 — Datos de contacto (UN solo mensaje):
+"Para enviarte la cotización súper rápido, ¿podrías compartirme estos datos?
+- Nombre completo
+- Correo electrónico o WhatsApp
+- Dirección (calle y número)
+- Comuna
+- Número de casa/edificio y depto si aplica (donde se realizará la instalación o entrega)"
 
-CUANDO TENGAS TODOS LOS DATOS, emite exactamente este bloque (sin cambiar el formato):
+BLOQUE 5 — CONFIRMACIÓN FINAL:
+Emitir en MAYÚSCULAS con TODOS los datos recopilados.
+No redundar información ya mencionada en la conversación.
+Cerrar con: EN BREVE RECIBIRÁS TU COTIZACIÓN. ¡GRACIAS POR CONTACTAR A DECO HOUSE! 🪟
 
-CONFIRMACIÓN FINAL:
-PRODUCTO: [producto]
-MEDIDAS: [medidas]
-PISO: [piso]
-COMUNA: [comuna]
-DIRECCIÓN: [dirección]
-CANTIDAD: [cantidad]
-PERFIL: [material] - [color]
-CONTACTO: [nombre] — [teléfono]
-
-Luego agrega una frase de cierre cálida, breve, en chileno.`;
+REGLAS CRÍTICAS:
+- NUNCA mencionar costos, precios ni que la instalación tiene valor adicional
+- Nunca repetir datos que el cliente ya dio
+- Tono chileno natural (puedes usar "po", "cachai", "súper", "al tiro")
+- Máximo 5-6 intercambios totales`;
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
+    const body    = await req.json().catch(() => ({}));
     const message = typeof body?.message === 'string' ? body.message.trim() : '';
     const history = Array.isArray(body?.messages) ? (body.messages as Msg[]) : [];
 
@@ -78,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     const { text } = await generateText({
       model: google('gemini-2.5-flash'),
-      system: VALENTINA,
+      system: ELISA,
       messages: coreMessages,
     });
 
@@ -88,7 +86,7 @@ export async function POST(req: NextRequest) {
       try {
         const db = await getMongoDb();
         await db.collection('outbound_messages').insertOne({
-          senderId: '+56954970745',
+          senderId:  '+56954970745',
           clientId:  'deco-house-demo',
           message:   `🚨 Nueva solicitud de cotización — Deco House:\n\n${text}`,
           createdAt: new Date(),
@@ -102,6 +100,24 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Error';
     console.error('[api/demo/deco-house/chat]', e);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
+// ─── DELETE — limpiar sesión de chat de un número (solo clientId: decohouse) ──
+export async function DELETE(req: NextRequest) {
+  try {
+    const senderId = req.nextUrl.searchParams.get('senderId') ?? '';
+    const db = await getMongoDb();
+
+    const filter: Record<string, unknown> = { clientId: 'decohouse' };
+    if (senderId) filter.senderId = senderId;
+
+    const result = await db.collection('chat_sessions').deleteMany(filter);
+    return NextResponse.json({ ok: true, deleted: result.deletedCount });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Error';
+    console.error('[deco-house/chat DELETE]', e);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

@@ -19,6 +19,8 @@ export function DecoHouseBridgePanels({ clientId }: { clientId: string }) {
   const [qr, setQr] = useState<QrJsonPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const [clearMsg, setClearMsg] = useState('');
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -47,12 +49,51 @@ export function DecoHouseBridgePanels({ clientId }: { clientId: string }) {
     return () => clearInterval(t);
   }, [refresh]);
 
+  const clearAllSessions = useCallback(async () => {
+    setClearing(true);
+    setClearMsg('');
+    try {
+      const res = await fetch('/api/demo/deco-house/chat', { method: 'DELETE' });
+      const data = (await res.json().catch(() => ({}))) as { deleted?: number };
+      setClearMsg(`✓ ${data.deleted ?? 0} sesion(es) eliminadas`);
+    } catch {
+      setClearMsg('Error al limpiar sesiones');
+    } finally {
+      setClearing(false);
+    }
+  }, []);
+
   const bridge = status?.bridges?.find((b) => b.clientId === clientId) ?? status?.bridges?.[0];
   const connected = bridge?.connected ?? false;
   const hasQrDoc = bridge?.hasQr ?? false;
 
   return (
-    <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="mt-6 space-y-4">
+      {/* ── Nueva conversación (limpiar sesiones) ── */}
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold">Limpiar sesiones de chat</p>
+            <p className="text-xs text-white/60 mt-1">
+              Borra los historiales de conversación de Elisa (clientId: decohouse) para que los clientes
+              empiecen desde cero. No afecta luciano ni agentia-ventas.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {clearMsg && <p className="text-xs text-emerald-300">{clearMsg}</p>}
+            <button
+              type="button"
+              disabled={clearing}
+              onClick={() => void clearAllSessions()}
+              className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white/80 hover:text-white transition disabled:opacity-40"
+            >
+              {clearing ? 'Limpiando…' : '↺ Nueva conversación (todos)'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -138,6 +179,7 @@ export function DecoHouseBridgePanels({ clientId }: { clientId: string }) {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 }

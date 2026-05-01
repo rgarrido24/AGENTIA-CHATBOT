@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Download, LogOut, Pause, Play, RefreshCw } from 'lucide-react';
+import { Download, LogOut, MessageSquarePlus, Pause, Play, RefreshCw } from 'lucide-react';
 
 type Lead = {
   leadId: string;
@@ -202,6 +202,11 @@ export function DecoHouseClientApp() {
       body: JSON.stringify({ leadId, paused }),
     }).catch(() => {});
     setLeads((prev) => prev.map((l) => (l.leadId === leadId ? { ...l, bot_status: paused ? 'paused' : 'active' } : l)));
+  }, []);
+
+  const resetConversation = useCallback(async (senderId: string) => {
+    const qs = senderId ? `?senderId=${encodeURIComponent(senderId)}` : '';
+    await fetch(`/api/demo/deco-house/chat${qs}`, { method: 'DELETE' }).catch(() => {});
   }, []);
 
   const toggleGlobalPause = useCallback(async (paused: boolean) => {
@@ -415,13 +420,24 @@ export function DecoHouseClientApp() {
                   <div className="rounded-xl border border-white/10 bg-black/20 p-4">
                     <p className="text-xs text-white/60">Bot</p>
                     <p className="text-sm font-semibold mt-1">{(selected.bot_status === 'paused' || selected.assignedTo) ? 'En pausa' : 'Activo'}</p>
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       <button
                         onClick={() => toggleLeadPause(selected.leadId, !(selected.bot_status === 'paused' || selected.assignedTo))}
                         className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:text-white transition inline-flex items-center gap-2"
                       >
                         {(selected.bot_status === 'paused' || selected.assignedTo) ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                         {(selected.bot_status === 'paused' || selected.assignedTo) ? 'Reanudar bot' : 'Pausar bot'}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await resetConversation(selected.senderId ?? '');
+                          await load();
+                        }}
+                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:text-white transition inline-flex items-center gap-2"
+                        title="Borra la sesión de chat — Elisa empezará desde cero con este cliente"
+                      >
+                        <MessageSquarePlus className="h-4 w-4" />
+                        Nueva conversación
                       </button>
                     </div>
                   </div>
