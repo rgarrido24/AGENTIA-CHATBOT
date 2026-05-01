@@ -32,6 +32,10 @@ async function main() {
   const db = dbName ? client.db(dbName) : client.db();
 
   const now = new Date();
+  const FORCE_OVERWRITE =
+    String(process.env.AGENTIA_FORCE_SEED_OVERWRITE || "")
+      .trim()
+      .toLowerCase() === "true";
 
   // Edita estos textos a tu gusto. (Son ejemplos seguros para empezar.)
   const profiles = [
@@ -204,13 +208,26 @@ async function main() {
     await col.updateOne(
       { clientId: p.clientId },
       {
-        $set: {
-          clientId: p.clientId,
-          model: p.model,
-          systemPrompt: p.systemPrompt,
-          knowledge: p.knowledge,
-          updatedAt: now
-        }
+        ...(FORCE_OVERWRITE
+          ? {
+              $set: {
+                clientId: p.clientId,
+                model: p.model,
+                systemPrompt: p.systemPrompt,
+                knowledge: p.knowledge,
+                updatedAt: now,
+              },
+            }
+          : {
+              // Por seguridad: NO pisar configs reales (como DecoHouse) al correr seeds.
+              $setOnInsert: {
+                clientId: p.clientId,
+                model: p.model,
+                systemPrompt: p.systemPrompt,
+                knowledge: p.knowledge,
+              },
+              $set: { updatedAt: now },
+            })
       },
       { upsert: true }
     );

@@ -268,8 +268,18 @@ async function main() {
 
   async function pollAndSendAlerts() {
     if (!ENABLE_ALERTS) return;
-    const client = getAnyReadyClient();
-    if (!client) return;
+    // Alertas: SIEMPRE deben salir del número correcto (no “prestar” otro clientId).
+    // Por defecto, usamos agentia-ventas (operación con Luciano).
+    const alertSenderClientId =
+      String(getEnv('AGENTIA_ALERTS_SENDER_CLIENT_ID', '') || process.env.AGENTIA_ALERTS_SENDER_CLIENT_ID || 'agentia-ventas')
+        .trim()
+        .toLowerCase();
+    const client = getStrictReadyClientForClientId(alertSenderClientId);
+    if (!client) {
+      // Importante: si el bridge está conectado pero no “ready”, aquí se vería.
+      console.warn(`[Agentia] Alertas: bridge no listo para clientId='${alertSenderClientId}'`);
+      return;
+    }
     const alertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER;
     if (!alertNumber) {
       console.warn('[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas desactivadas.');
@@ -281,6 +291,11 @@ async function main() {
       const res = await fetch(`${apiBase}/api/alerts/pending`, {
         headers: secret ? { Authorization: `Bearer ${secret}` } : {},
       });
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        console.error('[Agentia] Alertas: /api/alerts/pending fallo', res.status, body.slice(0, 300));
+        return;
+      }
       const data = await res.json().catch(() => ({}));
       const alerts = data.alerts || [];
       const sentIds = [];
@@ -315,11 +330,15 @@ async function main() {
       }
       if (sentIds.length > 0) {
         const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-        await fetch(`${apiBase}/api/alerts/sent`, {
+        const sentRes = await fetch(`${apiBase}/api/alerts/sent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}) },
           body: JSON.stringify({ ids: sentIds }),
         });
+        if (!sentRes.ok) {
+          const body = await sentRes.text().catch(() => '');
+          console.error('[Agentia] Alertas: /api/alerts/sent fallo', sentRes.status, body.slice(0, 300));
+        }
       }
     } catch (e) {
       console.error('[Agentia] Error en poll alerts:', e.message);
