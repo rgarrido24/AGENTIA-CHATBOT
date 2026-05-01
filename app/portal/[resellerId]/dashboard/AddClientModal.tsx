@@ -19,12 +19,13 @@ export default function AddClientModal({ resellerId }: { resellerId: string }) {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
 
-  const [nombre,      setNombre]      = useState('');
-  const [negocio,     setNegocio]     = useState('');
-  const [telefono,    setTelefono]    = useState('');
-  const [email,       setEmail]       = useState('');
-  const [alertNumber, setAlertNumber] = useState('');
-  const [forms,       setForms]       = useState<Formulario[]>([{ formId: '', formName: '' }]);
+  const [nombre,         setNombre]         = useState('');
+  const [negocio,        setNegocio]        = useState('');
+  const [telefono,       setTelefono]       = useState('');
+  const [email,          setEmail]          = useState('');
+  const [alertNumber,    setAlertNumber]    = useState('');
+  const [forms,          setForms]          = useState<Formulario[]>([{ formId: '', formName: '' }]);
+  const [tempPassword,   setTempPassword]   = useState('');
 
   function addForm() { setForms((f) => [...f, { formId: '', formName: '' }]); }
   function removeForm(i: number) { setForms((f) => f.filter((_, idx) => idx !== i)); }
@@ -34,7 +35,7 @@ export default function AddClientModal({ resellerId }: { resellerId: string }) {
 
   function reset() {
     setNombre(''); setNegocio(''); setTelefono(''); setEmail(''); setAlertNumber('');
-    setForms([{ formId: '', formName: '' }]); setError('');
+    setForms([{ formId: '', formName: '' }]); setError(''); setTempPassword('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -52,9 +53,8 @@ export default function AddClientModal({ resellerId }: { resellerId: string }) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Error al guardar'); return; }
-      reset();
-      setOpen(false);
-      router.refresh();
+      if (data.temporalPassword) setTempPassword(data.temporalPassword);
+      else { reset(); setOpen(false); router.refresh(); }
     } catch {
       setError('Error de conexión');
     } finally {
@@ -93,6 +93,38 @@ export default function AddClientModal({ resellerId }: { resellerId: string }) {
               <button onClick={() => { setOpen(false); reset(); }} style={{ color: '#444', fontSize: 18 }}>✕</button>
             </div>
 
+            {/* Password reveal screen — shown after successful creation */}
+            {tempPassword && (
+              <div className="px-5 py-6 text-center space-y-4">
+                <div className="text-3xl">🔑</div>
+                <p className="text-sm font-bold text-white">Cliente creado</p>
+                <p className="text-xs" style={{ color: '#666' }}>
+                  Contraseña temporal generada. Compártela con el cliente.
+                </p>
+                <div
+                  className="rounded-xl px-4 py-3 text-center font-mono text-lg font-bold tracking-widest select-all"
+                  style={{ background: '#0d1f00', border: '1px solid #CCFF0044', color: '#CCFF00' }}
+                >
+                  {tempPassword}
+                </div>
+                <p className="text-xs" style={{ color: '#445' }}>
+                  El cliente ingresa en{' '}
+                  <span style={{ color: '#778' }}>
+                    /portal/{resellerId}/cliente/{slugify(nombre)}
+                  </span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { reset(); setOpen(false); router.refresh(); }}
+                  className="w-full py-2.5 rounded-xl text-sm font-bold"
+                  style={{ background: '#CCFF00', color: '#000' }}
+                >
+                  Listo
+                </button>
+              </div>
+            )}
+
+            {!tempPassword && (
             <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
               <div>
                 <label style={labelStyle}>Nombre del cliente *</label>
@@ -178,6 +210,7 @@ export default function AddClientModal({ resellerId }: { resellerId: string }) {
                 </button>
               </div>
             </form>
+            )}
           </div>
         </div>
       )}

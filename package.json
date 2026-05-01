@@ -13,6 +13,7 @@
     "seed": "node scripts/seed-business-configs.js",
     "update:decohouse": "node scripts/update-decohouse-config.js",
     "cancel:outbound": "node scripts/cancel-pending-outbound.js",
+    "set:client-pw": "node scripts/set-client-password.js",
     "purge:knowledge": "node scripts/purge-knowledge.js",
     "test:comment": "node scripts/test-comment-webhook.js",
     "debug:export": "node scripts/generate-agentia-debug.js",

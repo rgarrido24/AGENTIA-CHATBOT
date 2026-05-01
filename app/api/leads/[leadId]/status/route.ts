@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 import { verifyResellerCookie, COOKIE_NAME } from '@/lib/reseller-auth';
+import { verifyAnyClientCookie, CLIENT_COOKIE_NAME } from '@/lib/client-auth';
 
 const VALID_STATUS = ['nuevo', 'contactado', 'interesado', 'cerrado', 'no_contesto'] as const;
 type StatusSeg = typeof VALID_STATUS[number];
@@ -9,10 +10,16 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { leadId: string } }
 ) {
-  const cookieValue = req.cookies.get(COOKIE_NAME)?.value;
-  const reseller    = await verifyResellerCookie(cookieValue);
+  const { leadId } = params;
+  const db = await getMongoDb();
+
+  const reseller = await verifyResellerCookie(req.cookies.get(COOKIE_NAME)?.value);
   if (!reseller) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const clientAuth = await verifyAnyClientCookie(req.cookies.get(CLIENT_COOKIE_NAME)?.value);
+    if (!clientAuth) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    // Verify lead belongs to this client
+    const lead = await db.collection('leads').findOne({ leadId, resellerId: clientAuth.resellerId, clientSlug: clientAuth.clientSlug });
+    if (!lead) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
   const body   = await req.json().catch(() => ({}));
@@ -26,9 +33,6 @@ export async function PATCH(
       { status: 400 }
     );
   }
-
-  const { leadId } = params;
-  const db         = await getMongoDb();
   const result     = await db.collection('leads').updateOne(
     { leadId },
     { $set: { status_seguimiento: status, updatedAt: new Date() } }

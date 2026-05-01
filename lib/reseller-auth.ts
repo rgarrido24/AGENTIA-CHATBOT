@@ -40,10 +40,11 @@ export interface ResellerClient {
     plataforma:  string;
     activo:      boolean;
   }>;
-  alertNumber?: string;
-  status:       'activo' | 'suspendido';
-  legacyQuery?: Record<string, unknown>;
-  createdAt:    Date;
+  alertNumber?:        string;
+  clientPasswordHash?: string;
+  status:              'activo' | 'suspendido';
+  legacyQuery?:        Record<string, unknown>;
+  createdAt:           Date;
 }
 
 // ─── Hashing ───────────────────────────────────────────────────────────────

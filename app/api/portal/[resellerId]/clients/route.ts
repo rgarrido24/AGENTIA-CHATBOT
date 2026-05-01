@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 import { verifyResellerCookie, COOKIE_NAME, type ResellerClient } from '@/lib/reseller-auth';
+import { hashClientPassword, generateTempPassword } from '@/lib/client-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -96,6 +97,9 @@ export async function POST(
     return NextResponse.json({ error: 'Ya existe un cliente con ese nombre' }, { status: 409 });
   }
 
+  const tempPassword       = generateTempPassword(10);
+  const clientPasswordHash = hashClientPassword(tempPassword);
+
   const now = new Date();
   await db.collection('leads').insertOne({
     _collection_type: 'reseller_client',
@@ -106,6 +110,7 @@ export async function POST(
     ...(telefono    ? { telefono }    : {}),
     ...(email       ? { email }       : {}),
     ...(alertNumber ? { alertNumber } : {}),
+    clientPasswordHash,
     formularios: formularios
       .filter((f: { formId?: string }) => f.formId?.trim())
       .map((f: { formId: string; formName?: string }) => ({
@@ -119,5 +124,5 @@ export async function POST(
     updatedAt: now,
   });
 
-  return NextResponse.json({ ok: true, clientSlug });
+  return NextResponse.json({ ok: true, clientSlug, temporalPassword: tempPassword });
 }

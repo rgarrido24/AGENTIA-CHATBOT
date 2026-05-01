@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 import { verifyResellerCookie, COOKIE_NAME, type ResellerClient } from '@/lib/reseller-auth';
+import { verifyClientCookie, CLIENT_COOKIE_NAME } from '@/lib/client-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,10 +10,17 @@ export async function GET(
   { params }: { params: { resellerId: string; clientSlug: string } }
 ) {
   const { resellerId, clientSlug } = params;
-  const cookieValue = req.cookies.get(COOKIE_NAME)?.value;
-  const reseller = await verifyResellerCookie(cookieValue);
-  if (!reseller || reseller.resellerId !== resellerId) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+  const resellerCookie = req.cookies.get(COOKIE_NAME)?.value;
+  const reseller = await verifyResellerCookie(resellerCookie);
+  const isResellerAuth = reseller && reseller.resellerId === resellerId;
+
+  if (!isResellerAuth) {
+    const clientCookie = req.cookies.get(CLIENT_COOKIE_NAME)?.value;
+    const isClientAuth = await verifyClientCookie(clientCookie, resellerId, clientSlug);
+    if (!isClientAuth) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
   }
 
   const db     = await getMongoDb();
