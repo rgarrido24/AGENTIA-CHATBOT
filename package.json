@@ -11,6 +11,7 @@
     "whatsapp:reset": "node scripts/whatsapp-reset-session.js",
     "whatsapp:kill-browser": "node scripts/whatsapp-kill-browser.js",
     "seed": "node scripts/seed-business-configs.js",
+    "update:decohouse": "node scripts/update-decohouse-config.js",
     "purge:knowledge": "node scripts/purge-knowledge.js",
     "test:comment": "node scripts/test-comment-webhook.js",
     "debug:export": "node scripts/generate-agentia-debug.js",
