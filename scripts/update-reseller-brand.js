@@ -1,7 +1,6 @@
 /**
- * Update a reseller's brandLogo and brandName in MongoDB.
- * Usage: node scripts/update-reseller-brand.js <resellerId> <brandLogo> <brandName>
- * Example: MONGODB_URI=<uri> node scripts/update-reseller-brand.js luciano '/luciano-logo.png' 'Luciano Ads Mánager'
+ * One-off: set brandLogo, brandName, brandColor for Luciano in colección leads.
+ * Run: MONGODB_URI=<uri> npm run update:reseller-brand
  */
 const fs   = require('fs');
 const path = require('path');
@@ -16,12 +15,6 @@ function getEnvValue(text, key) {
 }
 
 async function main() {
-  const [,, resellerId, brandLogo, brandName] = process.argv;
-  if (!resellerId || !brandLogo || !brandName) {
-    console.error('Usage: node scripts/update-reseller-brand.js <resellerId> <brandLogo> <brandName>');
-    process.exit(1);
-  }
-
   const root    = path.join(__dirname, '..');
   const readEnv = (f) => { const p = path.join(root, f); return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : ''; };
   const uri     = process.env.MONGODB_URI || getEnvValue(readEnv('.env.local'), 'MONGODB_URI') || getEnvValue(readEnv('.env'), 'MONGODB_URI');
@@ -31,18 +24,22 @@ async function main() {
   const client = new MongoClient(uri, { maxPoolSize: 3, serverSelectionTimeoutMS: 8000 });
   await client.connect();
   const db  = dbName ? client.db(dbName) : client.db();
-  const col = db.collection('leads');
 
-  const result = await col.updateOne(
-    { _collection_type: 'reseller', resellerId },
-    { $set: { brandLogo, brandName, updatedAt: new Date() } }
+  const result = await db.collection('leads').updateOne(
+    { _collection_type: 'reseller', resellerId: 'luciano' },
+    {
+      $set: {
+        brandLogo:  '/luciano-logo.png',
+        brandName:  'Luciano Ads Mánager',
+        brandColor: '#CCFF00',
+        updatedAt:  new Date(),
+      },
+    }
   );
 
   console.log(JSON.stringify({
     ok:       true,
-    resellerId,
-    brandLogo,
-    brandName,
+    resellerId: 'luciano',
     matched:  result.matchedCount,
     modified: result.modifiedCount,
   }, null, 2));
