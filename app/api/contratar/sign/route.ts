@@ -6,11 +6,23 @@ const PAYMENT_LINKS: Record<string, string | undefined> = {
   decohouse: process.env.STRIPE_PAYMENT_LINK_DECOHOUSE,
 };
 
+const ALLOWED_DOMAINS = ['agentia.software', 'localhost:3000', 'localhost:3010'];
+
 export async function POST(req: NextRequest) {
+  // Domain verification
+  const host = req.headers.get('host') ?? '';
+  if (!ALLOWED_DOMAINS.some((d) => host.includes(d))) {
+    return NextResponse.json({ error: 'Dominio no autorizado' }, { status: 403 });
+  }
+
   try {
-    const body       = await req.json().catch(() => ({}));
-    const clientId   = typeof body.clientId   === 'string' ? body.clientId.trim()   : '';
-    const signedName = typeof body.signedName === 'string' ? body.signedName.trim() : '';
+    const body              = await req.json().catch(() => ({}));
+    const clientId          = typeof body.clientId   === 'string' ? body.clientId.trim()   : '';
+    const signedName        = typeof body.signedName === 'string' ? body.signedName.trim() : '';
+    const proportionalAmount =
+      typeof body.proportionalAmount === 'number' ? body.proportionalAmount : undefined;
+    const firstFullBillingDate =
+      typeof body.firstFullBillingIso === 'string' ? new Date(body.firstFullBillingIso) : undefined;
 
     if (!clientId || !signedName) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
@@ -34,8 +46,10 @@ export async function POST(req: NextRequest) {
       clientId,
       signedName,
       ip,
-      userAgent: req.headers.get('user-agent') ?? '',
-      signedAt:  new Date(),
+      userAgent:            req.headers.get('user-agent') ?? '',
+      signedAt:             new Date(),
+      ...(proportionalAmount  !== undefined && { proportionalAmount }),
+      ...(firstFullBillingDate !== undefined && { firstFullBillingDate }),
     });
 
     return NextResponse.json({ paymentLink });

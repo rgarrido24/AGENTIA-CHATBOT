@@ -51,6 +51,7 @@ const BOT_UA_PATTERNS = [
   /curl\//i, /wget\//i, /python-requests/i, /go-http-client/i,
   /java\/\d/i, /scrapy/i, /mechanize/i, /nikto/i, /nmap/i,
   /masscan/i, /zgrab/i, /sqlmap/i, /hydra/i, /libwww-perl/i,
+  /python-requests|scrapy|wget|libwww|zgrab|masscan|nuclei/i,
 ];
 // SEO crawlers we WANT to allow
 const ALLOWED_BOTS = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp/i;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const TERMS = `TÉRMINOS Y CONDICIONES DE SERVICIO — AGENTIA
 
@@ -18,6 +18,8 @@ Agentia garantiza una disponibilidad del 99% mensual del servicio. El mantenimie
 
 5. USO ACEPTABLE
 El cliente es el único responsable del contenido de las conversaciones gestionadas a través de su chatbot. Queda expresamente prohibido el uso del servicio para actividades ilegales, envío masivo de mensajes no solicitados (spam), suplantación de identidad, o cualquier práctica que viole los Términos de Uso de WhatsApp Business o la legislación vigente.
+
+Uso de Marca: El Cliente autoriza a Agentia a utilizar su nombre comercial y/o logo únicamente como referencia de portafolio de clientes, salvo instrucción en contrario por escrito.
 
 6. CONFIDENCIALIDAD Y PROTECCIÓN DE DATOS
 Agentia no comparte información de los clientes ni de sus usuarios finales con terceros sin consentimiento explícito. Los datos de conversaciones se almacenan de forma segura en servidores cifrados. El cliente puede solicitar la exportación o eliminación total de sus datos en cualquier momento mediante solicitud formal a soporte@agentia.io.
@@ -41,13 +43,37 @@ type Props = {
   clientName: string;
   planName: string;
   price: string;
+  proportionalAmount?: number;
+  firstFullBillingIso?: string;
 };
 
-export function ContratoForm({ clientId, clientName, planName, price }: Props) {
+export function ContratoForm({
+  clientId,
+  clientName,
+  planName,
+  price,
+  proportionalAmount,
+  firstFullBillingIso,
+}: Props) {
   const [signedName, setSignedName] = useState('');
   const [accepted, setAccepted]     = useState(false);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
+
+  // Anti-debugging guard (production only)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') {
+      const interval = setInterval(() => {
+        const start = performance.now();
+        // eslint-disable-next-line no-debugger
+        debugger;
+        if (performance.now() - start > 100) {
+          document.body.innerHTML = '';
+        }
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, []);
 
   const canSubmit = accepted && signedName.trim().length >= 3 && !loading;
 
@@ -57,10 +83,15 @@ export function ContratoForm({ clientId, clientName, planName, price }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res  = await fetch('/api/contratar/sign', {
+      const res = await fetch('/api/contratar/sign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId, signedName: signedName.trim() }),
+        body: JSON.stringify({
+          clientId,
+          signedName: signedName.trim(),
+          proportionalAmount,
+          firstFullBillingIso,
+        }),
       });
       const data = (await res.json().catch(() => ({}))) as { paymentLink?: string; error?: string };
       if (!res.ok || !data.paymentLink) {
@@ -151,15 +182,14 @@ export function ContratoForm({ clientId, clientName, planName, price }: Props) {
       <button
         type="submit"
         disabled={!canSubmit}
-        className="w-full rounded-xl py-4 text-sm font-bold transition-opacity disabled:opacity-40"
+        className="w-full rounded-xl py-4 text-xs font-bold leading-snug text-center transition-opacity disabled:opacity-40"
         style={{ background: '#CCFF00', color: '#000' }}
       >
-        {loading ? 'Procesando…' : 'Firmar y proceder al pago →'}
+        {loading
+          ? 'Procesando…'
+          : 'Al hacer clic en Contratar y realizar el pago, acepto los Términos, Condiciones y Aviso de Privacidad aquí expuestos'}
       </button>
 
-      <p className="text-center text-xs" style={{ color: '#333' }}>
-        Al firmar, confirmás que leíste y aceptaste los términos completos.
-      </p>
     </form>
   );
 }

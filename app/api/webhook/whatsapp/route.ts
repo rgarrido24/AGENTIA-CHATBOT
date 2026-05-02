@@ -193,6 +193,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, skipped: true });
     }
 
+    // Kill-switch: si el cliente está inactivo en business_configs, responder 200 silencioso
+    {
+      const db  = await getMongoDb();
+      const cfg = await db.collection('business_configs').findOne(
+        { clientId },
+        { projection: { status: 1 } },
+      );
+      if (cfg?.status && cfg.status !== 'activo') {
+        console.log('[webhook/whatsapp] business_config inactivo — bot desactivado para clientId:', clientId);
+        return NextResponse.json({ ok: true, botInactive: true });
+      }
+    }
+
     // Persistir lead de agentia-ventas antes del chat (seguro ante fallos del chat API)
     if (clientId === 'agentia-ventas') {
       await ensureAgentiaVentasLead({ leadId, senderId: leadId, senderName, mensaje });
