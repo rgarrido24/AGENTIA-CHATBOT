@@ -142,7 +142,7 @@ export function ContratoForm({
           type="checkbox"
           checked={accepted}
           onChange={(e) => setAccepted(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[#CCFF00]"
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-green-500"
         />
         <span className="text-sm" style={{ color: '#aaa' }}>
           Acepto los términos y condiciones del servicio Agentia
@@ -165,7 +165,7 @@ export function ContratoForm({
           onChange={(e) => setSignedName(e.target.value)}
           placeholder="Ingresá tu nombre completo"
           autoComplete="name"
-          className="w-full rounded-xl border px-4 py-3 text-sm text-white placeholder-white/30 bg-transparent focus:outline-none focus:ring-2 focus:ring-[#CCFF00]/40"
+          className="w-full rounded-xl border px-4 py-3 text-sm text-white placeholder-white/30 bg-transparent focus:outline-none focus:ring-2 focus:ring-green-500/40"
           style={{ background: '#111', borderColor: '#2a2a2a' }}
         />
         <p className="text-xs mt-1.5" style={{ color: '#444' }}>
@@ -183,7 +183,7 @@ export function ContratoForm({
         type="submit"
         disabled={!canSubmit}
         className="w-full rounded-xl py-4 text-xs font-bold leading-snug text-center transition-opacity disabled:opacity-40"
-        style={{ background: '#CCFF00', color: '#000' }}
+        style={{ background: '#22c55e', color: '#000' }}
       >
         {loading
           ? 'Procesando…'

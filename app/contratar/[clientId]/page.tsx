@@ -70,14 +70,19 @@ export default function ContratoPage({ params }: { params: { clientId: string } 
       <div className="w-full max-w-xl space-y-6">
 
         {/* Header */}
-        <div className="text-center space-y-2">
-          <p className="text-xs font-semibold tracking-widest" style={{ color: '#CCFF00' }}>
-            AGENTIA
-          </p>
-          <h1 className="text-2xl font-extrabold text-white">Contrato de servicio</h1>
-          <p className="text-sm" style={{ color: '#666' }}>
-            Revisá los términos y firmá para proceder al pago
-          </p>
+        <div className="text-center space-y-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-agentia-2026.png"
+            alt="Agentia"
+            className="h-12 w-12 rounded-2xl mx-auto object-contain"
+          />
+          <div>
+            <h1 className="text-2xl font-extrabold text-white">Contrato de servicio</h1>
+            <p className="text-sm mt-1" style={{ color: '#666' }}>
+              Revisá los términos y firmá para proceder al pago
+            </p>
+          </div>
         </div>
 
         {/* Plan summary */}
@@ -93,14 +98,14 @@ export default function ContratoPage({ params }: { params: { clientId: string } 
               PLAN CONTRATADO
             </p>
             <p className="text-xl font-bold text-white">{plan.planName}</p>
-            <p className="text-2xl font-extrabold mt-1" style={{ color: '#CCFF00' }}>
+            <p className="text-2xl font-extrabold mt-1" style={{ color: '#22c55e' }}>
               {plan.price}
             </p>
           </div>
           <ul className="space-y-1.5">
             {plan.features.map((f) => (
               <li key={f} className="flex items-center gap-2 text-sm" style={{ color: '#aaa' }}>
-                <span style={{ color: '#CCFF00' }}>✓</span> {f}
+                <span style={{ color: '#22c55e' }}>✓</span> {f}
               </li>
             ))}
           </ul>
@@ -133,7 +138,7 @@ export default function ContratoPage({ params }: { params: { clientId: string } 
                   <p className="text-xs" style={{ color: '#777' }}>Suscripción mensual desde</p>
                   <p className="text-sm font-semibold text-white mt-0.5">{fmt(firstFullBilling)}</p>
                 </div>
-                <p className="text-sm font-bold shrink-0" style={{ color: '#CCFF00' }}>
+                <p className="text-sm font-bold shrink-0" style={{ color: '#22c55e' }}>
                   ${plan.priceMonthly} USD/mes
                 </p>
               </div>
