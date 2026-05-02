@@ -7,10 +7,14 @@ export default function ClientLogin({
   resellerId,
   clientSlug,
   clientNombre,
+  brandLogo,
+  brandName,
 }: {
-  resellerId:   string;
-  clientSlug:   string;
+  resellerId:    string;
+  clientSlug:    string;
   clientNombre?: string;
+  brandLogo?:    string;
+  brandName?:    string;
 }) {
   const router   = useRouter();
   const [pw,     setPw]     = useState('');
@@ -50,12 +54,26 @@ export default function ClientLogin({
         style={{ background: '#0d0d1a', borderColor: '#1c1c2e' }}
       >
         <div className="text-center mb-7">
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl mx-auto mb-4"
-            style={{ background: '#0d1f00', border: '1px solid #CCFF0044' }}
-          >
-            🔐
-          </div>
+          {brandLogo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={brandLogo}
+              alt={brandName ?? 'Logo'}
+              className="h-12 w-auto mx-auto mb-4 rounded-xl object-contain"
+            />
+          ) : (
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl mx-auto mb-4"
+              style={{ background: '#0d1f00', border: '1px solid #CCFF0044' }}
+            >
+              🔐
+            </div>
+          )}
+          {brandName && (
+            <p className="text-xs font-semibold tracking-wide mb-1" style={{ color: '#CCFF00' }}>
+              {brandName}
+            </p>
+          )}
           <p className="text-white font-bold text-lg">
             {clientNombre ?? 'Portal de leads'}
           </p>

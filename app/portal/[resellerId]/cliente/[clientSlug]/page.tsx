@@ -30,14 +30,17 @@ export default async function ClientPage({
 
   // Not authenticated → show login
   let clientNombre: string | undefined;
+  let brandLogo: string | undefined;
+  let brandName: string | undefined;
   try {
-    const db  = await getMongoDb();
-    const doc = await db.collection('leads').findOne({
-      _collection_type: 'reseller_client',
-      resellerId,
-      clientSlug,
-    });
-    clientNombre = doc?.nombre ? String(doc.nombre) : undefined;
+    const db = await getMongoDb();
+    const [clientDoc, resellerDoc] = await Promise.all([
+      db.collection('leads').findOne({ _collection_type: 'reseller_client', resellerId, clientSlug }),
+      db.collection('leads').findOne({ _collection_type: 'reseller', resellerId }),
+    ]);
+    clientNombre = clientDoc?.nombre ? String(clientDoc.nombre) : undefined;
+    brandLogo    = resellerDoc?.brandLogo ? String(resellerDoc.brandLogo) : undefined;
+    brandName    = resellerDoc?.brandName ? String(resellerDoc.brandName) : undefined;
   } catch { /* ignore */ }
 
   return (
@@ -45,6 +48,8 @@ export default async function ClientPage({
       resellerId={resellerId}
       clientSlug={clientSlug}
       clientNombre={clientNombre}
+      brandLogo={brandLogo}
+      brandName={brandName}
     />
   );
 }
