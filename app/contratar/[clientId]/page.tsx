@@ -5,7 +5,8 @@ type PlanConfig = {
   clientName: string;
   planName: string;
   price: string;
-  priceMonthly?: number;
+  priceMonthly: number;
+  setupFee: number;
   features: string[];
 };
 
@@ -15,6 +16,7 @@ const PLANS: Record<string, PlanConfig> = {
     planName: 'Plan Profesional',
     price: '$20 USD / mes',
     priceMonthly: 20,
+    setupFee: 20,
     features: [
       'Chatbot IA para WhatsApp',
       'Gestión de leads y conversaciones',
@@ -26,7 +28,9 @@ const PLANS: Record<string, PlanConfig> = {
   decohouse: {
     clientName: 'Deco House',
     planName: 'Plan acordado',
-    price: 'Precio acordado',
+    price: '$30 USD / mes',
+    priceMonthly: 30,
+    setupFee: 30,
     features: [
       'Chatbot IA para WhatsApp (Elisa)',
       'Asistente de cotizaciones automático',
@@ -55,10 +59,12 @@ export default function ContratoPage({ params }: { params: { clientId: string } 
   const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   const firstFullBilling = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
+  // Proporcional = días restantes después de hoy / días del mes × mensualidad
   const proportionalAmount =
-    plan.priceMonthly != null
-      ? Math.round((dayOfMonth / daysInMonth) * plan.priceMonthly * 100) / 100
-      : null;
+    Math.round(((daysInMonth - dayOfMonth) / daysInMonth) * plan.priceMonthly * 100) / 100;
+
+  const totalToday =
+    Math.round((plan.setupFee + proportionalAmount) * 100) / 100;
 
   const firstFullBillingIso = firstFullBilling.toISOString();
 
@@ -91,10 +97,7 @@ export default function ContratoPage({ params }: { params: { clientId: string } 
           style={{ background: '#0d0d0d', borderColor: '#1e1e1e' }}
         >
           <div>
-            <p
-              className="text-xs font-semibold tracking-widest mb-2"
-              style={{ color: '#555' }}
-            >
+            <p className="text-xs font-semibold tracking-widest mb-2" style={{ color: '#555' }}>
               PLAN CONTRATADO
             </p>
             <p className="text-xl font-bold text-white">{plan.planName}</p>
@@ -120,41 +123,44 @@ export default function ContratoPage({ params }: { params: { clientId: string } 
             FECHAS Y COBROS
           </p>
 
-          {proportionalAmount != null ? (
-            <>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs" style={{ color: '#777' }}>Cobro hoy (proporcional)</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#555' }}>
-                    {fmtShort(today)} al {fmtShort(lastDayOfMonth)}
-                  </p>
-                </div>
-                <p className="text-sm font-bold text-white shrink-0">
-                  ${proportionalAmount.toFixed(2)} USD
-                </p>
-              </div>
-              <div className="border-t pt-3 flex items-start justify-between gap-3" style={{ borderColor: '#222' }}>
-                <div>
-                  <p className="text-xs" style={{ color: '#777' }}>Suscripción mensual desde</p>
-                  <p className="text-sm font-semibold text-white mt-0.5">{fmt(firstFullBilling)}</p>
-                </div>
-                <p className="text-sm font-bold shrink-0" style={{ color: '#22c55e' }}>
-                  ${plan.priceMonthly} USD/mes
-                </p>
-              </div>
-            </>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs mb-1" style={{ color: '#555' }}>FECHA DE INICIO</p>
-                <p className="text-sm text-white">{fmt(today)}</p>
-              </div>
-              <div>
-                <p className="text-xs mb-1" style={{ color: '#555' }}>PRIMER COBRO COMPLETO</p>
-                <p className="text-sm text-white">{fmt(firstFullBilling)}</p>
-              </div>
+          {/* Cobro hoy: setupFee + proporcional */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold" style={{ color: '#777' }}>COBRO HOY</p>
+
+            <div className="flex items-center justify-between text-sm">
+              <span style={{ color: '#aaa' }}>Implementación (pago único)</span>
+              <span className="text-white font-medium">${plan.setupFee.toFixed(2)} USD</span>
             </div>
-          )}
+
+            <div className="flex items-center justify-between text-sm">
+              <span style={{ color: '#aaa' }}>
+                Proporcional {fmtShort(today)}–{fmtShort(lastDayOfMonth)}
+              </span>
+              <span className="text-white font-medium">${proportionalAmount.toFixed(2)} USD</span>
+            </div>
+
+            <div
+              className="flex items-center justify-between text-sm font-bold border-t pt-2"
+              style={{ borderColor: '#333' }}
+            >
+              <span style={{ color: '#22c55e' }}>Total hoy</span>
+              <span style={{ color: '#22c55e' }}>${totalToday.toFixed(2)} USD</span>
+            </div>
+          </div>
+
+          {/* Suscripción mensual */}
+          <div
+            className="flex items-center justify-between pt-3 border-t"
+            style={{ borderColor: '#222' }}
+          >
+            <div>
+              <p className="text-xs" style={{ color: '#777' }}>Suscripción mensual desde</p>
+              <p className="text-sm font-semibold text-white mt-0.5">{fmt(firstFullBilling)}</p>
+            </div>
+            <p className="text-sm font-bold shrink-0" style={{ color: '#22c55e' }}>
+              ${plan.priceMonthly} USD/mes
+            </p>
+          </div>
         </div>
 
         {/* Interactive form (client component) */}
@@ -163,7 +169,9 @@ export default function ContratoPage({ params }: { params: { clientId: string } 
           clientName={plan.clientName}
           planName={plan.planName}
           price={plan.price}
-          proportionalAmount={proportionalAmount ?? undefined}
+          setupFee={plan.setupFee}
+          proportionalAmount={proportionalAmount}
+          totalToday={totalToday}
           firstFullBillingIso={firstFullBillingIso}
         />
 

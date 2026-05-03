@@ -43,7 +43,9 @@ type Props = {
   clientName: string;
   planName: string;
   price: string;
+  setupFee?: number;
   proportionalAmount?: number;
+  totalToday?: number;
   firstFullBillingIso?: string;
 };
 
@@ -52,7 +54,9 @@ export function ContratoForm({
   clientName,
   planName,
   price,
+  setupFee,
   proportionalAmount,
+  totalToday,
   firstFullBillingIso,
 }: Props) {
   const [signedName, setSignedName] = useState('');
@@ -89,7 +93,9 @@ export function ContratoForm({
         body: JSON.stringify({
           clientId,
           signedName: signedName.trim(),
+          setupFee,
           proportionalAmount,
+          totalToday,
           firstFullBillingIso,
         }),
       });
