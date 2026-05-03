@@ -44,9 +44,8 @@ type Props = {
   planName: string;
   price: string;
   setupFee?: number;
-  proportionalAmount?: number;
   totalToday?: number;
-  firstFullBillingIso?: string;
+  renewalIso?: string;
 };
 
 export function ContratoForm({
@@ -55,9 +54,8 @@ export function ContratoForm({
   planName,
   price,
   setupFee,
-  proportionalAmount,
   totalToday,
-  firstFullBillingIso,
+  renewalIso,
 }: Props) {
   const [signedName, setSignedName] = useState('');
   const [accepted, setAccepted]     = useState(false);
@@ -94,9 +92,8 @@ export function ContratoForm({
           clientId,
           signedName: signedName.trim(),
           setupFee,
-          proportionalAmount,
           totalToday,
-          firstFullBillingIso,
+          renewalIso,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { paymentLink?: string; error?: string };

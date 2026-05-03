@@ -42,31 +42,16 @@ const PLANS: Record<string, PlanConfig> = {
 };
 
 function fmt(d: Date) {
-  return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
-}
-
-function fmtShort(d: Date) {
-  return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
+  return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export default function ContratoPage({ params }: { params: { clientId: string } }) {
   const plan = PLANS[params.clientId];
   if (!plan) notFound();
 
-  const today          = new Date();
-  const dayOfMonth     = today.getDate();
-  const daysInMonth    = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  const firstFullBilling = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-
-  // Proporcional = días restantes después de hoy / días del mes × mensualidad
-  const proportionalAmount =
-    Math.round(((daysInMonth - dayOfMonth) / daysInMonth) * plan.priceMonthly * 100) / 100;
-
-  const totalToday =
-    Math.round((plan.setupFee + proportionalAmount) * 100) / 100;
-
-  const firstFullBillingIso = firstFullBilling.toISOString();
+  const today       = new Date();
+  const renewal     = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+  const totalToday  = plan.setupFee + plan.priceMonthly;
 
   return (
     <main
@@ -114,65 +99,52 @@ export default function ContratoPage({ params }: { params: { clientId: string } 
           </ul>
         </div>
 
-        {/* Dates & billing */}
+        {/* Billing summary */}
         <div
-          className="rounded-2xl border p-5 space-y-3"
+          className="rounded-2xl border p-5 space-y-4"
           style={{ background: '#0d0d0d', borderColor: '#1e1e1e' }}
         >
           <p className="text-xs font-semibold tracking-widest" style={{ color: '#555' }}>
-            FECHAS Y COBROS
+            RESUMEN DE COBROS
           </p>
 
-          {/* Cobro hoy: setupFee + proporcional */}
-          <div className="space-y-2">
-            <p className="text-xs font-semibold" style={{ color: '#777' }}>COBRO HOY</p>
-
-            <div className="flex items-center justify-between text-sm">
-              <span style={{ color: '#aaa' }}>Implementación (pago único)</span>
-              <span className="text-white font-medium">${plan.setupFee.toFixed(2)} USD</span>
-            </div>
-
-            <div className="flex items-center justify-between text-sm">
-              <span style={{ color: '#aaa' }}>
-                Proporcional {fmtShort(today)}–{fmtShort(lastDayOfMonth)}
+          {/* Total hoy */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">Cobro hoy</span>
+              <span className="text-lg font-extrabold" style={{ color: '#22c55e' }}>
+                ${totalToday} USD
               </span>
-              <span className="text-white font-medium">${proportionalAmount.toFixed(2)} USD</span>
             </div>
-
-            <div
-              className="flex items-center justify-between text-sm font-bold border-t pt-2"
-              style={{ borderColor: '#333' }}
-            >
-              <span style={{ color: '#22c55e' }}>Total hoy</span>
-              <span style={{ color: '#22c55e' }}>${totalToday.toFixed(2)} USD</span>
-            </div>
+            <p className="text-xs" style={{ color: '#555' }}>
+              (${plan.setupFee} implementación + ${plan.priceMonthly} primer mes)
+            </p>
           </div>
 
-          {/* Suscripción mensual */}
-          <div
-            className="flex items-center justify-between pt-3 border-t"
-            style={{ borderColor: '#222' }}
-          >
+          <div className="border-t" style={{ borderColor: '#222' }} />
+
+          {/* Renovación */}
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs" style={{ color: '#777' }}>Suscripción mensual desde</p>
-              <p className="text-sm font-semibold text-white mt-0.5">{fmt(firstFullBilling)}</p>
+              <p className="text-xs font-semibold" style={{ color: '#555' }}>RENOVACIÓN AUTOMÁTICA</p>
+              <p className="text-sm text-white mt-0.5">{fmt(renewal)}</p>
             </div>
-            <p className="text-sm font-bold shrink-0" style={{ color: '#22c55e' }}>
-              ${plan.priceMonthly} USD/mes
-            </p>
+            <div className="text-right shrink-0">
+              <p className="text-xs font-semibold" style={{ color: '#555' }}>SUSCRIPCIÓN MENSUAL</p>
+              <p className="text-sm font-bold text-white mt-0.5">${plan.priceMonthly} USD/mes</p>
+            </div>
           </div>
         </div>
 
-        {/* Interactive form (client component) */}
+        {/* Interactive form */}
         <ContratoForm
           clientId={params.clientId}
           clientName={plan.clientName}
           planName={plan.planName}
           price={plan.price}
           setupFee={plan.setupFee}
-          proportionalAmount={proportionalAmount}
           totalToday={totalToday}
-          firstFullBillingIso={firstFullBillingIso}
+          renewalIso={renewal.toISOString()}
         />
 
       </div>

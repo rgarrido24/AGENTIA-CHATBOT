@@ -19,11 +19,10 @@ export async function POST(req: NextRequest) {
     const body              = await req.json().catch(() => ({}));
     const clientId          = typeof body.clientId   === 'string' ? body.clientId.trim()   : '';
     const signedName        = typeof body.signedName === 'string' ? body.signedName.trim() : '';
-    const setupFee           = typeof body.setupFee           === 'number' ? body.setupFee           : undefined;
-    const proportionalAmount = typeof body.proportionalAmount === 'number' ? body.proportionalAmount : undefined;
-    const totalToday         = typeof body.totalToday         === 'number' ? body.totalToday         : undefined;
-    const firstFullBillingDate =
-      typeof body.firstFullBillingIso === 'string' ? new Date(body.firstFullBillingIso) : undefined;
+    const setupFee   = typeof body.setupFee   === 'number' ? body.setupFee   : undefined;
+    const totalToday = typeof body.totalToday === 'number' ? body.totalToday : undefined;
+    const renewalDate =
+      typeof body.renewalIso === 'string' ? new Date(body.renewalIso) : undefined;
 
     if (!clientId || !signedName) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
@@ -49,10 +48,9 @@ export async function POST(req: NextRequest) {
       ip,
       userAgent:            req.headers.get('user-agent') ?? '',
       signedAt:             new Date(),
-      ...(setupFee            !== undefined && { setupFee }),
-      ...(proportionalAmount  !== undefined && { proportionalAmount }),
-      ...(totalToday          !== undefined && { totalToday }),
-      ...(firstFullBillingDate !== undefined && { firstFullBillingDate }),
+      ...(setupFee   !== undefined && { setupFee }),
+      ...(totalToday !== undefined && { totalToday }),
+      ...(renewalDate !== undefined && { renewalDate }),
     });
 
     return NextResponse.json({ paymentLink });
