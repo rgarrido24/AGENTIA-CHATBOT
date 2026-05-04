@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { HeroPhoneMockup } from '@/components/HeroPhoneMockup';
 import { IndustrySelectorGrid } from '@/components/IndustrySelectorGrid';
+import { AgentiaChatWidget } from '@/components/AgentiaChatWidget';
 import { useAnalytics } from '@/src/lib/analytics-client';
 
 // ─── Star Rating ──────────────────────────────────────────────────────────────
@@ -86,6 +87,7 @@ function initials(name: string) {
 export default function LandingPage() {
   useAnalytics();
   return (
+    <>
     <main
       className="min-h-screen text-white relative overflow-hidden"
       style={{ background: '#000' }}
@@ -329,5 +331,7 @@ export default function LandingPage() {
         </div>
       </div>
     </main>
+    <AgentiaChatWidget />
+    </>
   );
 }

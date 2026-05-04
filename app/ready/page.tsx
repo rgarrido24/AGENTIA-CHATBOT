@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AgentiaChatWidget } from '@/components/AgentiaChatWidget';
 import { ReadyLanding } from './ReadyLanding';
 
 export const metadata: Metadata = {
@@ -25,5 +26,10 @@ function resolveWhatsAppDigits(): string {
 
 export default function ReadyPage() {
   const whatsappDigits = resolveWhatsAppDigits();
-  return <ReadyLanding whatsappDigits={whatsappDigits} />;
+  return (
+    <>
+      <ReadyLanding whatsappDigits={whatsappDigits} />
+      <AgentiaChatWidget />
+    </>
+  );
 }
