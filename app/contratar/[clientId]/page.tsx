@@ -28,9 +28,9 @@ const PLANS: Record<string, PlanConfig> = {
   decohouse: {
     clientName: 'Deco House',
     planName: 'Plan acordado',
-    price: '$30 USD / mes',
-    priceMonthly: 30,
-    setupFee: 30,
+    price: '$35 USD / mes',
+    priceMonthly: 35,
+    setupFee: 35,
     features: [
       'Chatbot IA para WhatsApp (Elisa)',
       'Asistente de cotizaciones automático',

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { requireResellerAuth } from '@/lib/reseller-auth';
 import { getMongoDb } from '@/lib/mongodb';
 import type { ResellerClient } from '@/lib/reseller-auth';
@@ -5,6 +6,34 @@ import Link from 'next/link';
 import Image from 'next/image';
 import AddClientModal from './AddClientModal';
 import ClientsList from './ClientsList';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { resellerId: string };
+}): Promise<Metadata> {
+  try {
+    const db       = await getMongoDb();
+    const reseller = await db.collection('leads').findOne(
+      { _collection_type: 'reseller', resellerId: params.resellerId },
+      { projection: { brandName: 1, brandLogo: 1 } },
+    );
+    const brandName = reseller?.brandName ? String(reseller.brandName) : 'Dashboard';
+    const brandLogo = reseller?.brandLogo ? String(reseller.brandLogo) : '/logo-agentia-2026.png';
+    const title     = `${brandName} · Panel de Leads`;
+    return {
+      title,
+      description: 'Gestión de leads en tiempo real',
+      openGraph: {
+        title,
+        description: 'Gestión de leads en tiempo real',
+        images: [{ url: brandLogo, width: 512, height: 512, alt: brandName }],
+      },
+    };
+  } catch {
+    return { title: 'Dashboard' };
+  }
+}
 
 export default async function DashboardPage({ params }: { params: { resellerId: string } }) {
   const { resellerId } = params;
