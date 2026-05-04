@@ -2,10 +2,14 @@ import type { Metadata } from 'next';
 import { requireResellerAuth } from '@/lib/reseller-auth';
 import { getMongoDb } from '@/lib/mongodb';
 import type { ResellerClient } from '@/lib/reseller-auth';
-import Link from 'next/link';
-import Image from 'next/image';
-import AddClientModal from './AddClientModal';
-import ClientsList from './ClientsList';
+import {
+  isLucianoReseller,
+  LUCINO_OG_IMAGE,
+  LUCINO_OG_TITLE,
+  LUCINO_PRODUCT_TITLE,
+} from '@/lib/portal-luciano-ui';
+import { LucianoPortalThemeProvider } from './LucianoPortalTheme';
+import DashboardView from './DashboardView';
 
 export async function generateMetadata({
   params,
@@ -16,18 +20,32 @@ export async function generateMetadata({
     const db       = await getMongoDb();
     const reseller = await db.collection('leads').findOne(
       { _collection_type: 'reseller', resellerId: params.resellerId },
-      { projection: { brandName: 1, brandLogo: 1 } },
+      { projection: { brandName: 1, brandLogo: 1, nombre: 1 } },
     );
-    const brandName = reseller?.brandName ? String(reseller.brandName) : 'Dashboard';
+    const isLuc = isLucianoReseller(params.resellerId);
     const brandLogo = reseller?.brandLogo ? String(reseller.brandLogo) : '/logo-agentia-2026.png';
-    const title     = `${brandName} · Panel de Leads`;
+    const brandName = reseller?.brandName ? String(reseller.brandName) : 'Dashboard';
+    const resellerNombre = reseller?.nombre ? String(reseller.nombre) : params.resellerId;
+    const productTitle = isLuc ? LUCINO_PRODUCT_TITLE : brandName;
+    const title = `${resellerNombre} · ${productTitle}`;
+    const ogTitle = isLuc ? LUCINO_OG_TITLE : title;
+    const ogImage = isLuc ? LUCINO_OG_IMAGE : brandLogo;
+    const ogAlt = isLuc ? 'Luciano Ads Mánager' : brandName;
+    const desc = 'Gestión de leads en tiempo real';
     return {
       title,
-      description: 'Gestión de leads en tiempo real',
+      description: desc,
       openGraph: {
-        title,
-        description: 'Gestión de leads en tiempo real',
-        images: [{ url: brandLogo, width: 512, height: 512, alt: brandName }],
+        title: ogTitle,
+        description: desc,
+        type: 'website',
+        images: [{ url: ogImage, width: 1200, height: 630, alt: ogAlt }],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: ogTitle,
+        description: desc,
+        images: [ogImage],
       },
     };
   } catch {
@@ -71,79 +89,25 @@ export default async function DashboardPage({ params }: { params: { resellerId: 
   ]);
 
   return (
-    <div className="min-h-screen" style={{ background: '#000' }}>
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b px-4 py-3" style={{ background: '#000', borderColor: '#1a1a1a' }}>
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Image
-              src={reseller.brandLogo ?? '/logo-agentia-2026.png'}
-              alt={reseller.brandName ?? 'Portal'}
-              width={32} height={32}
-              className="rounded-lg object-contain"
-              style={{ background: '#111', padding: 2 }}
-            />
-            <div>
-              <p className="text-xs font-semibold" style={{ color: reseller.brandColor ?? '#22c55e' }}>
-                {reseller.brandName ?? 'Portal Agentia'}
-              </p>
-              <p className="text-sm font-bold text-white">{reseller.nombre}</p>
-            </div>
-          </div>
-          <a
-            href={`/api/portal/auth/logout?resellerId=${resellerId}`}
-            className="text-xs px-3 py-1.5 rounded-lg transition"
-            style={{ background: '#111', color: '#555', border: '1px solid #222' }}
-          >
-            Cerrar sesión
-          </a>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Stats */}
-        <div>
-          <p className="text-xs font-semibold mb-3" style={{ color: '#555' }}>Resumen global</p>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Leads hoy',    value: statsHoy },
-              { label: 'Esta semana',  value: statsSemana },
-              { label: 'Este mes',     value: statsMes },
-            ].map(({ label, value }) => (
-              <div
-                key={label}
-                className="rounded-xl p-4 text-center border"
-                style={{ background: '#0d0d0d', borderColor: '#1e1e1e' }}
-              >
-                <p className="text-2xl font-extrabold" style={{ color: '#22c55e' }}>{value}</p>
-                <p className="text-[10px] mt-1" style={{ color: '#555' }}>{label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Clients */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold" style={{ color: '#555' }}>Mis clientes</p>
-            <div className="flex items-center gap-3">
-              <AddClientModal resellerId={resellerId} />
-              <Link href={`/portal/${resellerId}/clientes`} className="text-xs" style={{ color: '#555' }}>
-                Ver todos →
-              </Link>
-            </div>
-          </div>
-
-          <ClientsList resellerId={resellerId} clients={clientsWithStats.map((c) => ({
-            clientSlug: c.clientSlug,
-            nombre:     c.nombre,
-            negocio:    c.negocio,
-            status:     String(c.status ?? ''),
-            leadsHoy:   c.leadsHoy,
-            total:      c.total,
-          }))} />
-        </div>
-      </main>
-    </div>
+    <LucianoPortalThemeProvider resellerId={resellerId}>
+      <DashboardView
+        resellerId={resellerId}
+        brandLogo={reseller.brandLogo}
+        brandName={reseller.brandName}
+        brandColor={reseller.brandColor}
+        nombre={reseller.nombre}
+        statsHoy={statsHoy}
+        statsSemana={statsSemana}
+        statsMes={statsMes}
+        clients={clientsWithStats.map((c) => ({
+          clientSlug: c.clientSlug,
+          nombre: c.nombre,
+          negocio: c.negocio,
+          status: String(c.status ?? ''),
+          leadsHoy: c.leadsHoy,
+          total: c.total,
+        }))}
+      />
+    </LucianoPortalThemeProvider>
   );
 }

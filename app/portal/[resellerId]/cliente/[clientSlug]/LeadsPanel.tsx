@@ -1,8 +1,22 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import Link from 'next/link';
-import { MessageCircle, RefreshCw, Plus, X } from 'lucide-react';
+import { MessageCircle, Moon, RefreshCw, Plus, Sun, X } from 'lucide-react';
+import {
+  isLucianoReseller,
+  LUCINO_PRODUCT_TITLE,
+  LUCINO_THEME_STORAGE_KEY,
+  type LucianoThemeMode,
+} from '@/lib/portal-luciano-ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +50,7 @@ type FormOption = { id: string; name: string };
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
 const ACCENT = '#CCFF00';
+const EMERALD = '#50C878';
 
 const STATUS_SEG_CONFIG: Record<StatusSeg, { label: string; bg: string; color: string }> = {
   nuevo:       { label: 'Nuevo',         bg: '#111',    color: '#666'    },
@@ -46,6 +61,229 @@ const STATUS_SEG_CONFIG: Record<StatusSeg, { label: string; bg: string; color: s
 };
 
 const STATUS_SEG_OPTIONS: StatusSeg[] = ['nuevo', 'contactado', 'interesado', 'cerrado', 'no_contesto'];
+
+export type LeadUITokens = {
+  accent: string;
+  bodyStyle: string;
+  pageBg: string;
+  shellBg: string;
+  headerBg: string;
+  headerBorder: string;
+  backLinkBg: string;
+  backLinkBorder: string;
+  backLinkColor: string;
+  clientNameColor: string;
+  panelTitleColor: string;
+  kpiBg: string;
+  kpiBorder: string;
+  kpiLabel: string;
+  refreshBtnBg: string;
+  refreshBtnBorder: string;
+  refreshBtnColor: string;
+  livePillBg: string;
+  livePillBorder: string;
+  selectBg: string;
+  selectColor: string;
+  selectBorder: string;
+  listBorder: string;
+  listInnerBg: string;
+  loadingText: string;
+  emptyTitle: string;
+  emptyHint: string;
+  detailAsideBg: string;
+  statusSeg: Record<StatusSeg, { label: string; bg: string; color: string }>;
+  leadRowSelected: string;
+  leadRowBorder: string;
+  leadName: string;
+  leadMuted: string;
+  leadTime: string;
+  chipBg: string;
+  chipFg: string;
+  avatarIdleBg: string;
+  avatarIdleFg: string;
+  detailRootBg: string;
+  detailHeaderBorder: string;
+  detailBackBtnBg: string;
+  detailBackBtnColor: string;
+  detailTitle: string;
+  detailSubtitle: string;
+  rowEven: string;
+  rowOdd: string;
+  rowBorder: string;
+  dtColor: string;
+  ddColor: string;
+  pillInactiveBg: string;
+  pillInactiveFg: string;
+  pillInactiveBorder: string;
+  textareaBg: string;
+  textareaBorder: string;
+  textareaPlaceholder: string;
+  textareaText: string;
+  ghostBtnBg: string;
+  ghostBtnColor: string;
+  noteCardBg: string;
+  noteCardBorder: string;
+  noteText: string;
+  noteMeta: string;
+  emptyNotes: string;
+  waBarBorder: string;
+  emptyIconBg: string;
+  emptyIconBorder: string;
+  emptyDetailTitle: string;
+  emptyDetailHint: string;
+};
+
+const STATUS_SEG_LIGHT: Record<StatusSeg, { label: string; bg: string; color: string }> = {
+  nuevo:       { label: 'Nuevo',         bg: '#f1f5f9', color: '#64748b' },
+  contactado:  { label: 'Contactado',    bg: '#eff6ff', color: '#2563eb' },
+  interesado:  { label: 'Interesado',    bg: '#fffbeb', color: '#b45309' },
+  cerrado:     { label: 'Cerrado ✓',     bg: '#ecfdf5', color: '#047857' },
+  no_contesto: { label: 'No contestó',   bg: '#fef2f2', color: '#b91c1c' },
+};
+
+const TOKENS_DARK: LeadUITokens = {
+  accent: ACCENT,
+  bodyStyle: '#000',
+  pageBg: '#000',
+  shellBg: '#000',
+  headerBg: '#000',
+  headerBorder: '#1a1a1a',
+  backLinkBg: '#0d0d0d',
+  backLinkBorder: '#1e1e1e',
+  backLinkColor: '#444',
+  clientNameColor: ACCENT,
+  panelTitleColor: '#fff',
+  kpiBg: '#0d0d0d',
+  kpiBorder: '#1e1e1e',
+  kpiLabel: '#444',
+  refreshBtnBg: '#0d0d0d',
+  refreshBtnBorder: '#1e1e1e',
+  refreshBtnColor: '#444',
+  livePillBg: '#0d1f00',
+  livePillBorder: `${ACCENT}44`,
+  selectBg: '#0d0d0d',
+  selectColor: '#aaa',
+  selectBorder: '#1e1e1e',
+  listBorder: '#1a1a1a',
+  listInnerBg: '#000',
+  loadingText: '#2a2a2a',
+  emptyTitle: '#333',
+  emptyHint: '#1e1e1e',
+  detailAsideBg: '#050505',
+  statusSeg: STATUS_SEG_CONFIG,
+  leadRowSelected: 'rgba(204,255,0,0.06)',
+  leadRowBorder: '#1a1a1a',
+  leadName: '#fff',
+  leadMuted: '#555',
+  leadTime: '#333',
+  chipBg: '#0d1f00',
+  chipFg: ACCENT,
+  avatarIdleBg: '#1e1e1e',
+  avatarIdleFg: '#555',
+  detailRootBg: '#000',
+  detailHeaderBorder: '#1a1a1a',
+  detailBackBtnBg: '#111',
+  detailBackBtnColor: '#555',
+  detailTitle: '#fff',
+  detailSubtitle: '#555',
+  rowEven: '#0a0a0a',
+  rowOdd: '#0d0d0d',
+  rowBorder: '#161616',
+  dtColor: '#444',
+  ddColor: '#fff',
+  pillInactiveBg: '#0d0d0d',
+  pillInactiveFg: '#444',
+  pillInactiveBorder: '#1e1e1e',
+  textareaBg: '#0d0d0d',
+  textareaBorder: '#2a2a2a',
+  textareaPlaceholder: '#333',
+  textareaText: '#fff',
+  ghostBtnBg: '#111',
+  ghostBtnColor: '#555',
+  noteCardBg: '#0d0d0d',
+  noteCardBorder: '#1a1a1a',
+  noteText: '#ccc',
+  noteMeta: '#333',
+  emptyNotes: '#2a2a2a',
+  waBarBorder: '#1a1a1a',
+  emptyIconBg: '#0d0d0d',
+  emptyIconBorder: '#1e1e1e',
+  emptyDetailTitle: '#444',
+  emptyDetailHint: '#222',
+};
+
+const TOKENS_LIGHT: LeadUITokens = {
+  accent: EMERALD,
+  bodyStyle: '#f8fafc',
+  pageBg: '#f8fafc',
+  shellBg: '#f8fafc',
+  headerBg: 'rgba(255,255,255,0.95)',
+  headerBorder: '#e2e8f0',
+  backLinkBg: '#ffffff',
+  backLinkBorder: '#e2e8f0',
+  backLinkColor: '#64748b',
+  clientNameColor: '#0f766e',
+  panelTitleColor: '#0f172a',
+  kpiBg: '#ffffff',
+  kpiBorder: '#e2e8f0',
+  kpiLabel: '#64748b',
+  refreshBtnBg: '#ffffff',
+  refreshBtnBorder: '#e2e8f0',
+  refreshBtnColor: '#64748b',
+  livePillBg: '#ecfdf5',
+  livePillBorder: `${EMERALD}44`,
+  selectBg: '#ffffff',
+  selectColor: '#334155',
+  selectBorder: '#e2e8f0',
+  listBorder: '#e2e8f0',
+  listInnerBg: '#ffffff',
+  loadingText: '#94a3b8',
+  emptyTitle: '#475569',
+  emptyHint: '#94a3b8',
+  detailAsideBg: '#f1f5f9',
+  statusSeg: STATUS_SEG_LIGHT,
+  leadRowSelected: 'rgba(80,200,120,0.14)',
+  leadRowBorder: '#e2e8f0',
+  leadName: '#0f172a',
+  leadMuted: '#64748b',
+  leadTime: '#94a3b8',
+  chipBg: '#ecfdf5',
+  chipFg: '#047857',
+  avatarIdleBg: '#e2e8f0',
+  avatarIdleFg: '#64748b',
+  detailRootBg: '#ffffff',
+  detailHeaderBorder: '#e2e8f0',
+  detailBackBtnBg: '#f8fafc',
+  detailBackBtnColor: '#64748b',
+  detailTitle: '#0f172a',
+  detailSubtitle: '#64748b',
+  rowEven: '#f8fafc',
+  rowOdd: '#ffffff',
+  rowBorder: '#e2e8f0',
+  dtColor: '#64748b',
+  ddColor: '#0f172a',
+  pillInactiveBg: '#f1f5f9',
+  pillInactiveFg: '#64748b',
+  pillInactiveBorder: '#e2e8f0',
+  textareaBg: '#ffffff',
+  textareaBorder: '#cbd5e1',
+  textareaPlaceholder: '#94a3b8',
+  textareaText: '#0f172a',
+  ghostBtnBg: '#f1f5f9',
+  ghostBtnColor: '#64748b',
+  noteCardBg: '#ffffff',
+  noteCardBorder: '#e2e8f0',
+  noteText: '#334155',
+  noteMeta: '#94a3b8',
+  emptyNotes: '#94a3b8',
+  waBarBorder: '#e2e8f0',
+  emptyIconBg: '#ffffff',
+  emptyIconBorder: '#e2e8f0',
+  emptyDetailTitle: '#475569',
+  emptyDetailHint: '#94a3b8',
+};
+
+const LeadUiContext = createContext<LeadUITokens>(TOKENS_DARK);
 
 function waUrl(tel: string) { return `https://wa.me/${tel.replace(/\D/g, '')}`; }
 
@@ -103,46 +341,58 @@ function LeadCard({
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const cfg = STATUS_SEG_CONFIG[lead.status_seguimiento];
+  const ui = useContext(LeadUiContext);
+  const cfg = ui.statusSeg[lead.status_seguimiento];
   return (
     <button
       type="button"
       onClick={onClick}
       className="w-full text-left px-4 py-3 flex items-start gap-3 transition-colors"
       style={{
-        background: isSelected ? 'rgba(204,255,0,0.06)' : 'transparent',
-        borderBottom: '1px solid #1a1a1a',
-        borderLeft: isSelected ? `3px solid ${ACCENT}` : '3px solid transparent',
+        background: isSelected ? ui.leadRowSelected : 'transparent',
+        borderBottom: `1px solid ${ui.leadRowBorder}`,
+        borderLeft: isSelected ? `3px solid ${ui.accent}` : '3px solid transparent',
         animation: isNew ? 'slideDown 0.4s cubic-bezier(0.34,1.5,0.64,1)' : undefined,
       }}
     >
       {/* Avatar */}
       <div
         className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-        style={{ background: isNew ? ACCENT : '#1e1e1e', color: isNew ? '#000' : '#555' }}
+        style={{
+          background: isNew ? ui.accent : ui.avatarIdleBg,
+          color: isNew ? (ui.accent === EMERALD ? '#042f2e' : '#000') : ui.avatarIdleFg,
+        }}
       >
         {initials(lead.nombre)}
       </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm text-white truncate">{lead.nombre}</span>
+          <span className="font-semibold text-sm truncate" style={{ color: ui.leadName }}>
+            {lead.nombre}
+          </span>
           {isNew && (
-            <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-pulse" style={{ background: ACCENT, color: '#000' }}>
+            <span
+              className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
+              style={{
+                background: ui.accent,
+                color: ui.accent === EMERALD ? '#042f2e' : '#000',
+              }}
+            >
               NUEVO
             </span>
           )}
         </div>
-        <p className="text-xs mt-0.5 truncate" style={{ color: '#555' }}>
+        <p className="text-xs mt-0.5 truncate" style={{ color: ui.leadMuted }}>
           {lead.telefono ? formatPhone(lead.telefono) : lead.email || '—'}
         </p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           {lead.campana && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: '#0d1f00', color: ACCENT }}>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: ui.chipBg, color: ui.chipFg }}>
               {lead.campana.length > 20 ? lead.campana.slice(0, 20) + '…' : lead.campana}
             </span>
           )}
-          <span className="text-[10px]" style={{ color: '#333' }}>{timeAgo(lead.createdAt)}</span>
+          <span className="text-[10px]" style={{ color: ui.leadTime }}>{timeAgo(lead.createdAt)}</span>
         </div>
       </div>
 
@@ -164,6 +414,7 @@ function LeadDetail({
   onNoteAdded:    (leadId: string, nota: Nota) => void;
   onClose:        () => void;
 }) {
+  const ui = useContext(LeadUiContext);
   const [status,   setStatus]   = useState<StatusSeg>(lead.status_seguimiento);
   const [notas,    setNotas]    = useState<Nota[]>(lead.notas);
   const [showNota, setShowNota] = useState(false);
@@ -244,24 +495,32 @@ function LeadDetail({
     setSavingN(false);
   }
 
-  const cfg = STATUS_SEG_CONFIG[status];
+  const cfg = ui.statusSeg[status];
 
   return (
-    <div className="h-full flex flex-col" style={{ background: '#000' }}>
+    <div className="h-full flex flex-col" style={{ background: ui.detailRootBg }}>
       {/* Detail header */}
-      <div className="px-6 py-4 flex items-center gap-4 border-b" style={{ borderColor: '#1a1a1a' }}>
-        <button type="button" onClick={onClose} className="lg:hidden p-1.5 rounded-lg" style={{ background: '#111', color: '#555' }}>
+      <div className="px-6 py-4 flex items-center gap-4 border-b" style={{ borderColor: ui.detailHeaderBorder }}>
+        <button
+          type="button"
+          onClick={onClose}
+          className="lg:hidden p-1.5 rounded-lg"
+          style={{ background: ui.detailBackBtnBg, color: ui.detailBackBtnColor }}
+        >
           ← Atrás
         </button>
         <div
           className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-          style={{ background: ACCENT, color: '#000' }}
+          style={{
+            background: ui.accent,
+            color: ui.accent === EMERALD ? '#042f2e' : '#000',
+          }}
         >
           {initials(lead.nombre)}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="font-bold text-lg text-white truncate">{lead.nombre}</h2>
-          <p className="text-sm" style={{ color: '#555' }}>{lead.form_display || lead.form_name || lead.form_id || lead.campana || lead.platform_src || 'Lead'}</p>
+          <h2 className="truncate text-lg font-bold" style={{ color: ui.detailTitle }}>{lead.nombre}</h2>
+          <p className="text-sm" style={{ color: ui.detailSubtitle }}>{lead.form_display || lead.form_name || lead.form_id || lead.campana || lead.platform_src || 'Lead'}</p>
         </div>
         <span className="shrink-0 text-xs font-semibold px-3 py-1 rounded-full" style={{ background: cfg.bg, color: cfg.color }}>
           {cfg.label}
@@ -274,16 +533,19 @@ function LeadDetail({
 
           {/* Contact info */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: ACCENT }}>Información de contacto</p>
-            <div className="rounded-xl overflow-hidden border" style={{ borderColor: '#1e1e1e' }}>
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider" style={{ color: ui.accent }}>Información de contacto</p>
+            <div className="overflow-hidden rounded-xl border" style={{ borderColor: ui.detailHeaderBorder }}>
               {detailRows.map(([k, v], i) => (
                 <div
                   key={k}
                   className="flex justify-between gap-4 px-4 py-2.5 text-sm"
-                  style={{ background: i % 2 === 0 ? '#0a0a0a' : '#0d0d0d', borderBottom: i < detailRows.length - 1 ? '1px solid #161616' : 'none' }}
+                  style={{
+                    background: i % 2 === 0 ? ui.rowEven : ui.rowOdd,
+                    borderBottom: i < detailRows.length - 1 ? `1px solid ${ui.rowBorder}` : 'none',
+                  }}
                 >
-                  <dt className="text-xs shrink-0" style={{ color: '#444' }}>{k}</dt>
-                  <dd className="font-medium text-right text-white text-xs max-w-[220px] truncate" title={v}>{v}</dd>
+                  <dt className="shrink-0 text-xs" style={{ color: ui.dtColor }}>{k}</dt>
+                  <dd className="max-w-[220px] truncate text-right text-xs font-medium" style={{ color: ui.ddColor }} title={v}>{v}</dd>
                 </div>
               ))}
             </div>
@@ -291,20 +553,20 @@ function LeadDetail({
 
           {/* Status selector */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: ACCENT }}>Estado de seguimiento</p>
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider" style={{ color: ui.accent }}>Estado de seguimiento</p>
             <div className="flex flex-wrap gap-2">
               {STATUS_SEG_OPTIONS.map((s) => {
-                const c = STATUS_SEG_CONFIG[s];
+                const c = ui.statusSeg[s];
                 return (
                   <button
                     key={s}
                     type="button"
                     onClick={() => changeStatus(s)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-full transition"
+                    className="rounded-full px-3 py-1.5 text-xs font-semibold transition"
                     style={{
-                      background: status === s ? c.bg : '#0d0d0d',
-                      color:      status === s ? c.color : '#444',
-                      border:     `1px solid ${status === s ? c.color + '55' : '#1e1e1e'}`,
+                      background: status === s ? c.bg : ui.pillInactiveBg,
+                      color:      status === s ? c.color : ui.pillInactiveFg,
+                      border:     `1px solid ${status === s ? `${c.color}55` : ui.pillInactiveBorder}`,
                     }}
                   >
                     {c.label}
@@ -316,18 +578,22 @@ function LeadDetail({
 
           {/* Notes */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: ACCENT }}>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: ui.accent }}>
                 Notas {notas.length > 0 && `(${notas.length})`}
               </p>
               {!showNota && (
                 <button
                   type="button"
                   onClick={() => setShowNota(true)}
-                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full"
-                  style={{ background: '#111', color: '#555', border: '1px solid #1e1e1e' }}
+                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs"
+                  style={{
+                    background: ui.ghostBtnBg,
+                    color: ui.ghostBtnColor,
+                    border: `1px solid ${ui.pillInactiveBorder}`,
+                  }}
                 >
-                  <Plus className="w-3 h-3" />Agregar nota
+                  <Plus className="h-3 w-3" />Agregar nota
                 </button>
               )}
             </div>
@@ -340,26 +606,33 @@ function LeadDetail({
                   placeholder="Escribe una nota…"
                   rows={3}
                   autoFocus
-                  className="w-full rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-[#333] outline-none resize-none"
-                  style={{ background: '#0d0d0d', border: '1px solid #2a2a2a' }}
+                  className="w-full resize-none rounded-xl px-3 py-2.5 text-sm outline-none"
+                  style={{
+                    background: ui.textareaBg,
+                    border: `1px solid ${ui.textareaBorder}`,
+                    color: ui.textareaText,
+                  }}
                 />
-                <div className="flex gap-2 mt-2">
+                <div className="mt-2 flex gap-2">
                   <button
                     type="button"
                     onClick={submitNota}
                     disabled={savingN || !notaText.trim()}
-                    className="flex-1 py-2 rounded-xl text-sm font-bold disabled:opacity-40 transition"
-                    style={{ background: ACCENT, color: '#000' }}
+                    className="flex-1 rounded-xl py-2 text-sm font-bold transition disabled:opacity-40"
+                    style={{
+                      background: ui.accent,
+                      color: ui.accent === EMERALD ? '#042f2e' : '#000',
+                    }}
                   >
                     {savingN ? 'Guardando…' : 'Guardar nota'}
                   </button>
                   <button
                     type="button"
                     onClick={() => { setShowNota(false); setNotaText(''); }}
-                    className="px-3 py-2 rounded-xl text-sm"
-                    style={{ background: '#111', color: '#555' }}
+                    className="rounded-xl px-3 py-2 text-sm"
+                    style={{ background: ui.ghostBtnBg, color: ui.ghostBtnColor }}
                   >
-                    <X className="w-4 h-4" />
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -368,16 +641,16 @@ function LeadDetail({
             {notas.length > 0 ? (
               <div className="space-y-2">
                 {[...notas].reverse().map((n, i) => (
-                  <div key={i} className="rounded-xl px-4 py-3" style={{ background: '#0d0d0d', border: '1px solid #1a1a1a' }}>
-                    <p className="text-sm" style={{ color: '#ccc' }}>{n.texto}</p>
-                    <p className="mt-1.5 text-xs" style={{ color: '#333' }}>
+                  <div key={i} className="rounded-xl px-4 py-3" style={{ background: ui.noteCardBg, border: `1px solid ${ui.noteCardBorder}` }}>
+                    <p className="text-sm" style={{ color: ui.noteText }}>{n.texto}</p>
+                    <p className="mt-1.5 text-xs" style={{ color: ui.noteMeta }}>
                       {n.autor} · {timeAgo(n.fecha)}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs" style={{ color: '#2a2a2a' }}>Sin notas aún.</p>
+              <p className="text-xs" style={{ color: ui.emptyNotes }}>Sin notas aún.</p>
             )}
           </div>
         </div>
@@ -385,7 +658,7 @@ function LeadDetail({
 
       {/* WhatsApp CTA — sticky bottom */}
       {lead.telefono && (
-        <div className="p-4 border-t" style={{ borderColor: '#1a1a1a' }}>
+        <div className="border-t p-4" style={{ borderColor: ui.waBarBorder }}>
           <a
             href={waUrl(lead.telefono)}
             target="_blank"
@@ -405,13 +678,17 @@ function LeadDetail({
 // ─── Empty state for detail panel ────────────────────────────────────────────
 
 function EmptyDetail() {
+  const ui = useContext(LeadUiContext);
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-3 px-8 text-center">
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{ background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
+    <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
+      <div
+        className="flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
+        style={{ background: ui.emptyIconBg, border: `1px solid ${ui.emptyIconBorder}` }}
+      >
         👤
       </div>
-      <p className="text-sm font-medium" style={{ color: '#444' }}>Seleccioná un lead</p>
-      <p className="text-xs" style={{ color: '#222' }}>Hacé clic en cualquier lead de la lista para ver el detalle completo.</p>
+      <p className="text-sm font-medium" style={{ color: ui.emptyDetailTitle }}>Seleccioná un lead</p>
+      <p className="text-xs" style={{ color: ui.emptyDetailHint }}>Hacé clic en cualquier lead de la lista para ver el detalle completo.</p>
     </div>
   );
 }
@@ -419,6 +696,41 @@ function EmptyDetail() {
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 
 export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; clientSlug: string }) {
+  const isLuc = useMemo(() => isLucianoReseller(resellerId), [resellerId]);
+  const [lucTheme, setLucTheme] = useState<LucianoThemeMode>('light');
+
+  useEffect(() => {
+    if (!isLuc) return;
+    try {
+      const v = window.localStorage.getItem(LUCINO_THEME_STORAGE_KEY);
+      setLucTheme(v === 'dark' ? 'dark' : 'light');
+    } catch {
+      setLucTheme('light');
+    }
+    const fn = (e: Event) => {
+      const d = (e as CustomEvent<LucianoThemeMode>).detail;
+      if (d === 'light' || d === 'dark') setLucTheme(d);
+    };
+    window.addEventListener('agentia-luciano-theme', fn as EventListener);
+    return () => window.removeEventListener('agentia-luciano-theme', fn as EventListener);
+  }, [isLuc]);
+
+  const ui = useMemo(
+    () => (isLuc && lucTheme === 'light' ? TOKENS_LIGHT : TOKENS_DARK),
+    [isLuc, lucTheme]
+  );
+
+  function toggleLucianoTheme() {
+    const next: LucianoThemeMode = lucTheme === 'light' ? 'dark' : 'light';
+    setLucTheme(next);
+    try {
+      window.localStorage.setItem(LUCINO_THEME_STORAGE_KEY, next);
+      window.dispatchEvent(new CustomEvent('agentia-luciano-theme', { detail: next }));
+    } catch {
+      /* ignore */
+    }
+  }
+
   const [leads,        setLeads]        = useState<Lead[]>([]);
   const [formOptions,  setFormOptions]  = useState<FormOption[]>([]);
   const [selectedForm, setSelectedForm] = useState('');
@@ -509,45 +821,55 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
   ];
 
   return (
-    <>
+    <LeadUiContext.Provider value={ui}>
       <style>{`
-        body { background: #000; margin: 0; }
+        body { background: ${ui.bodyStyle}; margin: 0; }
         @keyframes slideDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
         @keyframes countBump { 0% { transform:scale(1.3); } 100% { transform:scale(1); } }
       `}</style>
 
-      <div className="flex flex-col" style={{ height: '100dvh', background: '#000' }}>
+      <div className="flex flex-col" style={{ height: '100dvh', background: ui.shellBg }}>
 
         {/* ── Header ── */}
-        <header className="shrink-0 border-b px-4 py-3" style={{ background: '#000', borderColor: '#1a1a1a' }}>
-          <div className="flex items-center gap-4 flex-wrap">
+        <header className="shrink-0 border-b px-4 py-3" style={{ background: ui.headerBg, borderColor: ui.headerBorder }}>
+          <div className="flex flex-wrap items-center gap-4">
             {/* Back + title */}
-            <div className="flex items-center gap-3 mr-auto min-w-0">
-              <Link href={`/portal/${resellerId}/dashboard`} className="text-xs shrink-0 px-2 py-1 rounded-lg" style={{ color: '#444', background: '#0d0d0d', border: '1px solid #1e1e1e' }}>
+            <div className="mr-auto flex min-w-0 items-center gap-3">
+              <Link
+                href={`/portal/${resellerId}/dashboard`}
+                className="shrink-0 rounded-lg px-2 py-1 text-xs"
+                style={{
+                  color: ui.backLinkColor,
+                  background: ui.backLinkBg,
+                  border: `1px solid ${ui.backLinkBorder}`,
+                }}
+              >
                 ← Dashboard
               </Link>
               <div className="min-w-0">
-                <p className="text-xs font-semibold truncate" style={{ color: ACCENT }}>{clientNombre}</p>
-                <p className="font-bold text-sm text-white leading-tight">Panel de Leads</p>
+                <p className="truncate text-xs font-semibold" style={{ color: ui.clientNameColor }}>{clientNombre}</p>
+                <p className="text-sm font-bold leading-tight" style={{ color: ui.panelTitleColor }}>
+                  {isLuc ? LUCINO_PRODUCT_TITLE : 'Panel de Leads'}
+                </p>
               </div>
             </div>
 
             {/* KPIs in one row */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               {kpis.map(({ label, value, bump }) => (
                 <div
                   key={label}
-                  className="rounded-xl border px-3 py-1.5 text-center min-w-[60px]"
-                  style={{ background: '#0d0d0d', borderColor: '#1e1e1e' }}
+                  className="min-w-[60px] rounded-xl border px-3 py-1.5 text-center"
+                  style={{ background: ui.kpiBg, borderColor: ui.kpiBorder }}
                 >
                   <p
                     key={bump ? value : 0}
                     className="text-base font-extrabold tabular-nums leading-tight"
-                    style={{ color: ACCENT, animation: bump ? 'countBump 0.4s ease' : undefined }}
+                    style={{ color: ui.accent, animation: bump ? 'countBump 0.4s ease' : undefined }}
                   >
                     {value}
                   </p>
-                  <p className="text-[9px] mt-0.5" style={{ color: '#444' }}>{label}</p>
+                  <p className="mt-0.5 text-[9px]" style={{ color: ui.kpiLabel }}>{label}</p>
                 </div>
               ))}
 
@@ -555,17 +877,37 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
               <button
                 type="button"
                 onClick={() => fetchLeads(false, selectedForm)}
-                className="p-2 rounded-lg"
-                style={{ background: '#0d0d0d', color: '#444', border: '1px solid #1e1e1e' }}
+                className="rounded-lg p-2"
+                style={{
+                  background: ui.refreshBtnBg,
+                  color: ui.refreshBtnColor,
+                  border: `1px solid ${ui.refreshBtnBorder}`,
+                }}
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className="h-3.5 w-3.5" />
               </button>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{ background: '#0d1f00', borderColor: `${ACCENT}44` }}>
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: ACCENT }} />
+              {isLuc && (
+                <button
+                  type="button"
+                  onClick={toggleLucianoTheme}
+                  className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold"
+                  style={{
+                    background: ui.refreshBtnBg,
+                    borderColor: ui.refreshBtnBorder,
+                    color: ui.refreshBtnColor,
+                  }}
+                  aria-label={lucTheme === 'light' ? 'Modo oscuro' : 'Modo claro'}
+                >
+                  {lucTheme === 'light' ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+                  {lucTheme === 'light' ? 'Oscuro' : 'Claro'}
+                </button>
+              )}
+              <div className="flex items-center gap-1.5 rounded-full border px-3 py-1.5" style={{ background: ui.livePillBg, borderColor: ui.livePillBorder }}>
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: ui.accent }} />
                 <span
                   key={totalBump ? leads.length : 0}
                   className="text-xs font-semibold tabular-nums"
-                  style={{ color: ACCENT, animation: totalBump ? 'countBump 0.4s ease' : undefined }}
+                  style={{ color: ui.accent, animation: totalBump ? 'countBump 0.4s ease' : undefined }}
                 >
                   {leads.length}
                 </span>
@@ -579,8 +921,8 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
               <select
                 value={selectedForm}
                 onChange={(e) => setSelectedForm(e.target.value)}
-                className="appearance-none rounded-lg px-3 py-1.5 text-xs font-medium max-w-xs"
-                style={{ background: '#0d0d0d', color: '#aaa', border: '1px solid #1e1e1e', outline: 'none' }}
+                className="max-w-xs appearance-none rounded-lg px-3 py-1.5 text-xs font-medium outline-none"
+                style={{ background: ui.selectBg, color: ui.selectColor, border: `1px solid ${ui.selectBorder}` }}
               >
                 <option value="">Todos los formularios</option>
                 {formOptions.map((f) => (
@@ -599,23 +941,23 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
             className={`leads-list flex flex-col overflow-hidden border-r ${selectedLead ? 'hidden lg:flex' : 'flex'}`}
             style={{
               width: '100%',
-              borderColor: '#1a1a1a',
+              borderColor: ui.listBorder,
             }}
             // On lg+, fixed width
           >
             <style>{`@media (min-width: 1024px) { .leads-list { width: 380px !important; min-width: 380px; } }`}</style>
             <div
               className="flex flex-col overflow-hidden"
-              style={{ width: '100%', height: '100%', background: '#000' }}
+              style={{ width: '100%', height: '100%', background: ui.listInnerBg }}
             >
               {loading ? (
                 <div className="flex-1 flex items-center justify-center">
-                  <p className="text-sm" style={{ color: '#2a2a2a' }}>Cargando leads…</p>
+                  <p className="text-sm" style={{ color: ui.loadingText }}>Cargando leads…</p>
                 </div>
               ) : leads.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
-                  <p className="text-sm font-medium" style={{ color: '#333' }}>Sin leads aún</p>
-                  <p className="text-xs" style={{ color: '#1e1e1e' }}>Aparecerán aquí automáticamente cuando lleguen.</p>
+                  <p className="text-sm font-medium" style={{ color: ui.emptyTitle }}>Sin leads aún</p>
+                  <p className="text-xs" style={{ color: ui.emptyHint }}>Aparecerán aquí automáticamente cuando lleguen.</p>
                 </div>
               ) : (
                 <div className="flex-1 overflow-y-auto">
@@ -636,7 +978,7 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
           {/* Right: Detail panel */}
           <div
             className={`flex-1 overflow-hidden ${selectedLead ? 'flex' : 'hidden lg:flex'}`}
-            style={{ background: '#050505' }}
+            style={{ background: ui.detailAsideBg }}
           >
             {selectedLead ? (
               <div className="w-full">
@@ -654,6 +996,6 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
           </div>
         </div>
       </div>
-    </>
+    </LeadUiContext.Provider>
   );
 }

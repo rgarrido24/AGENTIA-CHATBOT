@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     siteName: 'Agentia',
     images: [
       {
-        url: '/og-agentia.jpg.jpeg',
+        url: '/og-agentia.jpg',
         width: 1200,
         height: 630,
         alt: 'Agentia — Chatbots con IA para negocios',
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Agentia | Chatbots con IA para Negocios',
     description: 'Automatiza tu WhatsApp con IA. Agenda, cobra y fideliza sin esfuerzo.',
-    images: ['/og-agentia.jpg.jpeg'],
+    images: ['/og-agentia.jpg'],
   },
   robots: {
     index: true,
