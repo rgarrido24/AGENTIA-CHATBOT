@@ -153,7 +153,6 @@ export function ReadyLanding({ whatsappDigits }: { whatsappDigits: string }) {
             >
               {leads.toLocaleString('es-MX')}
             </p>
-            <p className="mt-2 text-xs text-zinc-500">Simulación animada para campaña de lanzamiento.</p>
           </motion.div>
 
           {/* Lead magnet */}
@@ -184,18 +183,28 @@ export function ReadyLanding({ whatsappDigits }: { whatsappDigits: string }) {
             )}
           </motion.div>
 
-          {/* Logo opcional — lazy, pequeño */}
-          <motion.div variants={reduceMotion ? itemReduced : item} className="mt-14 opacity-60">
-            <Image
-              src="/og-agentia.jpg.jpeg"
-              alt="Agentia"
-              width={160}
-              height={84}
-              className="h-auto w-32 rounded-lg object-cover opacity-80 ring-1 ring-white/10"
-              sizes="128px"
-              loading="lazy"
-              quality={60}
-            />
+          {/* Visual — más grande y llamativo */}
+          <motion.div variants={reduceMotion ? itemReduced : item} className="mt-14 w-full max-w-2xl">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-2 shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset,0_28px_90px_-45px_rgba(56,189,248,0.35)] backdrop-blur-2xl">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-80"
+                aria-hidden
+                style={{
+                  background:
+                    'radial-gradient(ellipse 70% 50% at 30% 0%, rgba(52, 211, 153, 0.18), transparent 50%), radial-gradient(ellipse 70% 60% at 80% 100%, rgba(59, 130, 246, 0.16), transparent 55%)',
+                }}
+              />
+              <Image
+                src="/og-agentia.jpg.jpeg"
+                alt="Agentia"
+                width={1200}
+                height={630}
+                priority
+                className="relative h-auto w-full rounded-2xl object-cover ring-1 ring-white/10"
+                sizes="(max-width: 768px) 92vw, 768px"
+                quality={75}
+              />
+            </div>
           </motion.div>
         </motion.div>
       </div>
