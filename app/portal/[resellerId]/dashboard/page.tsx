@@ -17,6 +17,7 @@ export async function generateMetadata({
   params: { resellerId: string };
 }): Promise<Metadata> {
   try {
+    const metadataBase = new URL('https://agentia.software');
     const db       = await getMongoDb();
     const reseller = await db.collection('leads').findOne(
       { _collection_type: 'reseller', resellerId: params.resellerId },
@@ -29,16 +30,18 @@ export async function generateMetadata({
     const productTitle = isLuc ? LUCINO_PRODUCT_TITLE : brandName;
     const title = `${resellerNombre} · ${productTitle}`;
     const ogTitle = isLuc ? LUCINO_OG_TITLE : title;
-    const ogImage = isLuc ? LUCINO_OG_IMAGE : brandLogo;
+    const ogImage = isLuc ? new URL(LUCINO_OG_IMAGE, metadataBase).toString() : new URL(brandLogo, metadataBase).toString();
     const ogAlt = isLuc ? 'Luciano Ads Mánager' : brandName;
     const desc = 'Gestión de leads en tiempo real';
     return {
+      metadataBase,
       title,
       description: desc,
       openGraph: {
         title: ogTitle,
         description: desc,
         type: 'website',
+        url: new URL(`/portal/${params.resellerId}/dashboard`, metadataBase).toString(),
         images: [{ url: ogImage, width: 1200, height: 630, alt: ogAlt }],
       },
       twitter: {
