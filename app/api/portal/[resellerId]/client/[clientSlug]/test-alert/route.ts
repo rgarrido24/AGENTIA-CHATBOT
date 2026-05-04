@@ -36,7 +36,8 @@ export async function POST(
     return NextResponse.json({ error: 'Cliente sin alertNumber configurado' }, { status: 400 });
   }
 
-  const portalUrl = `https://agentia.software/portal/${resellerId}/cliente/${clientSlug}`;
+  // Cache-buster para forzar refresh del preview OG en WhatsApp.
+  const portalUrl = `https://agentia.software/portal/${resellerId}/cliente/${clientSlug}?lid=${Date.now()}`;
   const message =
     `🚨 ATENCION🚨\n` +
     `¡Nuevo ingreso de LEAD!\n\n` +

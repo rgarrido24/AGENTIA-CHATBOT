@@ -128,8 +128,10 @@ async function enqueueAdminAlert(
   }
 
   const { resellerId, clientSlug } = lead.resellerMatch ?? { resellerId: '', clientSlug: '' };
+  // WhatsApp/Facebook cachea el preview (Open Graph) por URL exacta.
+  // Agregamos un cache-buster estable por leadId para que el logo/preview correcto se refresque.
   const portalUrl = resellerId && clientSlug
-    ? `https://agentia.software/portal/${resellerId}/cliente/${clientSlug}`
+    ? `https://agentia.software/portal/${resellerId}/cliente/${clientSlug}?lid=${encodeURIComponent(lead.leadId)}`
     : `https://agentia.software/portal`;
 
   const message =
