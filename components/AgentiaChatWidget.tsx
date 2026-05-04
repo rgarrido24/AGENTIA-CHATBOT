@@ -11,8 +11,14 @@ type Role = 'user' | 'assistant';
 
 type Msg = { id: string; role: Role; text: string };
 
-const PROLOGUE =
-  '👋 ¡Hola! Soy la IA de Agentia. ¿Quieres ver cómo automatizo tu negocio en 5 minutos?';
+/** Globo (3s): corto para móvil + gancho de conversión */
+const BUBBLE_LINE1 = '👋 Hola, soy la IA de Agentia.';
+const BUBBLE_LINE2 =
+  'Si no ves tu industria en la página, la armamos a la medida. ¿Qué negocio tienes?';
+
+/** Panel vacío: un poco más de contexto sin repetir todo el globo */
+const PANEL_INTRO =
+  'Cuéntame tu giro (ej. barbería, restaurante, consultorio…) y qué quieres lograr: más citas, cobranza, seguimiento o atención 24/7. Con eso te digo el siguiente paso en 1 mensaje.';
 
 function newId() {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -32,11 +38,32 @@ function getOrCreateSessionId() {
 function wantsCommercialCta(text: string) {
   const t = text.toLowerCase();
   return (
-    /\b(precio|precios|costo|costos|cotiz|cotización|demo|demos|personaliz|plan|planes|mensual|anual|agendar|cita|calendario|videollamada)\b/i.test(
+    /\b(precio|precios|costo|costos|cotiz|cotización|demo|demos|personaliz|personalizada|a la medida|plan|planes|mensual|anual|agendar|cita|calendario|videollamada|paquete|inversión|negocio|giro|industria|ciudad)\b/i.test(
       t
     )
   );
 }
+
+const QUICK_REPLIES: { label: string; message: string }[] = [
+  {
+    label: 'Quiero automatizar mi negocio',
+    message:
+      'Hola, tengo un negocio local y quiero automatizar WhatsApp (citas, recordatorios y seguimiento). ¿Qué necesitan saber para orientarme?',
+  },
+  {
+    label: 'No veo mi industria en la web',
+    message:
+      'Hola, no encuentro mi industria en la página, pero necesito algo hecho a la medida. Mi giro es: ____. Ciudad: ____. ¿Pueden ayudarme?',
+  },
+  {
+    label: 'Quiero precios / planes',
+    message: 'Hola, quiero saber precios y planes de Agentia para mi negocio. ¿Me comparten opciones?',
+  },
+  {
+    label: 'Agendar demo en vivo',
+    message: 'Hola, quiero agendar una demo en vivo de 15–20 minutos para ver Agentia funcionando con mi caso.',
+  },
+];
 
 function buildWhatsAppUrl(digits: string, text: string) {
   const d = digits.replace(/\D/g, '');
@@ -87,10 +114,11 @@ export function AgentiaChatWidget() {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
   }, [msgs, typing, open]);
 
-  const send = useCallback(async () => {
-    const text = input.trim();
+  const sendMessage = useCallback(async (rawText: string, options?: { clearInput?: boolean }) => {
+    const text = rawText.trim();
     if (!text || typing) return;
-    setInput('');
+    if (options?.clearInput) setInput('');
+
     setMsgs((m) => [...m, { id: newId(), role: 'user', text }]);
     setTyping(true);
     setShowCta(false);
@@ -126,7 +154,11 @@ export function AgentiaChatWidget() {
     } finally {
       setTyping(false);
     }
-  }, [input, typing]);
+  }, [typing]);
+
+  const send = useCallback(() => {
+    void sendMessage(input, { clearInput: true });
+  }, [input, sendMessage]);
 
   if (hidden) return null;
 
@@ -144,10 +176,11 @@ export function AgentiaChatWidget() {
               setOpen(true);
               setShowBubble(false);
             }}
-            className="pointer-events-auto max-w-[min(92vw,320px)] rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-left text-sm leading-snug text-zinc-100 shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset,0_18px_60px_-30px_rgba(80,200,120,0.35)] backdrop-blur-2xl"
+            className="pointer-events-auto max-w-[min(92vw,340px)] rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-left text-sm leading-snug text-zinc-100 shadow-[0_0_0_1px_rgba(255,255,255,0.05)_inset,0_18px_60px_-30px_rgba(80,200,120,0.35)] backdrop-blur-2xl"
             style={{ boxShadow: `0 18px 60px -30px ${EMERALD}55` }}
           >
-            {PROLOGUE}
+            <span className="block font-semibold text-white">{BUBBLE_LINE1}</span>
+            <span className="mt-1.5 block text-[13px] leading-snug text-zinc-200">{BUBBLE_LINE2}</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -191,7 +224,25 @@ export function AgentiaChatWidget() {
 
             <div ref={listRef} className="flex-1 space-y-2 overflow-y-auto px-3 py-3">
               {msgs.length === 0 && (
-                <p className="px-1 text-xs leading-relaxed text-zinc-500">{PROLOGUE}</p>
+                <div className="space-y-3 px-1">
+                  <p className="text-xs leading-relaxed text-zinc-400">{PANEL_INTRO}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                    Empieza en 1 clic
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {QUICK_REPLIES.map((q) => (
+                      <button
+                        key={q.label}
+                        type="button"
+                        disabled={typing}
+                        onClick={() => void sendMessage(q.message)}
+                        className="rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-left text-[13px] font-medium leading-snug text-emerald-50 hover:bg-emerald-400/15 disabled:opacity-40"
+                      >
+                        {q.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
               {msgs.map((m) => {
                 const mine = m.role === 'user';
@@ -267,7 +318,7 @@ export function AgentiaChatWidget() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
-                      void send();
+                      send();
                     }
                   }}
                   rows={2}
@@ -276,7 +327,7 @@ export function AgentiaChatWidget() {
                 />
                 <button
                   type="button"
-                  onClick={() => void send()}
+                  onClick={() => send()}
                   disabled={typing || !input.trim()}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-400/15 text-emerald-100 hover:bg-emerald-400/25 disabled:opacity-40"
                   aria-label="Enviar"
