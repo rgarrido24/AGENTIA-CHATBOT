@@ -23,11 +23,21 @@ type ManualQuote = {
   email: string;
   producto: string;
   medidas: string;
+  grosor: string;
+  tipo_vidrio: string;
+  uso: string;
+  instalacion: string;
+  piso: string;
+  tipo_inmueble: string;
   comuna: string;
   direccion: string;
   cantidad: string;
   perfil: string;
   color: string;
+  precio_material: string;
+  costo_instalacion: string;
+  descuento: string;
+  tiempo_entrega: string;
   notas: string;
 };
 
@@ -68,59 +78,187 @@ async function imageUrlToDataUrl(url: string): Promise<string> {
   });
 }
 
-async function generateDecoPdf(params: {
-  title: string;
-  subtitle?: string;
-  rows: Array<[string, string]>;
-  filename: string;
-}) {
+async function generateDecoPdf(quote: ManualQuote, filename: string) {
   const { jsPDF } = await import('jspdf');
+  await import('jspdf-autotable');
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const d = doc as unknown as Record<string, unknown>;
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
+  const at = (opts: Record<string, unknown>) =>
+    (d.autoTable as (o: unknown) => void)(opts);
+  const lastY = () =>
+    ((d.lastAutoTable as { finalY: number }).finalY);
 
   // Header
-  doc.setFillColor(7, 20, 20);
-  doc.rect(0, 0, W, 86, 'F');
+  doc.setFillColor(27, 63, 107);
+  doc.rect(0, 0, W, 90, 'F');
+  doc.setFillColor(245, 166, 35);
+  doc.rect(0, 88, W, 3, 'F');
 
-  // Logo (best effort)
+  // Logo
   try {
-    const dataUrl = await imageUrlToDataUrl('/deco-logo.png');
-    // PNG
-    doc.addImage(dataUrl, 'PNG', W - 140, 18, 100, 50, undefined, 'FAST');
+    const dataUrl = await imageUrlToDataUrl('/deco-house-logo.png');
+    doc.addImage(dataUrl, 'PNG', W - 148, 12, 110, 66, undefined, 'FAST');
   } catch {
-    // ignore
+    try {
+      const dataUrl = await imageUrlToDataUrl('/deco-logo.png');
+      doc.addImage(dataUrl, 'PNG', W - 148, 12, 110, 66, undefined, 'FAST');
+    } catch { /* ignore */ }
   }
 
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
-  doc.text(params.title, 40, 46);
-  if (params.subtitle) {
-    doc.setFontSize(11);
-    doc.setTextColor(220, 235, 235);
-    doc.text(params.subtitle, 40, 68);
-  }
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.text('COTIZACIÓN', 40, 40);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Deco House — Vidrios, Aluminio y PVC', 40, 58);
+  doc.setFontSize(9);
+  doc.setTextColor(200, 210, 220);
+  doc.text(`Fecha: ${new Date().toLocaleDateString('es-CL')}`, 40, 74);
 
-  // Body
-  doc.setTextColor(30, 30, 30);
-  doc.setFontSize(12);
-  let y = 120;
-  for (const [k, v] of params.rows) {
-    const key = (k || '').trim();
-    const val = (v || '—').trim() || '—';
+  const drawSection = (y: number, title: string): number => {
+    doc.setFillColor(27, 63, 107);
+    doc.rect(30, y, W - 60, 20, 'F');
+    doc.setTextColor(245, 166, 35);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text(`${key}:`, 40, y);
+    doc.text(title, 40, y + 13);
+    return y + 20;
+  };
+
+  const tbl = (startY: number, body: string[][], opts?: Record<string, unknown>) =>
+    at({
+      startY,
+      margin: { left: 30, right: 30 },
+      body,
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: { top: 4, bottom: 4, left: 6, right: 6 }, textColor: [40, 40, 40], lineColor: [225, 228, 232], lineWidth: 0.3 },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 140, fillColor: [248, 250, 252], textColor: [80, 80, 80] },
+        1: { fillColor: [255, 255, 255] },
+      },
+      ...opts,
+    });
+
+  let y = 110;
+
+  // DATOS DEL CLIENTE
+  y = drawSection(y, 'DATOS DEL CLIENTE');
+  tbl(y, [
+    ['Nombre',            quote.nombre        || '—'],
+    ['WhatsApp',          quote.whatsapp       || '—'],
+    ['Email',             quote.email          || '—'],
+    ['Dirección',         quote.direccion      || '—'],
+    ['Comuna',            quote.comuna         || '—'],
+    ['Tipo de inmueble',  quote.tipo_inmueble  || '—'],
+  ]);
+  y = lastY() + 12;
+
+  // ESPECIFICACIONES
+  y = drawSection(y, 'ESPECIFICACIONES DEL PRODUCTO');
+  tbl(y, [
+    ['Producto',          quote.producto    || '—'],
+    ['Medidas',           quote.medidas     || '—'],
+    ['Grosor',            quote.grosor ? `${quote.grosor} mm` : '—'],
+    ['Tipo de vidrio',    quote.tipo_vidrio || '—'],
+    ['Perfil / Material', quote.perfil      || '—'],
+    ['Color',             quote.color       || '—'],
+    ['Uso',               quote.uso         || '—'],
+    ['Cantidad',          quote.cantidad    || '1'],
+  ]);
+  y = lastY() + 12;
+
+  // INSTALACIÓN
+  y = drawSection(y, 'INSTALACIÓN Y LOGÍSTICA');
+  tbl(y, [
+    ['Instalación',    quote.instalacion || '—'],
+    ['Piso / Altura',  quote.piso        || '—'],
+  ]);
+  y = lastY() + 12;
+
+  // COTIZACIÓN
+  const pMat   = parseFloat(quote.precio_material   || '0') || 0;
+  const pInst  = parseFloat(quote.costo_instalacion || '0') || 0;
+  const pDesc  = parseFloat(quote.descuento         || '0') || 0;
+  const subtotal  = pMat + pInst;
+  const descAmt   = subtotal * (pDesc / 100);
+  const baseNeto  = subtotal - descAmt;
+  const iva       = baseNeto * 0.19;
+  const total     = baseNeto + iva;
+  const has       = pMat > 0 || pInst > 0;
+  const fmtClp    = (n: number) =>
+    `$${n.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} CLP`;
+
+  const cotizRows: string[][] = [
+    ['Precio material',    has && pMat  > 0 ? fmtClp(pMat)  : '—'],
+    ['Costo instalación',  has && pInst > 0 ? fmtClp(pInst) : '—'],
+    ...(pDesc > 0 ? [['Descuento', `${pDesc}%`]] : []),
+    ['Subtotal neto',      has ? fmtClp(baseNeto) : '—'],
+    ['IVA (19%)',          has ? fmtClp(iva)      : '—'],
+    ['TOTAL',              has ? fmtClp(total)    : '(a confirmar)'],
+    ['Tiempo de entrega',  quote.tiempo_entrega   || '—'],
+  ];
+
+  y = drawSection(y, 'COTIZACIÓN');
+  tbl(y, cotizRows, {
+    didParseCell: (data: Record<string, unknown>) => {
+      const cell = data.cell as Record<string, unknown>;
+      const styles = cell.styles as Record<string, unknown>;
+      const rowIdx  = (data.row as { index: number }).index;
+      const colIdx  = (data.column as { index: number }).index;
+      const totalIdx = cotizRows.findIndex((r) => r[0] === 'TOTAL');
+      if (rowIdx === totalIdx && colIdx === 1) {
+        styles.fontStyle = 'bold';
+        styles.textColor = [27, 63, 107];
+        styles.fontSize  = 10;
+      }
+    },
+  });
+  y = lastY() + 12;
+
+  // NOTAS
+  if (quote.notas) {
+    y = drawSection(y, 'NOTAS ADICIONALES');
+    doc.setFontSize(9);
+    doc.setTextColor(40, 40, 40);
     doc.setFont('helvetica', 'normal');
-    const lines = doc.splitTextToSize(val, W - 140);
-    doc.text(lines, 140, y);
-    y += Math.max(18, lines.length * 14);
-    if (y > H - 60) {
-      doc.addPage();
-      y = 60;
-    }
+    const lines = doc.splitTextToSize(quote.notas, W - 80);
+    doc.text(lines, 40, y + 12);
+    y += (lines as string[]).length * 13 + 20;
   }
 
-  doc.save(params.filename);
+  // CONDICIONES Y GARANTÍA
+  y = drawSection(y, 'CONDICIONES Y GARANTÍA');
+  tbl(y, [
+    ['Validez',       '7 días desde la fecha de emisión'],
+    ['Forma de pago', '50% anticipo — 50% contra entrega'],
+    ['Garantía',      '6 meses por defectos de fabricación e instalación'],
+    ['Cancelaciones', 'No se aceptan una vez cortado el material'],
+  ]);
+
+  // Footer on every page
+  const pageCount = (doc as unknown as { internal: { getNumberOfPages: () => number } }).internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFillColor(27, 63, 107);
+    doc.rect(0, H - 48, W, 48, 'F');
+    doc.setFillColor(245, 166, 35);
+    doc.rect(0, H - 48, W, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Innova Digital Spa', 30, H - 31);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text('RUT 78.106.463-6  ·  +56 9 7902 5062  ·  innovadigital888@gmail.com  ·  infodecohousecl@gmail.com', 30, H - 18);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(245, 166, 35);
+    doc.text('Deco House — Soluciones en vidrios, aluminio y PVC', W - 30, H - 18, { align: 'right' });
+  }
+
+  doc.save(filename);
 }
 
 export function DecoHouseClientApp() {
@@ -136,11 +274,21 @@ export function DecoHouseClientApp() {
     email: '',
     producto: '',
     medidas: '',
+    grosor: '',
+    tipo_vidrio: '',
+    uso: '',
+    instalacion: 'Sí',
+    piso: '',
+    tipo_inmueble: '',
     comuna: '',
     direccion: '',
     cantidad: '1',
     perfil: 'Aluminio',
     color: '',
+    precio_material: '',
+    costo_instalacion: '',
+    descuento: '0',
+    tiempo_entrega: '',
     notas: '',
   });
 
@@ -225,42 +373,34 @@ export function DecoHouseClientApp() {
 
   const downloadFromLead = useCallback(async () => {
     if (!selected) return;
-    await generateDecoPdf({
-      title: 'Deco House — Presupuesto',
-      subtitle: 'Generado desde pipeline',
-      rows: [
-        ['Cliente', selected.senderName || '—'],
-        ['WhatsApp', selected.senderId || '—'],
-        ['Canal', selected.platform || '—'],
-        ['Etapa', selected.deco_stage || 'Nuevo'],
-        ['Creado', fmtWhen(selected.createdAt)],
-        ['Último mensaje', fmtWhen(selected.lastMessageAt)],
-        ['Mensaje', selected.lastMessage || '—'],
-      ],
-      filename: `decohouse-presupuesto-${(selected.senderId || selected.leadId).slice(-8)}.pdf`,
-    });
+    const q: ManualQuote = {
+      nombre: selected.senderName || '—',
+      whatsapp: selected.senderId || '—',
+      email: '',
+      producto: '',
+      medidas: '',
+      grosor: '',
+      tipo_vidrio: '',
+      uso: '',
+      instalacion: '',
+      piso: '',
+      tipo_inmueble: '',
+      comuna: '',
+      direccion: '',
+      cantidad: '1',
+      perfil: '',
+      color: '',
+      precio_material: '',
+      costo_instalacion: '',
+      descuento: '0',
+      tiempo_entrega: '',
+      notas: selected.lastMessage || '',
+    };
+    await generateDecoPdf(q, `decohouse-presupuesto-${(selected.senderId || selected.leadId).slice(-8)}.pdf`);
   }, [selected]);
 
   const downloadManual = useCallback(async () => {
-    const title = 'Deco House — Presupuesto';
-    await generateDecoPdf({
-      title,
-      subtitle: 'Presupuesto manual',
-      rows: [
-        ['Nombre', manual.nombre || '—'],
-        ['WhatsApp', manual.whatsapp || '—'],
-        ['Email', manual.email || '—'],
-        ['Producto', manual.producto || '—'],
-        ['Medidas', manual.medidas || '—'],
-        ['Comuna / Sector', manual.comuna || '—'],
-        ['Dirección', manual.direccion || '—'],
-        ['Cantidad', manual.cantidad || '—'],
-        ['Perfil', manual.perfil || '—'],
-        ['Color', manual.color || '—'],
-        ['Notas', manual.notas || '—'],
-      ],
-      filename: `decohouse-presupuesto-manual-${Date.now()}.pdf`,
-    });
+    await generateDecoPdf(manual, `decohouse-presupuesto-manual-${Date.now()}.pdf`);
   }, [manual]);
 
   return (
@@ -454,6 +594,7 @@ export function DecoHouseClientApp() {
               <p className="text-sm text-white/60 mt-1">Para cotizar leads que llegan por otros medios.</p>
 
               <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {/* Cliente */}
                 <div className="sm:col-span-2">
                   <label className="text-xs text-white/70">Nombre</label>
                   <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
@@ -469,47 +610,108 @@ export function DecoHouseClientApp() {
                   <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
                     value={manual.email} onChange={(e) => setManual((p) => ({ ...p, email: e.target.value }))} />
                 </div>
-                <div className="sm:col-span-2">
-                  <label className="text-xs text-white/70">Producto</label>
-                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                    value={manual.producto} onChange={(e) => setManual((p) => ({ ...p, producto: e.target.value }))} placeholder="Ventana / Mampara / PVC..." />
-                </div>
-                <div>
-                  <label className="text-xs text-white/70">Medidas</label>
-                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                    value={manual.medidas} onChange={(e) => setManual((p) => ({ ...p, medidas: e.target.value }))} placeholder="ancho × alto (cm)" />
-                </div>
-                <div>
-                  <label className="text-xs text-white/70">Cantidad (unidades)</label>
-                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                    value={manual.cantidad} onChange={(e) => setManual((p) => ({ ...p, cantidad: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="text-xs text-white/70">Comuna / Sector</label>
-                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                    value={manual.comuna} onChange={(e) => setManual((p) => ({ ...p, comuna: e.target.value }))} />
-                </div>
                 <div>
                   <label className="text-xs text-white/70">Dirección</label>
                   <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
                     value={manual.direccion} onChange={(e) => setManual((p) => ({ ...p, direccion: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="text-xs text-white/70">Perfil</label>
+                  <label className="text-xs text-white/70">Comuna / Sector</label>
+                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.comuna} onChange={(e) => setManual((p) => ({ ...p, comuna: e.target.value }))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-white/70">Tipo de inmueble</label>
+                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.tipo_inmueble} onChange={(e) => setManual((p) => ({ ...p, tipo_inmueble: e.target.value }))} placeholder="Casa / Depto / Oficina / Local..." />
+                </div>
+
+                {/* Producto */}
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-white/70">Producto</label>
+                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.producto} onChange={(e) => setManual((p) => ({ ...p, producto: e.target.value }))} placeholder="Ventana / Mampara / Vidrio / Espejo..." />
+                </div>
+                <div>
+                  <label className="text-xs text-white/70">Medidas (ancho × alto cm)</label>
+                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.medidas} onChange={(e) => setManual((p) => ({ ...p, medidas: e.target.value }))} placeholder="ej. 120 × 200" />
+                </div>
+                <div>
+                  <label className="text-xs text-white/70">Grosor (mm)</label>
+                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.grosor} onChange={(e) => setManual((p) => ({ ...p, grosor: e.target.value }))} placeholder="4 / 5 / 6 / 8" />
+                </div>
+                <div>
+                  <label className="text-xs text-white/70">Tipo de vidrio</label>
+                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.tipo_vidrio} onChange={(e) => setManual((p) => ({ ...p, tipo_vidrio: e.target.value }))} placeholder="Crudo / Laminado / Templado / Espejo..." />
+                </div>
+                <div>
+                  <label className="text-xs text-white/70">Perfil / Material</label>
                   <select className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
                     value={manual.perfil} onChange={(e) => setManual((p) => ({ ...p, perfil: e.target.value }))}>
+                    <option value="">— Sin perfil (solo vidrio) —</option>
                     <option>Aluminio</option>
                     <option>PVC</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-white/70">Color</label>
+                  <label className="text-xs text-white/70">Color del perfil</label>
                   <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                    value={manual.color} onChange={(e) => setManual((p) => ({ ...p, color: e.target.value }))} placeholder="Negro / Blanco / ..." />
+                    value={manual.color} onChange={(e) => setManual((p) => ({ ...p, color: e.target.value }))} placeholder="Blanco / Negro / Titanio..." />
                 </div>
+                <div>
+                  <label className="text-xs text-white/70">Uso</label>
+                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.uso} onChange={(e) => setManual((p) => ({ ...p, uso: e.target.value }))} placeholder="Residencial / Comercial / Baño..." />
+                </div>
+                <div>
+                  <label className="text-xs text-white/70">Cantidad (unidades)</label>
+                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.cantidad} onChange={(e) => setManual((p) => ({ ...p, cantidad: e.target.value }))} />
+                </div>
+
+                {/* Instalación */}
+                <div>
+                  <label className="text-xs text-white/70">Instalación</label>
+                  <select className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.instalacion} onChange={(e) => setManual((p) => ({ ...p, instalacion: e.target.value }))}>
+                    <option>Sí</option>
+                    <option>No (solo producto)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-white/70">Piso / Altura</label>
+                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.piso} onChange={(e) => setManual((p) => ({ ...p, piso: e.target.value }))} placeholder="Piso 1 / 3er piso con escaleras..." />
+                </div>
+
+                {/* Cotización */}
+                <div>
+                  <label className="text-xs text-white/70">Precio material (CLP)</label>
+                  <input type="number" min="0" className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.precio_material} onChange={(e) => setManual((p) => ({ ...p, precio_material: e.target.value }))} placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs text-white/70">Costo instalación (CLP)</label>
+                  <input type="number" min="0" className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.costo_instalacion} onChange={(e) => setManual((p) => ({ ...p, costo_instalacion: e.target.value }))} placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs text-white/70">Descuento (%)</label>
+                  <input type="number" min="0" max="100" className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.descuento} onChange={(e) => setManual((p) => ({ ...p, descuento: e.target.value }))} placeholder="0" />
+                </div>
+                <div>
+                  <label className="text-xs text-white/70">Tiempo de entrega</label>
+                  <input className="mt-1 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                    value={manual.tiempo_entrega} onChange={(e) => setManual((p) => ({ ...p, tiempo_entrega: e.target.value }))} placeholder="5-7 días hábiles..." />
+                </div>
+
                 <div className="sm:col-span-2">
-                  <label className="text-xs text-white/70">Notas</label>
-                  <textarea className="mt-1 w-full min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  <label className="text-xs text-white/70">Notas adicionales</label>
+                  <textarea className="mt-1 w-full min-h-[80px] rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
                     value={manual.notas} onChange={(e) => setManual((p) => ({ ...p, notas: e.target.value }))} />
                 </div>
               </div>
@@ -534,10 +736,20 @@ export function DecoHouseClientApp() {
                   <p><span className="text-white/60">Nombre:</span> {manual.nombre || '—'}</p>
                   <p><span className="text-white/60">WhatsApp:</span> {manual.whatsapp || '—'}</p>
                   <p><span className="text-white/60">Producto:</span> {manual.producto || '—'}</p>
-                  <p><span className="text-white/60">Medidas:</span> {manual.medidas || '—'}</p>
+                  <p><span className="text-white/60">Medidas:</span> {manual.medidas || '—'}{manual.grosor ? ` · ${manual.grosor}mm` : ''}</p>
+                  <p><span className="text-white/60">Vidrio:</span> {manual.tipo_vidrio || '—'}</p>
+                  <p><span className="text-white/60">Perfil:</span> {manual.perfil || 'Sin perfil'} {manual.color ? `· ${manual.color}` : ''}</p>
                   <p><span className="text-white/60">Cantidad:</span> {manual.cantidad || '—'} unidad(es)</p>
-                  <p><span className="text-white/60">Perfil:</span> {manual.perfil || '—'} {manual.color ? `· ${manual.color}` : ''}</p>
-                  <p><span className="text-white/60">Dirección:</span> {manual.direccion || '—'}</p>
+                  <p><span className="text-white/60">Instalación:</span> {manual.instalacion || '—'} {manual.piso ? `· ${manual.piso}` : ''}</p>
+                  <p><span className="text-white/60">Dirección:</span> {manual.direccion || '—'}{manual.comuna ? `, ${manual.comuna}` : ''}</p>
+                  {(parseFloat(manual.precio_material || '0') > 0 || parseFloat(manual.costo_instalacion || '0') > 0) && (
+                    <p><span className="text-white/60">Total estimado:</span> $
+                      {(
+                        (parseFloat(manual.precio_material || '0') + parseFloat(manual.costo_instalacion || '0')) *
+                        (1 - parseFloat(manual.descuento || '0') / 100) * 1.19
+                      ).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} CLP
+                    </p>
+                  )}
                 </div>
               </div>
               <p className="mt-4 text-xs text-white/50">

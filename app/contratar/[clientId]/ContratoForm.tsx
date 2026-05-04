@@ -33,8 +33,11 @@ Agentia no será responsable por pérdidas comerciales, lucro cesante o daños i
 9. MODIFICACIONES AL SERVICIO Y A ESTOS TÉRMINOS
 Agentia se reserva el derecho de modificar estos términos con 30 días de anticipación mediante notificación al correo del cliente. El uso continuado del servicio luego del vencimiento del plazo de notificación implica la aceptación tácita de los nuevos términos.
 
-10. LEY APLICABLE Y JURISDICCIÓN
-Este contrato se rige por las leyes de la República Argentina. Cualquier controversia derivada del mismo será sometida a la jurisdicción de los tribunales ordinarios de la Ciudad Autónoma de Buenos Aires, renunciando las partes a cualquier otro fuero que pudiere corresponder.
+10. AVISO DE PRIVACIDAD
+Los datos personales recabados son tratados conforme a lo establecido en la Ley 19.628 sobre Protección de la Vida Privada (Chile) y la Ley Federal de Protección de Datos Personales en Posesión de los Particulares — LFPDPPP (México). La información será utilizada exclusivamente para la prestación del servicio contratado y no será cedida a terceros sin consentimiento expreso del titular. El cliente podrá ejercer sus derechos de acceso, rectificación, cancelación y oposición (ARCO) mediante solicitud formal a soporte@agentia.io.
+
+11. SOPORTE Y MODIFICACIONES
+El soporte técnico está disponible de lunes a viernes de 9:00 a 19:00 hrs (GMT-6). El tiempo de respuesta es de máximo 6 horas para consultas generales y 2 horas para urgencias críticas. El plan incluye hasta 2 modificaciones sin código por mes (ajustes de texto, respuestas del bot, configuración básica) y 1 modificación con código por mes (nuevas funcionalidades menores). Los cambios mayores, nuevas integraciones o desarrollos a medida tendrán un costo adicional de $30 USD por tarea, a cotizar previamente con el cliente.
 
 Al firmar este contrato, el cliente declara haber leído, comprendido y aceptado la totalidad de los presentes términos y condiciones.`;
 
