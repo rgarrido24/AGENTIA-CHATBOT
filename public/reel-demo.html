@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentia — Reel Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+    }
+
+    /* ── Phone shell ─────────────────────────────────────── */
+    #phone-wrap {
+      transition: opacity 0.9s ease;
+      filter: drop-shadow(0 40px 80px rgba(0,168,132,0.08));
+    }
+
+    .phone {
+      width: 295px;
+      height: 615px;
+      border-radius: 42px;
+      background: #111b22;
+      border: 2px solid #222e35;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px #0a0a0a,
+        0 24px 80px rgba(0,0,0,0.95);
+      opacity: 0;
+      transform: translateY(28px) scale(0.97);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .phone.show { opacity: 1; transform: none; }
+
+    /* Status bar */
+    .status-bar {
+      background: #1f2c34;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #e9edef;
+    }
+    .sb-right { display: flex; gap: 6px; align-items: center; font-size: 9px; }
+
+    /* Header */
+    .wa-header {
+      background: #1f2c34;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px 0 6px;
+      gap: 8px;
+    }
+    .back { color: #8696a0; font-size: 22px; line-height: 1; padding: 0 2px; }
+    .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: #2a3942;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px;
+      flex-shrink: 0;
+    }
+    .cinfo { flex: 1; min-width: 0; }
+    .cname {
+      color: #e9edef;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cstatus { color: #00a884; font-size: 11px; margin-top: 2px; }
+    .h-icons { display: flex; gap: 18px; color: #8696a0; font-size: 17px; }
+
+    /* Chat area */
+    .wa-chat {
+      height: calc(615px - 28px - 58px - 56px);
+      background: #0b141a;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px 7px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      scrollbar-width: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%231a2738' fill-opacity='0.35'/%3E%3C/svg%3E");
+    }
+    .wa-chat::-webkit-scrollbar { display: none; }
+
+    /* Date chip */
+    .date-chip {
+      align-self: center;
+      background: #182229;
+      color: #8696a0;
+      font-size: 10px;
+      padding: 3px 11px;
+      border-radius: 7px;
+      margin-bottom: 8px;
+    }
+
+    /* Message bubbles */
+    .msg {
+      max-width: 84%;
+      padding: 6px 9px 18px;
+      border-radius: 7.5px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      position: relative;
+      white-space: pre-wrap;
+      word-break: break-word;
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+      transition: opacity 0.28s ease, transform 0.28s ease;
+      flex-shrink: 0;
+    }
+    .msg.show { opacity: 1; transform: none; }
+
+    .msg.sent {
+      background: #005c4b;
+      color: #e9edef;
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+    .msg.sent::after {
+      content: '';
+      position: absolute;
+      bottom: 0; right: -8px;
+      width: 0; height: 0;
+      border-left: 8px solid #005c4b;
+      border-bottom: 8px solid transparent;
+    }
+    .msg.recv {
+      background: #1f2c34;
+      color: #e9edef;
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+    }
+    .msg.recv::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: -8px;
+      width: 0; height: 0;
+      border-right: 8px solid #1f2c34;
+      border-bottom: 8px solid transparent;
+    }
+
+    /* Special confirmation bubble */
+    .msg.confirm {
+      background: #0d2b22;
+      border: 1px solid #00a88430;
+    }
+    .msg.confirm::after { border-right-color: #0d2b22; }
+
+    .msg-meta {
+      position: absolute;
+      bottom: 4px; right: 8px;
+      display: flex; align-items: center; gap: 3px;
+      font-size: 9.5px;
+      color: rgba(233,237,239,0.5);
+      white-space: nowrap;
+    }
+    .ticks { color: #53bdeb; }
+
+    /* Typing indicator */
+    .typing-wrap {
+      align-self: flex-start;
+      flex-shrink: 0;
+    }
+    .typing {
+      background: #1f2c34;
+      border-radius: 7.5px;
+      border-bottom-left-radius: 2px;
+      padding: 10px 14px;
+      display: none;
+      gap: 5px;
+      align-items: center;
+    }
+    .typing-wrap.show .typing { display: flex; }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #8696a0;
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+      40% { transform: translateY(-5px); opacity: 1; }
+    }
+
+    /* Input bar */
+    .wa-input {
+      background: #1f2c34;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      gap: 8px;
+      border-top: 1px solid #2a3942;
+    }
+    .i-icon { color: #8696a0; font-size: 21px; }
+    .i-field {
+      flex: 1;
+      background: #2a3942;
+      border-radius: 22px;
+      height: 38px;
+      display: flex; align-items: center;
+      padding: 0 14px;
+      color: #8696a0;
+      font-size: 13px;
+    }
+    .mic {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #00a884;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+    }
+
+    /* ── Overlays ─────────────────────────────────────────── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 28px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.7s ease;
+      z-index: 50;
+    }
+    .overlay.show { opacity: 1; }
+    .overlay.show .ot { animation: slideUp 0.5s ease forwards; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .ot { opacity: 0; }
+
+    .t-huge {
+      font-size: clamp(38px, 8vw, 78px);
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+    }
+    .t-huge .g { color: #22c55e; }
+
+    .t-large {
+      font-size: clamp(26px, 5vw, 52px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-top: 8px;
+    }
+    .t-large .g { color: #22c55e; }
+
+    .logo-scene {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 20px;
+    }
+    .logo-img {
+      width: 90px; height: 90px;
+      border-radius: 24px;
+      object-fit: contain;
+      background: #111;
+    }
+    .logo-fallback {
+      width: 90px; height: 90px;
+      border-radius: 24px;
+      background: #22c55e;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px;
+      font-weight: 900;
+      color: #000;
+    }
+    .domain-txt {
+      font-size: clamp(24px, 4.5vw, 48px);
+      font-weight: 800;
+      color: #22c55e;
+      letter-spacing: 0.01em;
+    }
+    .sub-txt {
+      font-size: 14px;
+      color: #444;
+      margin-top: -6px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Phone -->
+<div id="phone-wrap">
+  <div class="phone" id="phone">
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="sb-right">
+        <span>▂▄▆</span>
+        <span>WiFi</span>
+        <span>■ 87%</span>
+      </div>
+    </div>
+
+    <!-- WhatsApp header -->
+    <div class="wa-header">
+      <span class="back">‹</span>
+      <div class="avatar">💈</div>
+      <div class="cinfo">
+        <div class="cname">Barbería Don Carlos</div>
+        <div class="cstatus">en línea</div>
+      </div>
+      <div class="h-icons">
+        <span>📹</span>
+        <span>📞</span>
+        <span>⋮</span>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="wa-chat" id="chat">
+      <div class="date-chip">Hoy</div>
+      <div class="typing-wrap" id="typing-wrap">
+        <div class="typing" id="typing">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input bar -->
+    <div class="wa-input">
+      <span class="i-icon">😊</span>
+      <div class="i-field">Escribe un mensaje</div>
+      <span class="i-icon">📎</span>
+      <div class="mic">🎤</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Overlay 1 -->
+<div class="overlay" id="o1">
+  <div class="ot">
+    <div class="t-huge">Esto pasa<br>mientras</div>
+    <div class="t-huge"><span class="g">TÚ duermes</span></div>
+  </div>
+</div>
+
+<!-- Overlay 2 -->
+<div class="overlay" id="o2">
+  <div class="ot">
+    <div class="t-large">Tu negocio nunca para</div>
+    <div class="t-huge"><span class="g">con Agentia</span></div>
+  </div>
+</div>
+
+<!-- Overlay 3 -->
+<div class="overlay" id="o3">
+  <div class="ot logo-scene">
+    <img class="logo-img" src="/logo-agentia-2026.png" alt="Agentia"
+      onerror="this.style.display='none';document.getElementById('logo-fb').style.display='flex'">
+    <div class="logo-fallback" id="logo-fb" style="display:none">A</div>
+    <div>
+      <div class="domain-txt">agentia.software</div>
+      <div class="sub-txt">Chatbots con IA para tu negocio</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const chat    = document.getElementById('chat');
+  const typWrap = document.getElementById('typing-wrap');
+  const phone   = document.getElementById('phone');
+  const phoneW  = document.getElementById('phone-wrap');
+
+  function at(ms, fn) { setTimeout(fn, ms); }
+
+  function addMsg(role, text, extra) {
+    typWrap.classList.remove('show');
+
+    const el  = document.createElement('div');
+    el.className = 'msg ' + (role === 'u' ? 'sent' : 'recv') + (extra ? ' ' + extra : '');
+
+    const time = role === 'u' ? '9:41' : '9:41';
+    const checks = role === 'u' ? '<span class="ticks">✓✓</span>' : '';
+
+    el.innerHTML =
+      text.replace(/\n/g, '<br>') +
+      `<div class="msg-meta">${time} ${checks}</div>`;
+
+    // Insert before typing indicator
+    chat.insertBefore(el, typWrap);
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.classList.add('show');
+      chat.scrollTop = chat.scrollHeight;
+    }));
+  }
+
+  function showTyping() {
+    typWrap.classList.add('show');
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function showOverlay(id, prevId) {
+    if (prevId) {
+      const prev = document.getElementById(prevId);
+      prev.classList.remove('show');
+    }
+    at(prevId ? 650 : 0, () => document.getElementById(id).classList.add('show'));
+  }
+
+  // ── Timeline ───────────────────────────────────────────────────────────────
+
+  at(400,   () => phone.classList.add('show'));
+
+  // 2s — Cliente escribe
+  at(2000,  () => addMsg('u', 'Hola, quiero un corte mañana'));
+
+  // 3s — Typing
+  at(3000,  () => showTyping());
+
+  // 4s — Bot responde
+  at(4100,  () => addMsg('b', '¡Hola! 👋 Soy el asistente de\nBarbería Don Carlos.\n¿A qué hora te queda mejor?'));
+
+  // 6s — Cliente
+  at(6000,  () => addMsg('u', 'A las 6pm'));
+
+  // ~6.5s — Typing
+  at(6500,  () => showTyping());
+
+  // 7s — Bot
+  at(7600,  () => addMsg('b', 'Perfecto ✅ Tenemos disponible\n6:00 pm y 6:30 pm mañana viernes.\n¿Cuál prefieres?'));
+
+  // 9s — Cliente
+  at(9000,  () => addMsg('u', 'Las 6'));
+
+  // ~9.5s — Typing
+  at(9500,  () => showTyping());
+
+  // 10s — Bot confirma
+  at(10600, () => addMsg('b',
+    '¡Listo! 🎉 Tu cita está confirmada:\n\n📅 Viernes 2 de mayo\n⏰ 6:00 PM\n💈 Barbería Don Carlos\n\nTe mandamos recordatorio\n1 hora antes. ✨',
+    'confirm'
+  ));
+
+  // 16s — Fade out phone
+  at(16000, () => { phoneW.style.opacity = '0'; });
+
+  // 17s — "Esto pasa mientras TÚ duermes"
+  at(17000, () => showOverlay('o1'));
+
+  // 20s — "Tu negocio nunca para con Agentia"
+  at(20000, () => showOverlay('o2', 'o1'));
+
+  // 22s — Logo + agentia.software
+  at(22000, () => showOverlay('o3', 'o2'));
+
+  // 25s — fade final (loop: false)
+  at(25000, () => {
+    const o3 = document.getElementById('o3');
+    o3.style.transition = 'opacity 1.5s ease';
+    o3.style.opacity = '0.35';
+  });
+</script>
+</body>
+</html>
