@@ -122,6 +122,7 @@ async function enqueueAdminAlert(
     leadId:       string;
     clientId:     string;
     resellerMatch: { resellerId: string; clientSlug: string; alertNumber?: string } | null;
+    dedupKey?:    string;
   }
 ) {
   const alertNumber = lead.resellerMatch?.alertNumber ?? process.env.FB_ALERT_NUMBER;
@@ -131,13 +132,21 @@ async function enqueueAdminAlert(
   // Deduplicación: solo bloquear si ya existe OTRA ALERTA ADMIN para este leadId
   // (no confundir con el mensaje de bienvenida, que también lleva leadId)
   const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
-  const existing = await db.collection('outbound_messages').findOne({
-    leadId: lead.leadId,
-    source: 'admin-alert',
-    createdAt: { $gte: fiveMinAgo },
-  });
+  const existing = await db.collection('outbound_messages').findOne(
+    lead.dedupKey
+      ? {
+          source: 'admin-alert',
+          dedupKey: lead.dedupKey,
+          createdAt: { $gte: fiveMinAgo },
+        }
+      : {
+          leadId: lead.leadId,
+          source: 'admin-alert',
+          createdAt: { $gte: fiveMinAgo },
+        }
+  );
   if (existing) {
-    console.log(`[fb-leads] alerta bloqueada por duplicado — leadId: ${lead.leadId}`);
+    console.log(`[fb-leads] alerta bloqueada por duplicado — dedupKey/leadId: ${lead.dedupKey ?? lead.leadId}`);
     return;
   }
 
@@ -159,6 +168,7 @@ async function enqueueAdminAlert(
     clientId:  lead.clientId,
     leadId:    lead.leadId,
     source:    'admin-alert',
+    ...(lead.dedupKey ? { dedupKey: lead.dedupKey } : {}),
     message,
     createdAt: new Date(),
   });
@@ -265,7 +275,15 @@ async function processZapierLead(data: Record<string, unknown>) {
   console.log(`[fb-leads/zapier] Lead insertado: ${leadId}`);
 
   // NO enviar ningún mensaje al lead. Solo alerta al admin (Luciano).
-  await enqueueAdminAlert(db, { leadId, clientId, resellerMatch });
+  const dedupKey = [
+    'zapier',
+    clientId,
+    resellerMatch?.resellerId || 'unknown',
+    resellerMatch?.clientSlug || 'unknown',
+    form_id || 'noform',
+    phone || senderId,
+  ].join('|');
+  await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
 }
 
 // ─── Formato Meta nativo (entry.changes[].field === 'leadgen') ────────────────
@@ -368,7 +386,15 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
       }
 
       // NO enviar ningún mensaje al lead. Solo alerta al admin (Luciano).
-      await enqueueAdminAlert(db, { leadId, clientId, resellerMatch });
+      const dedupKey = [
+        'meta',
+        clientId,
+        resellerMatch?.resellerId || 'unknown',
+        resellerMatch?.clientSlug || 'unknown',
+        form_id || 'noform',
+        leadgen_id || senderId,
+      ].join('|');
+      await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
 
       console.log(`[fb-leads/meta] Lead guardado: ${leadId} | campaña: ${campaign_name}`);
     }

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 
@@ -14,6 +15,11 @@ function isDesktopFinePointer(): boolean {
 
 export function GlobalWhatsAppAndExit() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Solo en landing principal y en /ready. Nunca en /portal, /dashboard, /admin, etc.
+  const isAllowedPage = pathname === '/' || pathname === '/ready';
+  if (!isAllowedPage) return null;
 
   const canShow = useMemo(() => {
     if (typeof window === 'undefined') return false;
