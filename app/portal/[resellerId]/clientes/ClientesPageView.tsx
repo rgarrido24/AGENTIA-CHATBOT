@@ -114,6 +114,28 @@ export default function ClientesPageView({
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
+        <div className="flex items-center gap-3 text-xs mb-5">
+          <Link
+            href={`/portal/${resellerId}/dashboard`}
+            className="px-3 py-2 rounded-lg border shadow-sm"
+            style={{ background: cardBg, borderColor: cardBorder, color: titleColor }}
+          >
+            Dashboard
+          </Link>
+          <span
+            className="px-3 py-2 rounded-lg border shadow-sm font-semibold"
+            style={{ background: isLuciano && light ? '#CCFF00' : cardBg, borderColor: cardBorder, color: isLuciano && light ? '#000' : titleColor }}
+          >
+            Mis clientes
+          </span>
+          <Link
+            href={`/portal/${resellerId}/brief`}
+            className="px-3 py-2 rounded-lg border shadow-sm"
+            style={{ background: cardBg, borderColor: cardBorder, color: titleColor }}
+          >
+            Brief Digital
+          </Link>
+        </div>
         {rows.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-sm" style={{ color: emptyColor }}>No tienes clientes registrados.</p>

@@ -122,6 +122,28 @@ export default function DashboardView({
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        <div className="flex items-center gap-3 text-xs">
+          <span
+            className="px-3 py-2 rounded-lg border shadow-sm font-semibold"
+            style={{ background: isLuciano && light ? '#CCFF00' : statCardBg, borderColor: statBorder, color: isLuciano && light ? '#000' : titleWhite }}
+          >
+            Dashboard
+          </span>
+          <Link
+            href={`/portal/${resellerId}/clientes`}
+            className="px-3 py-2 rounded-lg border shadow-sm"
+            style={{ background: statCardBg, borderColor: statBorder, color: titleWhite }}
+          >
+            Mis clientes
+          </Link>
+          <Link
+            href={`/portal/${resellerId}/brief`}
+            className="px-3 py-2 rounded-lg border shadow-sm"
+            style={{ background: statCardBg, borderColor: statBorder, color: titleWhite }}
+          >
+            Brief Digital
+          </Link>
+        </div>
         <div>
           <p className="text-xs font-semibold mb-3" style={{ color: muted }}>
             Resumen global
