@@ -19,218 +19,318 @@
       overflow: hidden;
     }
 
-    /* ── Phone shell ─────────────────────────────────────── */
+    /* ── Phone shell (iPhone 15 Pro) ───────────────────────────────────────── */
     #phone-wrap {
       transition: opacity 0.9s ease;
-      filter: drop-shadow(0 40px 80px rgba(0,168,132,0.08));
+      filter: drop-shadow(0 40px 80px rgba(0,0,0,0.80));
     }
 
     .phone {
-      width: 295px;
-      height: 615px;
-      border-radius: 42px;
-      background: #111b22;
-      border: 2px solid #222e35;
+      width: 306px;
+      height: 640px;
+      border-radius: 44px;
+      background: #1c1c1e; /* titanio oscuro */
+      border: 1px solid rgba(255,255,255,0.10);
       overflow: hidden;
-      box-shadow:
-        0 0 0 1px #0a0a0a,
-        0 24px 80px rgba(0,0,0,0.95);
       opacity: 0;
       transform: translateY(28px) scale(0.97);
       transition: opacity 0.7s ease, transform 0.7s ease;
+      position: relative;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.06),
+        inset 0 0 0 0.5px rgba(0,0,0,0.6);
     }
     .phone.show { opacity: 1; transform: none; }
 
+    /* left edge reflection + subtle inner glow */
+    .phone::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.05) 14%, transparent 42%);
+      mix-blend-mode: screen;
+      opacity: 0.46;
+    }
+    .phone::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 40px;
+      pointer-events: none;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.05),
+        inset 0 16px 28px rgba(0,0,0,0.32);
+    }
+
+    /* Side buttons visible */
+    .side-btn {
+      position: absolute;
+      width: 5px;
+      border-radius: 5px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.24), rgba(0,0,0,0.35));
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25);
+      opacity: 0.92;
+      z-index: 6;
+    }
+    .btn-vol-up { left: -2px; top: 132px; height: 34px; }
+    .btn-vol-down { left: -2px; top: 175px; height: 34px; }
+    .btn-action { left: -2px; top: 92px; height: 22px; opacity: 0.78; }
+    .btn-power { right: -2px; top: 145px; height: 52px; }
+
+    /* Screen */
+    .screen {
+      position: absolute;
+      left: 9px; right: 9px; top: 9px; bottom: 9px;
+      border-radius: 38px;
+      overflow: hidden;
+      background: #0d1117;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+      z-index: 2;
+    }
+
+    /* Dynamic Island */
+    .island {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 112px;
+      height: 30px;
+      border-radius: 20px;
+      background: #000;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.06),
+        0 10px 22px rgba(0,0,0,0.55);
+      z-index: 20;
+    }
+    .island::after{
+      content:'';
+      position:absolute;
+      right: 10px; top: 9px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.22), rgba(255,255,255,0.04));
+      opacity: 0.9;
+    }
+
     /* Status bar */
     .status-bar {
-      background: #1f2c34;
-      height: 28px;
+      background: transparent;
+      height: 34px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
-      font-size: 10px;
-      font-weight: 700;
-      color: #e9edef;
+      padding: 0 22px;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: rgba(233,237,239,0.92);
+      position: relative;
+      z-index: 10;
     }
-    .sb-right { display: flex; gap: 6px; align-items: center; font-size: 9px; }
+    .sb-right { display: flex; gap: 8px; align-items: center; font-size: 9px; opacity: 0.95; }
 
-    /* Header */
+    /* WhatsApp header */
     .wa-header {
-      background: #1f2c34;
-      height: 58px;
+      background: #075e54;
+      height: 62px;
       display: flex;
       align-items: center;
-      padding: 0 10px 0 6px;
+      padding: 0 12px 0 8px;
       gap: 8px;
+      position: relative;
+      z-index: 9;
+      box-shadow: 0 16px 26px rgba(0,0,0,0.28);
     }
-    .back { color: #8696a0; font-size: 22px; line-height: 1; padding: 0 2px; }
+    .back { color: rgba(255,255,255,0.74); font-size: 22px; line-height: 1; padding: 0 2px; }
     .avatar {
       width: 38px; height: 38px;
       border-radius: 50%;
-      background: #2a3942;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 19px;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='30%25' r='70%25'%3E%3Cstop offset='0%25' stop-color='%23f59e0b'/%3E%3Cstop offset='55%25' stop-color='%23b45309'/%3E%3Cstop offset='100%25' stop-color='%2311151a'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='96' height='96' rx='48' fill='url(%23g)'/%3E%3Cpath d='M22 62c6-8 16-12 26-12s20 4 26 12' fill='none' stroke='%23ffffff' stroke-opacity='.35' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M34 36c4-6 11-10 14-10s10 4 14 10' fill='none' stroke='%23ffffff' stroke-opacity='.22' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M18 70h60' stroke='%230b0f14' stroke-opacity='.45' stroke-width='10' stroke-linecap='round'/%3E%3Cpath d='M26 70h44' stroke='%23ffffff' stroke-opacity='.16' stroke-width='8' stroke-linecap='round'/%3E%3Cpath d='M40 64l6 6' stroke='%23ffffff' stroke-opacity='.35' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M56 64l-6 6' stroke='%23ffffff' stroke-opacity='.35' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E") center/cover no-repeat;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.35);
       flex-shrink: 0;
     }
     .cinfo { flex: 1; min-width: 0; }
     .cname {
       color: #e9edef;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
       line-height: 1;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .cstatus { color: #00a884; font-size: 11px; margin-top: 2px; }
-    .h-icons { display: flex; gap: 18px; color: #8696a0; font-size: 17px; }
+    .verified {
+      font-size: 12px;
+      color: #53bdeb; /* blue ticks */
+      letter-spacing: -0.04em;
+      font-weight: 800;
+    }
+    .cstatus {
+      color: #25D366;
+      font-size: 11px;
+      margin-top: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pulse-dot{
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #25D366;
+      box-shadow: 0 0 0 0 rgba(37,211,102,0.45);
+      animation: onlinePulse 1.2s ease-in-out infinite;
+    }
+    @keyframes onlinePulse{
+      0%{ transform: scale(0.9); box-shadow: 0 0 0 0 rgba(37,211,102,0.35); opacity: .85;}
+      60%{ transform: scale(1.05); box-shadow: 0 0 0 10px rgba(37,211,102,0); opacity: 1;}
+      100%{ transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37,211,102,0); opacity: .85;}
+    }
+    .h-icons { display: flex; gap: 14px; color: rgba(255,255,255,0.90); }
+    .h-icons svg { width: 18px; height: 18px; opacity: 0.92; }
 
     /* Chat area */
     .wa-chat {
-      height: calc(615px - 28px - 58px - 56px);
-      background: #0b141a;
+      height: calc(640px - 18px - 34px - 62px - 60px - 18px);
+      background: #0d1117;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 10px 7px 6px;
+      padding: 12px 10px 10px;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 8px;
       scrollbar-width: none;
-      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%231a2738' fill-opacity='0.35'/%3E%3C/svg%3E");
+      background-image:
+        url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%231a2738' stroke-opacity='.28' stroke-width='2'%3E%3Cpath d='M40 60c18-20 34-20 52 0s34 20 52 0 34-20 52 0'/%3E%3Cpath d='M20 150c18-20 34-20 52 0s34 20 52 0 34-20 52 0'/%3E%3Cpath d='M60 110c10-10 20-10 30 0s20 10 30 0 20-10 30 0'/%3E%3Cpath d='M90 35c8-10 16-10 24 0s16 10 24 0'/%3E%3Cpath d='M80 200c8-10 16-10 24 0s16 10 24 0'/%3E%3C/g%3E%3Cg fill='%231a2738' fill-opacity='.20'%3E%3Ccircle cx='40' cy='40' r='3'/%3E%3Ccircle cx='210' cy='90' r='3'/%3E%3Ccircle cx='120' cy='160' r='3'/%3E%3Ccircle cx='70' cy='180' r='3'/%3E%3Ccircle cx='190' cy='200' r='3'/%3E%3C/g%3E%3C/svg%3E\");
+      background-size: 240px 240px;
     }
     .wa-chat::-webkit-scrollbar { display: none; }
 
     /* Date chip */
     .date-chip {
       align-self: center;
-      background: #182229;
-      color: #8696a0;
+      background: rgba(255,255,255,0.06);
+      color: rgba(233,237,239,0.62);
       font-size: 10px;
-      padding: 3px 11px;
-      border-radius: 7px;
-      margin-bottom: 8px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 4px;
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
     }
 
-    /* Message bubbles */
-    .msg {
-      max-width: 84%;
-      padding: 6px 9px 18px;
-      border-radius: 7.5px;
-      font-size: 12.5px;
-      line-height: 1.5;
-      position: relative;
-      white-space: pre-wrap;
-      word-break: break-word;
+    /* Message bubbles with meta below */
+    .msg-wrap{
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-width: 86%;
       opacity: 0;
-      transform: translateY(8px) scale(0.96);
+      transform: translateY(10px) scale(0.965);
       transition: opacity 0.28s ease, transform 0.28s ease;
       flex-shrink: 0;
     }
-    .msg.show { opacity: 1; transform: none; }
-
+    .msg-wrap.show { opacity: 1; transform: none; }
+    .msg {
+      padding: 8px 10px;
+      border-radius: 16px;
+      font-size: 12.6px;
+      line-height: 1.45;
+      position: relative;
+      white-space: pre-wrap;
+      word-break: break-word;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+    }
     .msg.sent {
       background: #005c4b;
       color: #e9edef;
       align-self: flex-end;
-      border-bottom-right-radius: 2px;
-    }
-    .msg.sent::after {
-      content: '';
-      position: absolute;
-      bottom: 0; right: -8px;
-      width: 0; height: 0;
-      border-left: 8px solid #005c4b;
-      border-bottom: 8px solid transparent;
+      border-bottom-right-radius: 6px;
     }
     .msg.recv {
-      background: #1f2c34;
+      background: #1e1e1e;
       color: #e9edef;
       align-self: flex-start;
-      border-bottom-left-radius: 2px;
+      border-bottom-left-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.06);
     }
-    .msg.recv::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: -8px;
-      width: 0; height: 0;
-      border-right: 8px solid #1f2c34;
-      border-bottom: 8px solid transparent;
-    }
-
-    /* Special confirmation bubble */
-    .msg.confirm {
-      background: #0d2b22;
-      border: 1px solid #00a88430;
-    }
-    .msg.confirm::after { border-right-color: #0d2b22; }
+    .msg.confirm { background: #0d2b22; border: 1px solid #00a88430; }
 
     .msg-meta {
-      position: absolute;
-      bottom: 4px; right: 8px;
-      display: flex; align-items: center; gap: 3px;
-      font-size: 9.5px;
-      color: rgba(233,237,239,0.5);
+      font-size: 10px;
+      color: rgba(233,237,239,0.55);
       white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 6px;
     }
-    .ticks { color: #53bdeb; }
+    .meta-right { justify-content: flex-end; }
+    .meta-left { justify-content: flex-start; }
+    .ticks { color: #53bdeb; letter-spacing: -0.04em; font-weight: 800; }
 
-    /* Typing indicator */
-    .typing-wrap {
-      align-self: flex-start;
-      flex-shrink: 0;
-    }
+    /* Typing indicator: 3 dots bouncing */
+    .typing-wrap { align-self: flex-start; flex-shrink: 0; }
     .typing {
-      background: #1f2c34;
-      border-radius: 7.5px;
-      border-bottom-left-radius: 2px;
+      background: #1e1e1e;
+      border-radius: 16px;
+      border-bottom-left-radius: 6px;
       padding: 10px 14px;
       display: none;
-      gap: 5px;
+      gap: 6px;
       align-items: center;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.06);
     }
     .typing-wrap.show .typing { display: flex; }
     .dot {
       width: 7px; height: 7px;
       border-radius: 50%;
-      background: #8696a0;
-      animation: bounce 1.2s ease-in-out infinite;
+      background: #a1adb6;
+      animation: bounce 0.95s cubic-bezier(.2,.65,.35,1) infinite;
     }
-    .dot:nth-child(2) { animation-delay: 0.2s; }
-    .dot:nth-child(3) { animation-delay: 0.4s; }
+    .dot:nth-child(2) { animation-delay: 0.15s; }
+    .dot:nth-child(3) { animation-delay: 0.30s; }
     @keyframes bounce {
       0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
-      40% { transform: translateY(-5px); opacity: 1; }
+      40% { transform: translateY(-6px); opacity: 1; }
     }
 
     /* Input bar */
     .wa-input {
       background: #1f2c34;
-      height: 56px;
+      height: 60px;
       display: flex;
       align-items: center;
-      padding: 0 8px;
+      padding: 0 10px;
       gap: 8px;
-      border-top: 1px solid #2a3942;
+      border-top: 1px solid rgba(255,255,255,0.06);
     }
-    .i-icon { color: #8696a0; font-size: 21px; }
+    .i-icon { color: rgba(233,237,239,0.74); font-size: 20px; width: 26px; text-align: center; }
     .i-field {
       flex: 1;
-      background: #2a3942;
+      background: rgba(255,255,255,0.06);
       border-radius: 22px;
       height: 38px;
       display: flex; align-items: center;
       padding: 0 14px;
-      color: #8696a0;
+      color: rgba(233,237,239,0.50);
       font-size: 13px;
     }
-    .mic {
+    .send {
       width: 40px; height: 40px;
       border-radius: 50%;
       background: #00a884;
       display: flex; align-items: center; justify-content: center;
-      font-size: 17px;
+      font-size: 16px;
       flex-shrink: 0;
+      box-shadow: 0 12px 22px rgba(0,168,132,0.20);
     }
 
     /* ── Overlays ─────────────────────────────────────────── */
@@ -313,52 +413,67 @@
 <!-- Phone -->
 <div id="phone-wrap">
   <div class="phone" id="phone">
+    <div class="side-btn btn-action"></div>
+    <div class="side-btn btn-vol-up"></div>
+    <div class="side-btn btn-vol-down"></div>
+    <div class="side-btn btn-power"></div>
 
-    <!-- Status bar -->
-    <div class="status-bar">
-      <span>9:41</span>
-      <div class="sb-right">
-        <span>▂▄▆</span>
-        <span>WiFi</span>
-        <span>■ 87%</span>
-      </div>
-    </div>
+    <div class="screen">
+      <div class="island" aria-hidden="true"></div>
 
-    <!-- WhatsApp header -->
-    <div class="wa-header">
-      <span class="back">‹</span>
-      <div class="avatar">💈</div>
-      <div class="cinfo">
-        <div class="cname">Barbería Don Carlos</div>
-        <div class="cstatus">en línea</div>
-      </div>
-      <div class="h-icons">
-        <span>📹</span>
-        <span>📞</span>
-        <span>⋮</span>
-      </div>
-    </div>
-
-    <!-- Chat -->
-    <div class="wa-chat" id="chat">
-      <div class="date-chip">Hoy</div>
-      <div class="typing-wrap" id="typing-wrap">
-        <div class="typing" id="typing">
-          <div class="dot"></div>
-          <div class="dot"></div>
-          <div class="dot"></div>
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="sb-right">
+          <span>▂▄▆</span>
+          <span>Wi‑Fi</span>
+          <span>87%</span>
         </div>
       </div>
-    </div>
 
-    <!-- Input bar -->
-    <div class="wa-input">
-      <span class="i-icon">😊</span>
-      <div class="i-field">Escribe un mensaje</div>
-      <span class="i-icon">📎</span>
-      <div class="mic">🎤</div>
-    </div>
+      <!-- WhatsApp header -->
+      <div class="wa-header">
+        <span class="back">‹</span>
+        <div class="avatar" aria-hidden="true"></div>
+        <div class="cinfo">
+          <div class="cname">
+            The Lord Barber <span class="verified">✓✓</span>
+          </div>
+          <div class="cstatus"><span class="pulse-dot"></span>en línea</div>
+        </div>
+        <div class="h-icons" aria-hidden="true">
+          <!-- video -->
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M15 10l5-3v10l-5-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 7h9a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <!-- phone -->
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M22 16.2v2a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.62-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 3.8 4.2 2 2 0 0 1 5.8 2h2a2 2 0 0 1 2 1.72c.12.86.3 1.7.54 2.5a2 2 0 0 1-.45 2.11L9 9.6a16 16 0 0 0 6 6l1.27-1.89a2 2 0 0 1 2.11-.45c.8.24 1.64.42 2.5.54A2 2 0 0 1 22 16.2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
 
+      <!-- Chat -->
+      <div class="wa-chat" id="chat">
+        <div class="date-chip">Hoy</div>
+        <div class="typing-wrap" id="typing-wrap">
+          <div class="typing" id="typing">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input bar -->
+      <div class="wa-input">
+        <span class="i-icon">😊</span>
+        <div class="i-field">Mensaje</div>
+        <span class="i-icon">📎</span>
+        <div class="send">➤</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -399,89 +514,122 @@
 
   function at(ms, fn) { setTimeout(fn, ms); }
 
-  function addMsg(role, text, extra) {
-    typWrap.classList.remove('show');
+  const baseTime = new Date();
+  baseTime.setHours(9, 41, 0, 0);
+  let minuteOffset = 0;
 
-    const el  = document.createElement('div');
+  function fmtTime() {
+    const d = new Date(baseTime.getTime() + minuteOffset * 60_000);
+    minuteOffset += 1;
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
+  function scrollBottom() { chat.scrollTop = chat.scrollHeight; }
+
+  function msgWrap(role) {
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-wrap';
+    wrap.style.alignSelf = role === 'u' ? 'flex-end' : 'flex-start';
+    return wrap;
+  }
+
+  function bubble(role, extra) {
+    const el = document.createElement('div');
     el.className = 'msg ' + (role === 'u' ? 'sent' : 'recv') + (extra ? ' ' + extra : '');
+    return el;
+  }
 
-    const time = role === 'u' ? '9:41' : '9:41';
-    const checks = role === 'u' ? '<span class="ticks">✓✓</span>' : '';
+  function meta(role, t) {
+    const m = document.createElement('div');
+    m.className = 'msg-meta ' + (role === 'u' ? 'meta-right' : 'meta-left');
+    const ticks = role === 'u' ? `<span class="ticks">✓✓</span>` : '';
+    m.innerHTML = `<span>${t}</span>${ticks}`;
+    return m;
+  }
 
-    el.innerHTML =
-      text.replace(/\n/g, '<br>') +
-      `<div class="msg-meta">${time} ${checks}</div>`;
-
-    // Insert before typing indicator
-    chat.insertBefore(el, typWrap);
-
+  function showWrap(wrap) {
+    chat.insertBefore(wrap, typWrap);
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      el.classList.add('show');
-      chat.scrollTop = chat.scrollHeight;
+      wrap.classList.add('show');
+      scrollBottom();
     }));
+  }
+
+  function addMsgInstant(role, text, extra) {
+    typWrap.classList.remove('show');
+    const t = fmtTime();
+    const wrap = msgWrap(role);
+    const el = bubble(role, extra);
+    el.innerHTML = String(text || '').replace(/\\n/g, '<br>');
+    wrap.appendChild(el);
+    wrap.appendChild(meta(role, t));
+    showWrap(wrap);
+  }
+
+  async function addMsgTyped(role, text, extra) {
+    typWrap.classList.remove('show');
+    const t = fmtTime();
+    const wrap = msgWrap(role);
+    const el = bubble(role, extra);
+    const span = document.createElement('span');
+    span.textContent = '';
+    el.appendChild(span);
+    wrap.appendChild(el);
+    wrap.appendChild(meta(role, t));
+    showWrap(wrap);
+
+    // visual "typing sound": bubble grows a touch as it appears
+    el.animate([{ transform: 'scale(0.985)' }, { transform: 'scale(1)' }], { duration: 180, easing: 'ease-out' });
+
+    const chars = Array.from(String(text || ''));
+    for (let i = 0; i < chars.length; i++) {
+      span.textContent += chars[i];
+      const c = chars[i];
+      const isSpace = c === ' ' || c === '\\n';
+      const isPunct = /[.,!?]/.test(c);
+      const base = isSpace ? 18 : 28;
+      const jitter = Math.floor(Math.random() * 34);
+      const slow = (text.length > 70 ? 10 : 0) + (isPunct ? 55 : 0);
+      await new Promise((r) => setTimeout(r, base + jitter + slow));
+      scrollBottom();
+    }
   }
 
   function showTyping() {
     typWrap.classList.add('show');
-    chat.scrollTop = chat.scrollHeight;
+    scrollBottom();
   }
 
   function showOverlay(id, prevId) {
-    if (prevId) {
-      const prev = document.getElementById(prevId);
-      prev.classList.remove('show');
-    }
+    if (prevId) document.getElementById(prevId).classList.remove('show');
     at(prevId ? 650 : 0, () => document.getElementById(id).classList.add('show'));
   }
 
   // ── Timeline ───────────────────────────────────────────────────────────────
+  at(400, () => phone.classList.add('show'));
 
-  at(400,   () => phone.classList.add('show'));
+  at(2000, () => addMsgInstant('u', 'Hola, ¿me agendás un corte para mañana?'));
+  at(3000, () => showTyping());
+  at(4100, () => addMsgTyped('b', '¡Hola! 👋 Soy el asistente de The Lord Barber.\\n\\n¿A qué hora te queda mejor?'));
 
-  // 2s — Cliente escribe
-  at(2000,  () => addMsg('u', 'Hola, quiero un corte mañana'));
+  at(6400, () => addMsgInstant('u', 'A las 6 pm'));
+  at(7100, () => showTyping());
+  at(8200, () => addMsgTyped('b', 'Perfecto ✅\\n\\nTengo disponible 6:00 pm y 6:30 pm mañana.\\n¿Cuál preferís?'));
 
-  // 3s — Typing
-  at(3000,  () => showTyping());
-
-  // 4s — Bot responde
-  at(4100,  () => addMsg('b', '¡Hola! 👋 Soy el asistente de\nBarbería Don Carlos.\n¿A qué hora te queda mejor?'));
-
-  // 6s — Cliente
-  at(6000,  () => addMsg('u', 'A las 6pm'));
-
-  // ~6.5s — Typing
-  at(6500,  () => showTyping());
-
-  // 7s — Bot
-  at(7600,  () => addMsg('b', 'Perfecto ✅ Tenemos disponible\n6:00 pm y 6:30 pm mañana viernes.\n¿Cuál prefieres?'));
-
-  // 9s — Cliente
-  at(9000,  () => addMsg('u', 'Las 6'));
-
-  // ~9.5s — Typing
-  at(9500,  () => showTyping());
-
-  // 10s — Bot confirma
-  at(10600, () => addMsg('b',
-    '¡Listo! 🎉 Tu cita está confirmada:\n\n📅 Viernes 2 de mayo\n⏰ 6:00 PM\n💈 Barbería Don Carlos\n\nTe mandamos recordatorio\n1 hora antes. ✨',
+  at(10600, () => addMsgInstant('u', 'Las 6'));
+  at(11400, () => showTyping());
+  at(12450, () => addMsgTyped('b',
+    '¡Listo! 🎉 Tu cita está confirmada:\\n\\n📅 Mañana\\n⏰ 6:00 PM\\n💈 The Lord Barber\\n\\nTe mando recordatorio 1 hora antes. ✨',
     'confirm'
   ));
 
-  // 16s — Fade out phone
-  at(16000, () => { phoneW.style.opacity = '0'; });
-
-  // 17s — "Esto pasa mientras TÚ duermes"
-  at(17000, () => showOverlay('o1'));
-
-  // 20s — "Tu negocio nunca para con Agentia"
-  at(20000, () => showOverlay('o2', 'o1'));
-
-  // 22s — Logo + agentia.software
-  at(22000, () => showOverlay('o3', 'o2'));
-
-  // 25s — fade final (loop: false)
-  at(25000, () => {
+  at(17500, () => { phoneW.style.opacity = '0'; });
+  at(18500, () => showOverlay('o1'));
+  at(20500, () => showOverlay('o2', 'o1'));
+  at(23000, () => showOverlay('o3', 'o2'));
+  at(26500, () => {
     const o3 = document.getElementById('o3');
     o3.style.transition = 'opacity 1.5s ease';
     o3.style.opacity = '0.35';
