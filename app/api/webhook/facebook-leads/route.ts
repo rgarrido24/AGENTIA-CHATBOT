@@ -55,6 +55,20 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
+/**
+ * Respaldo inmutable: la colección `leads_backup` solo recibe inserts (nunca updates ni deletes).
+ * Cada copia incluye `backupAt` para auditoría y recuperación ante pérdidas en `leads`.
+ */
+async function insertLeadBackup(
+  db: Awaited<ReturnType<typeof getMongoDb>>,
+  snapshot: Record<string, unknown>
+): Promise<void> {
+  await db.collection('leads_backup').insertOne({
+    ...snapshot,
+    backupAt: new Date(),
+  });
+}
+
 // ─── Lookup de reseller/cliente por formId ───────────────────────────────────
 type ResellerMatch = { resellerId: string; clientSlug: string; alertNumber?: string } | null;
 
@@ -211,7 +225,7 @@ async function processZapierLead(data: Record<string, unknown>) {
     console.warn(`[fb-leads/zapier] form_id "${form_id}" no tiene reseller → resellerId: "unknown"`);
   }
 
-  await db.collection('leads').insertOne({
+  const leadDoc = {
     leadId,
     clientId,
     pageId:          'fb-zapier',
@@ -243,7 +257,10 @@ async function processZapierLead(data: Record<string, unknown>) {
     messageCount:    1,
     createdAt:       now,
     updatedAt:       now,
-  });
+  };
+
+  await db.collection('leads').insertOne(leadDoc);
+  await insertLeadBackup(db, { ...leadDoc });
 
   console.log(`[fb-leads/zapier] Lead insertado: ${leadId}`);
 
@@ -300,7 +317,7 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
       const now           = new Date();
       const resellerMatch = await resolveResellerByFormId(form_id);
 
-      await db.collection('leads').updateOne(
+      const result = await db.collection('leads').updateOne(
         { leadId },
         {
           $set: {
@@ -339,6 +356,16 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
         },
         { upsert: true }
       );
+
+      // Respaldo solo en alta nueva (no en cada actualización del mismo leadId)
+      if (result.upsertedCount > 0) {
+        const saved = await db.collection('leads').findOne({ leadId });
+        if (saved) {
+          const snap = { ...saved } as Record<string, unknown> & { _id?: unknown };
+          delete snap._id;
+          await insertLeadBackup(db, snap);
+        }
+      }
 
       // NO enviar ningún mensaje al lead. Solo alerta al admin (Luciano).
       await enqueueAdminAlert(db, { leadId, clientId, resellerMatch });
