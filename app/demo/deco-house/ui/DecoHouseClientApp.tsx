@@ -96,15 +96,12 @@ async function generateDecoPdf(quote: ManualQuote, filename: string) {
   doc.setFillColor(245, 166, 35);
   doc.rect(0, 88, W, 3, 'F');
 
-  // Logo
+  // Logo (public/deco-house-logo.png — fondo azul con amarillo)
   try {
     const dataUrl = await imageUrlToDataUrl('/deco-house-logo.png');
     doc.addImage(dataUrl, 'PNG', W - 148, 12, 110, 66, undefined, 'FAST');
   } catch {
-    try {
-      const dataUrl = await imageUrlToDataUrl('/deco-logo.png');
-      doc.addImage(dataUrl, 'PNG', W - 148, 12, 110, 66, undefined, 'FAST');
-    } catch { /* ignore */ }
+    /* sin logo si el archivo no está en /public */
   }
 
   doc.setTextColor(255, 255, 255);
@@ -233,9 +230,22 @@ async function generateDecoPdf(quote: ManualQuote, filename: string) {
   y = drawSection(y, 'CONDICIONES Y GARANTÍA');
   tbl(y, [
     ['Validez',       '7 días desde la fecha de emisión'],
-    ['Forma de pago', '50% anticipo — 50% contra entrega'],
+    ['Forma de pago', '50% abono — 50% previa entrega, despacho y/o instalación'],
     ['Garantía',      '6 meses por defectos de fabricación e instalación'],
     ['Cancelaciones', 'No se aceptan una vez cortado el material'],
+  ]);
+  y = lastY() + 12;
+
+  // DATOS DE TRANSFERENCIA (antes del pie en todas las páginas)
+  y = drawSection(y, 'DATOS DE TRANSFERENCIA');
+  tbl(y, [
+    ['Razón social',      'INNOVA DIGITAL SpA'],
+    ['RUT',               '78.106.463-7'],
+    ['Banco',             'Banco de Chile'],
+    ['Cuenta corriente',  '00-174-11902-10'],
+    ['Email',             'innovadigital888@gmail.com'],
+    ['Condiciones de pago', '50% abono — 50% previa entrega, despacho y/o instalación'],
+    ['Medios de pago',    'Transferencia, débito, crédito'],
   ]);
 
   // Footer on every page
@@ -252,7 +262,7 @@ async function generateDecoPdf(quote: ManualQuote, filename: string) {
     doc.text('Innova Digital Spa', 30, H - 31);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
-    doc.text('RUT 78.106.463-6  ·  +56 9 7902 5062  ·  innovadigital888@gmail.com  ·  infodecohousecl@gmail.com', 30, H - 18);
+    doc.text('RUT 78.106.463-7  ·  +56 9 7902 5062  ·  innovadigital888@gmail.com  ·  infodecohousecl@gmail.com', 30, H - 18);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(245, 166, 35);
     doc.text('Deco House — Soluciones en vidrios, aluminio y PVC', W - 30, H - 18, { align: 'right' });
