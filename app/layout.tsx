@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Montserrat, Roboto, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
+import { GlobalWhatsAppAndExit } from '@/components/GlobalWhatsAppAndExit';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -133,6 +134,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen antialiased font-sans bg-luxury text-white">
         {children}
+        <GlobalWhatsAppAndExit />
       </body>
     </html>
   );

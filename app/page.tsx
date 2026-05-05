@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { Clock, BrainCircuit, BadgeCheck } from 'lucide-react';
 import { HeroPhoneMockup } from '@/components/HeroPhoneMockup';
 import { IndustrySelectorGrid } from '@/components/IndustrySelectorGrid';
 import { AgentiaChatWidget } from '@/components/AgentiaChatWidget';
@@ -78,6 +79,9 @@ const TESTIMONIOS = [
     color: '#f97316',
   },
 ];
+
+// Editable
+const LIVE_DEMOS_THIS_WEEK = 2;
 
 function initials(name: string) {
   return name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
@@ -208,6 +212,77 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Contador de demos (debajo del hero) ─────────────────────────── */}
+          <div className="mb-10">
+            <motion.p
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-xs sm:text-sm text-slate-400"
+              style={{ letterSpacing: '0.2px' }}
+            >
+              <span className="inline-flex items-center gap-2">
+                <span className="animate-pulse">🔴</span>
+                En vivo ahora — <span className="text-white font-semibold">{LIVE_DEMOS_THIS_WEEK}</span> demos disponibles esta semana
+              </span>
+            </motion.p>
+          </div>
+
+          {/* ── Cómo funciona ───────────────────────────────────────────────── */}
+          <section className="mb-16">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl font-bold text-white mb-2">Cómo funciona</h2>
+              <p className="text-slate-400 text-sm">3 pasos simples para automatizar WhatsApp</p>
+            </div>
+
+            <div className="max-w-5xl mx-auto">
+              <div className="relative grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Connector line (desktop) */}
+                <div
+                  className="hidden md:block absolute left-1/2 top-10 -translate-x-1/2 w-[78%] h-[2px]"
+                  style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(34,197,94,0.25) 20%, rgba(34,197,94,0.25) 80%, transparent 100%)' }}
+                />
+
+                {[
+                  {
+                    icon: <Clock className="w-5 h-5" />,
+                    title: 'Conectamos tu WhatsApp en 24hrs',
+                    desc: 'Sin instalaciones complicadas. Te guiamos y queda listo.',
+                  },
+                  {
+                    icon: <BrainCircuit className="w-5 h-5" />,
+                    title: 'Entrenamos la IA en tu negocio específico',
+                    desc: 'Productos, precios, objeciones y procesos, todo adaptado.',
+                  },
+                  {
+                    icon: <BadgeCheck className="w-5 h-5" />,
+                    title: 'Tú solo cierras los clientes calificados',
+                    desc: 'La IA filtra y agenda. Tú tomas a los mejores.',
+                  },
+                ].map((s) => (
+                  <div
+                    key={s.title}
+                    className="rounded-2xl p-6 border shadow-sm relative"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.09)',
+                      backdropFilter: 'blur(12px)',
+                    }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                      style={{ background: 'rgba(34,197,94,0.14)', border: '1px solid rgba(34,197,94,0.28)', color: '#4ade80' }}
+                    >
+                      {s.icon}
+                    </div>
+                    <p className="text-white font-extrabold leading-snug">{s.title}</p>
+                    <p className="text-slate-400 text-sm mt-2 leading-relaxed">{s.desc}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </section>
