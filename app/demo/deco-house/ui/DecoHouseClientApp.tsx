@@ -89,6 +89,16 @@ async function generateDecoPdf(quote: ManualQuote, filename: string) {
     (d.autoTable as (o: unknown) => void)(opts);
   const lastY = () =>
     ((d.lastAutoTable as { finalY: number }).finalY);
+  const FOOTER_H = 48;
+  const SAFE_BOTTOM = FOOTER_H + 18; // margen para que nada quede debajo del footer
+  const safeContentBottomY = () => H - SAFE_BOTTOM;
+
+  const ensureSpace = (y: number, needed: number) => {
+    if (y + needed <= safeContentBottomY()) return y;
+    doc.addPage();
+    // Reiniciar Y para nuevo contenido. No repetimos header: el footer ya se dibuja en todas las páginas.
+    return 40;
+  };
 
   // Header
   doc.setFillColor(27, 63, 107);
@@ -128,7 +138,7 @@ async function generateDecoPdf(quote: ManualQuote, filename: string) {
   const tbl = (startY: number, body: string[][], opts?: Record<string, unknown>) =>
     at({
       startY,
-      margin: { left: 30, right: 30 },
+      margin: { left: 30, right: 30, bottom: SAFE_BOTTOM },
       body,
       theme: 'plain',
       styles: { fontSize: 9, cellPadding: { top: 4, bottom: 4, left: 6, right: 6 }, textColor: [40, 40, 40], lineColor: [225, 228, 232], lineWidth: 0.3 },
@@ -236,7 +246,9 @@ async function generateDecoPdf(quote: ManualQuote, filename: string) {
   ]);
   y = lastY() + 12;
 
-  // DATOS DE TRANSFERENCIA (antes del pie en todas las páginas)
+  // DATOS DE TRANSFERENCIA (si no entra, pasa a segunda hoja)
+  // Estimación conservadora: sección (20) + tabla (7 filas * ~22) + padding
+  y = ensureSpace(y, 20 + 7 * 22 + 40);
   y = drawSection(y, 'DATOS DE TRANSFERENCIA');
   tbl(y, [
     ['Razón social',      'INNOVA DIGITAL SpA'],
