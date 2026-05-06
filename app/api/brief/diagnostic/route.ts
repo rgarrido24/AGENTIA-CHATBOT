@@ -42,6 +42,30 @@ function clientIP(req: NextRequest): string {
   );
 }
 
+async function trySendWhatsAppAlert(message: string): Promise<void> {
+  const to = (process.env.ALERT_WHATSAPP_NUMBER ?? '').trim();
+  const url = (process.env.WHATSAPP_SEND_URL ?? '').trim();
+  const token = (process.env.WHATSAPP_API_TOKEN ?? '').trim();
+  if (!to || !url || !token) return;
+
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        to,
+        type: 'text',
+        text: { body: message },
+      }),
+    });
+  } catch {
+    // best-effort
+  }
+}
+
 export async function POST(req: NextRequest) {
   let body: Partial<LeadBriefPayload> & Record<string, unknown>;
   try {
@@ -106,6 +130,21 @@ export async function POST(req: NextRequest) {
     createdAt: now,
     updatedAt: now,
   });
+
+  // Aviso a Rodolfo (best-effort). Si no está configurado el sender, se omite.
+  void trySendWhatsAppAlert(
+    [
+      `Nuevo Diagnóstico Agentia (/brief)`,
+      `Negocio: ${payload.step1.businessName} (${payload.step1.industry})`,
+      `Fugas/mes: ${payload.step2.lostSales}`,
+      `Mensajes: ${payload.step3.messageHandling}`,
+      payload.step3.webOrSocial ? `Web/Redes: ${payload.step3.webOrSocial}` : null,
+      `Contacto: ${payload.step4.contactName} · ${payload.step4.contactWhatsapp}`,
+      `Impacto: ${impact.potentialPct}% · ${impact.hoursWeekly}h/sem`,
+    ]
+      .filter(Boolean)
+      .join('\n')
+  );
 
   return NextResponse.json({
     ok: true,

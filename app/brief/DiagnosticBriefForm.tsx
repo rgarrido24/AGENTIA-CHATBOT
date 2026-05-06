@@ -108,6 +108,14 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
       const remaining = Math.max(0, 3000 - elapsed);
       if (remaining) await new Promise((r) => setTimeout(r, remaining));
       setPhase('done');
+
+      // Auto-abrir WhatsApp (desde el gesto del click) con el mensaje prellenado.
+      // Nota: algunos navegadores bloquean popups; en ese caso el botón sigue disponible.
+      if (salesWhatsapp) {
+        const url = buildWhatsappUrl(salesWhatsapp, businessName);
+        // Usar location (más confiable que window.open en algunos bloqueadores)
+        window.location.href = url;
+      }
     } catch {
       setPhase('form');
       setError('Error de conexión');
