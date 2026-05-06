@@ -23,7 +23,7 @@
     "check:izzi": "node scripts/check-izzi-chat.js",
     "dev": "npx next dev -p 3010",
     "build": "npm install && next build",
-    "start": "next start -p ${PORT:-3010}",
+    "start": "next start -H 0.0.0.0 -p ${PORT:-3010}",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
