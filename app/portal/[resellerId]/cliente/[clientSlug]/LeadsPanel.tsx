@@ -10,7 +10,7 @@ import {
   useState,
 } from 'react';
 import Link from 'next/link';
-import { MessageCircle, Moon, RefreshCw, Plus, Sun, X } from 'lucide-react';
+import { MessageCircle, Moon, RefreshCw, Plus, Sun, Trash2, X } from 'lucide-react';
 import {
   isLucianoReseller,
   LUCINO_PRODUCT_TITLE,
@@ -406,12 +406,24 @@ function LeadCard({
 // ─── Lead Detail Panel ────────────────────────────────────────────────────────
 
 function LeadDetail({
-  lead, resellerId, onStatusChange, onNoteAdded, onClose,
+  lead,
+  resellerId,
+  clientSlug,
+  apiBase,
+  allowDelete,
+  onStatusChange,
+  onNoteAdded,
+  onDeleted,
+  onClose,
 }: {
   lead: Lead;
   resellerId: string;
+  clientSlug: string;
+  apiBase: string;
+  allowDelete?: boolean;
   onStatusChange: (leadId: string, status: StatusSeg) => void;
   onNoteAdded:    (leadId: string, nota: Nota) => void;
+  onDeleted:      (leadId: string) => void;
   onClose:        () => void;
 }) {
   const ui = useContext(LeadUiContext);
@@ -420,6 +432,7 @@ function LeadDetail({
   const [showNota, setShowNota] = useState(false);
   const [notaText, setNotaText] = useState('');
   const [savingN,  setSavingN]  = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Reset state when lead changes
   useEffect(() => {
@@ -477,6 +490,24 @@ function LeadDetail({
     }).catch(console.error);
   }
 
+  async function deleteLead() {
+    if (!allowDelete) return;
+    if (!confirm('¿Eliminar este lead de forma permanente?')) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`${apiBase}?leadId=${encodeURIComponent(lead.id)}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert((data as { error?: string }).error || 'No se pudo eliminar');
+        return;
+      }
+      onDeleted(lead.id);
+      onClose();
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   async function submitNota() {
     if (!notaText.trim()) return;
     setSavingN(true);
@@ -522,9 +553,23 @@ function LeadDetail({
           <h2 className="truncate text-lg font-bold" style={{ color: ui.detailTitle }}>{lead.nombre}</h2>
           <p className="text-sm" style={{ color: ui.detailSubtitle }}>{lead.form_display || lead.form_name || lead.form_id || lead.campana || lead.platform_src || 'Lead'}</p>
         </div>
-        <span className="shrink-0 text-xs font-semibold px-3 py-1 rounded-full" style={{ background: cfg.bg, color: cfg.color }}>
-          {cfg.label}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          {allowDelete && (
+            <button
+              type="button"
+              title="Eliminar lead"
+              disabled={deleting}
+              onClick={() => void deleteLead()}
+              className="rounded-lg p-2 transition disabled:opacity-40"
+              style={{ background: '#1a0a0a', color: '#f87171', border: '1px solid #450a0a' }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: cfg.bg, color: cfg.color }}>
+            {cfg.label}
+          </span>
+        </div>
       </div>
 
       {/* Scrollable content */}
@@ -695,7 +740,16 @@ function EmptyDetail() {
 
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 
-export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; clientSlug: string }) {
+export function LeadsPanel({
+  resellerId,
+  clientSlug,
+  allowLeadDelete,
+}: {
+  resellerId: string;
+  clientSlug: string;
+  /** Solo cuando el reseller entra al panel (no el cliente final). */
+  allowLeadDelete?: boolean;
+}) {
   const isLuc = useMemo(() => isLucianoReseller(resellerId), [resellerId]);
   const [lucTheme, setLucTheme] = useState<LucianoThemeMode>('light');
 
@@ -811,6 +865,11 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
   }
   function handleNoteAdded(leadId: string, nota: Nota) {
     setLeads((prev) => prev.map((l) => l.id === leadId ? { ...l, notas: [...l.notas, nota] } : l));
+  }
+  function handleLeadDeleted(leadId: string) {
+    knownIds.current.delete(leadId);
+    setLeads((prev) => prev.filter((l) => l.id !== leadId));
+    setSelectedId((cur) => (cur === leadId ? null : cur));
   }
 
   const kpis = [
@@ -985,8 +1044,12 @@ export function LeadsPanel({ resellerId, clientSlug }: { resellerId: string; cli
                 <LeadDetail
                   lead={selectedLead}
                   resellerId={resellerId}
+                  clientSlug={clientSlug}
+                  apiBase={apiBase}
+                  allowDelete={allowLeadDelete}
                   onStatusChange={handleStatusChange}
                   onNoteAdded={handleNoteAdded}
+                  onDeleted={handleLeadDeleted}
                   onClose={() => setSelectedId(null)}
                 />
               </div>

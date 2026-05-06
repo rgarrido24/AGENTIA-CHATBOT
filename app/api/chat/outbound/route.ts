@@ -26,6 +26,7 @@ export async function GET() {
         message: m.message,
         clientId: m.clientId,
         mediaUrl: m.mediaUrl || null,
+        source: (m as { source?: string }).source ?? null,
       })),
     });
   } catch (err) {

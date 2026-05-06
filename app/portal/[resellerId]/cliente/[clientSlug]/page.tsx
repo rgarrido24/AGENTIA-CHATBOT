@@ -75,7 +75,7 @@ export default async function ClientPage({
   // Reseller cookie → full access (Luciano viewing his client's panel)
   const reseller = await getResellerAuth(resellerId);
   if (reseller) {
-    return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} />;
+    return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} allowLeadDelete />;
   }
 
   // Client cookie → restricted access (client views their own leads)

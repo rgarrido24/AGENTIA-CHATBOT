@@ -86,6 +86,36 @@ export async function GET(
   return NextResponse.json({ leads, formIds, clientNombre: client.nombre });
 }
 
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { resellerId: string; clientSlug: string } }
+) {
+  const { resellerId, clientSlug } = params;
+  const resellerCookie = req.cookies.get(COOKIE_NAME)?.value;
+  const reseller = await verifyResellerCookie(resellerCookie);
+  if (!reseller || reseller.resellerId !== resellerId) {
+    return NextResponse.json({ error: 'Solo el reseller puede eliminar leads' }, { status: 403 });
+  }
+
+  const leadId = req.nextUrl.searchParams.get('leadId')?.trim();
+  if (!leadId) {
+    return NextResponse.json({ error: 'Falta leadId' }, { status: 400 });
+  }
+
+  const db     = await getMongoDb();
+  const client = await db.collection<ResellerClient>('leads').findOne({ resellerId, clientSlug, _collection_type: 'reseller_client' });
+  if (!client) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
+
+  const scope  = buildLeadQuery(resellerId, clientSlug, client.legacyQuery);
+  const filter = '$or' in scope ? { $and: [{ leadId }, scope] } : { leadId, ...scope };
+
+  const result = await db.collection('leads').deleteOne(filter);
+  if (result.deletedCount === 0) {
+    return NextResponse.json({ error: 'Lead no encontrado o sin permiso' }, { status: 404 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
 function buildLeadQuery(
   resellerId: string,
   clientSlug: string,

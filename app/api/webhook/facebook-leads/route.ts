@@ -48,11 +48,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Bad JSON' }, { status: 400 });
   }
 
+  payload = normalizeIncomingLeadPayload(payload);
+  console.log('[fb-leads] keys:', Object.keys(payload).join(', '));
   console.log('[fb-leads] Payload:', JSON.stringify(payload).slice(0, 500));
 
   // Responder 200 inmediatamente y procesar en background
   processLead(payload).catch((err) => console.error('[fb-leads] Error al procesar:', err));
   return NextResponse.json({ ok: true });
+}
+
+/** Zapier a veces envía el objeto dentro de `body`, `data` o `payload`. Meta webhook usa `entry[]` en la raíz. */
+function normalizeIncomingLeadPayload(p: Record<string, unknown>): Record<string, unknown> {
+  if (p && Array.isArray(p.entry)) return p;
+  const nested = [p.body, p.data, p.payload, p.fields, (p as { lead?: unknown }).lead];
+  for (const c of nested) {
+    if (!c || typeof c !== 'object' || Array.isArray(c)) continue;
+    const o = c as Record<string, unknown>;
+    if (Array.isArray(o.entry)) continue;
+    const looksZapier =
+      'Nombre' in o ||
+      'Email' in o ||
+      'Whatsapp' in o ||
+      'WhatsApp' in o ||
+      'full_name' in o ||
+      'phone_number' in o ||
+      'email' in o;
+    if (looksZapier) {
+      console.log('[fb-leads] usando payload anidado (Zapier/plantilla)');
+      return o;
+    }
+  }
+  return p;
 }
 
 /**
@@ -105,8 +131,15 @@ function normalizePhone(raw: string): string {
 // ─── Router: detecta formato y deriva ────────────────────────────────────────
 async function processLead(payload: Record<string, unknown>) {
   const isZapier =
-    'full_name' in payload || 'phone_number' in payload || 'email' in payload ||
-    'Nombre' in payload || 'Whatsapp' in payload || 'Email' in payload;
+    'full_name' in payload ||
+    'phone_number' in payload ||
+    'email' in payload ||
+    'Nombre' in payload ||
+    'Whatsapp' in payload ||
+    'WhatsApp' in payload ||
+    'Email' in payload ||
+    'Phone' in payload ||
+    'phone' in payload;
 
   if (isZapier) {
     await processZapierLead(payload);
@@ -137,10 +170,12 @@ async function enqueueAdminAlert(
     '→',
     alertNumber ?? '(no definido)'
   );
-  if (!alertNumber) return;
+  if (!alertNumber) {
+    console.warn('[fb-leads] sin alerta: no hay alertNumber en cliente ni FB_ALERT_NUMBER en el servidor');
+    return;
+  }
 
-  // Deduplicación: solo bloquear si ya existe OTRA ALERTA ADMIN para este leadId
-  // (no confundir con el mensaje de bienvenida, que también lleva leadId)
+  // Deduplicación: evita doble aviso por reintentos de Meta (mismo leadgen) o Zapier (mismo Lead Id).
   const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
   const existing = await db.collection('outbound_messages').findOne(
     lead.dedupKey
@@ -289,14 +324,15 @@ async function processZapierLead(data: Record<string, unknown>) {
 
   console.log(`[fb-leads/zapier] Lead insertado: ${leadId}`);
 
-  // NO enviar ningún mensaje al lead. Solo alerta al admin (Luciano).
+  // NO enviar nada al teléfono del lead: solo cola hacia el WhatsApp del reseller/cliente (admin-alert).
+  // dedup: mismo Lead Id de Meta en reintentos; si no viene Lead Id, cada alta tiene leadId distinto (pruebas Zapier no se bloquean por teléfono).
   const dedupKey = [
     'zapier',
     clientId,
     resellerMatch?.resellerId || 'unknown',
     resellerMatch?.clientSlug || 'unknown',
     form_id || 'noform',
-    phone || senderId,
+    lead_id_meta || leadId,
   ].join('|');
   await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
 }
