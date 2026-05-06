@@ -35,6 +35,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
+  console.log('[stripe/webhook] evento recibido:', event.type);
+  console.log('[stripe/webhook] metadata:', JSON.stringify(event.data.object));
+
   const db = await getMongoDb();
 
   switch (event.type) {
