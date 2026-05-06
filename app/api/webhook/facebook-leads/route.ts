@@ -56,8 +56,9 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * Respaldo inmutable: la colección `leads_backup` solo recibe inserts (nunca updates ni deletes).
- * Cada copia incluye `backupAt` para auditoría y recuperación ante pérdidas en `leads`.
+ * Respaldo permanente (solo lectura operativa): la colección `leads_backup` solo debe
+ * recibir `insertOne` desde esta app — cero updates, cero deletes.
+ * Cada copia conserva los campos del lead + `backedUpAt` + `source_collection`.
  */
 async function insertLeadBackup(
   db: Awaited<ReturnType<typeof getMongoDb>>,
@@ -65,7 +66,8 @@ async function insertLeadBackup(
 ): Promise<void> {
   await db.collection('leads_backup').insertOne({
     ...snapshot,
-    backupAt: new Date(),
+    backedUpAt: new Date(),
+    source_collection: 'leads',
   });
 }
 
@@ -270,7 +272,12 @@ async function processZapierLead(data: Record<string, unknown>) {
   };
 
   await db.collection('leads').insertOne(leadDoc);
-  await insertLeadBackup(db, { ...leadDoc });
+  const savedZapier = await db.collection('leads').findOne({ leadId });
+  if (savedZapier) {
+    const snap = { ...savedZapier } as Record<string, unknown> & { _id?: unknown };
+    delete snap._id;
+    await insertLeadBackup(db, snap);
+  }
 
   console.log(`[fb-leads/zapier] Lead insertado: ${leadId}`);
 
