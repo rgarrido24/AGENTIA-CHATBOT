@@ -90,6 +90,19 @@ const nextConfig = {
 
   async headers() {
     return [
+      // Prevent aggressive edge caching for conversion-critical flows
+      {
+        source: '/brief',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+        ],
+      },
+      {
+        source: '/brief/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+        ],
+      },
       // Long-lived cache for static assets (Next.js hashes filenames)
       {
         source: '/_next/static/(.*)',

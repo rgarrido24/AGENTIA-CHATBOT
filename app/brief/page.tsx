@@ -5,6 +5,9 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function BriefDiagnosticPage() {
   const salesWhatsapp =
     (process.env.ALERT_WHATSAPP_NUMBER ?? '').replace(/\D/g, '') || null;
