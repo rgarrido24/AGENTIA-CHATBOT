@@ -79,6 +79,11 @@ export const INTERNAL_DASHBOARD_LINKS: InternalLinkSection[] = [
     title: 'Dashboard interno',
     items: [
       {
+        href: '/brief',
+        label: 'Cuestionario de diagnóstico tecnológico',
+        hint: 'Requiere login admin; guarda en project_briefs',
+      },
+      {
         href: '/dashboard/demos-internos',
         label: 'Demos internos (página legacy)',
         hint: 'Rutas que no están en el menú público',
