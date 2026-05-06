@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getMongoDb } from '@/lib/mongodb';
 
+const DEFAULT_PUBLIC_ORIGIN = 'https://agentia.software';
+
+function absolutePublicAssetUrl(pathOrUrl: string | null | undefined): string | null {
+  const raw = String(pathOrUrl ?? '').trim();
+  if (!raw) return null;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const path = raw.startsWith('/') ? raw : `/${raw}`;
+  const origin = (process.env.NEXT_PUBLIC_SITE_URL || process.env.AGENTIA_PUBLIC_URL || DEFAULT_PUBLIC_ORIGIN).replace(/\/$/, '');
+  return `${origin}${path}`;
+}
+
 // ─── Firma Meta (solo cuando viene cabecera x-hub-signature-256) ──────────────
 function verifyMetaSignature(body: string, signature: string): boolean {
   const secret = process.env.FB_APP_SECRET;
@@ -202,10 +213,19 @@ async function enqueueAdminAlert(
     ? `https://agentia.software/portal/${resellerId}/cliente/${clientSlug}?lid=${encodeURIComponent(lead.leadId)}`
     : `https://agentia.software/portal`;
 
+  let mediaUrl: string | null = null;
+  if (resellerId) {
+    const resellerDoc = await db.collection('leads').findOne(
+      { _collection_type: 'reseller', resellerId },
+      { projection: { brandLogo: 1 } }
+    );
+    mediaUrl = absolutePublicAssetUrl(resellerDoc?.brandLogo ? String(resellerDoc.brandLogo) : null);
+  }
+
   const message =
     `🚨 ATENCION🚨\n` +
     `¡Nuevo ingreso de LEAD!\n\n` +
-    `Vistita tu panel para contactarlo👇\n` +
+    `Visita tu panel para contactarlo👇\n` +
     portalUrl;
 
   await db.collection('outbound_messages').insertOne({
@@ -215,9 +235,12 @@ async function enqueueAdminAlert(
     source:    'admin-alert',
     ...(lead.dedupKey ? { dedupKey: lead.dedupKey } : {}),
     message,
+    ...(mediaUrl ? { mediaUrl } : {}),
     createdAt: new Date(),
   });
-  console.log(`[fb-leads] alerta encolada para ${alertNumber} → ${portalUrl}`);
+  console.log(
+    `[fb-leads] alerta encolada para ${alertNumber} → ${portalUrl}` + (mediaUrl ? ` (media: ${mediaUrl})` : '')
+  );
 }
 
 // ─── Formato Zapier: JSON plano ───────────────────────────────────────────────

@@ -36,6 +36,7 @@ export default async function ClientesPage({ params }: { params: { resellerId: s
         negocio: c.negocio,
         status: String(c.status ?? ''),
         activeForms: c.formularios.filter((f) => f.activo).length,
+        alertNumber: c.alertNumber ? String(c.alertNumber) : '',
         leadsHoy,
         leadsMes,
         total,
