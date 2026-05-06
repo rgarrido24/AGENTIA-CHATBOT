@@ -406,36 +406,15 @@ async function main() {
         try {
           const msgClientId = String(m.clientId || '').trim().toLowerCase();
           const src = String(m.source || '');
-          const isFbLeadAlert = src === 'admin-alert' || src === 'admin-alert-test';
-          /** Alertas de leads FB/Zapier: el destino va en senderId; puede enviar cualquier bridge listo (evita depender solo de agentia-ventas). */
-          let client = null;
-          if (isFbLeadAlert) {
-            const preferred = String(
-              getEnv('AGENTIA_ALERTS_SENDER_CLIENT_ID', '') ||
-                process.env.AGENTIA_ALERTS_SENDER_CLIENT_ID ||
-                'agentia-ventas'
-            )
-              .trim()
-              .toLowerCase();
-            client =
-              getStrictReadyClientForClientId(preferred) ||
-              getStrictReadyClientForClientId(msgClientId) ||
-              getAnyReadyClient();
-            if (client && client.info) {
-              console.log(
-                `[Agentia] Outbound alerta lead (${src}) → destino ${m.senderId} · sesión ${preferred !== (msgClientId || '') ? 'fallback bridge listo' : preferred}`
-              );
-            }
-          } else {
-            client = getStrictReadyClientForClientId(msgClientId);
-          }
+          // REGLA OPERATIVA: cada mensaje debe salir del bridge del `clientId` del mensaje.
+          // Para alertas admin (FB/Zapier), el server debe setear clientId='agentia-ventas'
+          // (o el que corresponda al número de Agentia). Nunca “prestar” otro bridge.
+          const client = getStrictReadyClientForClientId(msgClientId);
           if (!client || !client.info) {
             const readyList = ACTIVE_CLIENT_IDS.filter((id) => getClientState(id)?.ready).join(', ') || 'ninguno';
-            const why = isFbLeadAlert
-              ? `ningún bridge listo para enviar alerta de lead (configurá AGENTIA_WHATSAPP_CLIENT_IDS / proceso bridge; listos: ${readyList})`
-              : !msgClientId
-                ? `outbound sin clientId (definí clientId en el mensaje; bridges listos: ${readyList})`
-                : `bridge no listo para clientId=${msgClientId} — no se usa otro número (listos: ${readyList})`;
+            const why = !msgClientId
+              ? `outbound sin clientId (definí clientId en el mensaje; bridges listos: ${readyList})`
+              : `bridge no listo para clientId=${msgClientId} (source=${src}) — no se usa otro número (listos: ${readyList})`;
             const secret0 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
             await fetch(`${apiBase}/api/chat/outbound/error`, {
               method: 'POST',
