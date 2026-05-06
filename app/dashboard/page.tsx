@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Users, BookOpen, Megaphone, Calendar, Settings, BarChart3 } from 'lucide-react';
+import { DashboardDemosSection } from './DashboardDemosSection';
 
 const modules = [
   { href: '/dashboard/leads', label: 'Leads', icon: Users },
@@ -35,6 +36,8 @@ export default function DashboardPage() {
             </Link>
           ))}
         </div>
+
+        <DashboardDemosSection />
       </div>
     </main>
   );
