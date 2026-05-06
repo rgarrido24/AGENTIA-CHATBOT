@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
+import { listMergedAgentiaClients } from '@/lib/agentia-dashboard-clients';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,11 +10,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
   const db = await getMongoDb();
-  const clientes = await db
-    .collection('agentia_clients')
-    .find({})
-    .sort({ createdAt: -1 })
-    .project({ negocio: 1, plan: 1, moneda: 1, proximoPago: 1, status: 1, stripeCustomerId: 1 })
-    .toArray();
+  const clientes = await listMergedAgentiaClients(db, {
+    projection: {
+      negocio: 1,
+      plan: 1,
+      moneda: 1,
+      proximoPago: 1,
+      status: 1,
+      stripeCustomerId: 1,
+      clientId: 1,
+      createdAt: 1,
+    },
+  });
   return NextResponse.json({ clientes });
 }
