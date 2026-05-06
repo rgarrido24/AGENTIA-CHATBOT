@@ -77,6 +77,13 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = clientIP(request);
 
+  // ── Disable caching for /brief (conversion flow) ───────────────────────────
+  if (pathname === '/brief' || pathname.startsWith('/brief/')) {
+    const res = NextResponse.next();
+    res.headers.set('Cache-Control', 'no-store, max-age=0');
+    return res;
+  }
+
   // ── Bot blocking on API routes ────────────────────────────────────────────
   if (pathname.startsWith('/api/') && isMaliciousBot(request.headers.get('user-agent'))) {
     await logBlocked(request, ip);
@@ -156,6 +163,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/brief/:path*',
     '/admin/:path*',
     '/dashboard/:path*',
     '/api/admin/:path*',
