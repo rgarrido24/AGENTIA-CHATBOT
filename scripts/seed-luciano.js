@@ -34,7 +34,8 @@ const CLIENT = {
   negocio:     'Servicios financieros Córdoba',
   email:       '',
   telefono:    '',
-  alertNumber: '5493515920758',
+  // Alertas Zapier/Meta de los formularios de este cliente → WhatsApp de Antonio (no Luciano).
+  alertNumber: '5493518354796',
   formularios: [
     {
       formId:     '1450524039906078',

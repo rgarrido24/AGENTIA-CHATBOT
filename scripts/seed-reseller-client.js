@@ -1,6 +1,7 @@
 const { MongoClient } = require('mongodb');
+const dbName = process.env.MONGODB_DB || 'agentia_chatbot_ventas';
 MongoClient.connect(process.env.MONGODB_URI).then(async c => {
-  const db = c.db('agentia_chatbot_ventas');
+  const db = c.db(dbName);
 
   // Upsert — no duplica si ya existe
   const result = await db.collection('leads').updateOne(
@@ -17,7 +18,7 @@ MongoClient.connect(process.env.MONGODB_URI).then(async c => {
         nombre: 'Antonio Campetella',
         negocio: 'Servicios financieros Córdoba',
         telefono: '5493515920758',
-        alertNumber: '5493515920758',
+        alertNumber: '5493518354796',
         formularios: [{
           formId: '1450524039906078',
           formName: 'LEADS NUEVO (3 rangos de edad)',

@@ -14,6 +14,7 @@
     "update:decohouse": "node scripts/update-decohouse-config.js",
     "cancel:outbound": "node scripts/cancel-pending-outbound.js",
     "set:client-pw": "node scripts/set-client-password.js",
+    "set:antonio-fb-alert": "node scripts/set-antonio-campetella-alert.js",
     "update:reseller-brand": "node scripts/update-reseller-brand.js",
     "purge:knowledge": "node scripts/purge-knowledge.js",
     "test:comment": "node scripts/test-comment-webhook.js",
