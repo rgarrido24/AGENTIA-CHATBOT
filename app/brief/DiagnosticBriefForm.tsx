@@ -2,23 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Boxes, Dna, Sparkles, TriangleAlert } from 'lucide-react';
 
 const EMERALD = '#50C878';
 
-const MAIN_PROBLEMS = [
-  'Pierdo clientes por no contestar rápido',
-  'Mis procesos son manuales y lentos',
-  'No tengo presencia profesional en internet',
-  'Necesito un software específico para mi operación',
-] as const;
+const PAINS = ['Ventas lentas', 'Procesos manuales', 'Falta de presencia'] as const;
 
-const CHANNELS = ['WhatsApp', 'Instagram', 'Web', 'Local físico'] as const;
-
-const SUPERPOWERS = [
-  'Una IA que venda por mí 24/7',
-  'Un sistema que gestione mis clientes y pagos',
-  'Una web moderna que atraiga leads automáticamente',
-] as const;
+const SOLUTIONS = ['IA Concierge', 'CRM a medida', 'Web Pro'] as const;
 
 const INVESTMENT_RANGES = [
   'Menos de $10,000 MXN',
@@ -27,22 +17,14 @@ const INVESTMENT_RANGES = [
   'Más de $200,000 MXN',
 ] as const;
 
-const TIMELINES = [
-  'Urgente (menos de 2 semanas)',
-  '1–4 semanas',
-  '1–3 meses',
-  'Solo estoy explorando',
-] as const;
-
 const STEPS = [
-  { n: 1, title: 'Contexto', icon: '🏢' },
-  { n: 2, title: 'Diagnóstico', icon: '🧠' },
-  { n: 3, title: 'Alcance técnico', icon: '🛠️' },
-  { n: 4, title: 'Compromiso', icon: '🚀' },
+  { n: 1, title: 'ADN', kicker: 'Contexto del negocio', Icon: Dna },
+  { n: 2, title: 'Problema', kicker: 'Qué duele hoy', Icon: TriangleAlert },
+  { n: 3, title: 'Arquitectura', kicker: 'Qué solución imaginas', Icon: Boxes },
+  { n: 4, title: 'Viabilidad', kicker: 'Presupuesto y contacto', Icon: Sparkles },
 ] as const;
 
 type TeamSize = '1-5' | '6-20' | '21+';
-type YesNo = 'yes' | 'no';
 
 function glassCard(className = '') {
   return `rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-xl shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset,0_24px_80px_-40px_rgba(80,200,120,0.25)] ${className}`;
@@ -54,7 +36,19 @@ function btnPrimary(disabled?: boolean) {
   }`;
 }
 
-export function DiagnosticBriefForm() {
+function normalizeWhatsappDigits(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 10) return `52${digits}`; // MX default
+  return digits;
+}
+
+function buildWhatsappUrl(toDigits: string, businessName: string, recommendation: string): string {
+  const to = normalizeWhatsappDigits(toDigits);
+  const text = `Hola Rodolfo, acabo de completar el Diagnóstico de Agentia. Negocio: ${businessName || '(sin nombre)'}.\nRecomendación: ${recommendation || '(pendiente)'}.\n¿Me ayudas a aterrizar la arquitectura?`;
+  return `https://wa.me/${encodeURIComponent(to)}?text=${encodeURIComponent(text)}`;
+}
+
+export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string | null }) {
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState<'form' | 'loading' | 'done'>('form');
   const [error, setError] = useState('');
@@ -62,37 +56,24 @@ export function DiagnosticBriefForm() {
 
   const [businessName, setBusinessName] = useState('');
   const [industry, setIndustry] = useState('');
-  const [hasWebOrSystem, setHasWebOrSystem] = useState<YesNo | ''>('');
   const [teamSize, setTeamSize] = useState<TeamSize | ''>('');
 
-  const [mainProblem, setMainProblem] = useState<string>('');
-  const [mainChannel, setMainChannel] = useState<string>('');
-
-  const [superpower, setSuperpower] = useState<string>('');
-  const [integrations, setIntegrations] = useState('');
+  const [pain, setPain] = useState<string>('');
+  const [imaginedSolution, setImaginedSolution] = useState<string>('');
 
   const [investmentRange, setInvestmentRange] = useState('');
-  const [timeline, setTimeline] = useState('');
-  const [contactName, setContactName] = useState('');
   const [contactWhatsapp, setContactWhatsapp] = useState('');
 
   const progress = useMemo(() => ((step + 1) / 4) * 100, [step]);
 
   function canNext(): boolean {
     if (step === 0) {
-      return Boolean(
-        businessName.trim() && industry.trim() && hasWebOrSystem && teamSize
-      );
+      return Boolean(businessName.trim() && industry.trim() && teamSize);
     }
-    if (step === 1) return Boolean(mainProblem && mainChannel);
-    if (step === 2) return Boolean(superpower);
+    if (step === 1) return Boolean(pain);
+    if (step === 2) return Boolean(imaginedSolution);
     if (step === 3) {
-      return Boolean(
-        investmentRange &&
-          timeline &&
-          contactName.trim() &&
-          contactWhatsapp.trim()
-      );
+      return Boolean(investmentRange && contactWhatsapp.trim());
     }
     return false;
   }
@@ -104,20 +85,17 @@ export function DiagnosticBriefForm() {
       const res = await fetch('/api/brief/diagnostic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
+          website: '',
           step1: {
             businessName,
             industry,
-            hasWebOrSystem,
             teamSize,
           },
-          step2: { mainProblem, mainChannel },
-          step3: { superpower, integrations },
+          step2: { pain },
+          step3: { imaginedSolution },
           step4: {
             investmentRange,
-            timeline,
-            contactName,
             contactWhatsapp,
           },
         }),
@@ -136,6 +114,8 @@ export function DiagnosticBriefForm() {
     }
   }
 
+  const activeStep = STEPS[step];
+
   return (
     <div
       className="min-h-screen text-white relative overflow-hidden"
@@ -144,6 +124,17 @@ export function DiagnosticBriefForm() {
           'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(80,200,120,0.12), transparent 50%), #050508',
       }}
     >
+      {/* Dynamic gradient mesh */}
+      <motion.div
+        className="pointer-events-none absolute -inset-[40%] opacity-[0.28]"
+        style={{
+          background:
+            'radial-gradient(700px 400px at 18% 22%, rgba(80,200,120,0.16), transparent 60%), radial-gradient(600px 380px at 82% 30%, rgba(120,119,198,0.12), transparent 62%), radial-gradient(700px 420px at 55% 80%, rgba(80,200,120,0.10), transparent 60%)',
+          filter: 'blur(30px)',
+        }}
+        animate={{ x: [0, 24, 0], y: [0, -18, 0] }}
+        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+      />
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.35]"
         style={{
@@ -156,22 +147,97 @@ export function DiagnosticBriefForm() {
       <div className="relative z-10 mx-auto max-w-lg px-4 py-10 sm:py-14">
         <header className="mb-8 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
-            Agentia · Uso interno
+            Agentia
           </p>
           <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight">
-            Cuestionario de diagnóstico tecnológico
+            Diagnóstico de Automatización (2 min)
           </h1>
           <p className="mt-2 text-sm text-slate-400">
-            Cuatro pasos para perfilar la arquitectura ideal del cliente.
+            Responde 4 pasos y te digo qué arquitectura te conviene.
           </p>
         </header>
 
         {phase === 'form' && (
           <>
+            {/* Step artwork */}
+            <div className="mb-5">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`art_${step}`}
+                  initial={{ opacity: 0, y: 10, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: -6, filter: 'blur(14px)' }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                  className={`${glassCard('p-5 overflow-hidden relative')}`}
+                >
+                  <div
+                    className="absolute inset-0 opacity-90"
+                    style={{
+                      background:
+                        step === 0
+                          ? 'radial-gradient(600px 240px at 20% 30%, rgba(80,200,120,0.18), transparent 60%), radial-gradient(520px 240px at 90% 80%, rgba(255,255,255,0.06), transparent 62%)'
+                          : step === 1
+                            ? 'radial-gradient(620px 260px at 25% 25%, rgba(80,200,120,0.12), transparent 62%), radial-gradient(520px 260px at 80% 70%, rgba(239,68,68,0.10), transparent 62%)'
+                            : step === 2
+                              ? 'radial-gradient(620px 260px at 15% 50%, rgba(80,200,120,0.14), transparent 62%), radial-gradient(540px 260px at 85% 40%, rgba(59,130,246,0.10), transparent 62%)'
+                              : 'radial-gradient(620px 260px at 18% 30%, rgba(80,200,120,0.16), transparent 62%), radial-gradient(520px 260px at 85% 70%, rgba(168,85,247,0.10), transparent 62%)',
+                    }}
+                  />
+                  <div className="relative flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">{activeStep.kicker}</p>
+                      <p className="mt-2 text-lg font-semibold text-white">
+                        Paso {step + 1}: {activeStep.title}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-300/70">
+                        Completa este bloque para que podamos recomendar una arquitectura realista.
+                      </p>
+                    </div>
+                    <div
+                      className="h-12 w-12 rounded-2xl border border-white/10 bg-black/30 flex items-center justify-center"
+                      style={{
+                        boxShadow: `0 0 0 1px rgba(255,255,255,0.06) inset, 0 0 34px ${EMERALD}26`,
+                      }}
+                    >
+                      <activeStep.Icon className="h-6 w-6" style={{ color: EMERALD }} strokeWidth={1.25} />
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
             <div className={`${glassCard('p-4 mb-6')}`}>
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {STEPS.map((s, idx) => {
+                  const active = idx === step;
+                  const reached = idx <= step;
+                  const Icon = s.Icon;
+                  return (
+                    <div
+                      key={s.title}
+                      className="rounded-2xl border px-3 py-2 flex items-center gap-2"
+                      style={{
+                        borderColor: active ? 'rgba(80,200,120,0.45)' : 'rgba(255,255,255,0.10)',
+                        background: active ? 'rgba(80,200,120,0.10)' : 'rgba(0,0,0,0.20)',
+                        boxShadow: active ? `0 0 0 1px rgba(80,200,120,0.10) inset, 0 0 40px ${EMERALD}1f` : undefined,
+                      }}
+                    >
+                      <Icon
+                        className="h-4 w-4"
+                        strokeWidth={1.25}
+                        style={{
+                          color: active ? EMERALD : reached ? 'rgba(255,255,255,0.70)' : 'rgba(255,255,255,0.35)',
+                          filter: active ? `drop-shadow(0 0 10px ${EMERALD}66)` : undefined,
+                        }}
+                      />
+                      <span className="text-[11px] font-semibold text-white/70 truncate">{s.title}</span>
+                    </div>
+                  );
+                })}
+              </div>
               <div className="flex justify-between text-xs text-slate-400 mb-2">
                 <span>
-                  Paso {step + 1} de 4 · {STEPS[step].icon} {STEPS[step].title}
+                  Paso {step + 1} de 4 · {STEPS[step].title}
                 </span>
                 <span style={{ color: EMERALD }}>{Math.round(progress)}%</span>
               </div>
@@ -191,15 +257,16 @@ export function DiagnosticBriefForm() {
                 {step === 0 && (
                   <motion.div
                     key="s0"
-                    initial={{ opacity: 0, y: 12 }}
+                    initial={{ opacity: 0, y: 12, filter: 'blur(10px)' }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.25 }}
+                    exit={{ opacity: 0, y: -8, filter: 'blur(14px)' }}
+                    transition={{ duration: 0.32, ease: 'easeOut' }}
                     className="space-y-5"
                   >
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                      <span>🏢</span> Contexto
-                    </h2>
+                    <div className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">{STEPS[0].kicker}</p>
+                      <h2 className="text-lg font-bold">{STEPS[0].title}</h2>
+                    </div>
                     <div>
                       <label className="text-xs text-slate-400 block mb-1.5">Nombre del negocio</label>
                       <input
@@ -217,27 +284,6 @@ export function DiagnosticBriefForm() {
                         className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#50C878]/50"
                         placeholder="Ej. Alimentos, servicios, retail…"
                       />
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400 mb-2">
-                        ¿Actualmente cuentan con página web o sistema de gestión?
-                      </p>
-                      <div className="flex gap-2">
-                        {(['yes', 'no'] as const).map((v) => (
-                          <button
-                            key={v}
-                            type="button"
-                            onClick={() => setHasWebOrSystem(v)}
-                            className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition ${
-                              hasWebOrSystem === v
-                                ? 'border-[#50C878] bg-[#50C878]/15 text-white'
-                                : 'border-white/10 bg-black/20 text-slate-300 hover:border-white/20'
-                            }`}
-                          >
-                            {v === 'yes' ? 'Sí' : 'No'}
-                          </button>
-                        ))}
-                      </div>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 mb-2">Tamaño del equipo</p>
@@ -264,49 +310,31 @@ export function DiagnosticBriefForm() {
                 {step === 1 && (
                   <motion.div
                     key="s1"
-                    initial={{ opacity: 0, y: 12 }}
+                    initial={{ opacity: 0, y: 12, filter: 'blur(10px)' }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.25 }}
+                    exit={{ opacity: 0, y: -8, filter: 'blur(14px)' }}
+                    transition={{ duration: 0.32, ease: 'easeOut' }}
                     className="space-y-5"
                   >
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                      <span>🧠</span> Diagnóstico de necesidades
-                    </h2>
+                    <div className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">{STEPS[1].kicker}</p>
+                      <h2 className="text-lg font-bold">{STEPS[1].title}</h2>
+                    </div>
                     <div>
-                      <p className="text-xs text-slate-400 mb-2">¿Cuál es tu mayor problema hoy?</p>
+                      <p className="text-xs text-slate-400 mb-2">Selector de dolor</p>
                       <div className="space-y-2">
-                        {MAIN_PROBLEMS.map((p) => (
+                        {PAINS.map((p) => (
                           <button
                             key={p}
                             type="button"
-                            onClick={() => setMainProblem(p)}
+                            onClick={() => setPain(p)}
                             className={`w-full text-left px-4 py-3 rounded-xl text-sm border transition ${
-                              mainProblem === p
+                              pain === p
                                 ? 'border-[#50C878] bg-[#50C878]/12 text-white'
                                 : 'border-white/10 bg-black/20 text-slate-300 hover:border-white/18'
                             }`}
                           >
                             {p}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400 mb-2">¿Qué canal usas más para vender?</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {CHANNELS.map((c) => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setMainChannel(c)}
-                            className={`py-2.5 rounded-xl text-sm font-medium border transition ${
-                              mainChannel === c
-                                ? 'border-[#50C878] bg-[#50C878]/12 text-white'
-                                : 'border-white/10 bg-black/20 text-slate-300'
-                            }`}
-                          >
-                            {c}
                           </button>
                         ))}
                       </div>
@@ -317,27 +345,28 @@ export function DiagnosticBriefForm() {
                 {step === 2 && (
                   <motion.div
                     key="s2"
-                    initial={{ opacity: 0, y: 12 }}
+                    initial={{ opacity: 0, y: 12, filter: 'blur(10px)' }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.25 }}
+                    exit={{ opacity: 0, y: -8, filter: 'blur(14px)' }}
+                    transition={{ duration: 0.32, ease: 'easeOut' }}
                     className="space-y-5"
                   >
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                      <span>🛠️</span> Alcance técnico
-                    </h2>
+                    <div className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">{STEPS[2].kicker}</p>
+                      <h2 className="text-lg font-bold">{STEPS[2].title}</h2>
+                    </div>
                     <div>
                       <p className="text-xs text-slate-400 mb-2">
-                        Si pudieras elegir una &quot;superpotencia&quot; para tu negocio hoy, ¿cuál sería?
+                        ¿Qué solución imaginas?
                       </p>
                       <div className="space-y-2">
-                        {SUPERPOWERS.map((s) => (
+                        {SOLUTIONS.map((s) => (
                           <button
                             key={s}
                             type="button"
-                            onClick={() => setSuperpower(s)}
+                            onClick={() => setImaginedSolution(s)}
                             className={`w-full text-left px-4 py-3 rounded-xl text-sm border transition ${
-                              superpower === s
+                              imaginedSolution === s
                                 ? 'border-[#50C878] bg-[#50C878]/12 text-white'
                                 : 'border-white/10 bg-black/20 text-slate-300'
                             }`}
@@ -347,33 +376,22 @@ export function DiagnosticBriefForm() {
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1.5">
-                        ¿Requieres integración con otras herramientas? (opcional)
-                      </label>
-                      <textarea
-                        value={integrations}
-                        onChange={(e) => setIntegrations(e.target.value)}
-                        rows={3}
-                        className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#50C878]/50 resize-none"
-                        placeholder="Ej. Stripe, WhatsApp API, Google Calendar…"
-                      />
-                    </div>
                   </motion.div>
                 )}
 
                 {step === 3 && (
                   <motion.div
                     key="s3"
-                    initial={{ opacity: 0, y: 12 }}
+                    initial={{ opacity: 0, y: 12, filter: 'blur(10px)' }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.25 }}
+                    exit={{ opacity: 0, y: -8, filter: 'blur(14px)' }}
+                    transition={{ duration: 0.32, ease: 'easeOut' }}
                     className="space-y-5"
                   >
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                      <span>🚀</span> Compromiso
-                    </h2>
+                    <div className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">{STEPS[3].kicker}</p>
+                      <h2 className="text-lg font-bold">{STEPS[3].title}</h2>
+                    </div>
                     <div>
                       <p className="text-xs text-slate-400 mb-2">Rango de inversión estimada (MXN)</p>
                       <div className="space-y-2">
@@ -394,39 +412,13 @@ export function DiagnosticBriefForm() {
                       </div>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400 mb-2">¿Qué tan pronto necesitas la implementación?</p>
-                      <div className="space-y-2">
-                        {TIMELINES.map((t) => (
-                          <button
-                            key={t}
-                            type="button"
-                            onClick={() => setTimeline(t)}
-                            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition ${
-                              timeline === t
-                                ? 'border-[#50C878] bg-[#50C878]/12 text-white'
-                                : 'border-white/10 bg-black/20 text-slate-300'
-                            }`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1.5">Nombre de contacto</label>
-                      <input
-                        value={contactName}
-                        onChange={(e) => setContactName(e.target.value)}
-                        className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#50C878]/50"
-                      />
-                    </div>
-                    <div>
                       <label className="text-xs text-slate-400 block mb-1.5">WhatsApp</label>
                       <input
                         value={contactWhatsapp}
                         onChange={(e) => setContactWhatsapp(e.target.value)}
                         className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#50C878]/50"
                         placeholder="10 dígitos o con lada"
+                        inputMode="tel"
                       />
                     </div>
                   </motion.div>
@@ -501,8 +493,21 @@ export function DiagnosticBriefForm() {
               <span className="font-semibold" style={{ color: EMERALD }}>
                 {recommendation || 'Automatización de IA + Landing page'}
               </span>
-              . Rodolfo se contactará contigo en breve.
+              .
             </p>
+            {salesWhatsapp ? (
+              <a
+                href={buildWhatsappUrl(salesWhatsapp, businessName, recommendation)}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-6 inline-flex w-full sm:w-auto justify-center px-6 py-3 rounded-xl text-sm font-semibold transition hover:brightness-110 active:scale-[0.98]"
+                style={{ background: EMERALD, color: '#042f2e' }}
+              >
+                Agendar por WhatsApp
+              </a>
+            ) : (
+              <p className="mt-6 text-xs text-white/40">WhatsApp de ventas no configurado.</p>
+            )}
             <button
               type="button"
               onClick={() => {

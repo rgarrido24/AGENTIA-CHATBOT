@@ -118,6 +118,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ── Rate limiting: /api/brief/diagnostic (12 per 5 min per IP) ──────────────
+  if (pathname === '/api/brief/diagnostic' && request.method === 'POST') {
+    const allowed = edgeRateLimit(`brief:${ip}`, 12, 5 * 60 * 1000);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta de nuevo en 5 minutos.' }, { status: 429 });
+    }
+  }
+
   // ── Auth: dashboard / admin ──────────────────────────────────────────────────
   const isAdminPage    = pathname.startsWith('/admin');
   const isDashboardPage = pathname.startsWith('/dashboard');
@@ -153,6 +161,7 @@ export const config = {
     '/api/admin/:path*',
     '/api/chat',
     '/api/demo/:path*',
+    '/api/brief/diagnostic',
     '/api/agentia/followup',
     '/api/auth/login',
   ],

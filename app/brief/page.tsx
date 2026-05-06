@@ -1,4 +1,3 @@
-import AdminAuthGuard from '@/components/AdminAuthGuard';
 import { DiagnosticBriefForm } from './DiagnosticBriefForm';
 
 export const metadata = {
@@ -7,9 +6,8 @@ export const metadata = {
 };
 
 export default function BriefDiagnosticPage() {
-  return (
-    <AdminAuthGuard fromPath="/brief">
-      <DiagnosticBriefForm />
-    </AdminAuthGuard>
-  );
+  const salesWhatsapp =
+    (process.env.ALERT_WHATSAPP_NUMBER ?? '').replace(/\D/g, '') || null;
+
+  return <DiagnosticBriefForm salesWhatsapp={salesWhatsapp} />;
 }

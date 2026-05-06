@@ -12,13 +12,13 @@ type Role = 'user' | 'assistant';
 type Msg = { id: string; role: Role; text: string };
 
 /** Globo (3s): corto para móvil + gancho de conversión */
-const BUBBLE_LINE1 = '👋 Hola, soy la IA de Agentia.';
+const BUBBLE_LINE1 = '¡Hola! Soy la IA de Agentia.';
 const BUBBLE_LINE2 =
-  'Si no ves tu industria en la página, la armamos a la medida. ¿Qué negocio tienes?';
+  '¿Quieres que analice tu negocio ahora mismo? Abre el chat y te paso el diagnóstico de 2 minutos.';
 
 /** Panel vacío: un poco más de contexto sin repetir todo el globo */
 const PANEL_INTRO =
-  'Cuéntame tu giro (ej. barbería, restaurante, consultorio…) y qué quieres lograr: más citas, cobranza, seguimiento o atención 24/7. Con eso te digo el siguiente paso en 1 mensaje.';
+  '¿Quieres que analice tu negocio ahora mismo para ver cuánto tiempo podemos ahorrarte? Inicia el diagnóstico o cuéntame qué buscas y te guío.';
 
 function newId() {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -226,6 +226,12 @@ export function AgentiaChatWidget() {
               {msgs.length === 0 && (
                 <div className="space-y-3 px-1">
                   <p className="text-xs leading-relaxed text-zinc-400">{PANEL_INTRO}</p>
+                  <a
+                    href="/brief"
+                    className="inline-flex items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-400/15 px-3 py-2 text-[13px] font-semibold text-emerald-100 hover:bg-emerald-400/20"
+                  >
+                    Iniciar diagnóstico (2 min)
+                  </a>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
                     Empieza en 1 clic
                   </p>

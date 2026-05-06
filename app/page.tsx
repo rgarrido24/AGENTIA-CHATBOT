@@ -182,20 +182,21 @@ export default function LandingPage() {
                 {/* CTA buttons */}
                 <div className="flex flex-wrap gap-3 mb-8">
                   <a
-                    href="#demos"
-                    className="px-5 py-3 rounded-xl font-bold text-sm text-white transition-opacity hover:opacity-90"
-                    style={{ background: '#22c55e' }}
+                    href="/brief"
+                    className="px-6 py-3.5 rounded-xl font-extrabold text-sm text-white transition-all hover:brightness-110 active:scale-[0.99]"
+                    style={{
+                      background: '#50C878',
+                      boxShadow: '0 0 0 1px rgba(80,200,120,0.14) inset, 0 22px 60px -30px rgba(80,200,120,0.55)',
+                    }}
                   >
-                    Ver demos en vivo
+                    Inicia tu Diagnóstico de Automatización
                   </a>
                   <a
-                    href="https://wa.me/529998080265"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-5 py-3 rounded-xl font-bold text-sm text-white transition-opacity hover:opacity-75"
-                    style={{ border: '1.5px solid rgba(255,255,255,0.25)', background: 'transparent' }}
+                    href="#demos"
+                    className="px-5 py-3 rounded-xl font-bold text-sm text-white transition-opacity hover:opacity-90"
+                    style={{ border: '1.5px solid rgba(255,255,255,0.22)', background: 'transparent' }}
                   >
-                    Ver precios
+                    Ver demos en vivo
                   </a>
                 </div>
 
@@ -291,6 +292,43 @@ export default function LandingPage() {
           <div id="demos">
             <IndustrySelectorGrid />
           </div>
+
+          {/* ── Banner post-demos (personalización) ─────────────────────────── */}
+          <section className="mb-20">
+            <div
+              className="rounded-2xl px-6 py-10 sm:px-10 sm:py-12 text-center relative overflow-hidden"
+              style={{
+                background:
+                  'radial-gradient(800px 240px at 50% 0%, rgba(80,200,120,0.18), transparent 62%), rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              <div className="relative">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/40">
+                  Personalización
+                </p>
+                <h3 className="mt-2 text-2xl sm:text-3xl font-extrabold text-white">
+                  ¿Tu negocio es único? Diseñemos tu solución a medida.
+                </h3>
+                <p className="mt-3 text-sm text-slate-400 max-w-2xl mx-auto">
+                  Completa el diagnóstico y te recomendamos una arquitectura clara (IA, web, CRM o híbrido) según tu caso.
+                </p>
+                <div className="mt-7 flex justify-center">
+                  <a
+                    href="/brief"
+                    className="inline-flex items-center justify-center px-7 py-3.5 rounded-xl font-extrabold text-sm text-white transition-all hover:brightness-110 active:scale-[0.99]"
+                    style={{
+                      background: '#50C878',
+                      boxShadow: '0 0 0 1px rgba(80,200,120,0.14) inset, 0 22px 60px -30px rgba(80,200,120,0.55)',
+                    }}
+                  >
+                    Personalizar mi Proyecto
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* ── Testimonios ─────────────────────────────────────────────────── */}
           <section className="mb-24">
