@@ -3,28 +3,35 @@ import { getMongoDb } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
-export type DiagnosticPayload = {
-  // v2 (público) — el formulario nuevo manda esto
-  step1: { businessName: string; industry: string; teamSize: string };
-  step2: { pain: string };
-  step3: { imaginedSolution: string };
-  step4: { investmentRange: string; contactWhatsapp: string };
-  recommendationSummary: string;
+export type LeadBriefPayload = {
+  step1: { businessName: string; industry: string };
+  step2: { lostSales: '1-10' | '10-30' | '+30' };
+  step3: {
+    messageHandling: 'Yo solo' | 'Un empleado' | 'CRM básico' | 'No alcanzo a contestar';
+    webOrSocial?: string;
+  };
+  step4: { contactName: string; contactWhatsapp: string };
 };
 
-function buildRecommendation(p: DiagnosticPayload): string {
-  const chunks: string[] = [];
-  const sol = p.step3.imaginedSolution.toLowerCase();
-  const pain = p.step2.pain.toLowerCase();
+function computeImpact(p: LeadBriefPayload): { potentialPct: number; hoursWeekly: number } {
+  let potentialPct = 40;
+  let hoursWeekly = 2;
 
-  if (sol.includes('ia') || pain.includes('ventas') || pain.includes('contestar')) chunks.push('Automatización de IA');
-  if (sol.includes('web') || pain.includes('presencia')) chunks.push('Landing page moderna');
-  if (sol.includes('crm') || pain.includes('procesos')) chunks.push('Sistema de gestión a medida');
-
-  if (chunks.length === 0) {
-    return 'Automatización de IA + Landing page';
+  if (p.step2.lostSales === '10-30') {
+    potentialPct = 65;
+    hoursWeekly = 6;
   }
-  return chunks.join(' + ');
+  if (p.step2.lostSales === '+30') {
+    potentialPct = 85;
+    hoursWeekly = 12;
+  }
+
+  if (p.step3.messageHandling === 'No alcanzo a contestar') {
+    potentialPct = Math.min(95, potentialPct + 10);
+    hoursWeekly = Math.round(hoursWeekly * 1.25);
+  }
+
+  return { potentialPct, hoursWeekly };
 }
 
 function clientIP(req: NextRequest): string {
@@ -36,7 +43,7 @@ function clientIP(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  let body: Partial<DiagnosticPayload> & Record<string, unknown>;
+  let body: Partial<LeadBriefPayload> & Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
@@ -47,7 +54,6 @@ export async function POST(req: NextRequest) {
   const hp = String(body.website ?? '').trim();
   if (hp) return NextResponse.json({ ok: true });
 
-  // Acepta el shape nuevo y el viejo (por compatibilidad).
   const s1 = (body.step1 ?? {}) as Record<string, unknown>;
   const s2 = (body.step2 ?? {}) as Record<string, unknown>;
   const s3 = (body.step3 ?? {}) as Record<string, unknown>;
@@ -55,33 +61,43 @@ export async function POST(req: NextRequest) {
 
   const businessName = String(s1.businessName ?? '').trim();
   const industry = String(s1.industry ?? '').trim();
-  const teamSize = String(s1.teamSize ?? '').trim();
 
-  const pain = String((s2 as { pain?: unknown }).pain ?? (s2 as { mainProblem?: unknown }).mainProblem ?? '').trim();
-  const imaginedSolution = String((s3 as { imaginedSolution?: unknown }).imaginedSolution ?? (s3 as { superpower?: unknown }).superpower ?? '').trim();
-  const investmentRange = String(s4.investmentRange ?? '').trim();
-  const contactWhatsapp = String(s4.contactWhatsapp ?? '').replace(/\D/g, '');
+  const lostSales = String((s2 as { lostSales?: unknown }).lostSales ?? '').trim();
+  const messageHandling = String((s3 as { messageHandling?: unknown }).messageHandling ?? '').trim();
+  const webOrSocial = String((s3 as { webOrSocial?: unknown }).webOrSocial ?? '').trim();
 
-  if (!businessName || !industry || !teamSize || !pain || !imaginedSolution || !investmentRange || !contactWhatsapp) {
+  const contactName = String((s4 as { contactName?: unknown }).contactName ?? '').trim();
+  const contactWhatsapp = String((s4 as { contactWhatsapp?: unknown }).contactWhatsapp ?? '').replace(/\D/g, '');
+
+  const validLost = lostSales === '1-10' || lostSales === '10-30' || lostSales === '+30';
+  const validHandling =
+    messageHandling === 'Yo solo' ||
+    messageHandling === 'Un empleado' ||
+    messageHandling === 'CRM básico' ||
+    messageHandling === 'No alcanzo a contestar';
+
+  if (!businessName || !industry || !validLost || !validHandling || !contactName || !contactWhatsapp) {
     return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
   }
 
-  const payload: DiagnosticPayload = {
-    step1: { businessName, industry, teamSize },
-    step2: { pain },
-    step3: { imaginedSolution },
-    step4: { investmentRange, contactWhatsapp },
-    recommendationSummary: String(body.recommendationSummary ?? '').trim(),
+  const payload: LeadBriefPayload = {
+    step1: { businessName, industry },
+    step2: { lostSales: lostSales as LeadBriefPayload['step2']['lostSales'] },
+    step3: {
+      messageHandling: messageHandling as LeadBriefPayload['step3']['messageHandling'],
+      ...(webOrSocial ? { webOrSocial } : {}),
+    },
+    step4: { contactName, contactWhatsapp },
   };
-  if (!payload.recommendationSummary) {
-    payload.recommendationSummary = buildRecommendation(payload);
-  }
+
+  const impact = computeImpact(payload);
 
   const db = await getMongoDb();
   const now = new Date();
-  await db.collection('project_briefs').insertOne({
+  await db.collection('lead_briefs').insertOne({
     ...payload,
-    source: 'diagnostic_brief_v2_public',
+    impact,
+    source: 'lead_brief_v1_scanner',
     meta: {
       ip: clientIP(req),
       ua: req.headers.get('user-agent') ?? '',
@@ -93,6 +109,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    recommendation: payload.recommendationSummary,
+    impact,
   });
 }

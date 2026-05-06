@@ -2,29 +2,19 @@
 
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Boxes, Dna, Sparkles, TriangleAlert } from 'lucide-react';
+import { Fingerprint, MessagesSquare, PhoneCall, TrendingDown } from 'lucide-react';
 
 const EMERALD = '#50C878';
 
-const PAINS = ['Ventas lentas', 'Procesos manuales', 'Falta de presencia'] as const;
-
-const SOLUTIONS = ['IA Concierge', 'CRM a medida', 'Web Pro'] as const;
-
-const INVESTMENT_RANGES = [
-  'Menos de $10,000 MXN',
-  '$10,000 – $50,000 MXN',
-  '$50,000 – $200,000 MXN',
-  'Más de $200,000 MXN',
-] as const;
+const LOST_SALES = ['1-10', '10-30', '+30'] as const;
+const MESSAGE_HANDLING = ['Yo solo', 'Un empleado', 'CRM básico', 'No alcanzo a contestar'] as const;
 
 const STEPS = [
-  { n: 1, title: 'ADN', kicker: 'Contexto del negocio', Icon: Dna },
-  { n: 2, title: 'Problema', kicker: 'Qué duele hoy', Icon: TriangleAlert },
-  { n: 3, title: 'Arquitectura', kicker: 'Qué solución imaginas', Icon: Boxes },
-  { n: 4, title: 'Viabilidad', kicker: 'Presupuesto y contacto', Icon: Sparkles },
+  { n: 1, title: 'Identidad', kicker: 'Tu negocio', Icon: Fingerprint },
+  { n: 2, title: 'Diagnóstico de fugas', kicker: 'Ventas/citas perdidas', Icon: TrendingDown },
+  { n: 3, title: 'Infraestructura actual', kicker: 'Cómo operas hoy', Icon: MessagesSquare },
+  { n: 4, title: 'Contacto', kicker: 'Cierre', Icon: PhoneCall },
 ] as const;
-
-type TeamSize = '1-5' | '6-20' | '21+';
 
 function glassCard(className = '') {
   return `rounded-2xl border border-white/10 bg-white/[0.05] backdrop-blur-xl shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset,0_24px_80px_-40px_rgba(80,200,120,0.25)] ${className}`;
@@ -42,9 +32,9 @@ function normalizeWhatsappDigits(raw: string): string {
   return digits;
 }
 
-function buildWhatsappUrl(toDigits: string, businessName: string, recommendation: string): string {
+function buildWhatsappUrl(toDigits: string, businessName: string): string {
   const to = normalizeWhatsappDigits(toDigits);
-  const text = `Hola Rodolfo, acabo de completar el Diagnóstico de Agentia. Negocio: ${businessName || '(sin nombre)'}.\nRecomendación: ${recommendation || '(pendiente)'}.\n¿Me ayudas a aterrizar la arquitectura?`;
+  const text = `Hola Rodolfo, acabo de terminar mi Diagnóstico de Automatización para ${businessName || '(Nombre del Negocio)'}. Me interesa la recomendación de la IA. ¿Podemos hablar?`;
   return `https://wa.me/${encodeURIComponent(to)}?text=${encodeURIComponent(text)}`;
 }
 
@@ -52,29 +42,28 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState<'form' | 'loading' | 'done'>('form');
   const [error, setError] = useState('');
-  const [recommendation, setRecommendation] = useState('');
+  const [impact, setImpact] = useState<{ potentialPct: number; hoursWeekly: number } | null>(null);
 
   const [businessName, setBusinessName] = useState('');
   const [industry, setIndustry] = useState('');
-  const [teamSize, setTeamSize] = useState<TeamSize | ''>('');
 
-  const [pain, setPain] = useState<string>('');
-  const [imaginedSolution, setImaginedSolution] = useState<string>('');
+  const [lostSales, setLostSales] = useState<(typeof LOST_SALES)[number] | ''>('');
 
-  const [investmentRange, setInvestmentRange] = useState('');
+  const [messageHandling, setMessageHandling] = useState<(typeof MESSAGE_HANDLING)[number] | ''>('');
+  const [webOrSocial, setWebOrSocial] = useState('');
+
+  const [contactName, setContactName] = useState('');
   const [contactWhatsapp, setContactWhatsapp] = useState('');
 
   const progress = useMemo(() => ((step + 1) / 4) * 100, [step]);
 
   function canNext(): boolean {
     if (step === 0) {
-      return Boolean(businessName.trim() && industry.trim() && teamSize);
+      return Boolean(businessName.trim() && industry.trim());
     }
-    if (step === 1) return Boolean(pain);
-    if (step === 2) return Boolean(imaginedSolution);
-    if (step === 3) {
-      return Boolean(investmentRange && contactWhatsapp.trim());
-    }
+    if (step === 1) return Boolean(lostSales);
+    if (step === 2) return Boolean(messageHandling);
+    if (step === 3) return Boolean(contactName.trim() && contactWhatsapp.trim());
     return false;
   }
 
@@ -82,21 +71,21 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
     setError('');
     setPhase('loading');
     try {
+      const startedAt = Date.now();
       const res = await fetch('/api/brief/diagnostic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           website: '',
-          step1: {
-            businessName,
-            industry,
-            teamSize,
-          },
-          step2: { pain },
-          step3: { imaginedSolution },
+          step1: { businessName, industry },
+          step2: { lostSales },
           step4: {
-            investmentRange,
+            contactName,
             contactWhatsapp,
+          },
+          step3: {
+            messageHandling,
+            webOrSocial: webOrSocial.trim() ? webOrSocial.trim() : undefined,
           },
         }),
       });
@@ -106,7 +95,18 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
         setError((data as { error?: string }).error || 'No se pudo guardar');
         return;
       }
-      setRecommendation(String((data as { recommendation?: string }).recommendation || ''));
+      const nextImpact = (data as { impact?: { potentialPct?: number; hoursWeekly?: number } }).impact;
+      const potentialPct = Number(nextImpact?.potentialPct ?? 0);
+      const hoursWeekly = Number(nextImpact?.hoursWeekly ?? 0);
+      setImpact({
+        potentialPct: Number.isFinite(potentialPct) ? potentialPct : 0,
+        hoursWeekly: Number.isFinite(hoursWeekly) ? hoursWeekly : 0,
+      });
+
+      // Fuerza 3s de "análisis" (impacto visual)
+      const elapsed = Date.now() - startedAt;
+      const remaining = Math.max(0, 3000 - elapsed);
+      if (remaining) await new Promise((r) => setTimeout(r, remaining));
       setPhase('done');
     } catch {
       setPhase('form');
@@ -285,25 +285,6 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                         placeholder="Ej. Alimentos, servicios, retail…"
                       />
                     </div>
-                    <div>
-                      <p className="text-xs text-slate-400 mb-2">Tamaño del equipo</p>
-                      <div className="grid grid-cols-3 gap-2">
-                        {(['1-5', '6-20', '21+'] as const).map((ts) => (
-                          <button
-                            key={ts}
-                            type="button"
-                            onClick={() => setTeamSize(ts)}
-                            className={`py-2.5 rounded-xl text-xs font-semibold border transition ${
-                              teamSize === ts
-                                ? 'border-[#50C878] bg-[#50C878]/15 text-white'
-                                : 'border-white/10 bg-black/20 text-slate-300'
-                            }`}
-                          >
-                            {ts === '21+' ? '21+' : ts.replace('-', '–')} pers.
-                          </button>
-                        ))}
-                      </div>
-                    </div>
                   </motion.div>
                 )}
 
@@ -321,20 +302,22 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                       <h2 className="text-lg font-bold">{STEPS[1].title}</h2>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400 mb-2">Selector de dolor</p>
+                      <p className="text-xs text-slate-400 mb-2">
+                        ¿Cuántas ventas o citas crees que se pierden al mes por falta de respuesta inmediata?
+                      </p>
                       <div className="space-y-2">
-                        {PAINS.map((p) => (
+                        {LOST_SALES.map((p) => (
                           <button
                             key={p}
                             type="button"
-                            onClick={() => setPain(p)}
+                            onClick={() => setLostSales(p)}
                             className={`w-full text-left px-4 py-3 rounded-xl text-sm border transition ${
-                              pain === p
+                              lostSales === p
                                 ? 'border-[#50C878] bg-[#50C878]/12 text-white'
                                 : 'border-white/10 bg-black/20 text-slate-300 hover:border-white/18'
                             }`}
                           >
-                            {p}
+                            {p === '+30' ? '+30' : p.replace('-', '–')}
                           </button>
                         ))}
                       </div>
@@ -357,16 +340,16 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 mb-2">
-                        ¿Qué solución imaginas?
+                        ¿Cómo manejas tus mensajes hoy?
                       </p>
                       <div className="space-y-2">
-                        {SOLUTIONS.map((s) => (
+                        {MESSAGE_HANDLING.map((s) => (
                           <button
                             key={s}
                             type="button"
-                            onClick={() => setImaginedSolution(s)}
+                            onClick={() => setMessageHandling(s)}
                             className={`w-full text-left px-4 py-3 rounded-xl text-sm border transition ${
-                              imaginedSolution === s
+                              messageHandling === s
                                 ? 'border-[#50C878] bg-[#50C878]/12 text-white'
                                 : 'border-white/10 bg-black/20 text-slate-300'
                             }`}
@@ -375,6 +358,20 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                           </button>
                         ))}
                       </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1.5">
+                        Sitio Web o Redes Sociales (opcional)
+                      </label>
+                      <input
+                        value={webOrSocial}
+                        onChange={(e) => setWebOrSocial(e.target.value)}
+                        className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#50C878]/50"
+                        placeholder="Ej. https://tu-sitio.com o @tuinstagram"
+                      />
+                      <p className="mt-2 text-[12px] text-white/45">
+                        Si no tienes, no te preocupes, analizaremos tu nicho de mercado.
+                      </p>
                     </div>
                   </motion.div>
                 )}
@@ -393,23 +390,13 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                       <h2 className="text-lg font-bold">{STEPS[3].title}</h2>
                     </div>
                     <div>
-                      <p className="text-xs text-slate-400 mb-2">Rango de inversión estimada (MXN)</p>
-                      <div className="space-y-2">
-                        {INVESTMENT_RANGES.map((r) => (
-                          <button
-                            key={r}
-                            type="button"
-                            onClick={() => setInvestmentRange(r)}
-                            className={`w-full text-left px-4 py-2.5 rounded-xl text-sm border transition ${
-                              investmentRange === r
-                                ? 'border-[#50C878] bg-[#50C878]/12 text-white'
-                                : 'border-white/10 bg-black/20 text-slate-300'
-                            }`}
-                          >
-                            {r}
-                          </button>
-                        ))}
-                      </div>
+                      <label className="text-xs text-slate-400 block mb-1.5">Nombre</label>
+                      <input
+                        value={contactName}
+                        onChange={(e) => setContactName(e.target.value)}
+                        className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#50C878]/50"
+                        placeholder="Tu nombre"
+                      />
                     </div>
                     <div>
                       <label className="text-xs text-slate-400 block mb-1.5">WhatsApp</label>
@@ -454,7 +441,7 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                     className={btnPrimary(!canNext())}
                     style={{ background: EMERALD, color: '#042f2e' }}
                   >
-                    Enviar diagnóstico
+                    Ver mi resultado
                   </button>
                 )}
               </div>
@@ -474,7 +461,7 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
               className="mx-auto mb-6 h-12 w-12 rounded-full border-2 border-white/15 border-t-[#50C878]"
             />
             <p className="text-lg font-semibold text-white">
-              Agentia IA está procesando tu arquitectura ideal...
+              IA de Agentia analizando tu perfil operativo...
             </p>
             <p className="mt-2 text-sm text-slate-400">Un momento por favor.</p>
           </motion.div>
@@ -487,23 +474,22 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
             className={`${glassCard('p-8 text-center')}`}
           >
             <div className="text-4xl mb-4">✓</div>
-            <h2 className="text-xl font-bold text-white mb-3">Diagnóstico enviado</h2>
+            <h2 className="text-xl font-bold text-white mb-3">Resultado</h2>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Basado en tus respuestas, te recomendamos una{' '}
               <span className="font-semibold" style={{ color: EMERALD }}>
-                {recommendation || 'Automatización de IA + Landing page'}
+                Tu negocio tiene un potencial de automatización del {impact?.potentialPct ?? 0}%.
               </span>
-              .
+              {' '}Podrías recuperar hasta <span className="font-semibold text-white">{impact?.hoursWeekly ?? 0}</span> horas semanales.
             </p>
             {salesWhatsapp ? (
               <a
-                href={buildWhatsappUrl(salesWhatsapp, businessName, recommendation)}
+                href={buildWhatsappUrl(salesWhatsapp, businessName)}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-6 inline-flex w-full sm:w-auto justify-center px-6 py-3 rounded-xl text-sm font-semibold transition hover:brightness-110 active:scale-[0.98]"
+                className="mt-6 inline-flex w-full sm:w-auto justify-center px-7 py-3.5 rounded-xl text-sm font-extrabold transition hover:brightness-110 active:scale-[0.98]"
                 style={{ background: EMERALD, color: '#042f2e' }}
               >
-                Agendar por WhatsApp
+                Hablar con un Consultor de Soluciones
               </a>
             ) : (
               <p className="mt-6 text-xs text-white/40">WhatsApp de ventas no configurado.</p>
@@ -513,7 +499,7 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
               onClick={() => {
                 setPhase('form');
                 setStep(0);
-                setRecommendation('');
+                setImpact(null);
               }}
               className="mt-8 px-6 py-3 rounded-xl text-sm font-semibold border border-white/15 bg-white/5 text-slate-200 hover:bg-white/10 transition"
             >
