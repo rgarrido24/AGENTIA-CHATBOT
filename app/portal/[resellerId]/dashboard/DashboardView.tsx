@@ -15,6 +15,8 @@ export type DashboardClientRow = {
   status: string;
   leadsHoy: number;
   total: number;
+  /** Número WhatsApp para alertas de leads FB; si vacío usa FB_ALERT_NUMBER en servidor. */
+  alertNumber: string;
 };
 
 type Props = {

@@ -109,6 +109,7 @@ export default async function DashboardPage({ params }: { params: { resellerId: 
           status: String(c.status ?? ''),
           leadsHoy: c.leadsHoy,
           total: c.total,
+          alertNumber: c.alertNumber ? String(c.alertNumber) : '',
         }))}
       />
     </LucianoPortalThemeProvider>

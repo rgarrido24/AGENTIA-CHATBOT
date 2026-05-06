@@ -127,8 +127,16 @@ async function enqueueAdminAlert(
     dedupKey?:    string;
   }
 ) {
-  const alertNumber = lead.resellerMatch?.alertNumber ?? process.env.FB_ALERT_NUMBER;
-  console.log('[fb-leads] alertNumber:', alertNumber ?? '(no definido)');
+  const fromClient = lead.resellerMatch?.alertNumber?.trim();
+  const alertNumber = fromClient || process.env.FB_ALERT_NUMBER;
+  console.log(
+    '[fb-leads] alerta WhatsApp:',
+    fromClient
+      ? `documento cliente (${lead.resellerMatch?.clientSlug})`
+      : 'variable FB_ALERT_NUMBER (sin alertNumber en el cliente)',
+    '→',
+    alertNumber ?? '(no definido)'
+  );
   if (!alertNumber) return;
 
   // Deduplicación: solo bloquear si ya existe OTRA ALERTA ADMIN para este leadId
