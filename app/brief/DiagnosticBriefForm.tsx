@@ -258,7 +258,7 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                   <motion.div
                     key="s0"
                     initial={{ opacity: 0, y: 12, filter: 'blur(10px)' }}
-                    animate={{ opacity: 1, y: 0 }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                     exit={{ opacity: 0, y: -8, filter: 'blur(14px)' }}
                     transition={{ duration: 0.32, ease: 'easeOut' }}
                     className="space-y-5"
@@ -311,7 +311,7 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                   <motion.div
                     key="s1"
                     initial={{ opacity: 0, y: 12, filter: 'blur(10px)' }}
-                    animate={{ opacity: 1, y: 0 }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                     exit={{ opacity: 0, y: -8, filter: 'blur(14px)' }}
                     transition={{ duration: 0.32, ease: 'easeOut' }}
                     className="space-y-5"
@@ -346,7 +346,7 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                   <motion.div
                     key="s2"
                     initial={{ opacity: 0, y: 12, filter: 'blur(10px)' }}
-                    animate={{ opacity: 1, y: 0 }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                     exit={{ opacity: 0, y: -8, filter: 'blur(14px)' }}
                     transition={{ duration: 0.32, ease: 'easeOut' }}
                     className="space-y-5"
@@ -383,7 +383,7 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                   <motion.div
                     key="s3"
                     initial={{ opacity: 0, y: 12, filter: 'blur(10px)' }}
-                    animate={{ opacity: 1, y: 0 }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                     exit={{ opacity: 0, y: -8, filter: 'blur(14px)' }}
                     transition={{ duration: 0.32, ease: 'easeOut' }}
                     className="space-y-5"
