@@ -1,7 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 
-async function geoLookup(ip: string): Promise<{ pais: string; ciudad: string }> {
+function bestIp(req: NextRequest): string {
+  const candidates = [
+    req.headers.get('cf-connecting-ip'),
+    req.headers.get('x-real-ip'),
+    req.headers.get('x-vercel-forwarded-for'),
+    req.headers.get('x-forwarded-for'),
+  ]
+    .filter(Boolean)
+    .flatMap((v) => String(v).split(','))
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  return candidates[0] ?? 'unknown';
+}
+
+function headerGeo(req: NextRequest): { pais?: string; ciudad?: string } {
+  const country =
+    req.headers.get('x-vercel-ip-country') ||
+    req.headers.get('cf-ipcountry') ||
+    undefined;
+  const city = req.headers.get('x-vercel-ip-city') || undefined;
+  const pais = country && country !== 'XX' ? country : undefined;
+  return { pais, ciudad: city };
+}
+
+async function geoLookup(ip: string, fallback: { pais?: string; ciudad?: string }): Promise<{ pais: string; ciudad: string }> {
+  if (fallback.pais || fallback.ciudad) {
+    return {
+      pais: fallback.pais ?? 'Desconocido',
+      ciudad: fallback.ciudad ?? 'Desconocida',
+    };
+  }
+
   const skip = !ip || ip === 'unknown' || ip.startsWith('127.') || ip.startsWith('::');
   if (skip) return { pais: 'Local', ciudad: 'Local' };
   try {
@@ -18,8 +50,8 @@ async function geoLookup(ip: string): Promise<{ pais: string; ciudad: string }> 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const ip   = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-    const { pais, ciudad } = await geoLookup(ip);
+    const ip = bestIp(req);
+    const { pais, ciudad } = await geoLookup(ip, headerGeo(req));
 
     const db = await getMongoDb();
     await db.collection('analytics_events').insertOne({
@@ -28,12 +60,14 @@ export async function POST(req: NextRequest) {
       event:      body.event      ?? 'pageview',
       seconds:    body.seconds    ?? null,
       referrer:   body.referrer   ?? null,
+      ref:        body.ref        ?? null,
       ip,
       pais,
       ciudad,
       dispositivo: body.dispositivo ?? 'desktop',
       navegador:   body.navegador   ?? 'Desconocido',
       sessionId:   body.sessionId   ?? 'unknown',
+      visitorId:   body.visitorId   ?? null,
       userAgent:   body.userAgent   ?? null,
       createdAt:   new Date(),
     });

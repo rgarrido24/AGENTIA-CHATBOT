@@ -84,19 +84,26 @@ export async function GET(req: NextRequest) {
         $project: {
           fuente: {
             $cond: [
-              { $or: [{ $eq: ['$referrer', null] }, { $eq: ['$referrer', ''] }] },
-              'Directo',
+              // Prioriza ?ref= si existe, si no cae a referrer, si no Directo
+              { $and: [{ $ne: ['$ref', null] }, { $ne: ['$ref', ''] }] },
+              '$ref',
               {
-                $switch: {
-                  branches: [
-                    { case: { $regexMatch: { input: '$referrer', regex: 'whatsapp', options: 'i' } }, then: 'WhatsApp' },
-                    { case: { $regexMatch: { input: '$referrer', regex: 'instagram', options: 'i' } }, then: 'Instagram' },
-                    { case: { $regexMatch: { input: '$referrer', regex: 'facebook', options: 'i' } }, then: 'Facebook' },
-                    { case: { $regexMatch: { input: '$referrer', regex: 'google', options: 'i' } }, then: 'Google' },
-                    { case: { $regexMatch: { input: '$referrer', regex: 'linkedin', options: 'i' } }, then: 'LinkedIn' },
-                  ],
-                  default: 'Otro',
-                },
+                $cond: [
+                  { $or: [{ $eq: ['$referrer', null] }, { $eq: ['$referrer', ''] }] },
+                  'Directo',
+                  {
+                    $switch: {
+                      branches: [
+                        { case: { $regexMatch: { input: '$referrer', regex: 'whatsapp', options: 'i' } }, then: 'WhatsApp' },
+                        { case: { $regexMatch: { input: '$referrer', regex: 'instagram', options: 'i' } }, then: 'Instagram' },
+                        { case: { $regexMatch: { input: '$referrer', regex: 'facebook', options: 'i' } }, then: 'Facebook' },
+                        { case: { $regexMatch: { input: '$referrer', regex: 'google', options: 'i' } }, then: 'Google' },
+                        { case: { $regexMatch: { input: '$referrer', regex: 'linkedin', options: 'i' } }, then: 'LinkedIn' },
+                      ],
+                      default: 'Otro',
+                    },
+                  },
+                ],
               },
             ],
           },

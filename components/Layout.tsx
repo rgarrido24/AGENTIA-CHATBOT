@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useAnalytics, useVisitorStatus } from '@/src/lib/analytics-client';
 import {
   Menu,
   X,
@@ -60,6 +61,10 @@ export default function Layout({
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  // Tracking global (incluye /dashboard). El modo ADMIN (localStorage) evita cualquier escritura en Mongo.
+  useAnalytics();
+  const { status: visitorStatus, admin } = useVisitorStatus();
 
   const NavLink = ({
     href,
@@ -146,6 +151,17 @@ export default function Layout({
         </div>
 
         <div className="px-4 py-4 border-t border-forest/30">
+          <div className="mb-2">
+            {admin ? (
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
+                ADMIN · sin tracking
+              </span>
+            ) : visitorStatus ? (
+              <span className="inline-flex items-center gap-2 rounded-full border border-forest/40 bg-forest/10 px-2.5 py-1 text-[11px] font-semibold text-sage">
+                {visitorStatus.isNew ? 'Nuevo' : `Recurrente (${visitorStatus.visits} visitas)`}
+              </span>
+            ) : null}
+          </div>
           <p className="text-xs text-slate-500">
             © {new Date().getFullYear()} {brand.name ?? 'Agentia'}
           </p>
