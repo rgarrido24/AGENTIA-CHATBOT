@@ -33,7 +33,7 @@ Si ves **"Error de conexión"** o el banner amarillo de configuración:
 **Importante:** En Render **no existe un archivo `.env`** en el servidor. Las variables se configuran solo en el panel:
 
 1. Crea un **Web Service** y conecta tu repo.
-2. Build command: `npm run build`
+2. Build command: `npm run build:render`
 3. Start command: `npm start` (o usa el Procfile: `web: npm start`)
 4. Ve a **Environment** (menú izquierdo del servicio) y añade las variables con **"Add Environment Variable"**:
    - **Key:** `GEMINI_API_KEY` → **Value:** tu API key de Google AI Studio
