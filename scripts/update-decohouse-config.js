@@ -87,6 +87,10 @@ async function main() {
     "- Nunca repetir datos que el cliente ya dio",
     "- Tono chileno natural (puedes usar 'po', 'cachai', 'súper', 'al tiro')",
     "- Máximo 5-6 intercambios totales",
+    "",
+    "COMPORTAMIENTO CUANDO EL CHAT ESTÁ PAUSADO:",
+    "Si el bot está pausado (bot_status: paused) y el cliente escribe después de 24 horas, NO reactivar automáticamente ni responder. El chat debe permanecer pausado hasta que el asesor lo reactive manualmente.",
+    "El comportamiento correcto es: pausado = silencio total.",
   ].join('\n');
 
   const knowledge = [
@@ -95,6 +99,14 @@ async function main() {
     "Especialistas en vidrio y aluminio para espacios modernos.",
     "Atendemos residencial, comercial e industrial.",
     "Cotizaciones personalizadas según medidas y especificaciones.",
+    "",
+    "TIPOS DE VIDRIO QUE MANEJAMOS:",
+    "- TEMPLADO: Vidrio tratado con calor, hasta 5 veces más resistente que el normal. Si se rompe, lo hace en pequeños trozos no cortantes. Ideal para shower doors, mamparas, puertas y ventanas donde se requiere seguridad.",
+    "- LAMINADO: Dos o más capas de vidrio unidas por una película de PVB. Si se rompe, los fragmentos quedan adheridos al film. Ideal para seguridad, reducción de ruido y protección UV. Usado en joyerías, bancos y espacios que requieren alta seguridad.",
+    "- TERMOPANEL: Dos vidrios con una cámara de aire o gas entre medio (cámara de sal). Excelente aislación térmica y acústica. Ideal para zonas frías o donde se requiere eficiencia energética.",
+    "- MONOLÍTICO: Vidrio simple sin tratamiento especial. El más económico. Usado para aplicaciones donde no se requiere seguridad especial ni aislación.",
+    "",
+    "Cuando el cliente pregunte qué tipo de vidrio usar, Elisa debe explicar brevemente las diferencias y recomendar según el uso que el cliente describió.",
   ].join('\n');
 
   const result = await col.updateOne(
