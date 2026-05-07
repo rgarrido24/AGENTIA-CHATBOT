@@ -4,19 +4,47 @@ import { useEffect, useMemo, useState } from 'react';
 
 let _sessionId: string | null = null;
 
+function safeSessionGet(key: string): string | null {
+  try {
+    return typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeSessionSet(key: string, value: string): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(key, value);
+  } catch {
+    // ignore
+  }
+}
+
+function safeLocalGet(key: string): string | null {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeLocalSet(key: string, value: string): void {
+  try {
+    if (typeof window !== 'undefined') window.localStorage.setItem(key, value);
+  } catch {
+    // ignore
+  }
+}
+
 function getSessionId(): string {
   if (_sessionId) return _sessionId;
-  if (typeof sessionStorage !== 'undefined') {
-    let id = sessionStorage.getItem('agentia_sid');
-    if (!id) {
-      id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      sessionStorage.setItem('agentia_sid', id);
-    }
-    _sessionId = id;
-    return id;
+  let id = safeSessionGet('agentia_sid');
+  if (!id) {
+    id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    safeSessionSet('agentia_sid', id);
   }
-  _sessionId = `ssr-${Date.now()}`;
-  return _sessionId;
+  _sessionId = id;
+  return id;
 }
 
 const VISITOR_COOKIE = 'agentia_vid';
@@ -49,12 +77,12 @@ function getOrCreateVisitorId(): string {
 function detectAndPersistAdminFlag(searchParams: URLSearchParams): boolean {
   if (typeof window === 'undefined') return false;
 
-  const already = window.localStorage.getItem(ADMIN_LS_KEY) === '1';
+  const already = safeLocalGet(ADMIN_LS_KEY) === '1';
   const hasParam = searchParams.get('admin') === 'true';
   if (already) return true;
   if (!hasParam) return false;
 
-  window.localStorage.setItem(ADMIN_LS_KEY, '1');
+  safeLocalSet(ADMIN_LS_KEY, '1');
 
   // Quitar ?admin=true de la URL (solo una vez)
   try {
@@ -165,7 +193,7 @@ export function useVisitorStatus(): { status: VisitorStatus | null; admin: boole
         if (!d || !d.visitorId) return;
         setStatus(d);
         try {
-          sessionStorage.setItem('agentia_visitor_status', JSON.stringify(d));
+          safeSessionSet('agentia_visitor_status', JSON.stringify(d));
         } catch {
           // ignore
         }
