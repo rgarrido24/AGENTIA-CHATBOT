@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
 
 let _sessionId: string | null = null;
 
@@ -69,6 +68,20 @@ function detectAndPersistAdminFlag(searchParams: URLSearchParams): boolean {
   return true;
 }
 
+function getCurrentSearchParams(): URLSearchParams {
+  if (typeof window === 'undefined') return new URLSearchParams();
+  try {
+    return new URLSearchParams(window.location.search);
+  } catch {
+    return new URLSearchParams();
+  }
+}
+
+function getCurrentPathname(): string {
+  if (typeof window === 'undefined') return '/';
+  return window.location.pathname || '/';
+}
+
 function getDevice(): string {
   const ua = navigator.userAgent;
   if (/tablet|ipad/i.test(ua)) return 'tablet';
@@ -116,14 +129,12 @@ export type VisitorStatus = {
 };
 
 export function useVisitorStatus(): { status: VisitorStatus | null; admin: boolean } {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [status, setStatus] = useState<VisitorStatus | null>(null);
 
   const admin = useMemo(
-    () => detectAndPersistAdminFlag(new URLSearchParams(searchParams.toString())),
+    () => detectAndPersistAdminFlag(getCurrentSearchParams()),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [searchParams],
+    [],
   );
 
   useEffect(() => {
@@ -132,9 +143,10 @@ export function useVisitorStatus(): { status: VisitorStatus | null; admin: boole
       return;
     }
 
-    const ref = searchParams.get('ref');
+    const sp = getCurrentSearchParams();
+    const ref = sp.get('ref');
     const payload = {
-      page: pathname,
+      page: getCurrentPathname(),
       ref: ref || null,
       visitorId: getOrCreateVisitorId(),
       sessionId: getSessionId(),
@@ -159,29 +171,28 @@ export function useVisitorStatus(): { status: VisitorStatus | null; admin: boole
         }
       })
       .catch(() => {});
-  }, [admin, pathname, searchParams]);
+  }, [admin]);
 
   return { status, admin };
 }
 
 export function useAnalytics(demo?: string) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   useEffect(() => {
     const start = Date.now();
 
-    const admin = detectAndPersistAdminFlag(new URLSearchParams(searchParams.toString()));
+    const sp = getCurrentSearchParams();
+    const admin = detectAndPersistAdminFlag(sp);
     if (!admin) {
-      track('pageview', demo, { ref: searchParams.get('ref') || null });
+      track('pageview', demo, { ref: sp.get('ref') || null });
     }
 
     const handleUnload = () => {
       const seconds = Math.round((Date.now() - start) / 1000);
-      const admin = detectAndPersistAdminFlag(new URLSearchParams(searchParams.toString()));
+      const sp = getCurrentSearchParams();
+      const admin = detectAndPersistAdminFlag(sp);
       if (admin) return;
       const payload = JSON.stringify({
-        page: pathname,
+        page: getCurrentPathname(),
         demo: demo ?? null,
         event: 'time_spent',
         seconds,
@@ -190,7 +201,7 @@ export function useAnalytics(demo?: string) {
         navegador: getBrowser(),
         sessionId: getSessionId(),
         visitorId: getOrCreateVisitorId(),
-        ref: searchParams.get('ref') || null,
+        ref: sp.get('ref') || null,
         userAgent: navigator.userAgent,
       });
       if (navigator.sendBeacon) {
@@ -200,5 +211,5 @@ export function useAnalytics(demo?: string) {
 
     window.addEventListener('beforeunload', handleUnload);
     return () => window.removeEventListener('beforeunload', handleUnload);
-  }, [demo, pathname, searchParams]);
+  }, [demo]);
 }
