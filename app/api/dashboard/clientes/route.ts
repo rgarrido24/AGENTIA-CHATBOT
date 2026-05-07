@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient, ObjectId } from 'mongodb';
+import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
 const VENTAS_DB = 'agentia_chatbot_ventas';
+const DASHBOARD_COOKIE = 'dashboard_auth';
+const AUTH_SALT = 'agentia_dashboard_v2';
 
-function isAdmin(req: NextRequest) {
-  return req.cookies.get('admin_auth')?.value === process.env.ADMIN_PASSWORD;
+function dashboardToken(): string {
+  const user = process.env.ADMIN_USER || 'admin';
+  const pass = process.env.ADMIN_PASSWORD || '';
+  return crypto.createHash('sha256').update(user + ':' + pass + AUTH_SALT).digest('hex');
+}
+
+function isAdmin(req: NextRequest): boolean {
+  const token = req.cookies.get(DASHBOARD_COOKIE)?.value;
+  return !!token && token === dashboardToken();
 }
 
 export async function GET(req: NextRequest) {
@@ -18,15 +28,19 @@ export async function GET(req: NextRequest) {
   }
 
   const client = new MongoClient(uri);
-  await client.connect();
   try {
+    await client.connect();
     const db = client.db(VENTAS_DB);
     const clientes = await db
       .collection('agentia_clients')
       .find({})
       .sort({ createdAt: -1 })
       .toArray();
+    console.log('[clientes] total encontrados:', clientes.length);
     return NextResponse.json({ clientes });
+  } catch (err) {
+    console.error('[clientes] error MongoDB:', err);
+    return NextResponse.json({ error: 'Error al consultar clientes' }, { status: 500 });
   } finally {
     await client.close();
   }
@@ -45,8 +59,8 @@ export async function PATCH(req: NextRequest) {
   }
 
   const client = new MongoClient(uri);
-  await client.connect();
   try {
+    await client.connect();
     const db = client.db(VENTAS_DB);
     const oid = new ObjectId(id);
     let r = await db.collection('agentia_clients').updateOne(
@@ -63,6 +77,9 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
     }
     return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error('[clientes] error PATCH MongoDB:', err);
+    return NextResponse.json({ error: 'Error al actualizar cliente' }, { status: 500 });
   } finally {
     await client.close();
   }

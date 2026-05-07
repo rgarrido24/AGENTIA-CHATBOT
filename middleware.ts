@@ -133,11 +133,32 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── Auth: dashboard / admin ──────────────────────────────────────────────────
-  const isAdminPage    = pathname.startsWith('/admin');
-  const isDashboardPage = pathname.startsWith('/dashboard');
-  const isAdminApi     = pathname.startsWith('/api/admin');
-  const isProtected    = isAdminPage || isDashboardPage || isAdminApi;
+  // ── Auth: dashboard ──────────────────────────────────────────────────────────
+  const isDashboardPage = pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/login');
+  const isDashboardApi  = pathname.startsWith('/api/dashboard');
+
+  if (isDashboardPage || isDashboardApi) {
+    const adminUser = process.env.ADMIN_USER || 'admin';
+    const adminPass = process.env.ADMIN_PASSWORD;
+    if (!adminPass) {
+      if (isDashboardApi) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      return NextResponse.redirect(new URL('/dashboard/login', request.url));
+    }
+    const dashToken    = request.cookies.get('dashboard_auth')?.value;
+    const dashExpected = await sha256Hex(adminUser + ':' + adminPass + 'agentia_dashboard_v2');
+    if (!dashToken || dashToken !== dashExpected) {
+      if (isDashboardApi) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      const loginUrl = new URL('/dashboard/login', request.url);
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
+  // ── Auth: admin ───────────────────────────────────────────────────────────────
+  const isAdminPage = pathname.startsWith('/admin');
+  const isAdminApi  = pathname.startsWith('/api/admin');
+  const isProtected = isAdminPage || isAdminApi;
 
   if (!isProtected) {
     return NextResponse.next();
@@ -167,6 +188,7 @@ export const config = {
     '/admin/:path*',
     '/dashboard/:path*',
     '/api/admin/:path*',
+    '/api/dashboard/:path*',
     '/api/chat',
     '/api/demo/:path*',
     '/api/brief/diagnostic',
