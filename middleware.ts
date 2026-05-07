@@ -145,8 +145,14 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard/login', request.url));
     }
     const dashToken    = request.cookies.get('dashboard_auth')?.value;
+    const adminToken   = request.cookies.get('admin_auth')?.value;
     const dashExpected = await sha256Hex(adminUser + ':' + adminPass + 'agentia_dashboard_v2');
-    if (!dashToken || dashToken !== dashExpected) {
+    const adminExpected = await sha256Hex(adminPass + 'agentia_admin_salt');
+
+    const okDashboard = !!dashToken && dashToken === dashExpected;
+    const okAdmin = !!adminToken && adminToken === adminExpected;
+
+    if (!okDashboard && !okAdmin) {
       if (isDashboardApi) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
       const loginUrl = new URL('/dashboard/login', request.url);
       loginUrl.searchParams.set('from', pathname);

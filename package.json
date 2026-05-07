@@ -24,7 +24,7 @@
     "dev": "npx next dev -p 3010",
     "build": "npm install && next build",
     "build:render": "npm install && next build && npm run typecheck",
-    "start": "next start -H 0.0.0.0 -p ${PORT:-3010}",
+    "start": "node scripts/start-next.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
