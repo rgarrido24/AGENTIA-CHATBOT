@@ -8,6 +8,31 @@ const PAYMENT_LINKS: Record<string, string | undefined> = {
 
 const ALLOWED_DOMAINS = ['agentia.software', 'localhost:3000', 'localhost:3010'];
 
+const CONTRACT_ALERT_WHATSAPP = '529998080265';
+
+async function trySendContractSignedWhatsApp(message: string): Promise<void> {
+  const url = (process.env.WHATSAPP_SEND_URL ?? '').trim();
+  const token = (process.env.WHATSAPP_API_TOKEN ?? '').trim();
+  if (!url || !token) return;
+
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        to: CONTRACT_ALERT_WHATSAPP,
+        type: 'text',
+        text: { body: message },
+      }),
+    });
+  } catch {
+    // best-effort
+  }
+}
+
 export async function POST(req: NextRequest) {
   // Domain verification
   const host = req.headers.get('host') ?? '';
@@ -19,6 +44,9 @@ export async function POST(req: NextRequest) {
     const body              = await req.json().catch(() => ({}));
     const clientId          = typeof body.clientId   === 'string' ? body.clientId.trim()   : '';
     const signedName        = typeof body.signedName === 'string' ? body.signedName.trim() : '';
+    const planName =
+      typeof body.planName === 'string' ? body.planName.trim() : '';
+    const price = typeof body.price === 'string' ? body.price.trim() : '';
     const setupFee   = typeof body.setupFee   === 'number' ? body.setupFee   : undefined;
     const totalToday = typeof body.totalToday === 'number' ? body.totalToday : undefined;
     const renewalDate =
@@ -45,6 +73,8 @@ export async function POST(req: NextRequest) {
     await db.collection('contract_signatures').insertOne({
       clientId,
       signedName,
+      ...(planName && { planName }),
+      ...(price && { price }),
       ip,
       userAgent:            req.headers.get('user-agent') ?? '',
       signedAt:             new Date(),
@@ -52,6 +82,28 @@ export async function POST(req: NextRequest) {
       ...(totalToday !== undefined && { totalToday }),
       ...(renewalDate !== undefined && { renewalDate }),
     });
+
+    const hoy = new Date().toLocaleDateString('es-MX', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    const montoLine =
+      price ||
+      (totalToday !== undefined
+        ? `$${totalToday} USD`
+        : setupFee !== undefined
+          ? `$${setupFee} USD`
+          : '—');
+    const planLine = planName || clientId;
+    const waMsg = [
+      '🎉 NUEVO CONTRATO FIRMADO',
+      `Cliente: ${signedName}`,
+      `Plan: ${planLine}`,
+      `Monto: ${montoLine}`,
+      `Fecha: ${hoy}`,
+    ].join('\n');
+    void trySendContractSignedWhatsApp(waMsg);
 
     return NextResponse.json({ paymentLink });
   } catch (e) {

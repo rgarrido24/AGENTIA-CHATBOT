@@ -94,6 +94,8 @@ export function ContratoForm({
         body: JSON.stringify({
           clientId,
           signedName: signedName.trim(),
+          planName,
+          price,
           setupFee,
           totalToday,
           renewalIso,
