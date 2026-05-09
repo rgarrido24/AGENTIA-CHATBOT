@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Anuario Digital Kinder · Demo</title>
+    <style>
+      :root{
+        --bg:#060606;
+        --card:rgba(255,255,255,.06);
+        --border:rgba(255,255,255,.10);
+        --text:rgba(255,255,255,.92);
+        --muted:rgba(255,255,255,.60);
+        --accent:#22c55e;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+        color:var(--text);
+        background: radial-gradient(1200px 700px at 50% -10%, rgba(34,197,94,.22), transparent 60%), var(--bg);
+        min-height:100vh;
+      }
+      a{color:inherit}
+      .wrap{max-width:1060px;margin:0 auto;padding:22px 16px 48px}
+      .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+      .brand{display:flex;align-items:center;gap:10px}
+      .logo{width:40px;height:40px;border-radius:14px;object-fit:contain;background:rgba(255,255,255,.08);border:1px solid var(--border)}
+      .back{font-size:12px;color:rgba(255,255,255,.75);text-decoration:none;border:1px solid var(--border);padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.04)}
+      .grid{display:grid;grid-template-columns: 1fr 1fr; gap:14px}
+      @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
+      .card{border:1px solid var(--border);background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));border-radius:18px;padding:18px}
+      h1{margin:0 0 8px;font-size:26px;letter-spacing:-.02em}
+      .sub{margin:0;color:var(--muted);line-height:1.6}
+      .gallery{display:grid;grid-template-columns:1fr 1fr; gap:10px; margin-top:14px}
+      @media (max-width: 520px){ .gallery{grid-template-columns:1fr} }
+      .photo{
+        width:100%;
+        aspect-ratio: 4/3;
+        border-radius:16px;
+        border:1px solid rgba(255,255,255,.10);
+        object-fit:cover;
+        box-shadow: 0 18px 45px rgba(0,0,0,.45);
+      }
+      label{display:block;font-size:12px;color:rgba(255,255,255,.70);margin:0 0 6px}
+      input, select, textarea{
+        width:100%;
+        border-radius:14px;
+        border:1px solid rgba(255,255,255,.14);
+        background: rgba(0,0,0,.35);
+        padding:12px 12px;
+        color:var(--text);
+        outline:none;
+      }
+      textarea{min-height:92px;resize:vertical}
+      .row{display:grid;grid-template-columns:1fr 1fr; gap:10px}
+      @media (max-width: 520px){ .row{grid-template-columns:1fr} }
+      .btn{
+        display:inline-flex;align-items:center;justify-content:center;
+        width:100%;
+        border-radius:14px;
+        border:1px solid rgba(34,197,94,.35);
+        background: rgba(34,197,94,.14);
+        color:rgba(255,255,255,.92);
+        font-weight:700;
+        padding:12px;
+        cursor:pointer;
+        transition: transform .12s ease, background .12s ease;
+      }
+      .btn:hover{transform: translateY(-1px); background: rgba(34,197,94,.18)}
+      .note{margin-top:10px;font-size:12px;color:rgba(255,255,255,.55);line-height:1.5}
+      .ok{display:none;margin-top:10px;font-size:12px;color:#86efac}
+      .err{display:none;margin-top:10px;font-size:12px;color:#fca5a5}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div class="brand">
+          <img class="logo" src="/logo-agentia-2026.png" alt="Agentia" />
+          <div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75)">
+            Demo · Anuario Digital
+          </div>
+        </div>
+        <a class="back" href="/demo-fotos-escuela/index.html">← Volver</a>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h1>Anuario Digital Kinder 2024–2025</h1>
+          <p class="sub">
+            Completa los datos del alumno y elige tu paquete. En esta demo, la escuela recibe tu solicitud para coordinar la entrega.
+          </p>
+
+          <div class="gallery">
+            <img class="photo" src="/graduacion%20kinder%203.jpeg" alt="Ejemplo 1" />
+            <img class="photo" src="/graduacion%20kinder%203%201.jpeg" alt="Ejemplo 2" />
+          </div>
+
+          <p class="note">
+            Ejemplos en alta calidad (miniaturas) para mostrar el estilo de fotografía de graduación.
+          </p>
+        </div>
+
+        <div class="card">
+          <h1>Formulario para papás</h1>
+          <p class="sub">Registra tu solicitud. (Demo conectada a Agentia)</p>
+
+          <form id="frm" style="margin-top:14px">
+            <div class="row">
+              <div>
+                <label>Nombre del papá/mamá</label>
+                <input name="tutorNombre" required minlength="3" placeholder="Ej. María López" />
+              </div>
+              <div>
+                <label>WhatsApp</label>
+                <input name="tutorWhatsapp" required placeholder="Ej. 999 123 4567" />
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <div>
+                <label>Nombre del alumno</label>
+                <input name="alumnoNombre" required minlength="3" placeholder="Ej. Sofía López" />
+              </div>
+              <div>
+                <label>Grupo</label>
+                <input name="grupo" placeholder="Ej. Kinder 3A" />
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <div>
+                <label>Paquete</label>
+                <select name="paquete" required>
+                  <option value="" disabled selected>Selecciona…</option>
+                  <option value="Basico">Básico · 6 fotos + anuario digital</option>
+                  <option value="Premium">Premium · 12 fotos + anuario + impresión</option>
+                  <option value="Familiar">Familiar · 20 fotos + 2 impresiones</option>
+                </select>
+              </div>
+              <div>
+                <label>Correo (opcional)</label>
+                <input name="email" type="email" placeholder="correo@ejemplo.com" />
+              </div>
+            </div>
+
+            <div style="margin-top:10px">
+              <label>Notas (opcional)</label>
+              <textarea name="notas" placeholder="Talla de toga, horario preferido, etc."></textarea>
+            </div>
+
+            <button class="btn" type="submit" style="margin-top:12px">Enviar solicitud</button>
+            <div class="ok" id="ok">Listo: solicitud enviada. En breve te contactamos.</div>
+            <div class="err" id="err">No se pudo enviar. Intenta de nuevo.</div>
+          </form>
+
+          <p class="note">
+            Esto guarda la solicitud en MongoDB para que el equipo la vea y dé seguimiento.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function(){
+        const frm = document.getElementById('frm');
+        const ok = document.getElementById('ok');
+        const err = document.getElementById('err');
+        frm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          ok.style.display = 'none';
+          err.style.display = 'none';
+          const fd = new FormData(frm);
+          const payload = Object.fromEntries(fd.entries());
+          payload.tipo = 'anuario';
+          payload.page = location.pathname;
+          try{
+            const r = await fetch('/api/demo/fotos-escuela/submit', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            if(!r.ok) throw new Error('http');
+            ok.style.display = 'block';
+            frm.reset();
+          }catch{
+            err.style.display = 'block';
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
+
