@@ -155,6 +155,7 @@ body::after {
 .fan-card:nth-child(2) { left: 50%;   top: 0;    transform: translateX(-50%) rotate(0deg); z-index: 3; }
 .fan-card:nth-child(3) { right: 0%;   top: 30px; transform: rotate(8deg); z-index: 1; }
 .fan-card-top { height: 60%; background: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+.fan-card-photo { width: 100%; height: 60%; object-fit: cover; display: block; }
 .fan-card-body { flex: 1; padding: 12px; }
 .fan-card-title { font-family: 'Playfair Display', serif; font-size: .95rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
 .fan-card-sub   { font-size: .72rem; color: var(--muted); font-weight: 600; }
@@ -247,6 +248,7 @@ section { position: relative; z-index: 1; }
 }
 .gallery-card:hover { transform: scale(1.04) rotate(1deg); }
 .gallery-card-img { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; }
+.gallery-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .gallery-card-foot { padding: 10px 14px; background: white; }
 .gallery-card-foot span { font-size: .78rem; font-weight: 800; color: var(--navy); display: block; }
 .gallery-card-foot small { font-size: .68rem; color: var(--muted); font-weight: 600; }
@@ -390,21 +392,21 @@ footer strong { color: var(--goldlt); }
 <div class="preview-strip">
   <div class="pages-fan">
     <div class="fan-card">
-      <div class="fan-card-top" style="background:linear-gradient(135deg,#1B2B5E,#2D4A9E)">🎓</div>
+      <img class="fan-card-photo" src="/graduacion-kinder-3.jpeg" alt="Foto de graduación kinder" loading="lazy" />
       <div class="fan-card-body">
         <div class="fan-card-title">Portada<br>Generación</div>
         <div class="fan-card-sub">Diseño editorial exclusivo</div>
       </div>
     </div>
     <div class="fan-card">
-      <div class="fan-card-top" style="background:linear-gradient(135deg,#E8A020,#F4714A)">👤</div>
+      <img class="fan-card-photo" src="/graduacion-kinder-3-1.jpeg" alt="Perfil individual de graduación" loading="lazy" />
       <div class="fan-card-body">
         <div class="fan-card-title">Perfil<br>Individual</div>
         <div class="fan-card-sub">Foto + datos tiernos</div>
       </div>
     </div>
     <div class="fan-card">
-      <div class="fan-card-top" style="background:linear-gradient(135deg,#6BAA8E,#4A9E7F)">📸</div>
+      <img class="fan-card-photo" src="/graduacion-kinder-3.jpeg" alt="Collage de momentos de graduación" loading="lazy" />
       <div class="fan-card-body">
         <div class="fan-card-title">Collage de<br>Momentos</div>
         <div class="fan-card-sub">Los mejores recuerdos</div>
@@ -661,13 +663,13 @@ for (let i = 0; i < 22; i++) {
 
 /* ─── MARQUEE CARDS ──────────────────────────── */
 const pages = [
-  { emoji:'🎓', label:'Portada', sub:'Generación Kinder', bg:'linear-gradient(135deg,#1B2B5E,#2D4A9E)' },
-  { emoji:'👦', label:'Perfil: Mateo', sub:'Sueño: Bombero 🚒', bg:'linear-gradient(135deg,#E8A020,#F4714A)' },
-  { emoji:'📸', label:'Foto Grupal', sub:'Toda la generación', bg:'linear-gradient(135deg,#6BAA8E,#4A9E7F)' },
+  { img:'/graduacion-kinder-3.jpeg', label:'Portada', sub:'Generación Kinder', bg:'linear-gradient(135deg,#1B2B5E,#2D4A9E)' },
+  { img:'/graduacion-kinder-3-1.jpeg', label:'Perfil individual', sub:'Foto + recuerdo especial', bg:'linear-gradient(135deg,#E8A020,#F4714A)' },
+  { img:'/graduacion-kinder-3.jpeg', label:'Foto Grupal', sub:'Toda la generación', bg:'linear-gradient(135deg,#6BAA8E,#4A9E7F)' },
   { emoji:'💌', label:'Mensajes', sub:'De los papás con amor', bg:'linear-gradient(135deg,#F4714A,#e85b8a)' },
   { emoji:'👩‍🏫', label:'Nuestras Maestras', sub:'Con cariño y gratitud', bg:'linear-gradient(135deg,#1B2B5E,#6BAA8E)' },
-  { emoji:'🌟', label:'Así Crecimos', sub:'Inicio vs. Final', bg:'linear-gradient(135deg,#FFD060,#E8A020)' },
-  { emoji:'🎞️', label:'Momentos', sub:'Inolvidables del año', bg:'linear-gradient(135deg,#BF7FFF,#7C3AED)' },
+  { img:'/graduacion-kinder-3-1.jpeg', label:'Así Crecimos', sub:'Inicio vs. Final', bg:'linear-gradient(135deg,#FFD060,#E8A020)' },
+  { img:'/graduacion-kinder-3.jpeg', label:'Momentos', sub:'Inolvidables del año', bg:'linear-gradient(135deg,#BF7FFF,#7C3AED)' },
   { emoji:'🏆', label:'¡Lo Logramos!', sub:'Página de cierre', bg:'linear-gradient(135deg,#E8A020,#FFD060)' },
 ];
 
@@ -675,8 +677,11 @@ const marquee = document.getElementById('marquee');
 [...pages, ...pages].forEach(p => {
   const c = document.createElement('div');
   c.className = 'gallery-card';
+  const visual = p.img
+    ? `<img src="${p.img}" alt="${p.label}" loading="lazy" />`
+    : p.emoji;
   c.innerHTML = `
-    <div class="gallery-card-img" style="background:${p.bg}">${p.emoji}</div>
+    <div class="gallery-card-img" style="background:${p.bg}">${visual}</div>
     <div class="gallery-card-foot">
       <span>${p.label}</span>
       <small>${p.sub}</small>
