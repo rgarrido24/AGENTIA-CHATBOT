@@ -68,16 +68,16 @@ export const INTERNAL_DASHBOARD_LINKS: InternalLinkSection[] = [
       { href: '/demo-luciano', label: 'Redirect → panel Antonio (demo Luciano)' },
       {
         href: '/demo/fotos-escuela',
-        label: 'Fotos escolares — kinder (anuario + fiesta)',
-        hint: 'Demo estática con 2 sub-demos: anuario.html y fiesta.html',
+        label: 'Fotos escolares — portada (anuario + fiesta)',
+        hint: 'Landing del demo con las 2 sub-demos',
       },
       {
-        href: '/demo-fotos-escuela/anuario.html',
-        label: 'Fotos escolares — Anuario digital (HTML directo)',
+        href: '/demo/fotos-escuela/anuario',
+        label: 'Fotos escolares — Anuario digital de graduación',
       },
       {
-        href: '/demo-fotos-escuela/fiesta.html',
-        label: 'Fotos escolares — Fiesta de kinder (HTML directo)',
+        href: '/demo/fotos-escuela/fiesta',
+        label: 'Fotos escolares — Organizador colaborativo de fiesta',
       },
     ],
   },

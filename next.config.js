@@ -88,6 +88,15 @@ const nextConfig = {
     minimumCacheTTL: 86400,
   },
 
+  async rewrites() {
+    return [
+      // Demo de fotos-escuela: URLs limpias sin .html
+      { source: '/demo/fotos-escuela',         destination: '/demo-fotos-escuela/index.html' },
+      { source: '/demo/fotos-escuela/anuario', destination: '/demo-fotos-escuela/anuario.html' },
+      { source: '/demo/fotos-escuela/fiesta',  destination: '/demo-fotos-escuela/fiesta.html' },
+    ];
+  },
+
   async headers() {
     return [
       // Prevent aggressive edge caching for conversion-critical flows
@@ -138,10 +147,10 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "style-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https:",
               "connect-src 'self' https://generativelanguage.googleapis.com",
-              "font-src 'self' data:",
+              "font-src 'self' data: https://fonts.gstatic.com",
               "frame-ancestors 'none'",
               "object-src 'none'",
               "base-uri 'self'",
