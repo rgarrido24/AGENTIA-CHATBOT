@@ -29,3 +29,10 @@ env-local-restore.txt
 
 # Artefactos TypeScript
 *.tsbuildinfo
+
+# Backups de exports de Claude.ai (HTMLs gigantes con shell de Claude embebida)
+public/Anuario Digital Kinder*.html
+public/Fiesta de Kinder*.html
+
+# Carpeta temporal de trabajo
+tmp/
