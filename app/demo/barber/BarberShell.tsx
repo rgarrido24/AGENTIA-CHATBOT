@@ -20,35 +20,51 @@ import {
   X,
 } from 'lucide-react';
 import { BarberProvider, useBarber } from './barber-context';
-import { GIRO_CONFIGS } from './giro-config';
+import { GIRO_CONFIGS, type GiroId } from './giro-config';
 import GiroSelector from './GiroSelector';
 
-const NAV = [
-  { href: '/demo/barber', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/demo/barber/clientes', label: 'Clientes', icon: Users },
-  { href: '/demo/barber/servicios', label: 'Servicios', icon: Scissors },
-  { href: '/demo/barber/agenda', label: 'Agenda', icon: CalendarDays },
-  { href: '/demo/barber/recordatorios', label: 'Recordatorios', icon: Bell },
-  { href: '/demo/barber/chat', label: 'Chat IA', icon: MessageCircle },
-  { href: '/demo/barber/precios', label: '💼 Planes y Precios', icon: CreditCard },
-] as const;
+type NavItem = { suffix: string; label: string; icon: typeof LayoutDashboard };
 
-const TITLE_MAP: Record<string, string> = {
-  '/demo/barber': 'Dashboard',
-  '/demo/barber/clientes': 'Clientes',
-  '/demo/barber/servicios': 'Servicios',
-  '/demo/barber/agenda': 'Agenda',
-  '/demo/barber/recordatorios': 'Recordatorios',
-  '/demo/barber/chat': 'Chat IA',
-  '/demo/barber/precios': 'Planes y Precios',
+const NAV_ITEMS: NavItem[] = [
+  { suffix: '',                label: 'Dashboard',           icon: LayoutDashboard },
+  { suffix: '/clientes',       label: 'Clientes',            icon: Users },
+  { suffix: '/servicios',      label: 'Servicios',           icon: Scissors },
+  { suffix: '/agenda',         label: 'Agenda',              icon: CalendarDays },
+  { suffix: '/recordatorios',  label: 'Recordatorios',       icon: Bell },
+  { suffix: '/chat',           label: 'Chat IA',             icon: MessageCircle },
+  { suffix: '/precios',        label: '💼 Planes y Precios', icon: CreditCard },
+];
+
+const TITLE_BY_SUFFIX: Record<string, string> = {
+  '':               'Dashboard',
+  '/clientes':      'Clientes',
+  '/servicios':     'Servicios',
+  '/agenda':        'Agenda',
+  '/recordatorios': 'Recordatorios',
+  '/chat':          'Chat IA',
+  '/precios':       'Planes y Precios',
 };
+
+function deriveBasePath(pathname: string): '/demo/barber' | '/demo/nailstudio' {
+  return pathname.startsWith('/demo/nailstudio') ? '/demo/nailstudio' : '/demo/barber';
+}
 
 function ShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { giro, setGiro } = useBarber();
   const [open, setOpen] = useState(false);
   const [light, setLight] = useState(false);
-  const sectionTitle = TITLE_MAP[pathname] ?? 'Barbería';
+
+  const basePath = deriveBasePath(pathname);
+  const otherBasePath = basePath === '/demo/barber' ? '/demo/nailstudio' : '/demo/barber';
+  const suffix = pathname === basePath ? '' : pathname.slice(basePath.length);
+  const sectionTitle = TITLE_BY_SUFFIX[suffix] ?? 'Dashboard';
+
+  const NAV = NAV_ITEMS.map((n) => ({
+    href: `${basePath}${n.suffix}`,
+    label: n.label,
+    icon: n.icon,
+  }));
 
   const cfg = giro ? GIRO_CONFIGS[giro] : null;
   const ACCENT = cfg?.acento ?? '#0d9488';
@@ -129,7 +145,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {NAV.map(({ href, label, icon: Icon }) => {
             const active =
-              pathname === href || (href !== '/demo/barber' && pathname.startsWith(href));
+              pathname === href || (href !== basePath && pathname.startsWith(href));
             return (
               <Link
                 key={href}
@@ -147,21 +163,16 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Cambiar giro button */}
+        {/* Ver la otra demo (route-based, sin localStorage trickery) */}
         <div className={`px-3 pb-2 border-t ${light ? 'border-zinc-200' : 'border-white/10'} pt-2`}>
-          <button
-            type="button"
-            onClick={() => {
-              if (typeof window !== 'undefined') localStorage.removeItem('barber-giro');
-              setGiro('barberia' as never); // trigger re-render; context will show selector
-              // Force null by removing and navigating
-              window.location.reload();
-            }}
+          <Link
+            href={otherBasePath}
+            onClick={() => setOpen(false)}
             className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs transition-colors ${navInactive}`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Cambiar giro ({isNail ? '💅→✂️' : '✂️→💅'})
-          </button>
+            {isNail ? 'Ver demo Barbería ✂️' : 'Ver demo Nail Studio 💅'}
+          </Link>
         </div>
 
         <div className={`p-4 border-t ${light ? 'border-zinc-200' : 'border-white/10'} flex items-center gap-3`}>
@@ -206,9 +217,16 @@ function ShellInner({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function BarberShell({ children }: { children: React.ReactNode }) {
+export default function BarberShell({
+  children,
+  forceGiro = null,
+}: {
+  children: React.ReactNode;
+  /** Forzar giro cuando la ruta es dedicada (ej. /demo/nailstudio fuerza 'nail'). */
+  forceGiro?: GiroId | null;
+}) {
   return (
-    <BarberProvider>
+    <BarberProvider forceGiro={forceGiro}>
       <ShellInner>{children}</ShellInner>
     </BarberProvider>
   );

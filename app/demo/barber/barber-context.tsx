@@ -22,15 +22,25 @@ type Ctx = {
   setLastAddedEventId: Dispatch<SetStateAction<string | null>>;
   giro: GiroId | null;
   setGiro: (g: GiroId) => void;
+  /** Si true, el giro viene fijado por la ruta y no se puede cambiar desde la UI. */
+  isGiroLocked: boolean;
 };
 
 const BarberCtx = createContext<Ctx | null>(null);
 
-export function BarberProvider({ children }: { children: ReactNode }) {
+export function BarberProvider({
+  children,
+  forceGiro = null,
+}: {
+  children: ReactNode;
+  /** Forzar un giro específico sin permitir selección (cuando la ruta es dedicada). */
+  forceGiro?: GiroId | null;
+}) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [paidIds, setPaidIds] = useState<Set<string>>(new Set());
   const [lastAddedEventId, setLastAddedEventId] = useState<string | null>(null);
   const [giro, setGiroState] = useState<GiroId | null>(() => {
+    if (forceGiro) return forceGiro;
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('barber-giro');
       if (saved === 'barberia' || saved === 'nail') return saved;
@@ -38,12 +48,19 @@ export function BarberProvider({ children }: { children: ReactNode }) {
     return null;
   });
 
+  // If the route forces a giro, sync it whenever it changes (e.g. navigating between routes)
+  if (forceGiro && giro !== forceGiro) {
+    setGiroState(forceGiro);
+  }
+
   const setGiro = useCallback((g: GiroId) => {
     setGiroState(g);
     if (typeof window !== 'undefined') {
       localStorage.setItem('barber-giro', g);
     }
   }, []);
+
+  const isGiroLocked = !!forceGiro;
 
   const value = useMemo(
     () => ({
@@ -55,8 +72,9 @@ export function BarberProvider({ children }: { children: ReactNode }) {
       setLastAddedEventId,
       giro,
       setGiro,
+      isGiroLocked,
     }),
-    [events, paidIds, lastAddedEventId, giro, setGiro]
+    [events, paidIds, lastAddedEventId, giro, setGiro, isGiroLocked]
   );
 
   return <BarberCtx.Provider value={value}>{children}</BarberCtx.Provider>;

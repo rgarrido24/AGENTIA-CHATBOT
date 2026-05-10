@@ -20,7 +20,7 @@ type LucideIcon = React.ComponentType<{ className?: string; style?: React.CSSPro
 
 const GIROS: { Icon: LucideIcon; label: string; href: string; imageUrl: string }[] = [
   { Icon: Scissors,        label: 'Barbería',          href: '/demo/barber',      imageUrl: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80' },
-  { Icon: Sparkles,        label: 'Nail Studio',        href: '/demo/barber',      imageUrl: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=800&q=80' },
+  { Icon: Sparkles,        label: 'Nail Studio',        href: '/demo/nailstudio',  imageUrl: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=800&q=80' },
   { Icon: UtensilsCrossed, label: 'Restaurante',        href: '/demo/restaurante', imageUrl: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80' },
   { Icon: Waves,           label: 'Spa',                href: '/demo/spa',         imageUrl: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&q=80' },
   { Icon: Leaf,            label: 'Nutrición',          href: '/demo/nutricion',   imageUrl: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80' },
