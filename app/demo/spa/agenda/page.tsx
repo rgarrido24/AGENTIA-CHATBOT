@@ -513,14 +513,17 @@ export default function SpaAgendaPage() {
                         key={s.id}
                         type="button"
                         onClick={() => setForm((f) => ({ ...f, servicioId: s.id }))}
-                        className={`text-left rounded-xl border p-3 text-sm transition ${
+                        className={`text-left rounded-xl border p-3 text-sm transition flex gap-2 items-center ${
                           form.servicioId === s.id ? 'border-fuchsia-500 bg-fuchsia-950/30' : 'border-white/10 hover:bg-white/5'
                         }`}
                       >
-                        <div className="text-lg mb-1">{s.emoji}</div>
-                        <div className="font-medium">{s.nombre}</div>
-                        <div className="text-xs text-slate-400">
-                          ${s.precio} · {s.duracion} min
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={s.imagen} alt={s.nombre} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" loading="lazy" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{s.nombre}</div>
+                          <div className="text-xs text-slate-400">
+                            ${s.precio} · {s.duracion} min
+                          </div>
                         </div>
                       </button>
                     ))}

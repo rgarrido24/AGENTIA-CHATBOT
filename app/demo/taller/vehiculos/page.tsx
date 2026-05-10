@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Car, AlertTriangle } from 'lucide-react';
 import {
   MOCK_ORDENES,
   MOCK_VEHICULOS,
@@ -54,19 +55,26 @@ export default function VehiculosPage() {
               }`}
             >
               <div className="flex flex-wrap justify-between gap-3">
-                <div>
-                  <p className="text-xl font-bold">
-                    {v.emoji} {v.marca} {v.modelo} {v.año}
-                  </p>
-                  <p className="text-slate-400 text-sm">Placa {v.placa} · {v.color} · {v.combustible}</p>
-                  <p className="text-sm mt-1">Propietario: {c?.nombre ?? '—'}</p>
+                <div className="flex gap-3 items-start">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(56,189,248,0.12)' }}>
+                    <Car className="w-6 h-6 text-sky-400" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold">
+                      {v.marca} {v.modelo} {v.año}
+                    </p>
+                    <p className="text-slate-400 text-sm">Placa {v.placa} · {v.color} · {v.combustible}</p>
+                    <p className="text-sm mt-1">Propietario: {c?.nombre ?? '—'}</p>
+                  </div>
                 </div>
                 <div className="text-right text-sm">
                   <p>Km actual: {v.kilometraje.toLocaleString('es-MX')}</p>
-                  <p className={alertaKm ? 'text-red-400 font-semibold' : 'text-slate-400'}>
-                    {alertaKm
-                      ? '⚠️ Superó km de servicio programado'
-                      : `Próximo servicio ≈ ${kmRest.toLocaleString('es-MX')} km o en ${diasRest} día(s)`}
+                  <p className={`inline-flex items-center gap-1 ${alertaKm ? 'text-red-400 font-semibold' : 'text-slate-400'}`}>
+                    {alertaKm ? (
+                      <><AlertTriangle className="w-3.5 h-3.5" /> Superó km de servicio programado</>
+                    ) : (
+                      `Próximo servicio ≈ ${kmRest.toLocaleString('es-MX')} km o en ${diasRest} día(s)`
+                    )}
                   </p>
                 </div>
               </div>

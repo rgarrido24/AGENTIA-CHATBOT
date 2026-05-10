@@ -39,6 +39,7 @@ export type Servicio = {
   duracion: PrecioPorTamaño;
   categoria: CategoriaServicio;
   emoji: string;
+  imagen: string;
   disponible: boolean;
 };
 
@@ -121,6 +122,24 @@ const P = (a: number, b: number, c: number, d: number): PrecioPorTamaño => ({
   extraGrande: d,
 });
 
+const IMG_GROOM = {
+  banoBasico:    'https://images.unsplash.com/photo-1591946614720-90a587da4a36?w=600&q=80',
+  banoSecado:    'https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=600&q=80',
+  banoMedicado:  'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600&q=80',
+  corteEstandar: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=600&q=80',
+  corteRaza:     'https://images.unsplash.com/photo-1583511655802-41310279cc92?w=600&q=80',
+  recortePuntas: 'https://images.unsplash.com/photo-1596492784531-6e6eb5ea9993?w=600&q=80',
+  spaCompleto:   'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=600&q=80',
+  hidratacion:   'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600&q=80',
+  desrizador:    'https://images.unsplash.com/photo-1568572933382-74d440642117?w=600&q=80',
+  antipulgas:    'https://images.unsplash.com/photo-1601758125946-6ec2ef64daf8?w=600&q=80',
+  vitamina:      'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=600&q=80',
+  trataPiel:     'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=600&q=80',
+  uñas:          'https://images.unsplash.com/photo-1605568427561-40dd23c2acea?w=600&q=80',
+  oidos:         'https://images.unsplash.com/photo-1561948955-570b270e7c36?w=600&q=80',
+  dental:        'https://images.unsplash.com/photo-1551717743-49959800b1f6?w=600&q=80',
+};
+
 export const MOCK_SERVICIOS: Servicio[] = [
   {
     id: 'gs1',
@@ -130,6 +149,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(45, 55, 65, 75),
     categoria: 'Baño',
     emoji: '🛁',
+    imagen: IMG_GROOM.banoBasico,
     disponible: true,
   },
   {
@@ -140,6 +160,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(55, 65, 75, 85),
     categoria: 'Baño',
     emoji: '💨',
+    imagen: IMG_GROOM.banoSecado,
     disponible: true,
   },
   {
@@ -150,6 +171,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(60, 70, 80, 90),
     categoria: 'Baño',
     emoji: '🧴',
+    imagen: IMG_GROOM.banoMedicado,
     disponible: true,
   },
   {
@@ -160,6 +182,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(50, 60, 70, 80),
     categoria: 'Corte',
     emoji: '✂️',
+    imagen: IMG_GROOM.corteEstandar,
     disponible: true,
   },
   {
@@ -170,6 +193,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(70, 85, 95, 110),
     categoria: 'Corte',
     emoji: '🐩',
+    imagen: IMG_GROOM.corteRaza,
     disponible: true,
   },
   {
@@ -180,6 +204,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(35, 40, 45, 50),
     categoria: 'Corte',
     emoji: '✨',
+    imagen: IMG_GROOM.recortePuntas,
     disponible: true,
   },
   {
@@ -190,6 +215,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(90, 105, 120, 135),
     categoria: 'Spa',
     emoji: '🌿',
+    imagen: IMG_GROOM.spaCompleto,
     disponible: true,
   },
   {
@@ -200,6 +226,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(50, 60, 70, 80),
     categoria: 'Spa',
     emoji: '💧',
+    imagen: IMG_GROOM.hidratacion,
     disponible: true,
   },
   {
@@ -210,6 +237,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(55, 65, 75, 85),
     categoria: 'Spa',
     emoji: '🪮',
+    imagen: IMG_GROOM.desrizador,
     disponible: true,
   },
   {
@@ -220,6 +248,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(45, 55, 65, 75),
     categoria: 'Tratamiento',
     emoji: '🐜',
+    imagen: IMG_GROOM.antipulgas,
     disponible: true,
   },
   {
@@ -230,6 +259,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(40, 50, 60, 70),
     categoria: 'Tratamiento',
     emoji: '💊',
+    imagen: IMG_GROOM.vitamina,
     disponible: true,
   },
   {
@@ -240,6 +270,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(50, 60, 70, 80),
     categoria: 'Tratamiento',
     emoji: '🩹',
+    imagen: IMG_GROOM.trataPiel,
     disponible: true,
   },
   {
@@ -250,6 +281,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(15, 18, 20, 22),
     categoria: 'Extra',
     emoji: '🔸',
+    imagen: IMG_GROOM.uñas,
     disponible: true,
   },
   {
@@ -260,6 +292,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(15, 18, 20, 22),
     categoria: 'Extra',
     emoji: '👂',
+    imagen: IMG_GROOM.oidos,
     disponible: true,
   },
   {
@@ -270,6 +303,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     duracion: P(18, 20, 22, 25),
     categoria: 'Extra',
     emoji: '🦷',
+    imagen: IMG_GROOM.dental,
     disponible: true,
   },
 ];

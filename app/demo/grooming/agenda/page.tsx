@@ -576,12 +576,15 @@ export default function GroomingAgendaPage() {
                         key={s.id}
                         type="button"
                         onClick={() => setForm((f) => ({ ...f, servicioId: s.id }))}
-                        className={`text-left rounded-xl border p-3 text-sm transition ${
+                        className={`text-left rounded-xl border p-3 text-sm transition flex gap-2 items-center ${
                           form.servicioId === s.id ? 'border-orange-500 bg-orange-950/30' : 'border-white/10 hover:bg-white/5'
                         }`}
                       >
-                        <div className="text-lg mb-1">{s.emoji}</div>
-                        <div className="font-medium">{s.nombre}</div>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={s.imagen} alt={s.nombre} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" loading="lazy" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{s.nombre}</div>
+                        </div>
                       </button>
                     ))}
                   </div>

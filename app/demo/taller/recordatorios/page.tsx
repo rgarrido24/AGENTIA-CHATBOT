@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Car } from 'lucide-react';
 import {
   MOCK_ORDENES,
   MOCK_VEHICULOS,
@@ -78,11 +79,14 @@ export default function RecordatoriosPage() {
                 key={o.id}
                 className="rounded-xl border border-white/10 bg-white/[0.03] p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
               >
-                <div>
-                  <p className="font-semibold">
-                    {v.emoji} {v.marca} {v.modelo} — {o.tipo}
-                  </p>
-                  <p className="text-sm text-slate-400">{c.nombre}</p>
+                <div className="flex gap-2 items-center">
+                  <Car className="w-5 h-5 text-sky-400 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold">
+                      {v.marca} {v.modelo} — {o.tipo}
+                    </p>
+                    <p className="text-sm text-slate-400">{c.nombre}</p>
+                  </div>
                 </div>
                 <a
                   href={waLink(c.telefono, msg)}
@@ -113,14 +117,17 @@ export default function RecordatoriosPage() {
                   key={v.id}
                   className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
                 >
-                  <div>
-                    <p className="font-semibold">
-                      {v.emoji} {v.placa} · {v.marca} {v.modelo}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      Km: {v.kilometraje.toLocaleString('es-MX')} · Próx. km:{' '}
-                      {v.proximoServicioKm.toLocaleString('es-MX')}
-                    </p>
+                  <div className="flex gap-2 items-center">
+                    <Car className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold">
+                        {v.placa} · {v.marca} {v.modelo}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        Km: {v.kilometraje.toLocaleString('es-MX')} · Próx. km:{' '}
+                        {v.proximoServicioKm.toLocaleString('es-MX')}
+                      </p>
+                    </div>
                   </div>
                   <a
                     href={waLink(c.telefono, msg)}

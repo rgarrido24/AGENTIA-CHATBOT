@@ -14,6 +14,7 @@ export type Servicio = {
   especialista: string;
   disponible: boolean;
   emoji: string;
+  imagen: string;
 };
 
 export type Especialista = {
@@ -62,6 +63,30 @@ export const BRAND_SPA = {
   corto: 'Lumina',
 } as const;
 
+// Imágenes Unsplash temáticas para cada servicio
+const IMG_SPA = {
+  facialLimpieza:    'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=600&q=80',
+  facialHidratacion: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&q=80',
+  facialAntiedad:    'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=600&q=80',
+  facialPeeling:     'https://images.unsplash.com/photo-1596178065887-1198b6148b2b?w=600&q=80',
+  masajeAroma:       'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&q=80',
+  masajePiedras:     'https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=600&q=80',
+  masajeEspalda:     'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?w=600&q=80',
+  masajeReflex:      'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=600&q=80',
+  corpChocolate:     'https://images.unsplash.com/photo-1556760544-74068565f05c?w=600&q=80',
+  corpExfol:         'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=600&q=80',
+  corpAnticel:       'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80',
+  corpHidrat:        'https://images.unsplash.com/photo-1583416750470-965b2707b355?w=600&q=80',
+  manicure:          'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=600&q=80',
+  pedicure:          'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=600&q=80',
+  semiManos:         'https://images.unsplash.com/photo-1607779097040-26e80aa78e66?w=600&q=80',
+  semiPies:          'https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=600&q=80',
+  depAxilas:         'https://images.unsplash.com/photo-1591019479261-1a0a0e6ce3b6?w=600&q=80',
+  depPiernas:        'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=600&q=80',
+  depBikini:         'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80',
+  depCejas:          'https://images.unsplash.com/photo-1487412840807-30bfeb8df876?w=600&q=80',
+};
+
 export const MOCK_SERVICIOS: Servicio[] = [
   // Faciales
   {
@@ -74,6 +99,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Ana Flores',
     disponible: true,
     emoji: '✨',
+    imagen: IMG_SPA.facialLimpieza,
   },
   {
     id: 's2',
@@ -85,6 +111,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Ana Flores',
     disponible: true,
     emoji: '💧',
+    imagen: IMG_SPA.facialHidratacion,
   },
   {
     id: 's3',
@@ -96,6 +123,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Carmen Ruiz',
     disponible: true,
     emoji: '🌟',
+    imagen: IMG_SPA.facialAntiedad,
   },
   {
     id: 's4',
@@ -107,6 +135,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Carmen Ruiz',
     disponible: true,
     emoji: '🧪',
+    imagen: IMG_SPA.facialPeeling,
   },
   // Masajes
   {
@@ -119,6 +148,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Sofía Mendez',
     disponible: true,
     emoji: '🌸',
+    imagen: IMG_SPA.masajeAroma,
   },
   {
     id: 's6',
@@ -130,6 +160,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Sofía Mendez',
     disponible: true,
     emoji: '🔥',
+    imagen: IMG_SPA.masajePiedras,
   },
   {
     id: 's7',
@@ -141,6 +172,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Laura Torres',
     disponible: true,
     emoji: '💆',
+    imagen: IMG_SPA.masajeEspalda,
   },
   {
     id: 's8',
@@ -152,6 +184,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Laura Torres',
     disponible: true,
     emoji: '🦶',
+    imagen: IMG_SPA.masajeReflex,
   },
   // Corporales
   {
@@ -164,6 +197,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Daniela Vega',
     disponible: true,
     emoji: '🍫',
+    imagen: IMG_SPA.corpChocolate,
   },
   {
     id: 's10',
@@ -175,6 +209,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Daniela Vega',
     disponible: true,
     emoji: '🧴',
+    imagen: IMG_SPA.corpExfol,
   },
   {
     id: 's11',
@@ -186,6 +221,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Ana Flores',
     disponible: true,
     emoji: '💫',
+    imagen: IMG_SPA.corpAnticel,
   },
   {
     id: 's12',
@@ -197,6 +233,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Carmen Ruiz',
     disponible: true,
     emoji: '🌿',
+    imagen: IMG_SPA.corpHidrat,
   },
   // Uñas
   {
@@ -209,6 +246,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Sofía Mendez',
     disponible: true,
     emoji: '💅',
+    imagen: IMG_SPA.manicure,
   },
   {
     id: 's14',
@@ -220,6 +258,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Sofía Mendez',
     disponible: true,
     emoji: '🦶',
+    imagen: IMG_SPA.pedicure,
   },
   {
     id: 's15',
@@ -231,6 +270,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Laura Torres',
     disponible: true,
     emoji: '💅',
+    imagen: IMG_SPA.semiManos,
   },
   {
     id: 's16',
@@ -242,6 +282,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Laura Torres',
     disponible: true,
     emoji: '✨',
+    imagen: IMG_SPA.semiPies,
   },
   // Depilación
   {
@@ -254,6 +295,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Daniela Vega',
     disponible: true,
     emoji: '🪒',
+    imagen: IMG_SPA.depAxilas,
   },
   {
     id: 's18',
@@ -265,6 +307,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Daniela Vega',
     disponible: true,
     emoji: '🦵',
+    imagen: IMG_SPA.depPiernas,
   },
   {
     id: 's19',
@@ -276,6 +319,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Ana Flores',
     disponible: true,
     emoji: '👙',
+    imagen: IMG_SPA.depBikini,
   },
   {
     id: 's20',
@@ -287,6 +331,7 @@ export const MOCK_SERVICIOS: Servicio[] = [
     especialista: 'Carmen Ruiz',
     disponible: true,
     emoji: '👁️',
+    imagen: IMG_SPA.depCejas,
   },
 ];
 
