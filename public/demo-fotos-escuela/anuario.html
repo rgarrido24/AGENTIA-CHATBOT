@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anuario Digital · Generación Kinder 2024–2025</title>
+<title>Anuario Digital · Agentia · Generación 2026</title>
+<meta name="description" content="Inmortaliza el grupo de tu hijo. Creamos el recuerdo digital y físico que merecen al finalizar el año. Sin estrés para la escuela, directo para ti.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ── RESET & TOKENS ───────────────────────── */
@@ -76,13 +79,13 @@ body::after {
   animation: fadeDown .7s ease both;
   box-shadow: 0 4px 20px #1B2B5E44;
 }
-.hero-badge span { font-size: 1rem; }
 
 .hero h1 {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(2.8rem, 9vw, 6rem);
-  font-weight: 900; line-height: 1.0;
+  font-size: clamp(2rem, 6.5vw, 4.5rem);
+  font-weight: 900; line-height: 1.05;
   color: var(--navy);
+  max-width: 920px;
   animation: fadeDown .7s .1s ease both;
 }
 .hero h1 em {
@@ -101,7 +104,7 @@ body::after {
 
 .hero-sub {
   margin-top: 20px;
-  max-width: 520px; font-size: 1.1rem; font-weight: 600; color: var(--muted);
+  max-width: 640px; font-size: 1.05rem; font-weight: 600; color: var(--muted);
   line-height: 1.65;
   animation: fadeDown .7s .3s ease both;
 }
@@ -137,27 +140,35 @@ body::after {
 .scroll-hint svg { width: 20px; opacity: .5; }
 @keyframes pulse { 0%,100%{opacity:.5;transform:translateX(-50%) translateY(0)} 50%{opacity:1;transform:translateX(-50%) translateY(4px)} }
 
-/* ── MOCK PREVIEW STRIP ───────────────────── */
+/* ── MOCK PREVIEW STRIP (con glassmorphism) ─── */
 .preview-strip {
   position: relative; z-index: 1;
   padding: 0 24px 80px;
   display: flex; justify-content: center;
 }
 .pages-fan {
-  position: relative; width: min(680px, 100%); height: 340px;
+  position: relative; width: min(680px, 100%); height: 360px;
 }
 .fan-card {
-  position: absolute; width: 220px; height: 300px; border-radius: 16px;
-  background: white; box-shadow: 0 20px 60px rgba(0,0,0,.13);
+  position: absolute; width: 230px; height: 320px; border-radius: 20px;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow:
+    0 30px 60px -15px rgba(27,43,94,0.25),
+    0 8px 24px -8px rgba(27,43,94,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.8);
   overflow: hidden; display: flex; flex-direction: column;
+  transition: transform .35s ease, box-shadow .35s ease;
 }
+.fan-card:hover { transform: translateY(-8px) rotate(0deg) !important; box-shadow: 0 40px 80px -20px rgba(27,43,94,.35); }
 .fan-card:nth-child(1) { left: 0%;    top: 30px; transform: rotate(-8deg); z-index: 1; }
 .fan-card:nth-child(2) { left: 50%;   top: 0;    transform: translateX(-50%) rotate(0deg); z-index: 3; }
 .fan-card:nth-child(3) { right: 0%;   top: 30px; transform: rotate(8deg); z-index: 1; }
-.fan-card-top { height: 60%; background: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 3rem; }
-.fan-card-photo { width: 100%; height: 60%; object-fit: cover; display: block; }
-.fan-card-body { flex: 1; padding: 12px; }
-.fan-card-title { font-family: 'Playfair Display', serif; font-size: .95rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+.fan-card-photo { width: 100%; height: 65%; object-fit: cover; display: block; }
+.fan-card-body { flex: 1; padding: 14px 16px; }
+.fan-card-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; line-height: 1.15; }
 .fan-card-sub   { font-size: .72rem; color: var(--muted); font-weight: 600; }
 
 /* ── SECTION WRAPPER ──────────────────────── */
@@ -170,34 +181,41 @@ section { position: relative; z-index: 1; }
 }
 .section-title {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; line-height: 1.1;
+  font-size: clamp(1.8rem, 4.5vw, 2.8rem); font-weight: 900; line-height: 1.15;
   color: var(--navy); margin-bottom: 18px;
 }
 .section-body {
-  font-size: 1.05rem; color: var(--muted); font-weight: 600; line-height: 1.7; max-width: 560px;
+  font-size: 1.02rem; color: var(--muted); font-weight: 600; line-height: 1.7; max-width: 580px;
 }
 
-/* ── WHAT'S INCLUDED ──────────────────────── */
+/* ── BENEFITS GRID ────────────────────────── */
 .includes-section { padding: 80px 0; }
 .includes-grid {
   margin-top: 52px;
   display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 20px;
 }
 .include-card {
-  background: white; border-radius: 20px; padding: 28px 24px;
-  box-shadow: 0 2px 20px rgba(0,0,0,.05);
-  border: 1.5px solid #f0ede8;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 20px; padding: 28px 24px;
+  box-shadow: 0 4px 20px rgba(27,43,94,.06);
+  border: 1.5px solid rgba(240,237,232,.8);
   transition: transform .25s, box-shadow .25s;
   animation: fadeUp .5s ease both;
 }
-.include-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,.10); }
+.include-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(27,43,94,.12); }
 .include-icon {
-  width: 52px; height: 52px; border-radius: 14px;
+  width: 56px; height: 56px; border-radius: 16px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.6rem; margin-bottom: 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, var(--goldlt), var(--gold));
+  color: white;
+  box-shadow: 0 6px 18px rgba(232,160,32,.25);
 }
+.include-icon svg { width: 26px; height: 26px; }
 .include-card h3 { font-family: 'Baloo 2', cursive; font-size: 1.05rem; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
-.include-card p  { font-size: .88rem; color: var(--muted); font-weight: 600; line-height: 1.6; }
+.include-card p  { font-size: .9rem; color: var(--muted); font-weight: 600; line-height: 1.6; }
 
 /* ── HOW IT WORKS ─────────────────────────── */
 .how-section { padding: 80px 0; background: var(--navy); }
@@ -228,9 +246,43 @@ section { position: relative; z-index: 1; }
 .step-content h3 { font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 1.1rem; color: white; margin-bottom: 6px; }
 .step-content p  { font-size: .9rem; color: #94a3b8; font-weight: 600; line-height: 1.6; }
 
+/* ── GROUP HERO IMAGE (glassmorphism) ─────── */
+.group-hero {
+  padding: 60px 24px 0;
+  display: flex; justify-content: center;
+}
+.group-hero-frame {
+  position: relative;
+  width: min(880px, 100%);
+  border-radius: 28px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,.7), rgba(253,246,236,.5));
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255,255,255,.7);
+  box-shadow:
+    0 30px 70px -20px rgba(27,43,94,.28),
+    inset 0 1px 0 rgba(255,255,255,.9);
+}
+.group-hero-img {
+  width: 100%;
+  aspect-ratio: 16/10;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+  box-shadow: 0 10px 40px rgba(0,0,0,.15);
+}
+.group-hero-tag {
+  position: absolute; top: -16px; left: 28px;
+  background: var(--coral); color: white;
+  padding: 8px 18px; border-radius: 99px;
+  font-family: 'Baloo 2', cursive; font-weight: 800; font-size: .85rem;
+  box-shadow: 0 8px 24px rgba(244,113,74,.35);
+  letter-spacing: .04em;
+}
+
 /* ── GALLERY MARQUEE ──────────────────────── */
 .gallery-section { padding: 80px 0 60px; overflow: hidden; }
-
 .marquee-wrap { overflow: hidden; margin-top: 40px; }
 .marquee-track {
   display: flex; gap: 16px;
@@ -241,48 +293,75 @@ section { position: relative; z-index: 1; }
 @keyframes marquee { from{ transform: translateX(0); } to{ transform: translateX(-50%); } }
 
 .gallery-card {
-  width: 190px; height: 240px; flex-shrink: 0; border-radius: 18px;
+  width: 200px; height: 250px; flex-shrink: 0; border-radius: 18px;
   background: white; display: flex; flex-direction: column; overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,.08);
-  border: 2px solid #f0ede8; transition: transform .2s;
+  box-shadow: 0 10px 30px rgba(27,43,94,.10);
+  border: 2px solid rgba(255,255,255,.8); transition: transform .2s;
 }
 .gallery-card:hover { transform: scale(1.04) rotate(1deg); }
-.gallery-card-img { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; }
+.gallery-card-img { flex: 1; display: flex; align-items: center; justify-content: center; }
 .gallery-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery-card-emoji { font-size: 3.2rem; }
 .gallery-card-foot { padding: 10px 14px; background: white; }
 .gallery-card-foot span { font-size: .78rem; font-weight: 800; color: var(--navy); display: block; }
 .gallery-card-foot small { font-size: .68rem; color: var(--muted); font-weight: 600; }
 
-/* ── PRICING ──────────────────────────────── */
-.pricing-section { padding: 80px 0; }
-.pricing-card {
-  max-width: 520px; margin: 52px auto 0;
-  background: white; border-radius: 28px;
-  box-shadow: 0 8px 48px rgba(0,0,0,.10);
-  border: 2px solid #f0ede8; overflow: hidden;
-}
-.pricing-top {
+/* ── VOCAL / EMBAJADOR BANNER ─────────────── */
+.vocal-section { padding: 60px 0 0; }
+.vocal-card {
+  max-width: 720px; margin: 0 auto;
+  position: relative;
   background: linear-gradient(135deg, var(--navy), #2D4A9E);
-  padding: 36px 36px 28px; text-align: center; color: white;
+  border-radius: 28px;
+  padding: 36px 36px 36px 110px;
+  color: white;
+  box-shadow: 0 20px 50px rgba(27,43,94,.30);
+  overflow: hidden;
 }
-.pricing-top h3 { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
-.price-big { font-family: 'Baloo 2', cursive; font-size: 3.5rem; font-weight: 800; line-height: 1; color: var(--goldlt); }
-.price-note { font-size: .85rem; color: #a0aec0; margin-top: 6px; font-weight: 600; }
-.pricing-body { padding: 28px 36px 36px; }
-.perk { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; font-size: .95rem; font-weight: 600; }
-.perk .check { color: var(--sage); font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
-.pricing-cta { margin-top: 24px; }
-.pricing-cta .btn-primary { width: 100%; text-align: center; display: block; }
+.vocal-card::before {
+  content: '';
+  position: absolute; top: -40px; right: -40px; width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(255,208,96,.25), transparent 70%);
+  pointer-events: none;
+}
+.vocal-icon {
+  position: absolute; left: 28px; top: 50%; transform: translateY(-50%);
+  width: 64px; height: 64px;
+  background: linear-gradient(135deg, var(--goldlt), var(--gold));
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 12px 30px rgba(232,160,32,.45);
+}
+.vocal-icon svg { width: 30px; height: 30px; color: white; }
+.vocal-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem; font-weight: 800; margin-bottom: 8px;
+  color: var(--goldlt);
+}
+.vocal-card p {
+  font-size: .98rem; line-height: 1.55; font-weight: 600; color: #cfd6e8;
+}
+.vocal-card strong { color: white; }
+
+@media (max-width: 600px) {
+  .vocal-card {
+    padding: 90px 24px 28px;
+    text-align: center;
+  }
+  .vocal-icon {
+    left: 50%; top: 24px; transform: translateX(-50%);
+  }
+}
 
 /* ── INTEREST FORM ────────────────────────── */
-.form-section { padding: 80px 0; background: linear-gradient(135deg, #FDF6EC, #FFF8F8); }
+.form-section { padding: 60px 0 80px; background: linear-gradient(135deg, #FDF6EC, #FFF8F8); }
 .form-box {
-  max-width: 600px; margin: 0 auto; background: white; border-radius: 28px;
-  padding: 48px 40px; box-shadow: 0 8px 48px rgba(0,0,0,.08);
+  max-width: 640px; margin: 0 auto; background: white; border-radius: 28px;
+  padding: 48px 40px; box-shadow: 0 8px 48px rgba(27,43,94,.10);
   border: 1.5px solid #f0ede8;
 }
-.form-box h2 { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--navy); margin-bottom: 8px; }
-.form-box p  { color: var(--muted); font-size: .95rem; font-weight: 600; margin-bottom: 32px; line-height: 1.6; }
+.form-box h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 900; color: var(--navy); margin-bottom: 8px; line-height: 1.15; }
+.form-box .form-intro { color: var(--muted); font-size: .95rem; font-weight: 600; margin-bottom: 28px; line-height: 1.6; }
 
 .field { margin-bottom: 18px; }
 .field label { display: block; font-size: .82rem; font-weight: 800; color: var(--navy); margin-bottom: 6px; letter-spacing: .04em; }
@@ -294,7 +373,6 @@ section { position: relative; z-index: 1; }
   background: #fafaf8;
 }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--navy); background: white; }
-.field textarea { resize: vertical; min-height: 90px; }
 
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
@@ -307,11 +385,34 @@ section { position: relative; z-index: 1; }
   box-shadow: 0 6px 24px #E8A02044;
 }
 .form-submit:hover { transform: translateY(-3px); box-shadow: 0 12px 32px #E8A02055; }
+.form-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+.form-help {
+  margin-top: 18px;
+  background: #FFF8E1;
+  border: 1.5px dashed var(--gold);
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: .88rem;
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.55;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.form-help svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--gold); margin-top: 2px; }
+.form-help strong { color: var(--navy); }
 
 .success-msg {
   display: none; text-align: center; padding: 40px 20px;
 }
-.success-msg .big-emoji { font-size: 4rem; margin-bottom: 16px; }
+.success-msg .success-icon {
+  width: 84px; height: 84px; margin: 0 auto 16px;
+  background: linear-gradient(135deg, var(--sage), #4A9E7F);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 16px 40px rgba(107,170,142,.4);
+}
+.success-msg .success-icon svg { width: 42px; height: 42px; color: white; }
 .success-msg h3 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--navy); margin-bottom: 10px; }
 .success-msg p  { color: var(--muted); font-weight: 600; line-height: 1.6; }
 
@@ -319,7 +420,7 @@ section { position: relative; z-index: 1; }
 .counter-bar {
   background: var(--cream); border: 2px solid #f0ede8; border-radius: 16px;
   padding: 20px 28px; margin-bottom: 32px; display: flex; align-items: center; gap: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,.04);
+  box-shadow: 0 2px 12px rgba(27,43,94,.04);
 }
 .counter-num {
   font-family: 'Baloo 2', cursive; font-size: 2.2rem; font-weight: 800; color: var(--gold);
@@ -328,6 +429,139 @@ section { position: relative; z-index: 1; }
 .counter-label { font-size: .85rem; font-weight: 700; color: var(--muted); }
 .counter-track { flex: 1; height: 10px; background: #ede9e2; border-radius: 99px; overflow: hidden; }
 .counter-fill  { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--gold), var(--coral)); transition: width .5s ease; }
+
+/* ── STUDIO PREMIUM (PhotoPreview) ────────── */
+.studio-section { padding: 80px 0; background: linear-gradient(180deg, transparent, #FBF3E2 30%, #FBF3E2); }
+.studio-grid {
+  margin-top: 48px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 22px; align-items: stretch;
+}
+.studio-card {
+  position: relative; border-radius: 22px; overflow: hidden;
+  background: white;
+  box-shadow: 0 20px 50px -20px rgba(27,43,94,.25);
+  border: 1.5px solid rgba(240,237,232,.9);
+  display: flex; flex-direction: column;
+}
+.studio-card-tag {
+  position: absolute; top: 14px; left: 14px; z-index: 3;
+  font-family: 'Baloo 2', cursive; font-weight: 800;
+  font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+  padding: 6px 14px; border-radius: 99px;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.studio-card-tag.before { background: rgba(255,255,255,.85); color: var(--muted); border: 1px solid rgba(0,0,0,.06); }
+.studio-card-tag.after  { background: rgba(232,160,32,.95); color: white; box-shadow: 0 6px 20px rgba(232,160,32,.45); }
+
+.studio-frame {
+  position: relative;
+  aspect-ratio: 4/5;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  transition: background .6s ease;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,255,255,.6), transparent 50%),
+    linear-gradient(135deg, #f5f0e6, #ece2cf);
+}
+.studio-frame img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: filter .8s ease, transform .8s ease;
+}
+
+/* Estado AFTER → fondo studio premium */
+.studio-frame.applied {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(232,160,32,.18), transparent 60%),
+    linear-gradient(135deg, #1a1a1a, #2d2d2d);
+}
+.studio-frame.applied::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1.5px);
+  background-size: 16px 16px;
+  opacity: .9;
+}
+.studio-frame.applied img {
+  filter:
+    drop-shadow(0 8px 20px rgba(0,0,0,.55))
+    drop-shadow(0 2px 6px rgba(232,160,32,.18))
+    contrast(1.06)
+    saturate(1.08);
+  transform: scale(1.02);
+}
+
+/* Spinner overlay */
+.studio-loader {
+  position: absolute; inset: 0; z-index: 4;
+  display: none;
+  align-items: center; justify-content: center; flex-direction: column;
+  gap: 14px;
+  background: rgba(20,20,20,.78);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: white;
+}
+.studio-loader.active { display: flex; }
+.studio-spinner {
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 3px solid rgba(255,208,96,.25);
+  border-top-color: var(--goldlt);
+  animation: spin .9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.studio-loader-text {
+  font-family: 'Baloo 2', cursive; font-weight: 700; font-size: .95rem;
+  letter-spacing: .04em;
+  display: flex; align-items: center; gap: 8px;
+}
+.studio-loader-text .pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--goldlt);
+  animation: pulseDot 1s ease-in-out infinite;
+}
+@keyframes pulseDot { 0%,100%{opacity:.4;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
+
+.studio-card-foot {
+  padding: 16px 20px;
+  background: white;
+  border-top: 1px solid #f0ede8;
+}
+.studio-card-foot h4 {
+  font-family: 'Baloo 2', cursive; font-weight: 800;
+  font-size: .98rem; color: var(--navy); margin-bottom: 2px;
+}
+.studio-card-foot p {
+  font-size: .82rem; color: var(--muted); font-weight: 600;
+}
+
+.studio-controls {
+  margin-top: 28px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.btn-studio {
+  padding: 16px 36px; border: none; border-radius: 99px;
+  background: linear-gradient(135deg, var(--gold), var(--coral));
+  color: white; font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 800;
+  cursor: pointer; transition: transform .2s, box-shadow .2s;
+  box-shadow: 0 10px 28px rgba(232,160,32,.35);
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.btn-studio:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(232,160,32,.45); }
+.btn-studio:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.btn-studio svg { width: 18px; height: 18px; }
+.btn-studio.active {
+  background: linear-gradient(135deg, var(--navy), #2D4A9E);
+  box-shadow: 0 10px 28px rgba(27,43,94,.4);
+}
+.btn-studio-helper {
+  font-size: .78rem; color: var(--muted); font-weight: 600; text-align: center; max-width: 380px;
+}
+
+@media (max-width: 700px) {
+  .studio-grid { grid-template-columns: 1fr; gap: 18px; }
+  .studio-section { padding: 60px 0; }
+  .btn-studio { width: 100%; justify-content: center; }
+}
 
 /* ── FOOTER ───────────────────────────────── */
 footer {
@@ -347,11 +581,29 @@ footer strong { color: var(--goldlt); }
 .reveal.visible { opacity: 1; transform: none; }
 
 /* ── RESPONSIVE ───────────────────────────── */
-@media (max-width: 600px) {
+@media (max-width: 700px) {
+  .hero { padding: 60px 18px 50px; }
+  .hero-cta { flex-direction: column; width: 100%; }
+  .hero-cta a { width: 100%; text-align: center; }
+  .preview-strip { padding: 0 18px 60px; }
+  .pages-fan { height: 320px; }
+  .fan-card { width: 180px; height: 270px; }
+  .fan-card-title { font-size: .9rem; }
+  .group-hero { padding: 40px 18px 0; }
+  .group-hero-frame { padding: 8px; border-radius: 22px; }
+  .group-hero-tag { left: 18px; font-size: .75rem; padding: 6px 14px; }
+  .container { padding: 0 18px; }
+  .form-section { padding: 40px 0 60px; }
+  .form-box { padding: 32px 22px; border-radius: 22px; }
   .row2 { grid-template-columns: 1fr; }
-  .form-box { padding: 32px 22px; }
-  .fan-card { width: 170px; }
-  .pages-fan { height: 280px; }
+  .counter-bar { padding: 16px 18px; gap: 12px; }
+  .counter-num { font-size: 1.8rem; }
+  .includes-section, .how-section, .gallery-section { padding: 60px 0; }
+  .vocal-section { padding: 40px 0 0; }
+}
+@media (max-width: 380px) {
+  .fan-card { width: 150px; height: 230px; }
+  .fan-card-photo { height: 60%; }
 }
 </style>
 </head>
@@ -364,20 +616,30 @@ footer strong { color: var(--goldlt); }
 <section class="hero">
   <div class="hero-bg"></div>
 
-  <div class="hero-badge"><span>🎓</span> Graduación Kinder · Edición Especial</div>
+  <div class="hero-badge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+      <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+    </svg>
+    Edición Especial · Generación 2026
+  </div>
 
-  <h1>Nuestro <em>Anuario</em><br>Digital</h1>
+  <h1>
+    Inmortaliza el grupo de tu hijo.<br>
+    Creamos el <em>recuerdo digital y físico</em><br>
+    que merecen al finalizar este año.
+  </h1>
 
-  <p class="hero-year">✨ Generación Kinder 2024 – 2025 ✨</p>
+  <p class="hero-year">✦ Generación 2026 ✦</p>
 
   <p class="hero-sub">
-    Un recuerdo editorial, moderno y lleno de amor para celebrar
-    esta etapa tan especial de nuestros peques. 💛
+    Agentia utiliza tecnología de punta para capturar la esencia de la generación 2026.
+    <strong>Sin estrés para la escuela, directo para ti.</strong>
   </p>
 
   <div class="hero-cta">
-    <a href="#formulario" class="btn-primary">¡Me interesa! Apúntame 🙋</a>
-    <a href="#incluye"    class="btn-outline">Ver qué incluye →</a>
+    <a href="#formulario" class="btn-primary">Registrar mi salón →</a>
+    <a href="#beneficios" class="btn-outline">Ver qué incluye</a>
   </div>
 
   <div class="scroll-hint">
@@ -388,82 +650,111 @@ footer strong { color: var(--goldlt); }
   </div>
 </section>
 
-<!-- ══════════════════ PREVIEW CARDS ══════════════════ -->
+<!-- ══════════════════ PREVIEW CARDS (glassmorphism) ══════════════════ -->
 <div class="preview-strip">
   <div class="pages-fan">
     <div class="fan-card">
-      <img class="fan-card-photo" src="/graduacion-kinder-3.jpeg" alt="Foto de graduación kinder" loading="lazy" />
+      <img class="fan-card-photo" src="/demo-fotos-escuela/placeholder/alumno1.jpg" alt="Vista previa de portada del anuario digital — imagen ilustrativa generada por IA" loading="lazy" />
       <div class="fan-card-body">
         <div class="fan-card-title">Portada<br>Generación</div>
         <div class="fan-card-sub">Diseño editorial exclusivo</div>
       </div>
     </div>
     <div class="fan-card">
-      <img class="fan-card-photo" src="/graduacion-kinder-3-1.jpeg" alt="Perfil individual de graduación" loading="lazy" />
+      <img class="fan-card-photo" src="/demo-fotos-escuela/placeholder/grupo_ia.jpg" alt="Vista previa de foto grupal del anuario — imagen ilustrativa generada por IA" loading="lazy" />
       <div class="fan-card-body">
-        <div class="fan-card-title">Perfil<br>Individual</div>
-        <div class="fan-card-sub">Foto + datos tiernos</div>
+        <div class="fan-card-title">Foto<br>Grupal Oficial</div>
+        <div class="fan-card-sub">Toda la generación reunida</div>
       </div>
     </div>
     <div class="fan-card">
-      <img class="fan-card-photo" src="/graduacion-kinder-3.jpeg" alt="Collage de momentos de graduación" loading="lazy" />
+      <img class="fan-card-photo" src="/demo-fotos-escuela/placeholder/alumno2.jpg" alt="Vista previa de perfil individual — imagen ilustrativa generada por IA" loading="lazy" />
       <div class="fan-card-body">
-        <div class="fan-card-title">Collage de<br>Momentos</div>
-        <div class="fan-card-sub">Los mejores recuerdos</div>
+        <div class="fan-card-title">Perfil<br>Individual</div>
+        <div class="fan-card-sub">Foto + datos personalizados</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════ QUÉ INCLUYE ══════════════════ -->
-<section class="includes-section" id="incluye">
+<!-- ══════════════════ HERO GROUP IMAGE ══════════════════ -->
+<div class="group-hero">
+  <div class="group-hero-frame">
+    <span class="group-hero-tag">✦ Imagen ilustrativa generada por IA</span>
+    <img class="group-hero-img" src="/demo-fotos-escuela/placeholder/grupo_ia.jpg" alt="Foto grupal de muestra — imagen ilustrativa generada por IA, no representa alumnos reales" loading="lazy" />
+  </div>
+</div>
+
+<!-- ══════════════════ BENEFICIOS D2C ══════════════════ -->
+<section class="includes-section" id="beneficios">
   <div class="container">
     <div class="reveal">
-      <span class="section-label">✦ Contenido del Anuario</span>
-      <h2 class="section-title">Todo lo que tendrá<br>su anuario 📖</h2>
-      <p class="section-body">Cada página diseñada con cariño para que este recuerdo dure toda la vida.</p>
+      <span class="section-label">✦ Lo que recibe tu familia</span>
+      <h2 class="section-title">Recuerdo premium,<br>directo a las familias.</h2>
+      <p class="section-body">Pensado para padres: una experiencia digital y física que le harás llegar a tu hijo y a toda la familia, sin pasar por trámites con la escuela.</p>
     </div>
 
     <div class="includes-grid">
       <div class="include-card reveal" style="animation-delay:.05s">
-        <div class="include-icon" style="background:#FFF3E0">🎓</div>
-        <h3>Portada Generación</h3>
-        <p>Diseño editorial exclusivo con el nombre del grupo, año y foto grupal oficial.</p>
+        <div class="include-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          </svg>
+        </div>
+        <h3>Galería Digital Instantánea</h3>
+        <p>Acceso inmediato vía código QR único — descarga, comparte y guarda todas las fotos del grupo de tu hijo desde el celular.</p>
       </div>
       <div class="include-card reveal" style="animation-delay:.10s">
-        <div class="include-icon" style="background:#E8F5E9">👤</div>
-        <h3>Perfil Individual</h3>
-        <p>Foto con toga y birrete + datos personalizados: sueño, frase favorita, mejor amigo y más.</p>
+        <div class="include-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </div>
+        <h3>Fotos de Grupo Formales y Divertidas</h3>
+        <p>Sesión profesional con dos estilos: formales con toga y birrete + divertidas con props y temáticas únicas para la generación.</p>
       </div>
       <div class="include-card reveal" style="animation-delay:.15s">
-        <div class="include-icon" style="background:#E3F2FD">📸</div>
-        <h3>Foto Grupal Oficial</h3>
-        <p>La foto completa de la generación en diseño de página especial.</p>
+        <div class="include-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 16l5-5 4 4 3-3 6 6"/>
+            <circle cx="9" cy="9" r="1.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <h3>Productos Físicos Premium</h3>
+        <p>Cuadros en lienzo, acrílicos, álbumes editoriales y prints en alta calidad. Catálogo completo a precios directos al productor.</p>
       </div>
       <div class="include-card reveal" style="animation-delay:.20s">
-        <div class="include-icon" style="background:#FCE4EC">🎞️</div>
-        <h3>Collage de Momentos</h3>
-        <p>Las mejores fotos del año escolar: paseos, actividades, convivencias y más.</p>
+        <div class="include-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="5" width="20" height="14" rx="2.5"/>
+            <path d="M2 10h20"/>
+            <path d="M6 15h4"/>
+          </svg>
+        </div>
+        <h3>Pago Seguro en un Clic</h3>
+        <p>Mercado Pago y Stripe integrados. Sin intermediarios, sin trámites con la escuela — tu compra llega directo a tu casa.</p>
       </div>
       <div class="include-card reveal" style="animation-delay:.25s">
-        <div class="include-icon" style="background:#F3E5F5">👩‍🏫</div>
-        <h3>Sección de Maestras</h3>
-        <p>Un homenaje especial a las maestras que acompañaron a nuestros peques en esta etapa.</p>
+        <div class="include-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/>
+          </svg>
+        </div>
+        <h3>Anuario Digital Editorial</h3>
+        <p>PDF interactivo en alta resolución con perfil de tu hijo, fotos grupales, mensajes y collage de momentos del año.</p>
       </div>
       <div class="include-card reveal" style="animation-delay:.30s">
-        <div class="include-icon" style="background:#FFF8E1">💌</div>
-        <h3>Mensajes de los Papás</h3>
-        <p>Un espacio para que cada familia deje un mensaje de amor que el niño guardará siempre.</p>
-      </div>
-      <div class="include-card reveal" style="animation-delay:.35s">
-        <div class="include-icon" style="background:#E8F5E9">📈</div>
-        <h3>Así Crecimos</h3>
-        <p>Comparativa "inicio vs. fin del año" — ver cuánto crecieron es mágico. ✨</p>
-      </div>
-      <div class="include-card reveal" style="animation-delay:.40s">
-        <div class="include-icon" style="background:#FFF3E0">🏆</div>
-        <h3>Alta Calidad Digital</h3>
-        <p>Formato PDF interactivo en alta resolución. Listo para compartir o mandar a imprimir.</p>
+        <div class="include-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <h3>Entrega antes de graduación</h3>
+        <p>Plazos garantizados — anuario digital y productos físicos llegan a tiempo para celebrar el cierre del año escolar.</p>
       </div>
     </div>
   </div>
@@ -473,45 +764,45 @@ footer strong { color: var(--goldlt); }
 <section class="how-section" id="como">
   <div class="container">
     <div class="reveal">
-      <span class="section-label">✦ Proceso</span>
-      <h2 class="section-title" style="color:white">¿Cómo lo hacemos?</h2>
-      <p class="section-body">Simple, sin estrés y con resultados increíbles.</p>
+      <span class="section-label">✦ Proceso D2C</span>
+      <h2 class="section-title">Sin escuela de por medio.<br>Tú decides.</h2>
+      <p class="section-body">Activamos sesión de fotos cuando suficientes papás del salón se registran. Tú coordinas con el grupo de WhatsApp del salón.</p>
     </div>
 
     <div class="steps" style="margin-top:52px">
       <div class="step reveal" style="animation-delay:.05s">
         <div class="step-num">1</div>
         <div class="step-content">
-          <h3>Confirman su lugar 📋</h3>
-          <p>Llenan el formulario de interés y reservan el lugar de su peque en el anuario.</p>
+          <h3>Registras tu salón</h3>
+          <p>Llenas el formulario con los datos del colegio, grado y grupo de tu hijo. Compartes el link en el WhatsApp del salón.</p>
         </div>
       </div>
       <div class="step reveal" style="animation-delay:.10s">
         <div class="step-num">2</div>
         <div class="step-content">
-          <h3>Comparten fotos y datos 📤</h3>
-          <p>Envían la foto individual con toga, foto grupal y los datitos personalizados de su hijo(a).</p>
+          <h3>Se suman 15 papás del mismo salón</h3>
+          <p>Cuando el contador llega a 15 papás registrados de tu mismo grupo, agendamos la sesión de fotos profesional sin costo de visita.</p>
         </div>
       </div>
       <div class="step reveal" style="animation-delay:.15s">
         <div class="step-num">3</div>
         <div class="step-content">
-          <h3>Diseño personalizado 🎨</h3>
-          <p>El equipo crea cada página con el estilo editorial visto en los ejemplos — único y bonito.</p>
+          <h3>Sesión profesional en el colegio</h3>
+          <p>Nuestro equipo va al colegio con togas, birretes y set fotográfico completo — capturamos a la generación con dos estilos: formal y divertido.</p>
         </div>
       </div>
       <div class="step reveal" style="animation-delay:.20s">
         <div class="step-num">4</div>
         <div class="step-content">
-          <h3>Revisión y aprobación 👀</h3>
-          <p>Revisan su página individual y aprueban antes de la versión final.</p>
+          <h3>Galería digital y catálogo</h3>
+          <p>Recibes en WhatsApp el código QR de la galería privada del salón. Eliges qué fotos descargar y qué productos físicos comprar.</p>
         </div>
       </div>
       <div class="step reveal" style="animation-delay:.25s">
         <div class="step-num">5</div>
         <div class="step-content">
-          <h3>¡Reciben el anuario! 🎉</h3>
-          <p>PDF de alta calidad entregado antes de la ceremonia de graduación. ¡Listo para compartir con toda la familia!</p>
+          <h3>Pago seguro y entrega a casa</h3>
+          <p>Pagas por Mercado Pago o Stripe en un clic. Productos físicos llegan a tu casa antes de la ceremonia. Anuario digital se entrega de inmediato.</p>
         </div>
       </div>
     </div>
@@ -522,8 +813,9 @@ footer strong { color: var(--goldlt); }
 <section class="gallery-section">
   <div class="container">
     <div class="reveal">
-      <span class="section-label">✦ Páginas del Anuario</span>
-      <h2 class="section-title">Páginas que emocionan 💛</h2>
+      <span class="section-label">✦ Vista previa del anuario</span>
+      <h2 class="section-title">Páginas que emocionan</h2>
+      <p class="section-body" style="font-size:.92rem;color:var(--muted)">Todas las imágenes son ilustrativas generadas por IA — protegemos la privacidad de los menores.</p>
     </div>
   </div>
 
@@ -532,40 +824,86 @@ footer strong { color: var(--goldlt); }
   </div>
 </section>
 
-<!-- ══════════════════ PRECIO ══════════════════ -->
-<section class="pricing-section" id="precio">
-  <div class="container" style="text-align:center">
+<!-- ══════════════════ STUDIO PREMIUM (PhotoPreview) ══════════════════ -->
+<section class="studio-section" id="studio">
+  <div class="container">
     <div class="reveal">
-      <span class="section-label">✦ Inversión</span>
-      <h2 class="section-title">Un recuerdo para siempre</h2>
-      <p class="section-body" style="margin:0 auto">
-        Precio por familia — incluye el anuario completo de toda la generación.
-      </p>
+      <span class="section-label">✦ IA Studio Premium</span>
+      <h2 class="section-title">De foto casera a<br>foto de estudio en 2 segundos.</h2>
+      <p class="section-body">Nuestro motor de IA transforma cualquier foto del celular en un retrato editorial premium con fondo de estudio profesional. Pruébalo tú mismo:</p>
     </div>
 
-    <div class="pricing-card reveal">
-      <div class="pricing-top">
-        <h3>Anuario Digital Completo</h3>
-        <div class="price-big">Por confirmar</div>
-        <p class="price-note">💡 El precio se define según el número de familias confirmadas</p>
-      </div>
-      <div class="pricing-body">
-        <div class="perk"><span class="check">✓</span><span>Página individual personalizada con foto de graduación</span></div>
-        <div class="perk"><span class="check">✓</span><span>Datos y frase especial de tu hijo(a)</span></div>
-        <div class="perk"><span class="check">✓</span><span>Sección grupal completa de la generación</span></div>
-        <div class="perk"><span class="check">✓</span><span>Collage de momentos especiales del año</span></div>
-        <div class="perk"><span class="check">✓</span><span>Homenaje a maestras y mensajes de papás</span></div>
-        <div class="perk"><span class="check">✓</span><span>PDF interactivo en alta resolución para imprimir</span></div>
-        <div class="perk"><span class="check">✓</span><span>Entrega digital antes de la ceremonia 🎓</span></div>
-        <div class="pricing-cta">
-          <a href="#formulario" class="btn-primary">Reservar mi lugar →</a>
+    <div class="studio-grid">
+      <!-- ANTES -->
+      <div class="studio-card reveal" style="animation-delay:.05s">
+        <span class="studio-card-tag before">Antes</span>
+        <div class="studio-frame" id="studio-frame-1">
+          <img src="/demo-fotos-escuela/placeholder/nino-real.jpg" alt="Foto original — antes del procesamiento" loading="lazy" id="studio-img-1" />
+          <div class="studio-loader" id="studio-loader-1">
+            <div class="studio-spinner"></div>
+            <div class="studio-loader-text">
+              <span class="pulse-dot"></span>
+              IA de Agentia procesando…
+            </div>
+          </div>
+        </div>
+        <div class="studio-card-foot">
+          <h4>Foto original</h4>
+          <p>Tomada con celular, fondo común</p>
         </div>
       </div>
+
+      <!-- ANTES (niña) -->
+      <div class="studio-card reveal" style="animation-delay:.10s">
+        <span class="studio-card-tag before">Antes</span>
+        <div class="studio-frame" id="studio-frame-2">
+          <img src="/demo-fotos-escuela/placeholder/nina-real.jpg" alt="Foto original — antes del procesamiento" loading="lazy" id="studio-img-2" />
+          <div class="studio-loader" id="studio-loader-2">
+            <div class="studio-spinner"></div>
+            <div class="studio-loader-text">
+              <span class="pulse-dot"></span>
+              IA de Agentia procesando…
+            </div>
+          </div>
+        </div>
+        <div class="studio-card-foot">
+          <h4>Foto original</h4>
+          <p>Tomada con celular, fondo común</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="studio-controls">
+      <button class="btn-studio" id="btn-studio" onclick="applyStudioBg()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span id="btn-studio-text">Aplicar Fondo Studio Premium</span>
+      </button>
+      <p class="btn-studio-helper" id="btn-studio-helper">
+        El motor analiza la foto, recorta al niño y aplica un fondo de estudio profesional. Resultado en segundos.
+      </p>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════ FORMULARIO ══════════════════ -->
+<!-- ══════════════════ VOCAL / EMBAJADOR ══════════════════ -->
+<section class="vocal-section">
+  <div class="container">
+    <div class="vocal-card reveal">
+      <div class="vocal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/>
+        </svg>
+      </div>
+      <h3>¿Eres Vocal o quieres llevar esto a otro salón?</h3>
+      <p>Registra tu grupo y obtén el <strong>Paquete Premium de tu hijo como cortesía</strong> por coordinar la sesión. Solo necesitas compartir el link con el WhatsApp de tu salón y nosotros nos encargamos del resto.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ FORMULARIO DE ACTIVACIÓN ══════════════════ -->
 <section class="form-section" id="formulario">
   <div class="container">
     <div class="form-box reveal">
@@ -574,61 +912,78 @@ footer strong { color: var(--goldlt); }
       <div class="counter-bar">
         <div>
           <div class="counter-num" id="counter-num">0</div>
-          <div class="counter-label">familias apuntadas</div>
+          <div class="counter-label">papás registrados</div>
         </div>
         <div class="counter-track">
           <div class="counter-fill" id="counter-fill" style="width:0%"></div>
         </div>
-        <div style="font-size:.8rem;font-weight:800;color:var(--muted)">Meta: 20</div>
+        <div style="font-size:.8rem;font-weight:800;color:var(--muted)">Meta: 15</div>
       </div>
 
       <!-- Form -->
       <div id="form-wrap">
-        <h2>¡Apúntate! 🙋</h2>
-        <p>Confirma el interés de tu familia y asegura el lugar de tu peque en el anuario.</p>
+        <h2>Registra tu Salón y Activa la Sesión de Fotos</h2>
+        <p class="form-intro">Cuando 15 papás del mismo salón se registren, agendamos la sesión profesional sin costo de visita. Tú serás el contacto enlace del grupo.</p>
 
         <div class="row2">
           <div class="field">
-            <label>Nombre del papá / mamá *</label>
-            <input type="text" id="f-papa" placeholder="Ej: Ana García" required />
+            <label>Nombre completo (Papá / Mamá Enlace) *</label>
+            <input type="text" id="f-papa" placeholder="Ej: Ana García López" required />
           </div>
           <div class="field">
-            <label>Nombre del pequeño(a) *</label>
-            <input type="text" id="f-nino" placeholder="Ej: Mateo García" required />
+            <label>WhatsApp de contacto *</label>
+            <input type="tel" id="f-tel" placeholder="Ej: 55 1234 5678" required />
           </div>
         </div>
 
         <div class="field">
-          <label>WhatsApp de contacto *</label>
-          <input type="tel" id="f-tel" placeholder="Ej: 55 1234 5678" required />
+          <label>Nombre del colegio *</label>
+          <input type="text" id="f-colegio" placeholder="Ej: Colegio Montessori del Valle" required />
         </div>
 
-        <div class="field">
-          <label>¿Tienen fotos con toga y birrete? *</label>
-          <select id="f-fotos">
-            <option value="">Selecciona una opción…</option>
-            <option value="si">✅ Sí, ya las tenemos</option>
-            <option value="sesion">📸 Necesitamos organizar una sesión grupal</option>
-            <option value="no">❓ Aún no sabemos</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label>¿Algo más que quieras agregar?</label>
-          <textarea id="f-nota" placeholder="Dudas, sugerencias o ideas…"></textarea>
+        <div class="row2">
+          <div class="field">
+            <label>Grado y grupo *</label>
+            <input type="text" id="f-grupo" placeholder="Ej: 3° A" required />
+          </div>
+          <div class="field">
+            <label>¿Eres Vocal del salón?</label>
+            <select id="f-vocal">
+              <option value="no">No, soy papá/mamá del grupo</option>
+              <option value="si">Sí, soy Vocal / Coordinador</option>
+            </select>
+          </div>
         </div>
 
         <button class="form-submit" onclick="submitForm()">
-          💛 ¡Confirmar mi lugar en el anuario!
+          ¡Registrar mi Salón y Empezar! →
         </button>
+
+        <div class="form-help">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4M12 8h.01"/>
+          </svg>
+          <span>
+            Una vez que <strong>15 papás de tu salón</strong> se registren, agendamos la sesión de fotos profesional <strong>sin costo de visita</strong>.
+            ¡Comparte el link con el grupo de WhatsApp de tu salón!
+          </span>
+        </div>
       </div>
 
       <!-- Success -->
       <div class="success-msg" id="success-msg">
-        <div class="big-emoji">🎉</div>
-        <h3>¡Ya estás apuntada!</h3>
-        <p>Gracias por confirmar. En cuanto se alcance el grupo mínimo te avisamos por WhatsApp con todos los detalles.<br><br>
-        <strong>¡Nuestros peques merecen este recuerdo tan especial! 💛</strong></p>
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <h3>¡Salón registrado!</h3>
+        <p>
+          Te contactaremos por WhatsApp con tu <strong>link único de invitación</strong> para que lo compartas con los papás del grupo.<br><br>
+          Cuando se sumen <strong>15 papás de tu mismo salón</strong>, agendamos la sesión.<br><br>
+          <strong>¡Inmortalizar a esta generación está a un clic!</strong>
+        </p>
       </div>
 
     </div>
@@ -637,9 +992,9 @@ footer strong { color: var(--goldlt); }
 
 <!-- ══════════════════ FOOTER ══════════════════ -->
 <footer>
-  <p>🎓 <strong>Generación Kinder 2024 – 2025</strong></p>
-  <p>Pequeños hoy · <strong>Grandes mañana</strong></p>
-  <p style="margin-top:16px;font-size:.78rem;opacity:.6">Hecho con mucho amor para los peques y sus familias 💛</p>
+  <p><strong>Agentia · Anuario Digital Generación 2026</strong></p>
+  <p>Tecnología de punta para capturar la esencia de tu generación</p>
+  <p style="margin-top:16px;font-size:.78rem;opacity:.6">Todas las fotos de muestra son imágenes ilustrativas generadas por IA. Protegemos la privacidad de los menores.</p>
 </footer>
 
 <!-- ══════════════════ SCRIPTS ══════════════════ -->
@@ -663,25 +1018,22 @@ for (let i = 0; i < 22; i++) {
 
 /* ─── MARQUEE CARDS ──────────────────────────── */
 const pages = [
-  { img:'/graduacion-kinder-3.jpeg', label:'Portada', sub:'Generación Kinder', bg:'linear-gradient(135deg,#1B2B5E,#2D4A9E)' },
-  { img:'/graduacion-kinder-3-1.jpeg', label:'Perfil individual', sub:'Foto + recuerdo especial', bg:'linear-gradient(135deg,#E8A020,#F4714A)' },
-  { img:'/graduacion-kinder-3.jpeg', label:'Foto Grupal', sub:'Toda la generación', bg:'linear-gradient(135deg,#6BAA8E,#4A9E7F)' },
-  { emoji:'💌', label:'Mensajes', sub:'De los papás con amor', bg:'linear-gradient(135deg,#F4714A,#e85b8a)' },
-  { emoji:'👩‍🏫', label:'Nuestras Maestras', sub:'Con cariño y gratitud', bg:'linear-gradient(135deg,#1B2B5E,#6BAA8E)' },
-  { img:'/graduacion-kinder-3-1.jpeg', label:'Así Crecimos', sub:'Inicio vs. Final', bg:'linear-gradient(135deg,#FFD060,#E8A020)' },
-  { img:'/graduacion-kinder-3.jpeg', label:'Momentos', sub:'Inolvidables del año', bg:'linear-gradient(135deg,#BF7FFF,#7C3AED)' },
-  { emoji:'🏆', label:'¡Lo Logramos!', sub:'Página de cierre', bg:'linear-gradient(135deg,#E8A020,#FFD060)' },
+  { img:'/demo-fotos-escuela/placeholder/grupo_ia.jpg', label:'Portada Generación', sub:'Editorial exclusivo' },
+  { img:'/demo-fotos-escuela/placeholder/alumno1.jpg', label:'Perfil Individual', sub:'Foto + recuerdo' },
+  { img:'/demo-fotos-escuela/placeholder/grupo_ia.jpg', label:'Foto Grupal', sub:'Toda la generación' },
+  { img:'/demo-fotos-escuela/placeholder/alumno2.jpg', label:'Galería Digital', sub:'Acceso por QR' },
+  { img:'/demo-fotos-escuela/placeholder/grupo_ia.jpg', label:'Estilo Divertido', sub:'Props y temáticas' },
+  { img:'/demo-fotos-escuela/placeholder/alumno1.jpg', label:'Productos Físicos', sub:'Cuadros y acrílicos' },
+  { img:'/demo-fotos-escuela/placeholder/alumno2.jpg', label:'Mensaje Familiar', sub:'Espacio personal' },
+  { img:'/demo-fotos-escuela/placeholder/grupo_ia.jpg', label:'Cierre de Año', sub:'Página final' },
 ];
 
 const marquee = document.getElementById('marquee');
 [...pages, ...pages].forEach(p => {
   const c = document.createElement('div');
   c.className = 'gallery-card';
-  const visual = p.img
-    ? `<img src="${p.img}" alt="${p.label}" loading="lazy" />`
-    : p.emoji;
   c.innerHTML = `
-    <div class="gallery-card-img" style="background:${p.bg}">${visual}</div>
+    <div class="gallery-card-img"><img src="${p.img}" alt="${p.label} — imagen ilustrativa generada por IA" loading="lazy" /></div>
     <div class="gallery-card-foot">
       <span>${p.label}</span>
       <small>${p.sub}</small>
@@ -697,7 +1049,7 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
 /* ─── COUNTER ─────────────────────────────────── */
 let count = parseInt(localStorage.getItem('anuario_count') || '0');
-const META = 20;
+const META = 15;
 
 function updateCounter(n) {
   document.getElementById('counter-num').textContent = n;
@@ -707,19 +1059,19 @@ updateCounter(count);
 
 /* ─── FORM SUBMIT ────────────────────────────── */
 async function submitForm() {
-  const papa  = document.getElementById('f-papa').value.trim();
-  const nino  = document.getElementById('f-nino').value.trim();
-  const tel   = document.getElementById('f-tel').value.trim();
-  const fotos = document.getElementById('f-fotos').value;
-  const nota  = document.getElementById('f-nota').value.trim();
+  const papa    = document.getElementById('f-papa').value.trim();
+  const tel     = document.getElementById('f-tel').value.trim();
+  const colegio = document.getElementById('f-colegio').value.trim();
+  const grupo   = document.getElementById('f-grupo').value.trim();
+  const vocal   = document.getElementById('f-vocal').value;
 
-  if (!papa || !nino || !tel || !fotos) {
+  if (!papa || !tel || !colegio || !grupo) {
     alert('Por favor completa todos los campos obligatorios ✨');
     return;
   }
 
   const btn = document.querySelector('.form-submit');
-  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Registrando…'; }
 
   try {
     const res = await fetch('/api/demo/fotos-escuela/submit', {
@@ -729,9 +1081,9 @@ async function submitForm() {
         tipo: 'anuario',
         tutorNombre: papa,
         tutorWhatsapp: tel,
-        alumnoNombre: nino,
-        paquete: fotos,
-        notas: nota,
+        colegio,
+        grupo,
+        esVocal: vocal === 'si',
         page: location.pathname,
       }),
     });
@@ -748,19 +1100,65 @@ async function submitForm() {
   updateCounter(count);
 
   const subs = JSON.parse(localStorage.getItem('anuario_subs') || '[]');
-  subs.push({ papa, nino, tel, fotos, nota, ts: new Date().toISOString() });
+  subs.push({ papa, tel, colegio, grupo, vocal, ts: new Date().toISOString() });
   localStorage.setItem('anuario_subs', JSON.stringify(subs));
 
   document.getElementById('form-wrap').style.display = 'none';
   const sm = document.getElementById('success-msg');
   sm.style.display = 'block';
   sm.style.animation = 'fadeUp .5s ease both';
+  sm.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 /* ─── ENTER KEY FORM ─────────────────────────── */
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.activeElement.tagName !== 'TEXTAREA') submitForm();
+  if (e.key === 'Enter' && document.activeElement && document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'SELECT') {
+    const form = document.getElementById('form-wrap');
+    if (form && form.style.display !== 'none') submitForm();
+  }
 });
+
+/* ─── STUDIO PREMIUM (PhotoPreview) ──────────── */
+let studioApplied = false;
+
+async function applyStudioBg() {
+  const btn      = document.getElementById('btn-studio');
+  const btnText  = document.getElementById('btn-studio-text');
+  const helper   = document.getElementById('btn-studio-helper');
+  const frames   = [document.getElementById('studio-frame-1'), document.getElementById('studio-frame-2')];
+  const loaders  = [document.getElementById('studio-loader-1'), document.getElementById('studio-loader-2')];
+  const tags     = document.querySelectorAll('.studio-card-tag');
+
+  if (!btn) return;
+
+  // Toggle: si ya está aplicado, regresar al estado original
+  if (studioApplied) {
+    frames.forEach(f => f && f.classList.remove('applied'));
+    tags.forEach(t => { t.classList.remove('after'); t.classList.add('before'); t.textContent = 'Antes'; });
+    btn.classList.remove('active');
+    btnText.textContent = 'Aplicar Fondo Studio Premium';
+    helper.textContent = 'El motor analiza la foto, recorta al niño y aplica un fondo de estudio profesional. Resultado en segundos.';
+    studioApplied = false;
+    return;
+  }
+
+  btn.disabled = true;
+  btnText.textContent = 'Procesando con IA…';
+  loaders.forEach(l => l && l.classList.add('active'));
+
+  // Simular procesamiento con IA de Agentia (2 segundos)
+  await new Promise(res => setTimeout(res, 2000));
+
+  loaders.forEach(l => l && l.classList.remove('active'));
+  frames.forEach(f => f && f.classList.add('applied'));
+  tags.forEach(t => { t.classList.remove('before'); t.classList.add('after'); t.textContent = 'Después · Studio Premium'; });
+
+  btn.classList.add('active');
+  btn.disabled = false;
+  btnText.textContent = 'Volver a foto original';
+  helper.innerHTML = '<strong style="color:var(--navy)">¡Listo!</strong> Así se ve el resultado final con fondo de estudio profesional aplicado por la IA de Agentia.';
+  studioApplied = true;
+}
 </script>
 </body>
 </html>

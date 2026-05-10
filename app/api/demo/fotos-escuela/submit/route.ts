@@ -8,6 +8,12 @@ function cleanStr(v: unknown, max = 200): string {
   return v.trim().slice(0, max);
 }
 
+function cleanBool(v: unknown): boolean {
+  if (typeof v === 'boolean') return v;
+  if (typeof v === 'string') return v === 'true' || v === 'si' || v === 'sí';
+  return false;
+}
+
 function clientIP(req: NextRequest): string {
   return (
     req.headers.get('cf-connecting-ip') ??
@@ -25,18 +31,29 @@ export async function POST(req: NextRequest) {
     const tutorNombre = cleanStr(body.tutorNombre, 120);
     const tutorWhatsapp = cleanStr(body.tutorWhatsapp, 60);
     const alumnoNombre = cleanStr(body.alumnoNombre, 120);
+    const colegio = cleanStr(body.colegio, 160);
     const grupo = cleanStr(body.grupo, 60);
     const email = cleanStr(body.email, 160);
     const paquete = cleanStr(body.paquete, 60);
     const notas = cleanStr(body.notas, 800);
     const aportacion = cleanStr(body.aportacion, 800);
     const page = cleanStr(body.page, 200);
+    const esVocal = cleanBool(body.esVocal);
 
-    if (!tipo || !tutorNombre || !tutorWhatsapp || !alumnoNombre) {
-      return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
-    }
     if (tipo !== 'anuario' && tipo !== 'fiesta') {
       return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 });
+    }
+    if (!tutorNombre || !tutorWhatsapp) {
+      return NextResponse.json({ error: 'Faltan nombre y WhatsApp' }, { status: 400 });
+    }
+    if (tipo === 'anuario') {
+      // Flujo D2C: papá enlace + colegio + grupo
+      if (!colegio || !grupo) {
+        return NextResponse.json({ error: 'Faltan colegio y grupo' }, { status: 400 });
+      }
+    } else if (!alumnoNombre) {
+      // Flujo fiesta: requiere alumno
+      return NextResponse.json({ error: 'Falta nombre del alumno' }, { status: 400 });
     }
 
     const db = await getMongoDb();
@@ -44,8 +61,10 @@ export async function POST(req: NextRequest) {
       tipo,
       tutorNombre,
       tutorWhatsapp,
-      alumnoNombre,
+      alumnoNombre: alumnoNombre || null,
+      colegio: colegio || null,
       grupo: grupo || null,
+      esVocal: tipo === 'anuario' ? esVocal : null,
       email: email || null,
       paquete: paquete || null,
       notas: notas || null,
@@ -62,4 +81,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
-
