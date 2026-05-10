@@ -35,17 +35,20 @@ export default function CalendarDemo({
   lastAddedEventId,
   config: _config,
   onEventAdded: _onEventAdded,
+  light = false,
 }: {
   events: CalendarEvent[];
   paidIds: Set<string>;
   lastAddedEventId?: string | null;
   config?: DemoBusinessConfig;
   onEventAdded?: (c: CitaData) => void;
+  /** Aplica tema claro (para Nail Studio). */
+  light?: boolean;
 }) {
   void _config;
   void _onEventAdded;
   return (
-    <div className={styles.calendarWrap}>
+    <div className={`${styles.calendarWrap}${light ? ' ' + styles.light : ''}`}>
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="timeGridWeek"

@@ -6,8 +6,10 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell,
+  Boxes,
   CalendarDays,
   CreditCard,
+  DollarSign,
   LayoutDashboard,
   Menu,
   MessageCircle,
@@ -17,6 +19,7 @@ import {
   Sparkles,
   Sun,
   Users,
+  Wallet,
   X,
 } from 'lucide-react';
 import { BarberProvider, useBarber } from './barber-context';
@@ -26,13 +29,16 @@ import GiroSelector from './GiroSelector';
 type NavItem = { suffix: string; label: string; icon: typeof LayoutDashboard };
 
 const NAV_ITEMS: NavItem[] = [
-  { suffix: '',                label: 'Dashboard',           icon: LayoutDashboard },
-  { suffix: '/clientes',       label: 'Clientes',            icon: Users },
-  { suffix: '/servicios',      label: 'Servicios',           icon: Scissors },
-  { suffix: '/agenda',         label: 'Agenda',              icon: CalendarDays },
-  { suffix: '/recordatorios',  label: 'Recordatorios',       icon: Bell },
-  { suffix: '/chat',           label: 'Chat IA',             icon: MessageCircle },
-  { suffix: '/precios',        label: '💼 Planes y Precios', icon: CreditCard },
+  { suffix: '',                label: 'Dashboard',         icon: LayoutDashboard },
+  { suffix: '/clientes',       label: 'Clientes',          icon: Users },
+  { suffix: '/servicios',      label: 'Servicios',         icon: Scissors },
+  { suffix: '/agenda',         label: 'Agenda',            icon: CalendarDays },
+  { suffix: '/recordatorios',  label: 'Recordatorios',     icon: Bell },
+  { suffix: '/comisiones',     label: 'Comisiones',        icon: Wallet },
+  { suffix: '/inventario',     label: 'Inventario',        icon: Boxes },
+  { suffix: '/finanzas',       label: 'Ingresos vs Gastos',icon: DollarSign },
+  { suffix: '/chat',           label: 'Chat IA',           icon: MessageCircle },
+  { suffix: '/precios',        label: 'Planes y Precios',  icon: CreditCard },
 ];
 
 const TITLE_BY_SUFFIX: Record<string, string> = {
@@ -41,6 +47,9 @@ const TITLE_BY_SUFFIX: Record<string, string> = {
   '/servicios':     'Servicios',
   '/agenda':        'Agenda',
   '/recordatorios': 'Recordatorios',
+  '/comisiones':    'Comisiones',
+  '/inventario':    'Inventario',
+  '/finanzas':      'Ingresos vs Gastos',
   '/chat':          'Chat IA',
   '/precios':       'Planes y Precios',
 };
@@ -170,8 +179,8 @@ function ShellInner({ children }: { children: React.ReactNode }) {
             onClick={() => setOpen(false)}
             className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs transition-colors ${navInactive}`}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            {isNail ? 'Ver demo Barbería ✂️' : 'Ver demo Nail Studio 💅'}
+            {isNail ? <Scissors className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+            {isNail ? 'Ver demo Barbería' : 'Ver demo Nail Studio'}
           </Link>
         </div>
 

@@ -451,7 +451,7 @@
   font-weight: 600;
 }
 
-/* ========== FullCalendar tema oscuro ========== */
+/* ========== FullCalendar tema oscuro (default — barbería) ========== */
 .calendarWrap {
   height: 100%;
   --fc-page-bg-color: transparent;
@@ -473,15 +473,63 @@
 .calendarWrap :global(.fc-col-header-cell-cushion),
 .calendarWrap :global(.fc-timegrid-slot-label-cushion),
 .calendarWrap :global(.fc-scrollgrid-sync-inner) {
-  color: rgba(255, 255, 255, 0.7);
-}
-.calendarWrap :global(.fc-toolbar-title) {
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(255, 255, 255, 0.78);
   font-weight: 600;
 }
+.calendarWrap :global(.fc-toolbar-title) {
+  color: rgba(255, 255, 255, 0.98);
+  font-weight: 700;
+}
 .calendarWrap :global(.fc-button) {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.95);
   text-transform: capitalize;
+  font-weight: 600;
+}
+.calendarWrap :global(.fc-button-active) {
+  background: rgba(13, 148, 136, 0.6) !important;
+  border-color: rgba(13, 148, 136, 0.85) !important;
+}
+
+/* ========== FullCalendar tema claro (nail studio) — agregar clase light al wrapper ========== */
+.calendarWrap.light {
+  --fc-page-bg-color: #ffffff;
+  --fc-border-color: rgba(236, 72, 153, 0.18);
+  --fc-button-bg-color: #fdf2f8;
+  --fc-button-border-color: rgba(236, 72, 153, 0.35);
+  --fc-button-hover-bg-color: #fbcfe8;
+  --fc-today-bg-color: rgba(236, 72, 153, 0.08);
+  --fc-neutral-bg-color: #fdf2f8;
+  --fc-list-event-hover-bg-color: rgba(236, 72, 153, 0.08);
+}
+.calendarWrap.light :global(.fc-theme-standard td),
+.calendarWrap.light :global(.fc-theme-standard th) {
+  border-color: rgba(236, 72, 153, 0.18);
+}
+.calendarWrap.light :global(.fc-col-header-cell-cushion),
+.calendarWrap.light :global(.fc-timegrid-slot-label-cushion),
+.calendarWrap.light :global(.fc-scrollgrid-sync-inner) {
+  color: #4c0519;
+  font-weight: 600;
+}
+.calendarWrap.light :global(.fc-toolbar-title) {
+  color: #831843;
+  font-weight: 700;
+}
+.calendarWrap.light :global(.fc-button) {
+  color: #831843;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+.calendarWrap.light :global(.fc-button-active) {
+  background: #ec4899 !important;
+  border-color: #db2777 !important;
+  color: #fff !important;
+}
+.calendarWrap.light :global(.fc-daygrid-day-number),
+.calendarWrap.light :global(.fc-list-day-text),
+.calendarWrap.light :global(.fc-list-day-side-text) {
+  color: #831843;
+  font-weight: 600;
 }
 .calendarWrap :global(.fc-timegrid-now-indicator-line) {
   border-color: #ef4444;
