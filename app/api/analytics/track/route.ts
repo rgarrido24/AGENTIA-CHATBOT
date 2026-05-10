@@ -1,74 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
+import { bestIp, lookupGeo, isAdminRequest } from '@/lib/analytics-helpers';
 
-function bestIp(req: NextRequest): string {
-  const candidates = [
-    req.headers.get('cf-connecting-ip'),
-    req.headers.get('x-real-ip'),
-    req.headers.get('x-vercel-forwarded-for'),
-    req.headers.get('x-forwarded-for'),
-  ]
-    .filter(Boolean)
-    .flatMap((v) => String(v).split(','))
-    .map((s) => s.trim())
-    .filter(Boolean);
+export const dynamic = 'force-dynamic';
 
-  return candidates[0] ?? 'unknown';
-}
-
-function headerGeo(req: NextRequest): { pais?: string; ciudad?: string } {
-  const country =
-    req.headers.get('x-vercel-ip-country') ||
-    req.headers.get('cf-ipcountry') ||
-    undefined;
-  const city = req.headers.get('x-vercel-ip-city') || undefined;
-  const pais = country && country !== 'XX' ? country : undefined;
-  return { pais, ciudad: city };
-}
-
-async function geoLookup(ip: string, fallback: { pais?: string; ciudad?: string }): Promise<{ pais: string; ciudad: string }> {
-  if (fallback.pais || fallback.ciudad) {
-    return {
-      pais: fallback.pais ?? 'Desconocido',
-      ciudad: fallback.ciudad ?? 'Desconocida',
-    };
-  }
-
-  const skip = !ip || ip === 'unknown' || ip.startsWith('127.') || ip.startsWith('::');
-  if (skip) return { pais: 'Local', ciudad: 'Local' };
-  try {
-    const res = await fetch(`https://ipapi.co/${ip}/json/`, {
-      signal: AbortSignal.timeout(2500),
-    });
-    const d = await res.json() as { country_name?: string; city?: string };
-    return { pais: d.country_name ?? 'Desconocido', ciudad: d.city ?? 'Desconocida' };
-  } catch {
-    return { pais: 'Desconocido', ciudad: 'Desconocida' };
-  }
+function safeStr(v: unknown, max = 200): string | null {
+  if (typeof v !== 'string') return null;
+  const t = v.trim();
+  if (!t) return null;
+  return t.slice(0, max);
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    // ── Skip tracking for admin (logged in via cookies) ─────────────────────
+    if (isAdminRequest(req)) {
+      return NextResponse.json({ ok: true, skipped: true, isAdmin: true });
+    }
+
+    const body = await req.json().catch(() => ({}));
     const ip = bestIp(req);
-    const { pais, ciudad } = await geoLookup(ip, headerGeo(req));
+    const geo = await lookupGeo(req, ip);
 
     const db = await getMongoDb();
     await db.collection('analytics_events').insertOne({
-      page:       body.page       ?? '/',
-      demo:       body.demo       ?? null,
-      event:      body.event      ?? 'pageview',
-      seconds:    body.seconds    ?? null,
-      referrer:   body.referrer   ?? null,
-      ref:        body.ref        ?? null,
+      page:        body.page       ?? '/',
+      demo:        body.demo       ?? null,
+      event:       body.event      ?? 'pageview',
+      seconds:     body.seconds    ?? null,
+      referrer:    body.referrer   ?? null,
+      ref:         body.ref        ?? null,
       ip,
-      pais,
-      ciudad,
+      pais:        geo.pais,
+      ciudad:      geo.ciudad,
+      region:      geo.region ?? null,
+      timezone:    safeStr(body.timezone, 50) ?? geo.timezone ?? null,
+      isp:         geo.isp ?? null,
+      idioma:      safeStr(body.idioma, 20),
       dispositivo: body.dispositivo ?? 'desktop',
       navegador:   body.navegador   ?? 'Desconocido',
       sessionId:   body.sessionId   ?? 'unknown',
       visitorId:   body.visitorId   ?? null,
       userAgent:   body.userAgent   ?? null,
+      screenW:     typeof body.screenW === 'number' ? body.screenW : null,
+      screenH:     typeof body.screenH === 'number' ? body.screenH : null,
+      pixelRatio:  typeof body.pixelRatio === 'number' ? body.pixelRatio : null,
       createdAt:   new Date(),
     });
     return NextResponse.json({ ok: true });

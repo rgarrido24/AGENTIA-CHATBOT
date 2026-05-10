@@ -127,17 +127,53 @@ function getBrowser(): string {
   return 'Otro';
 }
 
+function getTimezone(): string | null {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  } catch {
+    return null;
+  }
+}
+
+function getLanguage(): string | null {
+  if (typeof navigator === 'undefined') return null;
+  return navigator.language || (navigator.languages?.[0] ?? null);
+}
+
+function getScreen(): { screenW: number | null; screenH: number | null; pixelRatio: number | null } {
+  if (typeof window === 'undefined' || !window.screen) {
+    return { screenW: null, screenH: null, pixelRatio: null };
+  }
+  return {
+    screenW: window.screen.width || null,
+    screenH: window.screen.height || null,
+    pixelRatio: typeof window.devicePixelRatio === 'number' ? window.devicePixelRatio : null,
+  };
+}
+
+function buildClientMeta() {
+  const { screenW, screenH, pixelRatio } = getScreen();
+  return {
+    dispositivo: getDevice(),
+    navegador: getBrowser(),
+    userAgent: navigator.userAgent,
+    idioma: getLanguage(),
+    timezone: getTimezone(),
+    screenW,
+    screenH,
+    pixelRatio,
+  };
+}
+
 function track(event: string, demo: string | undefined, extra: Record<string, unknown> = {}) {
   const payload = {
     page: window.location.pathname,
     demo: demo ?? null,
     event,
     referrer: document.referrer || null,
-    dispositivo: getDevice(),
-    navegador: getBrowser(),
     sessionId: getSessionId(),
     visitorId: getOrCreateVisitorId(),
-    userAgent: navigator.userAgent,
+    ...buildClientMeta(),
     ...extra,
   };
   fetch('/api/analytics/track', {
@@ -178,9 +214,7 @@ export function useVisitorStatus(): { status: VisitorStatus | null; admin: boole
       ref: ref || null,
       visitorId: getOrCreateVisitorId(),
       sessionId: getSessionId(),
-      dispositivo: getDevice(),
-      navegador: getBrowser(),
-      userAgent: navigator.userAgent,
+      ...buildClientMeta(),
     };
 
     fetch('/api/analytics/visit', {
@@ -225,12 +259,10 @@ export function useAnalytics(demo?: string) {
         event: 'time_spent',
         seconds,
         referrer: document.referrer || null,
-        dispositivo: getDevice(),
-        navegador: getBrowser(),
         sessionId: getSessionId(),
         visitorId: getOrCreateVisitorId(),
         ref: sp.get('ref') || null,
-        userAgent: navigator.userAgent,
+        ...buildClientMeta(),
       });
       if (navigator.sendBeacon) {
         navigator.sendBeacon('/api/analytics/track', new Blob([payload], { type: 'application/json' }));

@@ -1,61 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
+import { bestIp, lookupGeo, isAdminRequest } from '@/lib/analytics-helpers';
 
 export const dynamic = 'force-dynamic';
-
-function bestIp(req: NextRequest): string {
-  const candidates = [
-    req.headers.get('cf-connecting-ip'),
-    req.headers.get('x-real-ip'),
-    req.headers.get('x-vercel-forwarded-for'),
-    req.headers.get('x-forwarded-for'),
-  ]
-    .filter(Boolean)
-    .flatMap((v) => String(v).split(','))
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  return candidates[0] ?? 'unknown';
-}
-
-function headerGeo(req: NextRequest): { pais?: string; ciudad?: string } {
-  const country =
-    req.headers.get('x-vercel-ip-country') ||
-    req.headers.get('cf-ipcountry') ||
-    undefined;
-  const city = req.headers.get('x-vercel-ip-city') || undefined;
-  const pais = country && country !== 'XX' ? country : undefined;
-  return { pais, ciudad: city };
-}
-
-async function geoLookup(ip: string, fallback: { pais?: string; ciudad?: string }): Promise<{ pais: string; ciudad: string }> {
-  if (fallback.pais || fallback.ciudad) {
-    return {
-      pais: fallback.pais ?? 'Desconocido',
-      ciudad: fallback.ciudad ?? 'Desconocida',
-    };
-  }
-
-  const skip = !ip || ip === 'unknown' || ip.startsWith('127.') || ip.startsWith('::');
-  if (skip) return { pais: 'Local', ciudad: 'Local' };
-
-  try {
-    const res = await fetch(`https://ipapi.co/${ip}/json/`, {
-      signal: AbortSignal.timeout(2500),
-    });
-    const d = (await res.json()) as { country_name?: string; city?: string };
-    return { pais: d.country_name ?? 'Desconocido', ciudad: d.city ?? 'Desconocida' };
-  } catch {
-    return { pais: 'Desconocido', ciudad: 'Desconocida' };
-  }
-}
 
 function isUuidLike(v: unknown): v is string {
   return typeof v === 'string' && v.length >= 16 && v.length <= 64;
 }
 
+function safeStr(v: unknown, max = 200): string | null {
+  if (typeof v !== 'string') return null;
+  const t = v.trim();
+  if (!t) return null;
+  return t.slice(0, max);
+}
+
 export async function POST(req: NextRequest) {
   try {
+    // ── Skip tracking for admin (logged in via cookies) ─────────────────────
+    if (isAdminRequest(req)) {
+      return NextResponse.json({ skipped: true, isAdmin: true });
+    }
+
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     const visitorId = isUuidLike(body.visitorId) ? String(body.visitorId) : '';
     if (!visitorId) {
@@ -63,14 +29,19 @@ export async function POST(req: NextRequest) {
     }
 
     const page = typeof body.page === 'string' ? body.page : '/';
-    const ref = typeof body.ref === 'string' && body.ref.trim() ? body.ref.trim() : null;
+    const ref = safeStr(body.ref, 120);
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId : 'unknown';
     const dispositivo = typeof body.dispositivo === 'string' ? body.dispositivo : 'desktop';
     const navegador = typeof body.navegador === 'string' ? body.navegador : 'Desconocido';
-    const userAgent = typeof body.userAgent === 'string' ? body.userAgent : null;
+    const userAgent = safeStr(body.userAgent, 500);
+    const idioma = safeStr(body.idioma, 20);
+    const tzCliente = safeStr(body.timezone, 50);
+    const screenW = typeof body.screenW === 'number' ? body.screenW : null;
+    const screenH = typeof body.screenH === 'number' ? body.screenH : null;
+    const pixelRatio = typeof body.pixelRatio === 'number' ? body.pixelRatio : null;
 
     const ip = bestIp(req);
-    const { pais, ciudad } = await geoLookup(ip, headerGeo(req));
+    const geo = await lookupGeo(req, ip);
 
     const db = await getMongoDb();
     const col = db.collection('analytics_visitors');
@@ -91,11 +62,18 @@ export async function POST(req: NextRequest) {
         lastPage: page,
         lastSessionId: sessionId,
         lastIp: ip,
-        lastPais: pais,
-        lastCiudad: ciudad,
+        lastPais: geo.pais,
+        lastCiudad: geo.ciudad,
+        lastRegion: geo.region ?? null,
+        lastTimezone: tzCliente ?? geo.timezone ?? null,
+        lastIsp: geo.isp ?? null,
+        lastIdioma: idioma,
         lastDispositivo: dispositivo,
         lastNavegador: navegador,
         lastUserAgent: userAgent,
+        lastScreenW: screenW,
+        lastScreenH: screenH,
+        lastPixelRatio: pixelRatio,
         ...(ref ? { lastRef: ref } : {}),
       },
       $setOnInsert: {
@@ -104,11 +82,18 @@ export async function POST(req: NextRequest) {
         firstPage: page,
         firstSessionId: sessionId,
         firstIp: ip,
-        firstPais: pais,
-        firstCiudad: ciudad,
+        firstPais: geo.pais,
+        firstCiudad: geo.ciudad,
+        firstRegion: geo.region ?? null,
+        firstTimezone: tzCliente ?? geo.timezone ?? null,
+        firstIsp: geo.isp ?? null,
+        firstIdioma: idioma,
         firstDispositivo: dispositivo,
         firstNavegador: navegador,
         firstUserAgent: userAgent,
+        firstScreenW: screenW,
+        firstScreenH: screenH,
+        firstPixelRatio: pixelRatio,
         ...(ref ? { firstRef: ref } : {}),
         visits: 0,
       },
@@ -131,12 +116,11 @@ export async function POST(req: NextRequest) {
       isNew: !existing,
       visits,
       ref,
-      pais,
-      ciudad,
+      pais: geo.pais,
+      ciudad: geo.ciudad,
     });
   } catch (err) {
     console.error('[analytics/visit]', err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
-
