@@ -97,7 +97,7 @@ export default function RestauranteDashboardPage() {
             accentColor="#ef4444"
             apiRoute="/api/demo/restaurante/chat"
             initialMessage="¡Hola! 🍔 Bienvenido a La Séptima. ¿Quieres ver el menú, hacer un pedido o conocer nuestras promos del día?"
-            suggestedChips={['⭐ Mis puntos de lealtad', '🍔 Ver menú', '🛵 Pedir a domicilio', '🍹 Promos del día']}
+            suggestedChips={['Mis puntos de lealtad', 'Ver menú', 'Pedir a domicilio', 'Promos del día']}
             loyaltyCardData={DEMO_LOYALTY_REST}
           />
         </div>

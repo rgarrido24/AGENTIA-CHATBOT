@@ -34,7 +34,7 @@ const NAV = [
   { href: '/demo/dentista/pagos', label: 'Pagos', icon: CreditCard },
   { href: '/demo/dentista/chat', label: 'Asistente IA', icon: MessageCircle },
   { href: '/demo/dentista/configuracion', label: 'Configuración', icon: Settings },
-  { href: '/demo/dentista/precios', label: '💼 Planes y Precios', icon: Tag },
+  { href: '/demo/dentista/precios', label: 'Planes y Precios', icon: Tag },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {

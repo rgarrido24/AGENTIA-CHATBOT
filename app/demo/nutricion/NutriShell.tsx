@@ -47,7 +47,7 @@ const NAV = [
   { href: '/demo/nutricion/cardiovascular', label: 'Riesgo Cardiovascular',  icon: Heart          },
   { href: '/demo/nutricion/expediente',     label: 'Expediente',             icon: ClipboardList  },
   { href: '/demo/nutricion/finanzas',       label: 'Finanzas',               icon: Wallet         },
-  { href: '/demo/nutricion/precios',        label: '💼 Planes y Precios',    icon: CreditCard     },
+  { href: '/demo/nutricion/precios',        label: 'Planes y Precios',       icon: CreditCard     },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {

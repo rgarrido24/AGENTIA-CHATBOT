@@ -32,7 +32,7 @@ const NAV = [
   { href: '/demo/restaurante/inventario', label: 'Inventario', icon: Package },
   { href: '/demo/restaurante/caja', label: 'Caja', icon: DollarSign },
   { href: '/demo/restaurante/chat', label: 'Chat IA', icon: MessageCircle },
-  { href: '/demo/restaurante/precios', label: '💼 Planes y Precios', icon: CreditCard },
+  { href: '/demo/restaurante/precios', label: 'Planes y Precios', icon: CreditCard },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {

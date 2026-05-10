@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 import BarberPhoneMockup from '@/components/BarberPhoneMockup';
 import { getStoredConfig, getDefaultConfig, getDuracionMinutos } from '@/src/lib/demo-config';
 import type { DemoBusinessConfig } from '@/src/lib/demo-config';
@@ -406,7 +407,7 @@ export default function DemoBarberPage() {
               'Confirmación automática por WhatsApp',
             ].map((item) => (
               <li key={item} className={`flex items-center gap-3 ${isNail ? 'text-zinc-700' : 'text-slate-300'}`}>
-                <span className="text-green-400 font-bold">✓</span>
+                <Check className="w-4 h-4 text-green-400 shrink-0" strokeWidth={3} />
                 {item}
               </li>
             ))}
@@ -438,7 +439,7 @@ export default function DemoBarberPage() {
             suggestedChips={
               giroCfg
                 ? [
-                    `🔄 Repetir ${giroCfg.clienteRegreso.ultimoServicio}`,
+                    `Repetir ${giroCfg.clienteRegreso.ultimoServicio}`,
                     ...giroCfg.chipsCliente.slice(0, 4),
                   ]
                 : ['Quiero cita mañana', '¿Qué horarios tienen?', '¿Cuánto cuesta?']

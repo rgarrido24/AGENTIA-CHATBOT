@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { MessageCircle, MapPin, Clock, CheckCircle } from 'lucide-react';
+import { MessageCircle, MapPin, Clock, CheckCircle, Check } from 'lucide-react';
 
 // ─── Brand ────────────────────────────────────────────────────────────────────
 
@@ -432,8 +432,9 @@ export default function TortasBarraPage() {
           </div>
 
           <div className="relative">
-            <p className="text-sm font-semibold tracking-widest uppercase mb-3" style={{ color: RED }}>
-              🌮 Los Mochis, Sinaloa
+            <p className="text-sm font-semibold tracking-widest uppercase mb-3 inline-flex items-center gap-1.5" style={{ color: RED }}>
+              <MapPin className="w-3.5 h-3.5" />
+              Los Mochis, Sinaloa
             </p>
             <h2 className="text-4xl font-extrabold leading-tight mb-2" style={{ color: GOLD }}>
               Las Tortas de la Barra
@@ -467,8 +468,8 @@ export default function TortasBarraPage() {
 
               {/* Section divider helper */}
               {[
-                { label: '🔥 COMBOS', subtitle: 'Torta + Papas fritas + Agua de Jamaica', items: combos },
-                { label: '🌮 TORTAS INDIVIDUALES', subtitle: 'Preparadas al momento con ingredientes frescos', items: tortas },
+                { label: 'COMBOS', subtitle: 'Torta + Papas fritas + Agua de Jamaica', items: combos },
+                { label: 'TORTAS INDIVIDUALES', subtitle: 'Preparadas al momento con ingredientes frescos', items: tortas },
               ].map(({ label, subtitle, items }) => (
                 <section key={label} className="fade-up">
                   <div className="flex items-center gap-3 mb-5">
@@ -524,8 +525,10 @@ export default function TortasBarraPage() {
                   'Confirma con total y tiempo de espera',
                 ].map((f) => (
                   <div key={f} className="flex items-center gap-2.5 text-sm">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-xs font-bold"
-                      style={{ background: `${GOLD}22`, color: GOLD }}>✓</span>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: `${GOLD}22`, color: GOLD }}>
+                      <Check className="w-3 h-3" strokeWidth={3} />
+                    </span>
                     <span style={{ color: '#ccc' }}>{f}</span>
                   </div>
                 ))}

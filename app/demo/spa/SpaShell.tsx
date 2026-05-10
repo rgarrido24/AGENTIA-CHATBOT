@@ -29,7 +29,7 @@ const NAV = [
   { href: '/demo/spa/servicios', label: 'Servicios', icon: Sparkles },
   { href: '/demo/spa/recordatorios', label: 'Recordatorios', icon: Bell },
   { href: '/demo/spa/chat', label: 'Chat IA', icon: MessageCircle },
-  { href: '/demo/spa/precios', label: '💼 Planes y Precios', icon: CreditCard },
+  { href: '/demo/spa/precios', label: 'Planes y Precios', icon: CreditCard },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {

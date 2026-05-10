@@ -1,6 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
+import { Truck, Store } from 'lucide-react';
 import PhoneMockup from '@/components/PhoneMockup';
 import {
   Bar,
@@ -98,7 +100,7 @@ export default function GroomingDashboardPage() {
             accentColor="#f97316"
             apiRoute="/api/demo/grooming/chat"
             initialMessage="¡Hola! 🐾 Soy el asistente de K9 Elite Grooming. ¿Quieres agendar una cita o conocer nuestros servicios?"
-            suggestedChips={['📅 Agendar cita', '🐕 Servicios y precios', '🚗 Servicio a domicilio', '📍 Ubicación']}
+            suggestedChips={['Agendar cita', 'Servicios y precios', 'Servicio a domicilio', 'Ubicación']}
           />
         </div>
       </section>
@@ -154,7 +156,10 @@ export default function GroomingDashboardPage() {
                 <span className="text-slate-300">{srv?.nombre}</span>
                 <span className="text-slate-500">—</span>
                 <span className="text-slate-400">{mas?.nombre}</span>
-                <span className="text-[10px] text-slate-500 ml-auto">{c.modalidad === 'domicilio' ? '🚐 Dom' : '🏪 Suc'}</span>
+                <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 ml-auto font-semibold">
+                  {c.modalidad === 'domicilio' ? <Truck className="w-3 h-3" /> : <Store className="w-3 h-3" />}
+                  {c.modalidad === 'domicilio' ? 'Domicilio' : 'Sucursal'}
+                </span>
                 {statusBadge(c.status)}
               </div>
             );
@@ -171,7 +176,9 @@ export default function GroomingDashboardPage() {
               key={g.id}
               className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center"
             >
-              <div className="text-4xl mb-2">{g.foto}</div>
+              <div className="relative w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden border-2 border-orange-500/40">
+                <Image src={g.foto} alt={g.nombre} fill sizes="64px" className="object-cover" unoptimized />
+              </div>
               <p className="font-medium">{g.nombre}</p>
               <p className={`text-xs mt-1 ${g.disponibleAhora ? 'text-emerald-400' : 'text-slate-500'}`}>
                 {g.disponibleAhora ? '● Disponible' : '● Ocupada'}

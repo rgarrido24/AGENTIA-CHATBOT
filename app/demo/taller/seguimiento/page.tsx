@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Wrench, Check, X, MessageCircle, PartyPopper, Calendar } from 'lucide-react';
 import {
   getCliente,
   getVehiculo,
@@ -14,7 +15,7 @@ const STATUS_STEPS: { status: StatusOrden; label: string }[] = [
   { status: 'recibido',     label: 'Recibido' },
   { status: 'diagnostico',  label: 'Diagnóstico' },
   { status: 'en_reparacion',label: 'Reparación' },
-  { status: 'listo',        label: 'Listo ✓' },
+  { status: 'listo',        label: 'Listo' },
   { status: 'entregado',    label: 'Entregado' },
 ];
 
@@ -27,9 +28,9 @@ const STATUS_IDX: Record<StatusOrden, number> = {
 };
 
 const TIPO_FOTO_LABEL: Record<FotoOrden['tipo'], string> = {
-  recepcion: '📸 Recepción',
-  avance: '🔧 Avance',
-  entrega: '✅ Entrega',
+  recepcion: 'Recepción',
+  avance: 'Avance',
+  entrega: 'Entrega',
 };
 
 const WA_TALLER = 'https://wa.me/529998080265?text=' + encodeURIComponent('Hola, quiero saber el estado de mi vehículo.');
@@ -61,10 +62,10 @@ export default function SeguimientoPage() {
       {/* Header */}
       <div className="bg-[#0f172a] border-b border-white/10 px-4 py-5 text-center">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-700 mb-3">
-          <span className="text-2xl">🔧</span>
+          <Wrench className="w-6 h-6 text-amber-300" />
         </div>
         <h1 className="text-lg font-bold">AutoPro Taller Mecánico</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Tu vehículo está en buenas manos 🔧</p>
+        <p className="text-sm text-slate-400 mt-0.5">Tu vehículo está en buenas manos</p>
         <span className="inline-block mt-2 text-[11px] font-bold px-3 py-1 rounded-full bg-amber-600/30 text-amber-300 border border-amber-700">
           VISTA DEL CLIENTE — DEMO
         </span>
@@ -134,7 +135,7 @@ export default function SeguimientoPage() {
                           : 'border-white/20 bg-white/5 text-slate-600'
                       }`}
                     >
-                      {done ? '✓' : i + 1}
+                      {done ? <Check className="w-3 h-3" strokeWidth={3} /> : i + 1}
                     </div>
                     <p
                       className={`text-[10px] text-center leading-tight w-14 ${
@@ -162,14 +163,19 @@ export default function SeguimientoPage() {
           }`}
         >
           {orden.status === 'listo' ? (
-            <p className="text-emerald-300 font-semibold text-sm">
-              🎉 ¡Tu vehículo está listo! Puedes pasar a recogerlo hoy antes de las 6pm.
+            <p className="text-emerald-300 font-semibold text-sm flex items-center gap-2">
+              <PartyPopper className="w-4 h-4" />
+              ¡Tu vehículo está listo! Puedes pasar a recogerlo hoy antes de las 6pm.
             </p>
           ) : orden.status === 'entregado' ? (
-            <p className="text-slate-300 text-sm">✅ Tu vehículo fue entregado. ¡Gracias por confiar en AutoPro!</p>
+            <p className="text-slate-300 text-sm flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-400" strokeWidth={3} />
+              Tu vehículo fue entregado. ¡Gracias por confiar en AutoPro!
+            </p>
           ) : (
-            <p className="text-slate-300 text-sm">
-              📅 Entrega estimada:{' '}
+            <p className="text-slate-300 text-sm flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-amber-300" />
+              Entrega estimada:{' '}
               <span className="font-semibold text-white">
                 {new Date(orden.fechaEstimadaEntrega + 'T12:00:00').toLocaleDateString('es-MX', {
                   weekday: 'long', day: 'numeric', month: 'long',
@@ -215,8 +221,9 @@ export default function SeguimientoPage() {
             className="rounded-2xl border border-amber-700/40 bg-amber-950/20 p-4 space-y-3"
           >
             <p className="text-xs font-semibold text-amber-300 uppercase">Mensaje del taller</p>
-            <p className="text-sm text-slate-200 leading-relaxed">
-              💬 El técnico dice: <span className="text-white">{orden.observaciones}</span>
+            <p className="text-sm text-slate-200 leading-relaxed flex items-start gap-2">
+              <MessageCircle className="w-4 h-4 text-amber-300 mt-0.5 flex-shrink-0" />
+              <span>El técnico dice: <span className="text-white">{orden.observaciones}</span></span>
             </p>
             <AnimatePresence mode="wait">
               {autorizado === null ? (
@@ -229,17 +236,19 @@ export default function SeguimientoPage() {
                 >
                   <button
                     type="button"
-                    onClick={() => { setAutorizado(true); showToast('✓ Autorización enviada al taller'); }}
-                    className="flex-1 py-2 rounded-xl font-semibold text-white bg-emerald-700 hover:bg-emerald-600 text-sm transition-colors"
+                    onClick={() => { setAutorizado(true); showToast('Autorización enviada al taller'); }}
+                    className="flex-1 py-2 rounded-xl font-semibold text-white bg-emerald-700 hover:bg-emerald-600 text-sm transition-colors inline-flex items-center justify-center gap-1.5"
                   >
-                    ✓ Autorizo
+                    <Check className="w-4 h-4" strokeWidth={3} />
+                    Autorizo
                   </button>
                   <button
                     type="button"
                     onClick={() => { setAutorizado(false); showToast('Respuesta enviada al taller'); }}
-                    className="flex-1 py-2 rounded-xl font-semibold text-slate-300 bg-slate-700 hover:bg-slate-600 text-sm transition-colors"
+                    className="flex-1 py-2 rounded-xl font-semibold text-slate-300 bg-slate-700 hover:bg-slate-600 text-sm transition-colors inline-flex items-center justify-center gap-1.5"
                   >
-                    ✗ No por ahora
+                    <X className="w-4 h-4" />
+                    No por ahora
                   </button>
                 </motion.div>
               ) : (
@@ -247,9 +256,13 @@ export default function SeguimientoPage() {
                   key="confirmed"
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`text-sm font-semibold ${autorizado ? 'text-emerald-300' : 'text-slate-400'}`}
+                  className={`text-sm font-semibold flex items-center gap-1.5 ${autorizado ? 'text-emerald-300' : 'text-slate-400'}`}
                 >
-                  {autorizado ? '✓ Autorizaste el trabajo adicional' : '✗ Respondiste que no por ahora'}
+                  {autorizado ? (
+                    <><Check className="w-4 h-4" strokeWidth={3} />Autorizaste el trabajo adicional</>
+                  ) : (
+                    <><X className="w-4 h-4" />Respondiste que no por ahora</>
+                  )}
                 </motion.p>
               )}
             </AnimatePresence>
@@ -266,7 +279,8 @@ export default function SeguimientoPage() {
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-semibold text-white bg-emerald-700 hover:bg-emerald-600 transition-colors text-sm"
         >
-          💬 Escribir al taller por WhatsApp
+          <MessageCircle className="w-4 h-4" />
+          Escribir al taller por WhatsApp
         </motion.a>
 
         <p className="text-center text-xs text-slate-600 pb-4">

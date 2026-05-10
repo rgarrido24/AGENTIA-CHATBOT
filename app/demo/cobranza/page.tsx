@@ -71,7 +71,7 @@ export default function CobranzaDashboardPage() {
             accentColor="#3b82f6"
             apiRoute="/api/demo/cobranza/chat"
             initialMessage="¡Hola! 🎓 Soy el asistente del Instituto Meridian. ¿Tienes dudas sobre tu colegiatura, becas o planes de pago?"
-            suggestedChips={['💳 Mi saldo', '📅 Plan de pagos', '🎓 Becas disponibles', '📞 Hablar con asesor']}
+            suggestedChips={['Mi saldo', 'Plan de pagos', 'Becas disponibles', 'Hablar con asesor']}
           />
         </div>
       </section>

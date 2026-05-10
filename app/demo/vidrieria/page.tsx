@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { BellRing, FileText } from 'lucide-react';
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
@@ -709,17 +710,20 @@ export default function DecoHouseDemoPage() {
               <p className="text-sm font-bold text-white mb-4">Catálogo de productos</p>
               <div className="grid grid-cols-2 gap-2 text-xs" style={{ color: C.silver }}>
                 {[
-                  ['🪟', 'Mamparas aluminio', 'Blanco, Negro, Gris titanio, Roble dorado'],
-                  ['🚿', 'Shower Door', 'Herrajes inoxidable'],
-                  ['🪞', 'Espejos', 'Laminados, biselados'],
-                  ['🏢', 'Puertas Protex', 'Cristal 1 y 2 hojas'],
-                  ['🔶', 'Vidrios especiales', 'Solar Cool, Bronce'],
-                  ['🧱', 'PVC', 'Blanco, Negro, Antracita, Roble dorado, Nogal'],
-                ].map(([icon, name, sub]) => (
-                  <div key={name} className="rounded-xl p-2.5" style={{ background: C.card2, border: `1px solid ${C.border}` }}>
-                    <span className="text-lg">{icon}</span>
-                    <p className="font-semibold mt-1 text-white" style={{ fontSize: 11 }}>{name}</p>
-                    <p style={{ fontSize: 10, color: C.dim }}>{sub}</p>
+                  { img: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=200&q=80', name: 'Mamparas aluminio', sub: 'Blanco, Negro, Gris titanio, Roble dorado' },
+                  { img: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=200&q=80', name: 'Shower Door',       sub: 'Herrajes inoxidable' },
+                  { img: 'https://images.unsplash.com/photo-1558997519-83ea9252edf8?w=200&q=80', name: 'Espejos',           sub: 'Laminados, biselados' },
+                  { img: 'https://images.unsplash.com/photo-1593696140826-c58b021acf8b?w=200&q=80', name: 'Puertas Protex',    sub: 'Cristal 1 y 2 hojas' },
+                  { img: 'https://images.unsplash.com/photo-1503594384566-461fe158e797?w=200&q=80', name: 'Vidrios especiales', sub: 'Solar Cool, Bronce' },
+                  { img: 'https://images.unsplash.com/photo-1565182999561-18d7dc61c393?w=200&q=80', name: 'PVC',                sub: 'Blanco, Negro, Antracita, Roble dorado, Nogal' },
+                ].map(({ img, name, sub }) => (
+                  <div key={name} className="rounded-xl overflow-hidden" style={{ background: C.card2, border: `1px solid ${C.border}` }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img} alt={name} className="w-full h-16 object-cover" loading="lazy" />
+                    <div className="p-2.5">
+                      <p className="font-semibold text-white" style={{ fontSize: 11 }}>{name}</p>
+                      <p style={{ fontSize: 10, color: C.dim }}>{sub}</p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -785,7 +789,9 @@ export default function DecoHouseDemoPage() {
             {/* Placeholder when not done */}
             {!done && (
               <div className="rounded-2xl p-5 text-center" style={{ background: C.card, border: `1px dashed ${C.border}` }}>
-                <p className="text-2xl mb-2">📲</p>
+                <div className="w-10 h-10 mx-auto mb-2 rounded-full flex items-center justify-center" style={{ background: 'rgba(37,211,102,0.12)' }}>
+                  <BellRing className="w-5 h-5" style={{ color: C.green }} />
+                </div>
                 <p className="text-sm font-semibold text-white mb-1">Alerta al dueño</p>
                 <p className="text-xs" style={{ color: C.dim }}>
                   Cuando el cliente complete el flujo, Jorfran recibe el resumen completo en WhatsApp automáticamente.
@@ -893,7 +899,11 @@ export default function DecoHouseDemoPage() {
                 className="w-full py-3.5 rounded-xl font-bold text-sm transition-all active:scale-[0.99] disabled:opacity-60"
                 style={{ background: C.accent, color: C.bg }}
               >
-                {generating ? 'Generando PDF...' : '📄 Generar cotización PDF'}
+                {generating ? (
+                  'Generando PDF...'
+                ) : (
+                  <span className="inline-flex items-center justify-center gap-2"><FileText className="w-4 h-4" /> Generar cotización PDF</span>
+                )}
               </button>
               <p className="text-center mt-2 text-xs" style={{ color: C.dim }}>
                 El PDF incluye logo, desglose de precios con IVA, validez 15 días y datos de contacto.

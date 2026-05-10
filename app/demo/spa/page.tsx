@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import PhoneMockup from '@/components/PhoneMockup';
 import {
   Bar,
@@ -105,7 +106,7 @@ export default function SpaDashboardPage() {
             accentColor="#9333ea"
             apiRoute="/api/demo/spa/chat"
             initialMessage="¡Hola! 💜 Soy la asistente de Lumina Spa. ¿Te gustaría conocer nuestros servicios o agendar una cita?"
-            suggestedChips={['⭐ Mis puntos de lealtad', '💆 Ver servicios', '📅 Agendar cita', '💰 Ver precios']}
+            suggestedChips={['Mis puntos de lealtad', 'Ver servicios', 'Agendar cita', 'Ver precios']}
             loyaltyCardData={DEMO_LOYALTY_SPA}
           />
         </div>
@@ -179,7 +180,9 @@ export default function SpaDashboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {MOCK_ESPECIALISTAS.map((e) => (
               <div key={e.id} className="rounded-xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-white/[0.03] p-4 text-center shadow-sm dark:shadow-none">
-                <div className="text-4xl mb-2">{e.foto}</div>
+                <div className="relative w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden border-2 border-purple-200 dark:border-purple-500/40">
+                  <Image src={e.foto} alt={e.nombre} fill sizes="64px" className="object-cover" unoptimized />
+                </div>
                 <p className="font-semibold text-zinc-900 dark:text-white text-sm">{e.nombre}</p>
                 <p className="text-[11px] mt-1">
                   <span className={e.disponibleAhora ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>

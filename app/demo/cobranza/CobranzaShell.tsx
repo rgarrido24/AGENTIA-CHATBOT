@@ -28,7 +28,7 @@ const NAV = [
   { href: '/demo/cobranza/conciliacion', label: 'Conciliación', icon: RefreshCw },
   { href: '/demo/cobranza/secuencias', label: 'Secuencias', icon: GitBranch },
   { href: '/demo/cobranza/asistente', label: 'Asistente IA', icon: Bot },
-  { href: '/demo/cobranza/precios', label: '💼 Planes y Precios', icon: CreditCard },
+  { href: '/demo/cobranza/precios', label: 'Planes y Precios', icon: CreditCard },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {

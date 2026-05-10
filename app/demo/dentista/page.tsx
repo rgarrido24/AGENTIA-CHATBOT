@@ -86,7 +86,7 @@ export default function DentistaDashboardPage() {
             accentColor="#0ea5e9"
             apiRoute="/api/demo/dentista/chat"
             initialMessage="¡Hola! 🦷 Soy la asistente de la Clínica Dental Sonrisa Perfecta. ¿En qué puedo ayudarte hoy?"
-            suggestedChips={['📅 Agendar cita', '💰 Ver precios', '🚨 Urgencia dental', '⏰ Horarios']}
+            suggestedChips={['Agendar cita', 'Ver precios', 'Urgencia dental', 'Horarios']}
           />
         </div>
       </section>

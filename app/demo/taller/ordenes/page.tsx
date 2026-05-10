@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, ClipboardList, Camera, FileText, Wrench, Check, Eye, Lock, Paperclip, MessageCircle, CircleDot } from 'lucide-react';
 import {
   getCliente,
   getVehiculo,
@@ -190,19 +190,24 @@ function TabChecklist({ orden, clienteNombre }: { orden: OrdenServicio; clienteN
     { key: 'radio', label: 'Radio / Autoestéreo', val: cl.radio },
   ];
 
-  const nivelesLabel: Record<DanoVehiculo['nivel'], string> = { leve: '🟢 Leve', moderado: '🟡 Moderado', severo: '🔴 Severo' };
+  const nivelesColor: Record<DanoVehiculo['nivel'], string> = { leve: '#22c55e', moderado: '#f59e0b', severo: '#ef4444' };
+  const nivelesLabel: Record<DanoVehiculo['nivel'], string> = { leve: 'Leve', moderado: 'Moderado', severo: 'Severo' };
 
   return (
     <div className="space-y-5 py-2">
       {/* Header firmado */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="font-semibold text-sm">📋 Checklist de Recepción</p>
+          <p className="font-semibold text-sm flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-amber-300" />
+            Checklist de Recepción
+          </p>
           <p className="text-xs text-slate-400">Firmado por el cliente al ingresar</p>
         </div>
         {cl.firmaCliente && (
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
-            ✓ Firmado — {cl.fechaChecklist}
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
+            <Check className="w-3 h-3" strokeWidth={3} />
+            Firmado — {cl.fechaChecklist}
           </span>
         )}
       </div>
@@ -216,8 +221,8 @@ function TabChecklist({ orden, clienteNombre }: { orden: OrdenServicio; clienteN
         <div className="grid grid-cols-2 gap-1.5">
           {items.map((it) => (
             <div key={it.key} className="flex items-center gap-2 text-xs">
-              <span className={it.val ? 'text-emerald-400' : 'text-slate-600'}>
-                {it.val ? '✓' : '○'}
+              <span className={`inline-flex ${it.val ? 'text-emerald-400' : 'text-slate-600'}`}>
+                {it.val ? <Check className="w-3 h-3" strokeWidth={3} /> : <CircleDot className="w-3 h-3" />}
               </span>
               <span className={it.val ? 'text-slate-200' : 'text-slate-500'}>{it.label}</span>
             </div>
@@ -233,7 +238,10 @@ function TabChecklist({ orden, clienteNombre }: { orden: OrdenServicio; clienteN
             {[...cl.golpes, ...cl.rayones].map((d) => (
               <li key={d.id} className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs font-bold">{nivelesLabel[d.nivel]}</span>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold">
+                    <span className="w-2 h-2 rounded-full" style={{ background: nivelesColor[d.nivel] }} />
+                    {nivelesLabel[d.nivel]}
+                  </span>
                   <span className="text-xs text-slate-400 capitalize">
                     {d.tipo} — {d.zona.replace(/_/g, ' ')}
                   </span>
@@ -250,7 +258,10 @@ function TabChecklist({ orden, clienteNombre }: { orden: OrdenServicio; clienteN
 
       {/* Firma */}
       <div className="rounded-xl border border-emerald-800/40 bg-emerald-950/20 p-4">
-        <p className="text-sm font-semibold text-emerald-300">✓ El cliente revisó y firmó conforme</p>
+        <p className="text-sm font-semibold text-emerald-300 flex items-center gap-1.5">
+          <Check className="w-4 h-4" strokeWidth={3} />
+          El cliente revisó y firmó conforme
+        </p>
         <p className="text-xs text-slate-400 mt-1">{clienteNombre} · {cl.fechaChecklist}</p>
       </div>
     </div>
@@ -259,9 +270,9 @@ function TabChecklist({ orden, clienteNombre }: { orden: OrdenServicio; clienteN
 
 // ── Pestaña Fotos ─────────────────────────────────────────────────────────────
 const TIPO_FOTO_LABEL: Record<FotoOrden['tipo'], string> = {
-  recepcion: '📸 Recepción',
-  avance: '🔧 Avance',
-  entrega: '✅ Entrega',
+  recepcion: 'Recepción',
+  avance: 'Avance',
+  entrega: 'Entrega',
 };
 
 function TabFotos({ orden }: { orden: OrdenServicio }) {
@@ -277,15 +288,19 @@ function TabFotos({ orden }: { orden: OrdenServicio }) {
     <div className="space-y-4 py-2">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-semibold text-sm">📸 Registro fotográfico</p>
+          <p className="font-semibold text-sm flex items-center gap-2">
+            <Camera className="w-4 h-4 text-sky-300" />
+            Registro fotográfico
+          </p>
           <p className="text-xs text-slate-400">Las fotos marcadas como "visible" las ve el cliente en tiempo real</p>
         </div>
         <button
           type="button"
           onClick={() => setAddOpen(true)}
-          className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white bg-slate-600 hover:bg-slate-500 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold text-white bg-slate-600 hover:bg-slate-500 transition-colors"
         >
-          📷 Agregar foto
+          <Camera className="w-3.5 h-3.5" />
+          Agregar foto
         </button>
       </div>
 
@@ -299,17 +314,20 @@ function TabFotos({ orden }: { orden: OrdenServicio }) {
               <img src={f.url} alt={f.descripcion} className="w-full object-cover" style={{ aspectRatio: '4/3' }} />
               <div className="p-2.5 space-y-1">
                 <p className="text-xs font-semibold text-white">{TIPO_FOTO_LABEL[f.tipo]}</p>
-                <p className="text-[11px] text-slate-400">🔧 {f.tecnico}</p>
+                <p className="text-[11px] text-slate-400 inline-flex items-center gap-1">
+                  <Wrench className="w-3 h-3" />
+                  {f.tecnico}
+                </p>
                 <p className="text-[11px] text-slate-500">{f.fecha}</p>
                 <p className="text-[11px] text-slate-300 leading-relaxed">{f.descripcion}</p>
                 <span
-                  className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border mt-1 ${
+                  className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border mt-1 ${
                     f.visibleCliente
                       ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
                       : 'bg-slate-800 text-slate-400 border-slate-700'
                   }`}
                 >
-                  {f.visibleCliente ? '👁️ Visible para cliente' : '🔒 Solo taller'}
+                  {f.visibleCliente ? <><Eye className="w-3 h-3" />Visible para cliente</> : <><Lock className="w-3 h-3" />Solo taller</>}
                 </span>
               </div>
             </div>
@@ -347,9 +365,9 @@ function TabFotos({ orden }: { orden: OrdenServicio }) {
                   onChange={(e) => setForm((f) => ({ ...f, tipo: e.target.value }))}
                   className="w-full rounded-lg bg-slate-900 border border-white/10 px-3 py-2 text-sm"
                 >
-                  <option value="recepcion">📸 Recepción</option>
-                  <option value="avance">🔧 Avance</option>
-                  <option value="entrega">✅ Entrega</option>
+                  <option value="recepcion">Recepción</option>
+                  <option value="avance">Avance</option>
+                  <option value="entrega">Entrega</option>
                 </select>
               </div>
               <div>
@@ -373,16 +391,17 @@ function TabFotos({ orden }: { orden: OrdenServicio }) {
               </div>
               <button
                 type="button"
-                className="w-full py-2 rounded-lg border border-white/10 text-sm text-slate-400 hover:bg-white/5 transition-colors"
+                className="w-full py-2 rounded-lg border border-white/10 text-sm text-slate-400 hover:bg-white/5 transition-colors inline-flex items-center justify-center gap-2"
               >
-                📎 Seleccionar foto — (demo)
+                <Paperclip className="w-4 h-4" />
+                Seleccionar foto — (demo)
               </button>
               <button
                 type="button"
                 className="w-full py-2.5 rounded-xl font-semibold text-white text-sm bg-slate-600 hover:bg-slate-500 transition-colors"
                 onClick={() => {
                   setAddOpen(false);
-                  showToast('Foto agregada ✓');
+                  showToast('Foto agregada');
                   setForm({ tipo: 'avance', descripcion: '', visible: true });
                 }}
               >
@@ -427,15 +446,15 @@ export default function OrdenesPage() {
         <p className="text-sm text-slate-400">Placa: {v?.placa ?? '—'}</p>
         <p className="text-sm">Cliente: {c?.nombre ?? '—'}</p>
         <p className="text-sm text-slate-300">Técnico: {o.tecnico}</p>
-        <p className="text-amber-400 text-sm mt-1">⏱ {dias} día{dias !== 1 ? 's' : ''} en taller</p>
+        <p className="text-amber-400 text-sm mt-1">{dias} día{dias !== 1 ? 's' : ''} en taller</p>
         <p className="text-sm font-medium text-white mt-1">{o.tipo}</p>
         <p className="text-xs text-slate-500">
           Est. entrega:{' '}
           {new Date(o.fechaEstimadaEntrega + 'T12:00:00').toLocaleDateString('es-MX')}
         </p>
-        <div className="flex gap-1 mt-2">
-          {o.checklist && <span className="text-[10px] text-slate-400" title="Checklist">📋</span>}
-          {o.fotosOrden.length > 0 && <span className="text-[10px] text-slate-400" title={`${o.fotosOrden.length} fotos`}>📸</span>}
+        <div className="flex gap-2 mt-2 text-slate-400">
+          {o.checklist && <ClipboardList className="w-3 h-3" aria-label="Checklist" />}
+          {o.fotosOrden.length > 0 && <Camera className="w-3 h-3" aria-label={`${o.fotosOrden.length} fotos`} />}
         </div>
         <button
           type="button"
@@ -512,9 +531,9 @@ export default function OrdenesPage() {
   }, [drawerOrden, drawerCliente, drawerVeh]);
 
   const TABS = [
-    { id: 'orden' as const, label: '📄 Orden' },
-    { id: 'checklist' as const, label: '📋 Checklist' },
-    { id: 'fotos' as const, label: '📸 Fotos' },
+    { id: 'orden' as const, label: 'Orden', icon: FileText },
+    { id: 'checklist' as const, label: 'Checklist', icon: ClipboardList },
+    { id: 'fotos' as const, label: 'Fotos', icon: Camera },
   ];
 
   return (
@@ -589,12 +608,13 @@ export default function OrdenesPage() {
                       key={t.id}
                       type="button"
                       onClick={() => setTab(t.id)}
-                      className={`flex-1 py-2.5 text-xs font-semibold transition-colors border-b-2 ${
+                      className={`flex-1 py-2.5 text-xs font-semibold transition-colors border-b-2 inline-flex items-center justify-center gap-1.5 ${
                         tab === t.id
                           ? 'border-sky-500 text-sky-300 bg-sky-950/30'
                           : 'border-transparent text-slate-400 hover:text-white'
                       }`}
                     >
+                      <t.icon className="w-3.5 h-3.5" />
                       {t.label}
                     </button>
                   ))}
@@ -653,7 +673,10 @@ export default function OrdenesPage() {
                     </section>
                     {drawerOrden.observaciones && (
                       <section className="rounded-lg border border-amber-700/40 bg-amber-950/20 p-3">
-                        <p className="text-xs text-amber-300">💬 Observaciones</p>
+                        <p className="text-xs text-amber-300 inline-flex items-center gap-1.5">
+                          <MessageCircle className="w-3 h-3" />
+                          Observaciones
+                        </p>
                         <p className="mt-1 text-slate-300">{drawerOrden.observaciones}</p>
                       </section>
                     )}

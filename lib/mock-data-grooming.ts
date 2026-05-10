@@ -275,9 +275,9 @@ export const MOCK_SERVICIOS: Servicio[] = [
 ];
 
 export const MOCK_GROOMERS: Groomer[] = [
-  { id: 'gr1', nombre: 'Valeria Soto', foto: '👩‍🦰', citas_hoy: 5, disponibleAhora: true, turno: 'completo' },
-  { id: 'gr2', nombre: 'Luis Camarena', foto: '👨', citas_hoy: 4, disponibleAhora: true, turno: 'completo' },
-  { id: 'gr3', nombre: 'Daniela Neri', foto: '👩', citas_hoy: 3, disponibleAhora: false, turno: 'mañana' },
+  { id: 'gr1', nombre: 'Valeria Soto',  foto: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80', citas_hoy: 5, disponibleAhora: true,  turno: 'completo' },
+  { id: 'gr2', nombre: 'Luis Camarena', foto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80', citas_hoy: 4, disponibleAhora: true,  turno: 'completo' },
+  { id: 'gr3', nombre: 'Daniela Neri',  foto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80', citas_hoy: 3, disponibleAhora: false, turno: 'mañana'   },
 ];
 
 export const COSTO_DOMICILIO_EXTRA: PrecioPorTamaño = {

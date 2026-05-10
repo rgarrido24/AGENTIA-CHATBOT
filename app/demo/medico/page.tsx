@@ -86,7 +86,7 @@ export default function MedicoDashboardPage() {
             accentColor="#10b981"
             apiRoute="/api/demo/medico/chat"
             initialMessage="¡Hola! 🏥 Soy el asistente del Centro Médico Salud+. ¿Quieres agendar una consulta o tienes alguna pregunta?"
-            suggestedChips={['📅 Agendar consulta', '🩺 Ver especialidades', '💰 Precios', '🚨 Urgencias']}
+            suggestedChips={['Agendar consulta', 'Ver especialidades', 'Precios', 'Urgencias']}
           />
         </div>
       </section>

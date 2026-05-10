@@ -35,7 +35,7 @@ const NAV = [
   { href: '/demo/taller/caja', label: 'Caja', icon: DollarSign },
   { href: '/demo/taller/recordatorios', label: 'Recordatorios', icon: Bell },
   { href: '/demo/taller/chat', label: 'Asistente IA', icon: MessageCircle },
-  { href: '/demo/taller/precios', label: '💼 Planes y Precios', icon: DollarSign },
+  { href: '/demo/taller/precios', label: 'Planes y Precios', icon: DollarSign },
 ] as const;
 
 const TITLE_MAP: Record<string, string> = {

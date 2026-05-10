@@ -31,6 +31,7 @@ import {
   heatmapActividad,
   ultimaAccionTexto,
 } from '@/lib/mock-data-nutricion';
+import { AlertTriangle, Smartphone, Lightbulb, ShoppingCart, Camera, Copy, Utensils, MessageCircle, X as XIcon, Check } from 'lucide-react';
 import { useNutricion } from './nutricion-context';
 import { useNutricionTheme } from './nutricion-theme-context';
 import type { LoyaltyCardData } from '@/app/demo/barber/LoyaltyCard';
@@ -105,7 +106,10 @@ function PanelActividad({ pacientes }: { pacientes: ReturnType<typeof pacientesA
   return (
     <div>
       <div className="mb-3">
-        <h2 className="text-sm font-semibold" style={{ color: colors.textPrimary }}>📱 Actividad de Pacientes — Últimos 14 días</h2>
+        <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+          <Smartphone className="w-4 h-4" style={{ color: ACCENT }} />
+          Actividad de Pacientes — Últimos 14 días
+        </h2>
         <p className="text-xs mt-0.5" style={{ color: colors.textMuted }}>Registro en tiempo real de la interacción de cada paciente con el sistema</p>
       </div>
       <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${colors.border}`, background: colors.cardBg }}>
@@ -162,8 +166,9 @@ function PanelActividad({ pacientes }: { pacientes: ReturnType<typeof pacientesA
           })}
         </div>
         <div className="px-4 py-3" style={{ borderTop: `1px solid ${colors.divider}`, background: colors.cardBgAlt }}>
-          <p className="text-[10px]" style={{ color: colors.textMuted }}>
-            💡 Los pacientes registran desde WhatsApp — solo escriben al número del consultorio y el sistema guarda todo automáticamente.
+          <p className="text-[10px] flex items-center gap-1.5" style={{ color: colors.textMuted }}>
+            <Lightbulb className="w-3 h-3 flex-shrink-0" style={{ color: AMBER }} />
+            Los pacientes registran desde WhatsApp — solo escriben al número del consultorio y el sistema guarda todo automáticamente.
           </p>
         </div>
       </div>
@@ -216,7 +221,10 @@ function ModalListaSuper({ pacienteNombre, lista, onClose }: { pacienteNombre: s
       >
         <div className="flex items-start justify-between gap-3 p-5" style={{ borderBottom: `1px solid ${colors.border}` }}>
           <div>
-            <p className="font-semibold text-base" style={{ color: colors.textPrimary }}>🛒 Lista del súper — {pacienteNombre}</p>
+            <p className="font-semibold text-base flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <ShoppingCart className="w-4 h-4" style={{ color: ACCENT }} />
+              Lista del súper — {pacienteNombre}
+            </p>
             <p className="text-xs mt-0.5" style={{ color: colors.textSecondary }}>{lista.semana} · {lista.calorias_diarias} kcal/día</p>
             {total > 0 && (
               <div className="mt-2 h-1.5 w-40 rounded-full overflow-hidden" style={{ background: colors.border }}>
@@ -224,7 +232,9 @@ function ModalListaSuper({ pacienteNombre, lista, onClose }: { pacienteNombre: s
               </div>
             )}
           </div>
-          <button onClick={onClose} className="text-xl leading-none flex-shrink-0 mt-0.5" style={{ color: colors.textMuted }}>✕</button>
+          <button onClick={onClose} className="leading-none flex-shrink-0 mt-0.5" style={{ color: colors.textMuted }} aria-label="Cerrar">
+            <XIcon className="w-5 h-5" />
+          </button>
         </div>
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {lista.secciones.map((sec) => (
@@ -240,9 +250,9 @@ function ModalListaSuper({ pacienteNombre, lista, onClose }: { pacienteNombre: s
                       className="flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer transition-colors"
                       style={{ background: isDone ? colors.accentSoft : undefined }}
                     >
-                      <span className="w-4 h-4 flex-shrink-0 rounded border flex items-center justify-center text-[10px]"
+                      <span className="w-4 h-4 flex-shrink-0 rounded border flex items-center justify-center"
                         style={{ borderColor: isDone ? ACCENT : colors.border, background: isDone ? ACCENT : 'transparent', color: '#fff' }}>
-                        {isDone && '✓'}
+                        {isDone && <Check className="w-3 h-3" strokeWidth={3} />}
                       </span>
                       <span className="flex-1 text-sm" style={{ color: isDone ? colors.textMuted : colors.textPrimary, textDecoration: isDone ? 'line-through' : 'none' }}>{it.alimento}</span>
                       <span className="text-xs flex-shrink-0" style={{ color: colors.textMuted }}>{it.cantidad} {it.unidad}</span>
@@ -255,12 +265,14 @@ function ModalListaSuper({ pacienteNombre, lista, onClose }: { pacienteNombre: s
         </div>
         <div className="flex gap-2 p-4" style={{ borderTop: `1px solid ${colors.border}` }}>
           <button onClick={handleWhatsApp} className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white" style={{ background: '#25D366' }}>
-            📱 Enviar por WhatsApp
+            <MessageCircle className="w-4 h-4" />
+            Enviar por WhatsApp
           </button>
           <button onClick={() => void navigator.clipboard.writeText('')}
-            className="px-4 rounded-xl text-sm font-semibold transition-colors"
+            className="px-4 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
             style={{ background: colors.cardBgAlt, color: colors.textSecondary, border: `1px solid ${colors.border}` }}>
-            📋 Copiar
+            <Copy className="w-4 h-4" />
+            Copiar
           </button>
         </div>
       </motion.div>
@@ -307,7 +319,11 @@ function FilaPacienteSuper({ pacienteId }: { pacienteId: string }) {
           className="flex-shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition-colors"
           style={{ background: loading ? colors.border : ACCENT }}
         >
-          {loading ? <><span className="animate-spin inline-block w-3 h-3 border border-white/40 border-t-white rounded-full" />Calculando…</> : <>🛒 {lista ? 'Ver lista' : 'Generar lista'}</>}
+          {loading ? (
+            <><span className="animate-spin inline-block w-3 h-3 border border-white/40 border-t-white rounded-full" />Calculando…</>
+          ) : (
+            <><ShoppingCart className="w-3 h-3" />{lista ? 'Ver lista' : 'Generar lista'}</>
+          )}
         </button>
       </div>
       <AnimatePresence>
@@ -370,7 +386,10 @@ function RegistroCalorico() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-          <h2 className="text-sm font-semibold" style={{ color: colors.textPrimary }}>📸 Registro calórico por foto</h2>
+          <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+            <Camera className="w-4 h-4" style={{ color: ACCENT }} />
+            Registro calórico por foto
+          </h2>
           <p className="text-xs mt-0.5" style={{ color: colors.textMuted }}>El paciente envía foto de su comida y la IA estima las calorías automáticamente.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -388,7 +407,11 @@ function RegistroCalorico() {
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
             style={{ background: simulating ? colors.border : '#16a34a' }}
           >
-            {simulating ? <><span className="animate-spin inline-block w-3 h-3 border border-white/40 border-t-white rounded-full" />Analizando…</> : '📸 Simular foto'}
+            {simulating ? (
+              <><span className="animate-spin inline-block w-3 h-3 border border-white/40 border-t-white rounded-full" />Analizando…</>
+            ) : (
+              <><Camera className="w-3 h-3" />Simular foto</>
+            )}
           </button>
         </div>
       </div>
@@ -414,7 +437,9 @@ function RegistroCalorico() {
           <div className="divide-y" style={{ borderColor: colors.divider }}>
             {logs.map((l, i) => (
               <div key={i} className="px-4 py-3 flex items-start gap-3">
-                <span className="text-lg flex-shrink-0">🍽️</span>
+                <span className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: colors.accentSoft, color: ACCENT }}>
+                  <Utensils className="w-4 h-4" />
+                </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold" style={{ color: colors.textPrimary }}>{l.tiempo}</p>
                   <p className="text-xs mt-0.5 whitespace-pre-line" style={{ color: colors.textSecondary }}>
@@ -466,7 +491,7 @@ export default function NutricionDashboardPage() {
         <div className="flex-shrink-0">
           <PhoneMockup businessName="NutriVida" businessEmoji="💚" accentColor={ACCENT} apiRoute="/api/demo/nutricion/chat"
             initialMessage={'¡Hola! 💚 Soy tu asistente de NutriVida.\nPuedo ayudarte con tu dieta, sustituciones de alimentos\ny a mantenerte motivado/a. ¿En qué te ayudo hoy?'}
-            suggestedChips={['⭐ Mis puntos de lealtad','🥗 ¿Puedo comer aguacate?','💪 ¿Cuánto he bajado?','🍕 Me antojó pizza, ¿qué hago?']}
+            suggestedChips={['Mis puntos de lealtad', '¿Puedo comer aguacate?', '¿Cuánto he bajado?', 'Me antojó pizza, ¿qué hago?']}
             loyaltyCardData={DEMO_LOYALTY_NUTRI}
           />
         </div>
@@ -480,7 +505,7 @@ export default function NutricionDashboardPage() {
             className="rounded-xl border border-red-300 p-4 flex flex-col sm:flex-row sm:items-center gap-3"
             style={{ background: isLight ? '#fef2f2' : 'rgba(127,29,29,0.4)' }}
           >
-            <span className="text-2xl">⚠️</span>
+            <AlertTriangle className="w-6 h-6 flex-shrink-0" style={{ color: isLight ? '#dc2626' : '#fca5a5' }} />
             <p className="text-sm flex-1" style={{ color: isLight ? '#991b1b' : '#fecaca' }}>
               <strong>{riesgo.length} paciente{riesgo.length === 1 ? '' : 's'}</strong> llevan más de 7 días sin registrar mediciones.
             </p>
@@ -495,7 +520,7 @@ export default function NutricionDashboardPage() {
             { label: 'Pacientes activos', value: activos, color: '#16a34a', decimals: 0 as const },
             { label: 'Pérdida promedio este mes', value: promMes, color: AMBER, decimals: 1 as const, suffix: ' kg' },
             { label: 'En riesgo de abandono', value: riesgo.length, color: '#ef4444', decimals: 0 as const },
-            { label: 'Logros este mes', value: logrosMes, color: '#84cc16', decimals: 0 as const, suffix: ' 🏆' },
+            { label: 'Logros este mes', value: logrosMes, color: '#84cc16', decimals: 0 as const },
           ].map((k, i) => (
             <motion.div key={k.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
               className="rounded-xl p-5"
@@ -588,7 +613,10 @@ export default function NutricionDashboardPage() {
         </div>
 
         <div>
-          <h2 className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>🛒 Lista del súper semanal</h2>
+          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+            <ShoppingCart className="w-4 h-4" style={{ color: ACCENT }} />
+            Lista del súper semanal
+          </h2>
           <p className="text-xs mb-3" style={{ color: colors.textMuted }}>
             Genera la lista de compras para 7 días basada en el plan de cada paciente y el SMAE.
           </p>
