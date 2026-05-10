@@ -19,9 +19,11 @@ export function GlobalWhatsAppAndExit() {
 
   // Solo en landing principal y en /ready. Nunca en /portal, /dashboard, /admin, etc.
   const isAllowedPage = pathname === '/' || pathname === '/ready';
-  if (!isAllowedPage) return null;
 
+  // IMPORTANT: hooks MUST run on every render (Rules of Hooks).
+  // Conditional rendering happens AFTER hooks, never before.
   const canShow = useMemo(() => {
+    if (!isAllowedPage) return false;
     if (typeof window === 'undefined') return false;
     if (!isDesktopFinePointer()) return false;
     try {
@@ -29,7 +31,7 @@ export function GlobalWhatsAppAndExit() {
     } catch {
       return false;
     }
-  }, []);
+  }, [isAllowedPage]);
 
   useEffect(() => {
     if (!canShow) return;
@@ -51,6 +53,8 @@ export function GlobalWhatsAppAndExit() {
     document.addEventListener('mouseout', onMouseOut);
     return () => document.removeEventListener('mouseout', onMouseOut);
   }, [canShow]);
+
+  if (!isAllowedPage) return null;
 
   return (
     <>
