@@ -377,15 +377,36 @@ section { position: relative; z-index: 1; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
 .form-submit {
+  position: relative;
   margin-top: 8px;
   padding: 16px; border: none; border-radius: 99px; width: 100%;
   background: linear-gradient(135deg, var(--gold), var(--coral));
   color: white; font-family: 'Baloo 2', cursive; font-size: 1.05rem; font-weight: 800;
   cursor: pointer; transition: transform .2s, box-shadow .2s;
   box-shadow: 0 6px 24px #E8A02044;
+  overflow: hidden;
 }
-.form-submit:hover { transform: translateY(-3px); box-shadow: 0 12px 32px #E8A02055; }
-.form-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+.form-submit:hover:not(.loading) { transform: translateY(-3px); box-shadow: 0 12px 32px #E8A02055; }
+.form-submit:disabled, .form-submit.loading { cursor: not-allowed; transform: none; }
+.form-submit.loading { background: linear-gradient(135deg, var(--navy), #2D4A9E); }
+.form-submit-label, .form-submit-loader {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  transition: opacity .25s, transform .25s;
+}
+.form-submit-loader {
+  position: absolute; inset: 0;
+  opacity: 0; pointer-events: none;
+  transform: translateY(8px);
+}
+.form-submit.loading .form-submit-label { opacity: 0; transform: translateY(-8px); }
+.form-submit.loading .form-submit-loader { opacity: 1; transform: translateY(0); }
+.form-spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,.3);
+  border-top-color: white;
+  animation: spin .8s linear infinite;
+}
 
 .form-help {
   margin-top: 18px;
@@ -403,7 +424,25 @@ section { position: relative; z-index: 1; }
 .form-help strong { color: var(--navy); }
 
 .success-msg {
-  display: none; text-align: center; padding: 40px 20px;
+  display: none; text-align: center;
+  padding: 44px 28px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255,255,255,.85), rgba(253,246,236,.7));
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1.5px solid rgba(255,255,255,.8);
+  box-shadow:
+    0 30px 80px -20px rgba(27,43,94,.35),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  position: relative;
+  overflow: hidden;
+}
+.success-msg::before {
+  content: '';
+  position: absolute; top: -40px; right: -40px;
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(232,160,32,.25), transparent 70%);
+  pointer-events: none;
 }
 .success-msg .success-icon {
   width: 84px; height: 84px; margin: 0 auto 16px;
@@ -411,10 +450,12 @@ section { position: relative; z-index: 1; }
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 16px 40px rgba(107,170,142,.4);
+  position: relative; z-index: 1;
 }
 .success-msg .success-icon svg { width: 42px; height: 42px; color: white; }
-.success-msg h3 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--navy); margin-bottom: 10px; }
-.success-msg p  { color: var(--muted); font-weight: 600; line-height: 1.6; }
+.success-msg h3 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--navy); margin-bottom: 10px; position: relative; z-index: 1; }
+.success-msg p  { color: var(--muted); font-weight: 600; line-height: 1.6; position: relative; z-index: 1; }
+.success-msg p strong { color: var(--navy); }
 
 /* ── COUNTER ──────────────────────────────── */
 .counter-bar {
@@ -831,6 +872,21 @@ section { position: relative; z-index: 1; }
   gap: 20px;
   margin-top: 48px;
 }
+.features-grid.features-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 900px;
+  margin-left: auto; margin-right: auto;
+}
+.features-grid.features-grid-3 .feature-card { padding: 36px 26px; }
+.features-grid.features-grid-3 .feature-icon { width: 72px; height: 72px; margin-bottom: 20px; }
+.features-grid.features-grid-3 .feature-icon svg { width: 32px; height: 32px; }
+.features-grid.features-grid-3 .feature-card h4 { font-size: 1.1rem; margin-bottom: 10px; }
+.features-grid.features-grid-3 .feature-card p { font-size: .92rem; line-height: 1.6; }
+@media (max-width: 800px) {
+  .features-grid.features-grid-3 { grid-template-columns: 1fr; gap: 18px; }
+  .features-grid.features-grid-3 .feature-card { padding: 28px 22px; }
+}
 .feature-card {
   background: white;
   border-radius: 22px;
@@ -1092,8 +1148,8 @@ footer strong { color: var(--goldlt); }
             <circle cx="9" cy="9" r="1.5" fill="currentColor"/>
           </svg>
         </div>
-        <h3>Productos Físicos Premium</h3>
-        <p>Cuadros en lienzo, acrílicos, álbumes editoriales y prints en alta calidad. Catálogo completo a precios directos al productor.</p>
+        <h3>Recuerdos Físicos Seleccionados</h3>
+        <p>Fotografías impresas en alta definición, ampliaciones y marcos decorativos de temporada. Calidad profesional entregada directamente en tu colegio.</p>
       </div>
       <div class="include-card reveal" style="animation-delay:.20s">
         <div class="include-icon">
@@ -1123,7 +1179,7 @@ footer strong { color: var(--goldlt); }
           </svg>
         </div>
         <h3>Entrega antes de graduación</h3>
-        <p>Plazos garantizados — anuario digital y productos físicos llegan a tiempo para celebrar el cierre del año escolar.</p>
+        <p>Plazos garantizados — el Anuario Digital llega por link y los recuerdos físicos se entregan directamente en el colegio antes del cierre del año.</p>
       </div>
     </div>
   </div>
@@ -1149,29 +1205,29 @@ footer strong { color: var(--goldlt); }
       <div class="step reveal" style="animation-delay:.10s">
         <div class="step-num">2</div>
         <div class="step-content">
-          <h3>Se suman 15 papás del mismo salón</h3>
-          <p>Cuando el contador llega a 15 papás registrados de tu mismo grupo, agendamos la sesión de fotos profesional sin costo de visita.</p>
+          <h3>Se suman 10 papás del mismo salón</h3>
+          <p>Cuando el contador llega a 10 papás registrados de tu mismo grupo, agendamos la sesión de fotos profesional sin costo de visita.</p>
         </div>
       </div>
       <div class="step reveal" style="animation-delay:.15s">
         <div class="step-num">3</div>
         <div class="step-content">
-          <h3>Sesión profesional en el colegio</h3>
-          <p>Nuestro equipo va al colegio con togas, birretes y set fotográfico completo — capturamos a la generación con dos estilos: formal y divertido.</p>
+          <h3>Sesión Fotográfica en el Colegio</h3>
+          <p>Nuestro equipo acude al salón para capturar a los niños en su entorno escolar con dos estilos: <strong>Formal (Retrato)</strong> y <strong>Divertido (Grupo)</strong>. Sin complicaciones, fotos frescas y naturales.</p>
         </div>
       </div>
       <div class="step reveal" style="animation-delay:.20s">
         <div class="step-num">4</div>
         <div class="step-content">
-          <h3>Galería digital y catálogo</h3>
-          <p>Recibes en WhatsApp el código QR de la galería privada del salón. Eliges qué fotos descargar y qué productos físicos comprar.</p>
+          <h3>Galería privada con QR</h3>
+          <p>Recibes en WhatsApp el código QR de la galería privada del salón. Eliges qué fotos descargar y qué recuerdos físicos comprar.</p>
         </div>
       </div>
       <div class="step reveal" style="animation-delay:.25s">
         <div class="step-num">5</div>
         <div class="step-content">
-          <h3>Pago seguro y entrega a casa</h3>
-          <p>Pagas por Mercado Pago o Stripe en un clic. Productos físicos llegan a tu casa antes de la ceremonia. Anuario digital se entrega de inmediato.</p>
+          <h3>Pagos seguros y entrega en el colegio</h3>
+          <p>Pagos seguros vía <strong>Mercado Pago o Transferencia</strong>. Los productos físicos se entregan directamente en el colegio; el Anuario Digital se envía mediante un enlace personalizado para descarga y visualización inmediata.</p>
         </div>
       </div>
     </div>
@@ -1206,7 +1262,7 @@ footer strong { color: var(--goldlt); }
       <!-- Foto principal con reflejo dinámico -->
       <div class="bg-photo-stage" id="bg-stage" data-stage>
         <span class="bg-photo-tag">Studio Premium</span>
-        <img class="bg-photo-img" id="bg-photo" src="/assets/fotos-demo/alumno1-clasico.png" alt="Vista previa del niño con fondo Clásico (Biblioteca) — generada por IA" loading="lazy" />
+        <img class="bg-photo-img" id="bg-photo" src="/assets/fotos-demo/alumno1-clasico.png?v=2" alt="Vista previa del niño con fondo Clásico (Biblioteca) — generada por IA" loading="lazy" />
       </div>
 
       <!-- Texto + thumbnails -->
@@ -1215,20 +1271,20 @@ footer strong { color: var(--goldlt); }
         <p>Con nuestra tecnología, tú eliges el escenario: desde la <strong>clásica biblioteca</strong> hasta una <strong>aventura épica</strong>. Toca cualquier estilo y míralo cambiar.</p>
 
         <div class="bg-thumbs" id="bg-thumbs">
-          <div class="bg-thumb-item active" data-bg="/assets/fotos-demo/alumno1-clasico.png" data-label="Clásico">
-            <div class="bg-thumb active"><img src="/assets/fotos-demo/alumno1-clasico.png" alt="Estilo Clásico" /></div>
+          <div class="bg-thumb-item active" data-bg="/assets/fotos-demo/alumno1-clasico.png?v=2" data-label="Clásico">
+            <div class="bg-thumb active"><img src="/assets/fotos-demo/alumno1-clasico.png?v=2" alt="Estilo Clásico — Biblioteca" /></div>
             <span class="bg-thumb-label">Clásico</span>
           </div>
-          <div class="bg-thumb-item" data-bg="/assets/fotos-demo/alumno1-graduacion.png" data-label="Graduación">
-            <div class="bg-thumb"><img src="/assets/fotos-demo/alumno1-graduacion.png" alt="Estilo Graduación" /></div>
+          <div class="bg-thumb-item" data-bg="/assets/fotos-demo/alumno1-graduacion.png?v=2" data-label="Graduación">
+            <div class="bg-thumb"><img src="/assets/fotos-demo/alumno1-graduacion.png?v=2" alt="Estilo Graduación — Bokeh dorado" /></div>
             <span class="bg-thumb-label">Graduación</span>
           </div>
-          <div class="bg-thumb-item" data-bg="/assets/fotos-demo/alumno1-avion.png" data-label="Aventura">
-            <div class="bg-thumb"><img src="/assets/fotos-demo/alumno1-avion.png" alt="Estilo Aventura" /></div>
+          <div class="bg-thumb-item" data-bg="/assets/fotos-demo/alumno1-avion.png?v=2" data-label="Aventura">
+            <div class="bg-thumb"><img src="/assets/fotos-demo/alumno1-avion.png?v=2" alt="Estilo Aventura — Aviador" /></div>
             <span class="bg-thumb-label">Aventura</span>
           </div>
-          <div class="bg-thumb-item" data-bg="/assets/fotos-demo/alumno1-playa.png" data-label="Playa">
-            <div class="bg-thumb"><img src="/assets/fotos-demo/alumno1-playa.png" alt="Estilo Playa" /></div>
+          <div class="bg-thumb-item" data-bg="/assets/fotos-demo/alumno1-playa.png?v=2" data-label="Playa">
+            <div class="bg-thumb"><img src="/assets/fotos-demo/alumno1-playa.png?v=2" alt="Estilo Playa — Atardecer" /></div>
             <span class="bg-thumb-label">Playa</span>
           </div>
         </div>
@@ -1252,12 +1308,12 @@ footer strong { color: var(--goldlt); }
 
     <div class="compare-wrap reveal" id="compare-wrap" data-compare>
       <!-- Imagen ANTES (de fondo) -->
-      <img class="compare-img" src="/assets/fotos-demo/alumno1-playa.png" alt="Foto original con fondo de escuela" loading="lazy" />
+      <img class="compare-img" src="/assets/fotos-demo/hija-original.jpg" alt="Foto original con fondo de salón de clases" loading="lazy" />
       <span class="compare-tag before">Antes</span>
 
       <!-- Imagen DESPUÉS (clip por la izquierda) -->
       <div class="compare-after-wrap" id="compare-after">
-        <img class="compare-img" src="/assets/fotos-demo/alumno1-graduacion.png" alt="Foto procesada con fondo studio premium" loading="lazy" />
+        <img class="compare-img" src="/assets/fotos-demo/hija-editada.jpg" alt="Foto procesada con fondo studio premium" loading="lazy" />
       </div>
       <span class="compare-tag after">Después · Studio</span>
 
@@ -1304,8 +1360,8 @@ footer strong { color: var(--goldlt); }
       Desliza para ver el anuario de ejemplo
     </p>
 
-    <!-- 4 ÍCONOS DE FORMATO DIGITAL -->
-    <div class="features-grid">
+    <!-- 3 PILARES DEL PRODUCTO -->
+    <div class="features-grid features-grid-3">
       <div class="feature-card reveal" style="animation-delay:.05s">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1313,42 +1369,31 @@ footer strong { color: var(--goldlt); }
             <path d="M22 4h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z"/>
           </svg>
         </div>
-        <h4>Páginas Animadas</h4>
-        <p>Efecto flip realista al pasar las hojas, como un libro físico.</p>
+        <h4>Anuario Digital Interactivo</h4>
+        <p>Diseño editorial premium con perfil de tu hijo, foto grupal, mensajes y collage de momentos del año.</p>
       </div>
       <div class="feature-card reveal" style="animation-delay:.10s">
-        <div class="feature-icon coral">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18V5l12-2v13"/>
-            <circle cx="6" cy="18" r="3"/>
-            <circle cx="18" cy="16" r="3"/>
-          </svg>
-        </div>
-        <h4>Música Personalizada</h4>
-        <p>Música de fondo elegida por el grupo mientras navegan el anuario.</p>
-      </div>
-      <div class="feature-card reveal" style="animation-delay:.15s">
         <div class="feature-icon gold">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="23 7 16 12 23 17 23 7"/>
-            <rect x="1" y="5" width="15" height="14" rx="2"/>
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
           </svg>
         </div>
-        <h4>Videos y Fotos Extras</h4>
-        <p>Galería ampliada con momentos del año, videos cortos y mensajes.</p>
+        <h4>Galería Privada con QR</h4>
+        <p>Acceso vía código QR único del salón. Descarga, comparte y guarda las fotos sin pasar por la escuela.</p>
       </div>
-      <div class="feature-card reveal" style="animation-delay:.20s">
-        <div class="feature-icon sage">
+      <div class="feature-card reveal" style="animation-delay:.15s">
+        <div class="feature-icon coral">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="18" cy="5" r="3"/>
-            <circle cx="6" cy="12" r="3"/>
-            <circle cx="18" cy="19" r="3"/>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 16l5-5 4 4 3-3 6 6"/>
+            <circle cx="9" cy="9" r="1.5" fill="currentColor"/>
           </svg>
         </div>
-        <h4>Fácil de Compartir</h4>
-        <p>Un link único para enviar a abuelos, tíos y toda la familia.</p>
+        <h4>Recuerdos Físicos Seleccionados</h4>
+        <p>Impresiones de alta definición, ampliaciones y marcos decorativos. Entregados directamente en el colegio.</p>
       </div>
     </div>
 
@@ -1389,13 +1434,13 @@ footer strong { color: var(--goldlt); }
         <div class="counter-track">
           <div class="counter-fill" id="counter-fill" style="width:0%"></div>
         </div>
-        <div style="font-size:.8rem;font-weight:800;color:var(--muted)">Meta: 15</div>
+        <div style="font-size:.8rem;font-weight:800;color:var(--muted)">Meta: 10</div>
       </div>
 
       <!-- Form -->
       <div id="form-wrap">
-        <h2>Registra tu Salón y Activa la Sesión de Fotos</h2>
-        <p class="form-intro">Cuando 15 papás del mismo salón se registren, agendamos la sesión profesional sin costo de visita. Tú serás el contacto enlace del grupo.</p>
+        <h2>Regístrate y Activa la Sesión Fotográfica de tu Salón</h2>
+        <p class="form-intro">Cuando <strong>10 papás</strong> del mismo salón se registren, agendamos la <strong>Sesión Fotográfica en el Colegio</strong> sin costo de visita. Tú serás el contacto enlace del grupo.</p>
 
         <div class="row2">
           <div class="field">
@@ -1427,8 +1472,12 @@ footer strong { color: var(--goldlt); }
           </div>
         </div>
 
-        <button class="form-submit" onclick="submitForm()">
-          ¡Registrar mi Salón y Empezar! →
+        <button class="form-submit" id="form-submit-btn" onclick="submitForm()">
+          <span class="form-submit-label">¡Registrar mi Salón y Empezar! →</span>
+          <span class="form-submit-loader" aria-hidden="true">
+            <span class="form-spinner"></span>
+            Procesando con Agentia…
+          </span>
         </button>
 
         <div class="form-help">
@@ -1437,24 +1486,24 @@ footer strong { color: var(--goldlt); }
             <path d="M12 16v-4M12 8h.01"/>
           </svg>
           <span>
-            Una vez que <strong>15 papás de tu salón</strong> se registren, agendamos la sesión de fotos profesional <strong>sin costo de visita</strong>.
+            Una vez que <strong>10 papás de tu salón</strong> se registren, agendamos la <strong>Sesión Fotográfica</strong> en el colegio <strong>sin costo de visita</strong>.
             ¡Comparte el link con el grupo de WhatsApp de tu salón!
           </span>
         </div>
       </div>
 
-      <!-- Success -->
+      <!-- Success (Glassmorphism Modal style) -->
       <div class="success-msg" id="success-msg">
         <div class="success-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
             <path d="M5 13l4 4L19 7"/>
           </svg>
         </div>
-        <h3>¡Salón registrado!</h3>
+        <h3>¡Registro procesado con éxito!</h3>
         <p>
-          Te contactaremos por WhatsApp con tu <strong>link único de invitación</strong> para que lo compartas con los papás del grupo.<br><br>
-          Cuando se sumen <strong>15 papás de tu mismo salón</strong>, agendamos la sesión.<br><br>
-          <strong>¡Inmortalizar a esta generación está a un clic!</strong>
+          <strong>Revisa tu WhatsApp</strong> para la confirmación. Te enviamos un mensaje con los siguientes pasos y un link único para que invites al resto del salón.<br><br>
+          Cuando se sumen <strong>10 papás de tu mismo salón</strong>, agendamos la Sesión Fotográfica en el colegio.<br><br>
+          <strong>¡No olvides compartir el link con los demás papás!</strong>
         </p>
       </div>
 
@@ -1495,7 +1544,7 @@ const pages = [
   { img:'/demo-fotos-escuela/placeholder/grupo_ia.jpg', label:'Foto Grupal', sub:'Toda la generación' },
   { img:'/demo-fotos-escuela/placeholder/alumno2.jpg', label:'Galería Digital', sub:'Acceso por QR' },
   { img:'/demo-fotos-escuela/placeholder/grupo_ia.jpg', label:'Estilo Divertido', sub:'Props y temáticas' },
-  { img:'/demo-fotos-escuela/placeholder/alumno1.jpg', label:'Productos Físicos', sub:'Cuadros y acrílicos' },
+  { img:'/demo-fotos-escuela/placeholder/alumno1.jpg', label:'Recuerdos Físicos', sub:'Impresiones y marcos' },
   { img:'/demo-fotos-escuela/placeholder/alumno2.jpg', label:'Mensaje Familiar', sub:'Espacio personal' },
   { img:'/demo-fotos-escuela/placeholder/grupo_ia.jpg', label:'Cierre de Año', sub:'Página final' },
 ];
@@ -1521,7 +1570,7 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
 /* ─── COUNTER ─────────────────────────────────── */
 let count = parseInt(localStorage.getItem('anuario_count') || '0');
-const META = 15;
+const META = 10;
 
 function updateCounter(n) {
   document.getElementById('counter-num').textContent = n;
@@ -1529,7 +1578,7 @@ function updateCounter(n) {
 }
 updateCounter(count);
 
-/* ─── FORM SUBMIT ────────────────────────────── */
+/* ─── FORM SUBMIT (con WhatsApp + Modal Glassmorphism) ─── */
 async function submitForm() {
   const papa    = document.getElementById('f-papa').value.trim();
   const tel     = document.getElementById('f-tel').value.trim();
@@ -1542,11 +1591,19 @@ async function submitForm() {
     return;
   }
 
-  const btn = document.querySelector('.form-submit');
-  if (btn) { btn.disabled = true; btn.textContent = 'Registrando…'; }
+  const btn = document.getElementById('form-submit-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('loading');
+  }
 
+  // Para que la transición visual del "Procesando con Agentia" sea perceptible
+  // aunque el backend responda muy rápido.
+  const minDelay = new Promise(r => setTimeout(r, 1200));
+
+  let serverWaLink = '';
   try {
-    const res = await fetch('/api/demo/fotos-escuela/submit', {
+    const reqPromise = fetch('/api/demo/fotos-escuela/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1559,13 +1616,26 @@ async function submitForm() {
         page: location.pathname,
       }),
     });
-    if (!res.ok) {
+    const [res] = await Promise.all([reqPromise, minDelay]);
+    if (res && res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data && data.whatsappLink) serverWaLink = data.whatsappLink;
+    } else if (res) {
       const data = await res.json().catch(() => ({}));
       console.warn('[anuario] respuesta no OK:', res.status, data);
     }
   } catch (err) {
     console.warn('[anuario] error de red al guardar:', err);
+    await minDelay;
   }
+
+  // Mensaje que el papá va a enviar a Agentia
+  const waMessage =
+    `Hola Agentia, acabo de registrar al grupo ${grupo} del colegio ${colegio}. ` +
+    `Avísenme cuando seamos 10 papás para la sesión.`;
+  // El backend devuelve el link con el número correcto. Como fallback, abrimos
+  // wa.me sin número (deja al usuario elegir su contacto pre-llenado).
+  const waLink = serverWaLink || `https://wa.me/?text=${encodeURIComponent(waMessage)}`;
 
   count++;
   localStorage.setItem('anuario_count', count);
@@ -1574,6 +1644,13 @@ async function submitForm() {
   const subs = JSON.parse(localStorage.getItem('anuario_subs') || '[]');
   subs.push({ papa, tel, colegio, grupo, vocal, ts: new Date().toISOString() });
   localStorage.setItem('anuario_subs', JSON.stringify(subs));
+
+  // Abrir WhatsApp en nueva pestaña (mejor UX: lo abrimos ANTES de mostrar
+  // el modal para no perder el gesto de usuario; en móvil esto evita
+  // bloqueo de popups y dispara la app de WhatsApp directamente).
+  try { window.open(waLink, '_blank', 'noopener'); } catch (_) {}
+
+  if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
 
   document.getElementById('form-wrap').style.display = 'none';
   const sm = document.getElementById('success-msg');
