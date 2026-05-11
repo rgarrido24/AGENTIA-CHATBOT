@@ -131,11 +131,42 @@ async function resolveResellerByFormId(formId: string): Promise<ResellerMatch> {
   }
 }
 
-// ─── Normalización de teléfono ────────────────────────────────────────────────
+// ─── Normalización de teléfono (foco Argentina, fallback internacional) ──────
+/**
+ * Convierte teléfonos en formato local argentino al E.164 que necesita WhatsApp.
+ *
+ *   "01157550180"     (AR local 11 dígitos)        → "5491157550180"
+ *   "1157550180"      (AR 10 dígitos sin prefijo)  → "5491157550180"
+ *   "541157550180"    (AR + país pero sin 9 móvil) → "5491157550180"
+ *   "5491157550180"   (ya OK)                      → "5491157550180"
+ *   "+52 1 5512345678" (México)                    → "5215512345678"  (intacto)
+ *
+ * Si el número ya tiene un código de país distinto a 54 lo respeta tal cual
+ * (10+ dígitos sin `0` inicial = E.164 internacional).
+ */
 function normalizePhone(raw: string): string {
-  const d = raw.replace(/\D/g, '');
-  if (d.startsWith('54') && d.length >= 12) return d;
-  if (d.length === 10) return `54${d}`;
+  let d = (raw || '').replace(/\D/g, '');
+  if (!d) return '';
+
+  // Ya en formato AR móvil correcto
+  if (d.startsWith('549') && d.length === 13) return d;
+
+  // 54 + 10 dígitos sin el 9 móvil → insertar 9
+  if (d.startsWith('54') && d.length === 12) return `549${d.slice(2)}`;
+
+  // Cualquier número internacional con >= 12 dígitos y SIN 0 inicial:
+  // ya está en E.164, lo respetamos (MX 52, US 1, ES 34, etc.).
+  if (d.length >= 12 && !d.startsWith('0')) return d;
+
+  // Formato local AR con prefijo nacional "0" (11 dígitos típico: 0XX + número)
+  if (d.startsWith('0') && d.length === 11) return `549${d.slice(1)}`;
+
+  // 10 dígitos sin prefijo → asumimos AR móvil (CABA, Córdoba, etc.)
+  if (d.length === 10) return `549${d}`;
+
+  // 11 dígitos con 9 al inicio (raro pero posible)
+  if (d.length === 11 && d.startsWith('9')) return `54${d}`;
+
   return d;
 }
 
@@ -280,6 +311,10 @@ async function processZapierLead(data: Record<string, unknown>) {
   }
 
   console.log(`[fb-leads/zapier] nombre="${full_name}" tel="${phone_raw}" campaña="${campaign_name}"`);
+  console.log(
+    `[fb-leads/zapier] form_fields extras (${Object.keys(form_fields).length}): ` +
+      JSON.stringify(form_fields).slice(0, 400),
+  );
 
   if (!phone_raw && !email && !full_name) {
     console.warn('[fb-leads/zapier] Sin datos de contacto, ignorando');

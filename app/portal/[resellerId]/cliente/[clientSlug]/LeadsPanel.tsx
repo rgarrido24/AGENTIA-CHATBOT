@@ -285,13 +285,64 @@ const TOKENS_LIGHT: LeadUITokens = {
 
 const LeadUiContext = createContext<LeadUITokens>(TOKENS_DARK);
 
-function waUrl(tel: string) { return `https://wa.me/${tel.replace(/\D/g, '')}`; }
+/**
+ * Normaliza un teléfono argentino a formato internacional E.164 para WhatsApp.
+ *
+ * Casos que arregla:
+ *   - "01157550180"   → "5491157550180"   (quita 0 nacional + agrega 549 móvil)
+ *   - "1157550180"    → "5491157550180"   (10 dígitos AR sin prefijo)
+ *   - "541157550180"  → "5491157550180"   (54 sin 9 móvil → agrega 9)
+ *   - "5491157550180" → "5491157550180"   (ya correcto, devuelve igual)
+ *   - "0351 6789012"  → "5493516789012"   (Córdoba)
+ *   - "+52 1 55 1234567" → "5215512345678" (México intacto)
+ *
+ * Heurística: si el número ya tiene un código de país no-AR (52, 1, 34, etc.)
+ * lo respeta. Solo aplica la lógica AR cuando detecta un formato local AR.
+ */
+function normalizePhoneForWa(tel: string): string {
+  let d = (tel || '').replace(/\D/g, '');
+  if (!d) return '';
+
+  // Si ya está en formato AR correcto con 9 móvil (549 + 10 dígitos = 13)
+  if (d.startsWith('549') && d.length === 13) return d;
+
+  // 54 + 10 dígitos sin el 9 móvil → insertar 9
+  if (d.startsWith('54') && d.length === 12) return `549${d.slice(2)}`;
+
+  // Cualquier otro número con código de país de 2 dígitos válido (>= 12 dígitos)
+  // que no sea AR — lo dejamos pasar tal cual (MX 52, ES 34, etc.)
+  if (d.length >= 12 && !d.startsWith('0')) return d;
+
+  // Formato local AR con 0 nacional (11 dígitos empezando con 0)
+  if (d.startsWith('0') && d.length === 11) {
+    return `549${d.slice(1)}`;
+  }
+
+  // 10 dígitos sin prefijo → asumir AR móvil
+  if (d.length === 10) return `549${d}`;
+
+  // 11 dígitos sin 0 inicial (raro) → asumir AR móvil con 9 ya incluido
+  if (d.length === 11 && d.startsWith('9')) return `54${d}`;
+
+  // Fallback: devolver los dígitos tal cual
+  return d;
+}
+
+function waUrl(tel: string) {
+  const normalized = normalizePhoneForWa(tel);
+  return `https://wa.me/${normalized}`;
+}
 
 function formatPhone(tel: string) {
-  const d = tel.replace(/\D/g, '');
-  if (d.startsWith('5493') && d.length === 13) return `+54 351 ${d.slice(6, 9)}-${d.slice(9)}`;
-  if (d.length >= 10) return `+${d}`;
-  return tel || '—';
+  const d = normalizePhoneForWa(tel);
+  if (!d) return tel || '—';
+  // AR móvil: 549 + cód área 2-4 dígitos + número
+  if (d.startsWith('549') && d.length === 13) {
+    const area = d.slice(3, 5); // 11 (CABA), 35 (Córdoba), etc.
+    if (area === '11') return `+54 9 11 ${d.slice(5, 9)}-${d.slice(9)}`;
+    return `+54 9 ${d.slice(3, 6)} ${d.slice(6, 9)}-${d.slice(9)}`;
+  }
+  return `+${d}`;
 }
 
 function timeAgo(iso: string) {
@@ -450,34 +501,73 @@ function LeadDetail({
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, ' ')
       .trim();
-  const normMap = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const [k, v] of Object.entries(ff)) {
-      if (typeof v !== 'string') continue;
-      const vv = v.trim();
-      if (!vv) continue;
-      m.set(normalizeKey(k), vv);
-    }
-    return m;
-  }, [ff]);
-  const getField = (...keys: string[]) => {
-    for (const k of keys) {
-      const direct = ff[k];
-      if (typeof direct === 'string' && direct.trim()) return direct.trim();
-      const vv = normMap.get(normalizeKey(k));
-      if (vv) return vv;
-    }
-    return '—';
+
+  /** Etiquetas "lindas" para los campos comunes del formulario.
+   *  Cualquier campo que no esté acá se renderiza igualmente, usando el nombre
+   *  original tal como llegó del webhook (con `humanLabel` arriba).
+   */
+  const FRIENDLY_LABELS: Record<string, string> = {
+    [normalizeKey('Con que contas')]: 'CON QUÉ CONTÁS',
+    [normalizeKey('Con que cuentas')]: 'CON QUÉ CUENTAS',
+    [normalizeKey('Confirma tu edad')]: 'CONFIRMA TU EDAD',
+    [normalizeKey('Rango de edad')]: 'RANGO DE EDAD',
+    [normalizeKey('Edad')]: 'EDAD',
+    [normalizeKey('DNI')]: 'DNI',
+    [normalizeKey('Documento')]: 'DOCUMENTO',
+    [normalizeKey('Ciudad')]: 'CIUDAD',
+    [normalizeKey('Provincia')]: 'PROVINCIA',
+    [normalizeKey('Codigo postal')]: 'CÓDIGO POSTAL',
+    [normalizeKey('Direccion')]: 'DIRECCIÓN',
+    [normalizeKey('Fecha de nacimiento')]: 'FECHA DE NACIMIENTO',
   };
 
+  /** Keys que NO se muestran como campos extras (ya van en la cabecera fija). */
+  const HIDDEN_KEYS = new Set([
+    normalizeKey('Nombre'),
+    normalizeKey('Nombre completo'),
+    normalizeKey('Full name'),
+    normalizeKey('Email'),
+    normalizeKey('Correo'),
+    normalizeKey('Whatsapp'),
+    normalizeKey('WhatsApp'),
+    normalizeKey('Telefono'),
+    normalizeKey('Phone'),
+    normalizeKey('Phone number'),
+    normalizeKey('Fecha'),
+    normalizeKey('Created time'),
+    normalizeKey('Lead Id'),
+    normalizeKey('Form Id'),
+    normalizeKey('Form name'),
+    normalizeKey('Page name'),
+    normalizeKey('Platform'),
+  ]);
+
+  /** Rows dinámicos: TODOS los `form_fields` que tengan valor, sin importar el nombre.
+   *  Esto soluciona el caso en el que Zapier o Meta mandan los campos con
+   *  IDs/keys diferentes a las hardcodeadas (DNI vs documento_nacional, etc.).
+   */
+  const extraRows = useMemo<[string, string][]>(() => {
+    const rows: [string, string][] = [];
+    const seen = new Set<string>();
+    for (const [rawKey, v] of Object.entries(ff)) {
+      if (typeof v !== 'string') continue;
+      const value = v.trim();
+      if (!value) continue;
+      const nk = normalizeKey(rawKey);
+      if (!nk || HIDDEN_KEYS.has(nk) || seen.has(nk)) continue;
+      seen.add(nk);
+      const label = FRIENDLY_LABELS[nk] || humanLabel(rawKey).toUpperCase();
+      rows.push([label, value]);
+    }
+    return rows;
+  }, [ff]);
+
   const detailRows: [string, string][] = [
-    ['NOMBRE',            lead.nombre || '—'],
-    ['WHATSAPP',          lead.telefono ? formatPhone(lead.telefono) : '—'],
-    ['EMAIL',             lead.email || '—'],
-    ['FECHA',             fmtDate(lead.createdAt)],
-    ['CON QUE CUENTAS',   getField('Con Que Contas?', 'Con Que Contas', 'Con qué contas?', 'Con qué cuentas', 'Con Que Cuentas', 'Con que cuentas', 'Con que contas')],
-    ['CONFIRMA TU EDAD',  getField('Confirma Tu Edad', 'Confirma tu edad', 'Confirma Tu edad', 'Rango de edad', 'Rango Edad', 'Edad')],
-    ['DNI',               getField('Dni', 'DNI', 'dni')],
+    ['NOMBRE',   lead.nombre || '—'],
+    ['WHATSAPP', lead.telefono ? formatPhone(lead.telefono) : '—'],
+    ['EMAIL',    lead.email || '—'],
+    ['FECHA',    fmtDate(lead.createdAt)],
+    ...extraRows,
   ];
 
   async function changeStatus(s: StatusSeg) {
