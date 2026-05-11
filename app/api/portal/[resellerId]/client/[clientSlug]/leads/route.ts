@@ -25,43 +25,51 @@ export async function GET(
 
   const db     = await getMongoDb();
   const client = await db.collection<ResellerClient>('leads').findOne({ resellerId, clientSlug, _collection_type: 'reseller_client' });
-  console.log('[leads-route] client doc:', JSON.stringify({ clientSlug, legacyQuery: client?.legacyQuery }));
   if (!client) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
 
+  // ─── Aislamiento estricto entre clientes ────────────────────────────────
+  // Lista de form_id permitidos para ESTE cliente (los configurados y activos).
+  // Si el cliente no tiene formularios activos cargados, no ve ningún lead
+  // (mejor mostrar vacío que filtrar cosas ajenas por error).
+  const allowedFormIds = (client.formularios ?? [])
+    .filter((f) => f.formId && f.activo !== false)
+    .map((f) => String(f.formId));
+
   const filterFormId = req.nextUrl.searchParams.get('formId') ?? '';
-  const base = buildLeadQuery(resellerId, clientSlug, client.legacyQuery);
-  const query = filterFormId ? { ...base, form_id: filterFormId } : base;
+  // Si el usuario pide un formId específico, validar que sea uno de los suyos.
+  const effectiveFormIds = filterFormId
+    ? (allowedFormIds.includes(filterFormId) ? [filterFormId] : [])
+    : allowedFormIds;
+
+  const base = buildLeadQuery(resellerId, clientSlug, effectiveFormIds);
   const totalCount = await db.collection('leads').countDocuments(base);
-  console.log('[leads-route] query:', JSON.stringify(base), '→ total:', totalCount);
+  console.log(
+    '[leads-route] strict isolation',
+    JSON.stringify({ resellerId, clientSlug, allowedFormIds, effectiveFormIds, totalCount }),
+  );
 
-  const docs = await db
-    .collection('leads')
-    .find(query)
-    .sort({ createdAt: -1 })
-    .limit(300)
-    .project({
-      leadId: 1, nombre: 1, senderName: 1, telefono: 1, senderId: 1,
-      email: 1, campana: 1, adset: 1, canal_origen: 1,
-      form_id: 1, form_name: 1, page_name: 1, platform_src: 1,
-      form_fields: 1, status_vendedor: 1, status: 1,
-      status_seguimiento: 1, notas: 1, createdAt: 1, _id: 0,
-    })
-    .toArray();
+  const docs = effectiveFormIds.length === 0
+    ? []
+    : await db
+      .collection('leads')
+      .find(base)
+      .sort({ createdAt: -1 })
+      .limit(300)
+      .project({
+        leadId: 1, nombre: 1, senderName: 1, telefono: 1, senderId: 1,
+        email: 1, campana: 1, adset: 1, canal_origen: 1,
+        form_id: 1, form_name: 1, page_name: 1, platform_src: 1,
+        form_fields: 1, status_vendedor: 1, status: 1,
+        status_seguimiento: 1, notas: 1, createdAt: 1, _id: 0,
+      })
+      .toArray();
 
-  // Unique form IDs for the filter dropdown — client formularios config has priority for names
-  const formMap = new Map<string, string>();
-  for (const f of (client.formularios ?? [])) {
-    if (f.formId) formMap.set(String(f.formId), String(f.formName || f.formId));
-  }
-  const allDocs = filterFormId
-    ? await db.collection('leads').find(base).project({ form_id: 1, form_name: 1, _id: 0 }).toArray()
-    : docs;
-  for (const d of allDocs) {
-    if (d.form_id && !formMap.has(String(d.form_id))) {
-      formMap.set(String(d.form_id), String(d.form_name || d.form_id));
-    }
-  }
-  const formIds = Array.from(formMap.entries()).map(([id, name]) => ({ id, name }));
+  // El dropdown SOLO muestra los formularios configurados para este cliente.
+  // Nunca inferimos formIds desde los leads — eso es lo que filtraba info ajena.
+  const formIds = (client.formularios ?? [])
+    .filter((f) => f.formId)
+    .map((f) => ({ id: String(f.formId), name: String(f.formName || f.formId) }));
+  const formMap = new Map<string, string>(formIds.map((f) => [f.id, f.name]));
 
   const leads = docs.map((d) => ({
     id:                 d.leadId as string,
@@ -106,24 +114,38 @@ export async function DELETE(
   const client = await db.collection<ResellerClient>('leads').findOne({ resellerId, clientSlug, _collection_type: 'reseller_client' });
   if (!client) return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
 
-  const scope  = buildLeadQuery(resellerId, clientSlug, client.legacyQuery);
-  const filter = '$or' in scope ? { $and: [{ leadId }, scope] } : { leadId, ...scope };
+  const allowedFormIds = (client.formularios ?? [])
+    .filter((f) => f.formId && f.activo !== false)
+    .map((f) => String(f.formId));
 
-  const result = await db.collection('leads').deleteOne(filter);
+  const scope  = buildLeadQuery(resellerId, clientSlug, allowedFormIds);
+  const result = await db.collection('leads').deleteOne({ leadId, ...scope });
   if (result.deletedCount === 0) {
     return NextResponse.json({ error: 'Lead no encontrado o sin permiso' }, { status: 404 });
   }
   return NextResponse.json({ ok: true });
 }
 
+/**
+ * Aislamiento estricto: un cliente solo ve leads que cumplan TODAS estas
+ * condiciones a la vez:
+ *   1. resellerId === su reseller (Luciano)
+ *   2. clientSlug === su slug (antonio, gabriela_alcaraz, etc.)
+ *   3. form_id ∈ formularios configurados y activos para ESE cliente
+ *
+ * Si el cliente no tiene formularios configurados, no ve nada (fail-closed),
+ * que es lo correcto en términos de privacidad.
+ */
 function buildLeadQuery(
   resellerId: string,
   clientSlug: string,
-  legacyQuery?: Record<string, unknown>
+  allowedFormIds: string[],
 ): Record<string, unknown> {
-  const primary = { resellerId, clientSlug };
-  if (!legacyQuery) return primary;
-  return { $or: [primary, legacyQuery] };
+  if (allowedFormIds.length === 0) {
+    // Fail-closed: ningún match posible si no hay formularios cargados.
+    return { resellerId, clientSlug, form_id: { $in: [] } };
+  }
+  return { resellerId, clientSlug, form_id: { $in: allowedFormIds } };
 }
 
 function mapEstado(sv: string | undefined): 'nuevo' | 'contactado' | 'en_seguimiento' {

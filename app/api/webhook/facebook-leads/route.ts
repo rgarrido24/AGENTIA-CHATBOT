@@ -111,22 +111,53 @@ async function insertLeadBackup(
 // ─── Lookup de reseller/cliente por formId ───────────────────────────────────
 type ResellerMatch = { resellerId: string; clientSlug: string; alertNumber?: string } | null;
 
+/**
+ * Encuentra el cliente al que pertenece un formId. Si el mismo formId está
+ * configurado en MÚLTIPLES clientes (error de configuración que rompería el
+ * aislamiento de privacidad), loggea CRITICAL y elige determinísticamente
+ * el más reciente por createdAt como fallback — pero deja la advertencia en
+ * los logs para que el operador corrija la duplicación.
+ */
 async function resolveResellerByFormId(formId: string): Promise<ResellerMatch> {
   if (!formId) return null;
   try {
-    const db     = await getMongoDb();
-    const client = await db.collection('leads').findOne({
-      _collection_type:     'reseller_client',
-      'formularios.formId': formId,
-      'formularios.activo': true,
-    });
-    if (!client) return null;
+    const db = await getMongoDb();
+    const matches = await db
+      .collection('leads')
+      .find({
+        _collection_type:     'reseller_client',
+        'formularios.formId': formId,
+        'formularios.activo': true,
+      })
+      .project({ resellerId: 1, clientSlug: 1, alertNumber: 1, nombre: 1, createdAt: 1, _id: 0 })
+      .toArray();
+
+    if (matches.length === 0) return null;
+
+    if (matches.length > 1) {
+      console.error(
+        `[fb-leads] ⚠️ CONFLICTO DE PRIVACIDAD: el formId "${formId}" está configurado en ${matches.length} clientes a la vez: ` +
+          matches
+            .map((m) => `${m.resellerId}/${m.clientSlug} (${m.nombre || 'sin nombre'})`)
+            .join(' | ') +
+          '. Esto NUNCA debe pasar — los leads quedarán mezclados entre clientes. Corregir en el dashboard del reseller.',
+      );
+    }
+
+    // Elegir el más reciente determinísticamente cuando hay duplicados
+    const chosen = matches.sort((a, b) => {
+      const ta = a.createdAt ? new Date(a.createdAt as Date).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt as Date).getTime() : 0;
+      return tb - ta;
+    })[0];
+
     return {
-      resellerId:  String(client.resellerId),
-      clientSlug:  String(client.clientSlug),
-      alertNumber: client.alertNumber ? String(client.alertNumber) : undefined,
+      resellerId:  String(chosen.resellerId),
+      clientSlug:  String(chosen.clientSlug),
+      alertNumber: chosen.alertNumber ? String(chosen.alertNumber) : undefined,
     };
-  } catch {
+  } catch (err) {
+    console.error('[fb-leads] resolveResellerByFormId error:', (err as Error)?.message);
     return null;
   }
 }
