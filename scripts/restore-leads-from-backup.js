@@ -39,10 +39,39 @@
  *     --form-id 1424965795847302 --from 2026-05-01 --apply
  */
 
-require('dotenv').config({ path: '.env.local' });
-require('dotenv').config();
-
 const { MongoClient } = require('mongodb');
+const fs = require('fs');
+const path = require('path');
+
+// ─── Loader simple de .env / .env.local (sin dependencia de `dotenv`) ────
+function stripBom(text) {
+  if (text.charCodeAt(0) === 0xfeff) return text.slice(1);
+  return text;
+}
+function loadEnvFile(p) {
+  if (!fs.existsSync(p)) return {};
+  const pairs = {};
+  const raw = stripBom(fs.readFileSync(p, 'utf8'));
+  for (const line of raw.split('\n')) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    const eq = t.indexOf('=');
+    if (eq < 1) continue;
+    const k = t.slice(0, eq).trim();
+    let v = t.slice(eq + 1).trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+      v = v.slice(1, -1);
+    }
+    pairs[k] = v;
+  }
+  return pairs;
+}
+const ROOT = path.join(__dirname, '..');
+const ENV = {
+  ...loadEnvFile(path.join(ROOT, '.env')),
+  ...loadEnvFile(path.join(ROOT, '.env.local')),
+  ...process.env,
+};
 
 const ARGS = process.argv.slice(2);
 function getFlag(name) {
@@ -64,8 +93,8 @@ if (!RESELLER || !CLIENT_SLUG) {
 }
 
 async function main() {
-  const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB || 'agentia_chatbot_ventas';
+  const uri = ENV.MONGODB_URI;
+  const dbName = ENV.MONGODB_DB || 'agentia_chatbot_ventas';
   if (!uri) {
     console.error('❌ Falta MONGODB_URI en .env / variables de entorno');
     process.exit(1);

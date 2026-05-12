@@ -21,10 +21,33 @@
  * con `reassigned_at` + `reassigned_from` para auditoría.
  */
 
-require('dotenv').config({ path: '.env.local' });
-require('dotenv').config();
-
 const { MongoClient } = require('mongodb');
+const fs = require('fs');
+const path = require('path');
+
+function stripBom(t) { return t.charCodeAt(0) === 0xfeff ? t.slice(1) : t; }
+function loadEnvFile(p) {
+  if (!fs.existsSync(p)) return {};
+  const pairs = {};
+  const raw = stripBom(fs.readFileSync(p, 'utf8'));
+  for (const line of raw.split('\n')) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    const eq = t.indexOf('=');
+    if (eq < 1) continue;
+    const k = t.slice(0, eq).trim();
+    let v = t.slice(eq + 1).trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+    pairs[k] = v;
+  }
+  return pairs;
+}
+const ROOT = path.join(__dirname, '..');
+const ENV = {
+  ...loadEnvFile(path.join(ROOT, '.env')),
+  ...loadEnvFile(path.join(ROOT, '.env.local')),
+  ...process.env,
+};
 
 const ARGS = process.argv.slice(2);
 const APPLY = ARGS.includes('--apply');
@@ -34,8 +57,8 @@ const RESELLER_FILTER = (() => {
 })();
 
 async function main() {
-  const uri = process.env.MONGODB_URI;
-  const dbName = process.env.MONGODB_DB || process.env.MONGO_DB || 'agentia';
+  const uri = ENV.MONGODB_URI;
+  const dbName = ENV.MONGODB_DB || ENV.MONGO_DB || 'agentia_chatbot_ventas';
   if (!uri) {
     console.error('❌ Falta MONGODB_URI en .env');
     process.exit(1);
