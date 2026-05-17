@@ -16,10 +16,11 @@ dist
 scripts/page-tokens.json
 env-local-restore.txt
 
-# WhatsApp session (whatsapp-web.js)
+# WhatsApp session (whatsapp-web.js + Baileys)
 .wwebjs_auth
 .wwebjs_auth_*
 .wwebjs_cache
+.baileys_auth_*
 .whatsapp-kill.ps1
 
 # Bases de datos locales
