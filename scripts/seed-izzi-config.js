@@ -101,7 +101,9 @@ Negocios: mismos descuentos (-$81 en 120MB, -$101 de 150MB a 1000MB) sobre preci
 Si el cliente tiene pago anticipado, el descuento Hot Sale inicia en mes 2.
 
 ## PAGO ANTICIPADO ACTUALIZADO (hasta 31 mayo)
-- $350 primer mes en 3P/3PM de 100 a 1000 MB (nacional).
+- Residencial 3P/3PM: $350 primer mes (100 a 1000 MB, nacional).
+- Negocios 3P: $400 primer mes (no $350).
+- Con móvil (3PM): sumar el precio del plan móvil al pago anticipado. Ejemplo: 3PM + móvil 5GB = $350 + $120 = $470 primer mes.
 - Mérida y Progreso: $100 residencial / $150 negocios en paquetes 2P y 3P de 80, 100 y 120 MB (primer mes).
 - IMPORTANTE: el pago anticipado de $300 ya NO existe — quedó obsoleto desde el 17 de mayo.
 
@@ -114,6 +116,15 @@ Incluye HBO Max básico con anuncios gratis 12 meses. NO seleccionar el compleme
 ## PROMOCIÓN 120 MB OUTBOUND (hasta 31 mayo)
 Solo aplica canal CC Outbound/Digital.
 Incluye Disney+ Estándar con anuncios gratis 12 meses. NO seleccionar el complemento manualmente (cancela el beneficio).
+
+## CORRECCIONES Y EXCEPCIONES IMPORTANTES
+
+### 120 MB en zona FTTH
+En zonas FTTH el cliente que contrate 120 MB (2P o 3P tradicional, sin móvil) recibe automáticamente 150 MB simétricos durante 12 meses. Al mes 13 baja a 120 MB. NO seleccionar complemento manualmente.
+
+### Hot Sale — excepciones por plaza
+- Hot Sale NO aplica en Monterrey ni HUB Polanco para paquetes de 150 MB.
+- El descuento permanente de -$91 en 120 MB (AC 1034) NO aplica en Mérida ni Progreso. Solo en las plazas listadas en esa campaña específica.
 
 ## PLANES izzi móvil
 5GB 12m: $240 sin izzi / $120 con izzi fijo | 10GB 12m: $300-360 / $150-180 | 20GB: $500 / $250
