@@ -150,16 +150,19 @@ async function getDb() {
 
 async function saveQrToMongo(clientId, qr) {
   try {
+    const cleanQr = typeof qr === 'string'
+      ? qr.replace(/^data:[^;]+;base64,/, '').trim()
+      : qr;
     const db = await getDb();
     await db.collection('whatsapp_qr').updateOne(
       { _id: clientId },
-      { $set: { qr, connected: false, updatedAt: new Date(), clientId } },
+      { $set: { qr: cleanQr, connected: false, updatedAt: new Date(), clientId } },
       { upsert: true }
     );
     if (clientId === 'agentia') {
       await db.collection('whatsapp_qr').updateOne(
         { _id: 'current' },
-        { $set: { qr, updatedAt: new Date() } },
+        { $set: { qr: cleanQr, updatedAt: new Date() } },
         { upsert: true }
       );
     }
@@ -238,7 +241,7 @@ async function callChatApi(clientId, message, senderId, senderName, mediaBase64,
 
 // ─── Estado por cliente ──────────────────────────────────────────────────────
 
-/** @type {Map<string, { sock: any, ready: boolean, state: string, reconnectAttempt: number, starting: boolean, lastQr: string|null }>} */
+/** @type {Map<string, { sock: any, ready: boolean, state: string, reconnectAttempt: number, starting: boolean, lastQr: string|null, qrTimer: ReturnType<typeof setTimeout>|null }>} */
 const clients = new Map();
 
 function getClientState(id) {
@@ -446,7 +449,7 @@ async function startClient(clientId, baileys) {
 
   let state = clients.get(id);
   if (!state) {
-    state = { sock: null, ready: false, state: 'boot', reconnectAttempt: 0, starting: false, lastQr: null };
+    state = { sock: null, ready: false, state: 'boot', reconnectAttempt: 0, starting: false, lastQr: null, qrTimer: null };
     clients.set(id, state);
   }
   if (state.starting) {
@@ -508,12 +511,24 @@ async function startClient(clientId, baileys) {
     if (qr) {
       state.state = 'qr';
       state.lastQr = qr;
+      // Reiniciar timer: si en 60s no se escanea, forzar nuevo QR
+      if (state.qrTimer) clearTimeout(state.qrTimer);
+      state.qrTimer = setTimeout(() => {
+        state.qrTimer = null;
+        if (state.state === 'qr') {
+          console.log(`[Baileys] (${id}) QR expiró (60s) — reiniciando para nuevo QR`);
+          startClient(id, baileys).catch((e) => {
+            console.error(`[Baileys] (${id}) Error reiniciando por QR timeout:`, e?.message || e);
+          });
+        }
+      }, 60_000);
       console.log(`[Baileys] (${id}) QR — escanear en ${getApiBase()}/api/whatsapp/qr?clientId=${encodeURIComponent(id)}`);
       await saveQrToMongo(id, qr);
       await postQrToApi(id, { qr });
     }
 
     if (connection === 'open') {
+      if (state.qrTimer) { clearTimeout(state.qrTimer); state.qrTimer = null; }
       state.state = 'ready';
       state.ready = true;
       state.reconnectAttempt = 0;
@@ -524,6 +539,7 @@ async function startClient(clientId, baileys) {
     }
 
     if (connection === 'close') {
+      if (state.qrTimer) { clearTimeout(state.qrTimer); state.qrTimer = null; }
       state.state = 'disconnected';
       state.ready = false;
       await setConnectedInMongo(id, false);
