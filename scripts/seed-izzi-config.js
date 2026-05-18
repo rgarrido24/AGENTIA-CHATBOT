@@ -92,6 +92,29 @@ Aplica en: Mérida, Progreso, Puebla, Tabasco, Tlaxcala y Veracruz.
 Hot Sale 17 mayo-2 junio: descuentos permanentes desde mes 1 en 100-1000 MB.
 Pago anticipado Sureste1: $350 en 3P/3PM (100-1000 MB).
 
+## HOT SALE 2026 (17 mayo – 2 junio, nacional)
+Descuentos PERMANENTES desde mes 1. NO aplica combinado con izzi móvil.
+2P residencial: 120MB $459 | 150MB $539 | 200MB $599 | 500MB $719 | 1000MB $919
+3P residencial: 120MB+TV $639 | 150MB+TV $719 | 200MB+TV $779 | 500MB+TV $899 | 1000MB+TV $1,099
+Negocios: mismos descuentos (-$81 en 120MB, -$101 de 150MB a 1000MB) sobre precios lista negocios.
+100MB especial: residencial 2P $429 | negocios 2P $479 — descuento 6 meses. NO aplica en Coatzacoalcos, Tlaxcala y otras plazas específicas (verificar cobertura).
+Si el cliente tiene pago anticipado, el descuento Hot Sale inicia en mes 2.
+
+## PAGO ANTICIPADO ACTUALIZADO (hasta 31 mayo)
+- $350 primer mes en 3P/3PM de 100 a 1000 MB (nacional).
+- Mérida y Progreso: $100 residencial / $150 negocios en paquetes 2P y 3P de 80, 100 y 120 MB (primer mes).
+- IMPORTANTE: el pago anticipado de $300 ya NO existe — quedó obsoleto desde el 17 de mayo.
+
+## PROMOCIÓN 100 MB OUTBOUND (hasta 31 mayo)
+Solo aplica canal CC Outbound/Digital.
+Residencial 100MB 2P: $429 meses 1-3, luego $449 permanente.
+Negocios 100MB 2P: $479 meses 1-3, luego $499 permanente.
+Incluye HBO Max básico con anuncios gratis 12 meses. NO seleccionar el complemento manualmente (cancela el beneficio).
+
+## PROMOCIÓN 120 MB OUTBOUND (hasta 31 mayo)
+Solo aplica canal CC Outbound/Digital.
+Incluye Disney+ Estándar con anuncios gratis 12 meses. NO seleccionar el complemento manualmente (cancela el beneficio).
+
 ## PLANES izzi móvil
 5GB 12m: $240 sin izzi / $120 con izzi fijo | 10GB 12m: $300-360 / $150-180 | 20GB: $500 / $250
 Comparte datos: $600-700 / $300-350 | Plan Familiar: $900 / $450
@@ -165,7 +188,7 @@ async function main() {
   const db = client.db();
   const result = await db.collection('business_configs').updateOne(
     { clientId: 'izzi' },
-    { $set: { systemPrompt, knowledge, updatedAt: new Date('2026-05-18') } }
+    { $set: { systemPrompt, knowledge, updatedAt: new Date('2026-05-18T12:00:00Z') } }
   );
   console.log(result.modifiedCount === 1 ? '✅ Actualizado OK' : '⚠️ Sin cambios (documento idéntico o no existe)');
   await client.close();
