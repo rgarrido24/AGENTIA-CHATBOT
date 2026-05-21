@@ -1,14 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-
-type BriefQuestion = {
-  id: string;
-  step: 1 | 2 | 3 | 4;
-  label: string;
-  type: 'text' | 'textarea' | 'yesno' | 'number' | 'url';
-  placeholder?: string;
-};
+import type { BriefQuestion } from '@/lib/brief-default-questions';
 
 type ApiDoc = {
   token: string;
@@ -48,13 +41,6 @@ export default function BriefPublicForm({ token }: { token: string }) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ score: number; recommendation: string } | null>(null);
-
-  const [client, setClient] = useState({
-    contacto_nombre: '',
-    contacto_whatsapp: '',
-    contacto_email: '',
-    negocio_nombre: '',
-  });
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
 
@@ -97,6 +83,20 @@ export default function BriefPublicForm({ token }: { token: string }) {
     if (!doc) return;
     setSubmitting(true);
     setError('');
+    const historia = String(answers.negocio_historia ?? '').trim();
+    const negocioNombre =
+      historia.split('\n')[0].slice(0, 80) ||
+      String(answers.negocio_productos_promo ?? '')
+        .trim()
+        .split('\n')[0]
+        .slice(0, 80) ||
+      '—';
+    const client = {
+      contacto_nombre: String(answers.contacto_nombre ?? '').trim(),
+      contacto_whatsapp: String(answers.contacto_whatsapp ?? '').trim(),
+      contacto_email: String(answers.contacto_email ?? '').trim(),
+      negocio_nombre: negocioNombre,
+    };
     try {
       const res = await fetch(`/api/brief/${encodeURIComponent(token)}`, {
         method: 'POST',
@@ -149,51 +149,6 @@ export default function BriefPublicForm({ token }: { token: string }) {
                 <StepPill n={4} active={step === 4} />
               </div>
 
-              {step === 1 && (
-                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-semibold" style={{ color: '#475569' }}>Nombre del negocio</label>
-                    <input
-                      className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-                      style={{ borderColor: '#cbd5e1', background: '#fff', color: '#0f172a' }}
-                      value={client.negocio_nombre}
-                      onChange={(e) => setClient((p) => ({ ...p, negocio_nombre: e.target.value }))}
-                      placeholder="Ej: Mi negocio"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold" style={{ color: '#475569' }}>Tu nombre</label>
-                    <input
-                      className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-                      style={{ borderColor: '#cbd5e1', background: '#fff', color: '#0f172a' }}
-                      value={client.contacto_nombre}
-                      onChange={(e) => setClient((p) => ({ ...p, contacto_nombre: e.target.value }))}
-                      placeholder="Nombre y apellido"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold" style={{ color: '#475569' }}>WhatsApp</label>
-                    <input
-                      className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-                      style={{ borderColor: '#cbd5e1', background: '#fff', color: '#0f172a' }}
-                      value={client.contacto_whatsapp}
-                      onChange={(e) => setClient((p) => ({ ...p, contacto_whatsapp: e.target.value }))}
-                      placeholder="+52..."
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="text-xs font-semibold" style={{ color: '#475569' }}>Email</label>
-                    <input
-                      className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
-                      style={{ borderColor: '#cbd5e1', background: '#fff', color: '#0f172a' }}
-                      value={client.contacto_email}
-                      onChange={(e) => setClient((p) => ({ ...p, contacto_email: e.target.value }))}
-                      placeholder="email@empresa.com"
-                    />
-                  </div>
-                </div>
-              )}
-
               <div className="mt-6 space-y-4">
                 {current.map((q) => (
                   <div key={q.id}>
@@ -229,6 +184,7 @@ export default function BriefPublicForm({ token }: { token: string }) {
                       </div>
                     ) : (
                       <input
+                        type={q.type === 'number' ? 'number' : q.type === 'url' ? 'url' : 'text'}
                         className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
                         style={{ borderColor: '#cbd5e1', background: '#fff', color: '#0f172a' }}
                         value={answers[q.id] ?? ''}

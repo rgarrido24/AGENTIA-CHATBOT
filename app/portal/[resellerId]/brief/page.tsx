@@ -3,6 +3,8 @@ import { getMongoDb } from '@/lib/mongodb';
 import { LucianoPortalThemeProvider } from '../dashboard/LucianoPortalTheme';
 import BriefAdminView from './ui/BriefAdminView';
 
+/** Preguntas por defecto del brief: `lib/brief-default-questions.ts` (editables en BriefAdminView). */
+
 export const dynamic = 'force-dynamic';
 
 type BriefRow = {

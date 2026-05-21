@@ -2,16 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getMongoDb } from '@/lib/mongodb';
 import { verifyResellerCookie, COOKIE_NAME } from '@/lib/reseller-auth';
+import { DEFAULT_BRIEF_QUESTIONS, type BriefQuestion } from '@/lib/brief-default-questions';
 
 export const dynamic = 'force-dynamic';
-
-type BriefQuestion = {
-  id: string;
-  step: 1 | 2 | 3 | 4;
-  label: string;
-  type: 'text' | 'textarea' | 'yesno' | 'number' | 'url';
-  placeholder?: string;
-};
 
 type BriefDoc = {
   token: string;
@@ -50,32 +43,7 @@ function normalizeQuestions(input: unknown): BriefQuestion[] {
 }
 
 function defaultQuestions(): BriefQuestion[] {
-  return [
-    // Paso 1 — Perfil
-    { id: 'negocio_nombre', step: 1, label: 'Nombre del negocio', type: 'text', placeholder: 'Ej: Deco House' },
-    { id: 'negocio_rubro', step: 1, label: 'Rubro', type: 'text', placeholder: 'Ej: Construcción, estética, servicios...' },
-    { id: 'negocio_producto', step: 1, label: 'Producto / servicio principal', type: 'textarea' },
-    { id: 'negocio_redes', step: 1, label: 'Redes sociales (links)', type: 'textarea', placeholder: 'Instagram, Facebook, TikTok...' },
-    { id: 'negocio_web', step: 1, label: 'Sitio web', type: 'url', placeholder: 'https://...' },
-
-    // Paso 2 — Objetivos
-    { id: 'objetivo_principal', step: 2, label: 'Objetivo principal', type: 'textarea', placeholder: 'Ej: generar leads, ventas, mensajes...' },
-    { id: 'publico_objetivo', step: 2, label: 'Público objetivo', type: 'textarea' },
-    { id: 'competidores', step: 2, label: 'Competidores', type: 'textarea' },
-    { id: 'diferenciador', step: 2, label: 'Diferenciador del negocio', type: 'textarea' },
-
-    // Paso 3 — Técnico
-    { id: 'tiene_pixel', step: 3, label: '¿Tiene Pixel de Facebook instalado?', type: 'yesno' },
-    { id: 'tiene_gtm', step: 3, label: '¿Tiene Google Tag Manager?', type: 'yesno' },
-    { id: 'meta_ads_activa', step: 3, label: '¿Cuenta de Meta Ads activa?', type: 'yesno' },
-    { id: 'tiene_catalogo', step: 3, label: '¿Catálogo de productos?', type: 'yesno' },
-
-    // Paso 4 — Inversión
-    { id: 'presupuesto_mensual', step: 4, label: 'Presupuesto mensual (MXN)', type: 'number', placeholder: 'Ej: 8000' },
-    { id: 'fecha_inicio', step: 4, label: 'Fecha de inicio', type: 'text', placeholder: 'Ej: 15/05/2026' },
-    { id: 'invirtio_antes', step: 4, label: '¿Ha invertido antes?', type: 'yesno' },
-    { id: 'resultados_previos', step: 4, label: 'Resultados anteriores', type: 'textarea' },
-  ];
+  return DEFAULT_BRIEF_QUESTIONS.map((q) => ({ ...q }));
 }
 
 export async function GET(req: NextRequest, { params }: { params: { resellerId: string } }) {

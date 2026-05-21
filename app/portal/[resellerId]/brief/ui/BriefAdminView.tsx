@@ -6,14 +6,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Moon, Sun, Copy, Plus, ExternalLink } from 'lucide-react';
 import { useLucianoPortalThemeOptional } from '../../dashboard/LucianoPortalTheme';
 import { LUCINO_PRODUCT_TITLE } from '@/lib/portal-luciano-ui';
-
-type BriefQuestion = {
-  id: string;
-  step: 1 | 2 | 3 | 4;
-  label: string;
-  type: 'text' | 'textarea' | 'yesno' | 'number' | 'url';
-  placeholder?: string;
-};
+import { DEFAULT_BRIEF_QUESTIONS, type BriefQuestion } from '@/lib/brief-default-questions';
 
 type BriefListRow = {
   token: string;
@@ -32,26 +25,6 @@ type Props = {
   nombre: string;
   briefs: BriefListRow[];
 };
-
-const DEFAULT_QUESTIONS: BriefQuestion[] = [
-  { id: 'negocio_nombre', step: 1, label: 'Nombre del negocio', type: 'text', placeholder: 'Ej: Tu negocio' },
-  { id: 'negocio_rubro', step: 1, label: 'Rubro', type: 'text' },
-  { id: 'negocio_producto', step: 1, label: 'Producto / servicio principal', type: 'textarea' },
-  { id: 'negocio_redes', step: 1, label: 'Redes sociales (links)', type: 'textarea' },
-  { id: 'negocio_web', step: 1, label: 'Sitio web', type: 'url', placeholder: 'https://...' },
-  { id: 'objetivo_principal', step: 2, label: 'Objetivo principal', type: 'textarea' },
-  { id: 'publico_objetivo', step: 2, label: 'Público objetivo', type: 'textarea' },
-  { id: 'competidores', step: 2, label: 'Competidores', type: 'textarea' },
-  { id: 'diferenciador', step: 2, label: 'Diferenciador del negocio', type: 'textarea' },
-  { id: 'tiene_pixel', step: 3, label: '¿Tiene Pixel de Facebook instalado?', type: 'yesno' },
-  { id: 'tiene_gtm', step: 3, label: '¿Tiene Google Tag Manager?', type: 'yesno' },
-  { id: 'meta_ads_activa', step: 3, label: '¿Cuenta de Meta Ads activa?', type: 'yesno' },
-  { id: 'tiene_catalogo', step: 3, label: '¿Catálogo de productos?', type: 'yesno' },
-  { id: 'presupuesto_mensual', step: 4, label: 'Presupuesto mensual (MXN)', type: 'number' },
-  { id: 'fecha_inicio', step: 4, label: 'Fecha de inicio', type: 'text' },
-  { id: 'invirtio_antes', step: 4, label: '¿Ha invertido antes?', type: 'yesno' },
-  { id: 'resultados_previos', step: 4, label: 'Resultados anteriores', type: 'textarea' },
-];
 
 function fmt(d: string | Date | null | undefined) {
   if (!d) return '—';
@@ -84,7 +57,9 @@ export default function BriefAdminView({
 
   const headerLine = isLuciano ? LUCINO_PRODUCT_TITLE : brandName ?? 'Portal';
 
-  const [questions, setQuestions] = useState<BriefQuestion[]>(DEFAULT_QUESTIONS);
+  const [questions, setQuestions] = useState<BriefQuestion[]>(() =>
+    DEFAULT_BRIEF_QUESTIONS.map((q) => ({ ...q }))
+  );
   const [creating, setCreating] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);

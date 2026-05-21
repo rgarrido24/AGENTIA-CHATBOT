@@ -42,9 +42,12 @@ function scoreBrief(answers: Record<string, unknown>): { score: number; reasons:
   }
 
   const presupuesto = Number(String(answers.presupuesto_mensual ?? '').replace(/[^\d.]/g, '')) || 0;
-  if (presupuesto > 5000) {
+  if (presupuesto > 200_000) {
     score += 20;
-    reasons.push('Presupuesto mensual > $5000 MXN (+20)');
+    reasons.push('Presupuesto mensual alto en ARS (+20)');
+  } else if (presupuesto > 5_000) {
+    score += 20;
+    reasons.push('Presupuesto mensual configurado (+20)');
   }
 
   const cuentaActiva = yes(answers.meta_ads_activa);
@@ -53,17 +56,17 @@ function scoreBrief(answers: Record<string, unknown>): { score: number; reasons:
     reasons.push('Cuenta Meta Ads activa (+20)');
   }
 
-  const objetivo = String(answers.objetivo_principal ?? '').trim();
-  if (objetivo.length >= 20) {
+  const historia = String(answers.negocio_historia ?? '').trim();
+  const objetivoLegacy = String(answers.objetivo_principal ?? '').trim();
+  if (historia.length >= 30 || objetivoLegacy.length >= 20) {
     score += 20;
-    reasons.push('Objetivo claro (+20)');
+    reasons.push('Historia u objetivo claro (+20)');
   }
 
-  const web = String(answers.negocio_web ?? '').trim();
-  const hasWeb = web.length >= 6;
-  if (hasWeb) {
+  const urlLine = String(answers.redes_y_web ?? answers.negocio_web ?? '').trim();
+  if (urlLine.startsWith('http') && urlLine.length >= 10) {
     score += 20;
-    reasons.push('Tiene web (+20)');
+    reasons.push('Web o enlaces declarados (+20)');
   }
 
   if (score > 100) score = 100;
@@ -77,23 +80,31 @@ async function buildRecommendation(params: {
   answers: Record<string, unknown>;
 }): Promise<string> {
   const profile = {
-    negocio: String(params.answers.negocio_nombre ?? ''),
-    rubro: String(params.answers.negocio_rubro ?? ''),
-    producto: String(params.answers.negocio_producto ?? ''),
-    web: String(params.answers.negocio_web ?? ''),
-    redes: String(params.answers.negocio_redes ?? ''),
-    objetivo: String(params.answers.objetivo_principal ?? ''),
-    publico: String(params.answers.publico_objetivo ?? ''),
+    nombreCompleto: String(params.answers.contacto_nombre ?? ''),
+    email: String(params.answers.contacto_email ?? ''),
+    cuit: String(params.answers.cuit_facturacion ?? ''),
+    negocioHistoria: String(params.answers.negocio_historia ?? ''),
+    productosPromo: String(params.answers.negocio_productos_promo ?? ''),
+    redesYWeb: String(params.answers.redes_y_web ?? ''),
     competidores: String(params.answers.competidores ?? ''),
+    publicoObjetivo: String(params.answers.publico_objetivo ?? ''),
+    geoAnuncios: String(params.answers.orientacion_geo_anuncios ?? ''),
     diferenciador: String(params.answers.diferenciador ?? ''),
     pixel: String(params.answers.tiene_pixel ?? ''),
     gtm: String(params.answers.tiene_gtm ?? ''),
     metaAds: String(params.answers.meta_ads_activa ?? ''),
     catalogo: String(params.answers.tiene_catalogo ?? ''),
-    presupuestoMensual: String(params.answers.presupuesto_mensual ?? ''),
+    presupuestoMensualArs: String(params.answers.presupuesto_mensual ?? ''),
     fechaInicio: String(params.answers.fecha_inicio ?? ''),
     invirtioAntes: String(params.answers.invirtio_antes ?? ''),
     resultadosPrevios: String(params.answers.resultados_previos ?? ''),
+    // Compat briefs antiguos (ids previos)
+    negocioLegacy: String(params.answers.negocio_nombre ?? ''),
+    rubroLegacy: String(params.answers.negocio_rubro ?? ''),
+    productoLegacy: String(params.answers.negocio_producto ?? ''),
+    webLegacy: String(params.answers.negocio_web ?? ''),
+    redesLegacy: String(params.answers.negocio_redes ?? ''),
+    objetivoLegacy: String(params.answers.objetivo_principal ?? ''),
   };
 
   const systemInstruction =
@@ -111,7 +122,11 @@ async function buildRecommendation(params: {
     return await generateGeminiReply({ userMessage, systemInstruction });
   } catch {
     // Fallback seguro si falta GEMINI_API_KEY o hay error.
-    const objetivo = profile.objetivo ? `Objetivo: ${profile.objetivo}` : 'Definir objetivo y KPIs.';
+    const objetivo =
+      profile.diferenciador ||
+      profile.negocioHistoria ||
+      profile.objetivoLegacy ||
+      'Definir objetivo y KPIs.';
     return [
       '- Diagnóstico: falta información o tracking a validar.',
       `- ${objetivo}`,
