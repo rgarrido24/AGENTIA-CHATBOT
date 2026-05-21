@@ -2,7 +2,7 @@
  * Baileys WhatsApp Bridge — sin Chrome/Puppeteer.
  *
  * - Multi-client: AGENTIA_WHATSAPP_CLIENT_IDS (coma) o AGENTIA_WHATSAPP_CLIENT_ID
- * - Sesión persistente: .baileys_auth_<clientId>/
+ * - Sesión persistente: MongoDB colección `whatsapp_sessions` (creds + keys por clientId)
  * - QR en MongoDB colección whatsapp_qr (+ API qr-store opcional)
  * - Polling outbound_messages cada 5s vía /api/chat/outbound
  * - Health: GET /health en PORT o 10000
@@ -184,6 +184,114 @@ async function setConnectedInMongo(clientId, connected) {
   } catch (e) {
     console.error(`[Baileys] (${clientId}) Error actualizando connected en MongoDB:`, e?.message || e);
   }
+}
+
+/**
+ * Auth state Baileys en MongoDB (sobrevive redeploys en Railway).
+ * Misma semántica que useMultiFileAuthState: creds + keys por tipo/id.
+ *
+ * @param {import('mongodb').Db} db
+ * @param {string} clientId
+ * @param {*} baileysPkg — namespace import de @whiskeysockets/baileys
+ */
+async function useMongoAuthState(db, clientId, baileysPkg) {
+  const { initAuthCreds, BufferJSON, proto } = baileysPkg;
+  const col = db.collection('whatsapp_sessions');
+
+  await col.createIndex({ clientId: 1 }, { unique: true }).catch(() => {});
+
+  const doc = await col.findOne({ clientId });
+
+  let creds;
+  if (doc?.creds && typeof doc.creds === 'object' && Object.keys(doc.creds).length > 0) {
+    try {
+      creds = JSON.parse(JSON.stringify(doc.creds), BufferJSON.reviver);
+    } catch (e) {
+      console.warn(`[Baileys] (${clientId}) creds inválidas en MongoDB, usando nuevas:`, e?.message || e);
+      creds = initAuthCreds();
+    }
+  } else {
+    creds = initAuthCreds();
+  }
+
+  let inMemoryKeys = {};
+  if (doc?.keys && typeof doc.keys === 'object' && Object.keys(doc.keys).length > 0) {
+    try {
+      inMemoryKeys = JSON.parse(JSON.stringify(doc.keys), BufferJSON.reviver);
+    } catch (e) {
+      console.warn(`[Baileys] (${clientId}) keys inválidas en MongoDB, iniciando vacío:`, e?.message || e);
+      inMemoryKeys = {};
+    }
+  }
+
+  /** @type {Promise<void>} */
+  let persistChain = Promise.resolve();
+
+  async function persistDocument() {
+    const payload = {
+      clientId,
+      creds: JSON.parse(JSON.stringify(creds, BufferJSON.replacer)),
+      keys: JSON.parse(JSON.stringify(inMemoryKeys, BufferJSON.replacer)),
+      updatedAt: new Date(),
+    };
+    await col.updateOne({ clientId }, { $set: payload }, { upsert: true });
+  }
+
+  function queuePersist() {
+    persistChain = persistChain.then(() => persistDocument()).catch((e) => {
+      console.error(`[Baileys] (${clientId}) Error persistiendo whatsapp_sessions:`, e?.message || e);
+    });
+    return persistChain;
+  }
+
+  const keysStore = {
+    /**
+     * @param {string} type
+     * @param {string[]} ids
+     */
+    get: async (type, ids) => {
+      const data = {};
+      const bucket = inMemoryKeys[type] || {};
+      for (const id of ids) {
+        let value = bucket[id];
+        if (type === 'app-state-sync-key' && value && proto?.Message?.AppStateSyncKeyData) {
+          value = proto.Message.AppStateSyncKeyData.fromObject(
+            typeof value.toJSON === 'function' ? value.toJSON() : value
+          );
+        }
+        data[id] = value;
+      }
+      return data;
+    },
+    /**
+     * @param {Record<string, Record<string, unknown>>} patch
+     */
+    set: async (patch) => {
+      for (const category of Object.keys(patch)) {
+        const inner = patch[category];
+        if (!inner || typeof inner !== 'object') continue;
+        if (!inMemoryKeys[category]) inMemoryKeys[category] = {};
+        for (const id of Object.keys(inner)) {
+          const val = inner[id];
+          if (val) inMemoryKeys[category][id] = val;
+          else delete inMemoryKeys[category][id];
+        }
+      }
+      await queuePersist();
+    },
+  };
+
+  const saveCreds = async () => {
+    await queuePersist();
+  };
+
+  return {
+    state: {
+      creds,
+      keys: keysStore,
+    },
+    saveCreds,
+  };
 }
 
 async function postQrToApi(clientId, payload) {
@@ -440,7 +548,6 @@ async function startClient(clientId, baileys) {
   const id = String(clientId || '').trim().toLowerCase() || 'agentia';
   const {
     default: makeWASocket,
-    useMultiFileAuthState,
     DisconnectReason,
     downloadMediaMessage,
     fetchLatestBaileysVersion,
@@ -472,8 +579,8 @@ async function startClient(clientId, baileys) {
     state.sock = null;
   }
 
-  const authDir = path.join(__dirname, '..', `.baileys_auth_${id}`);
-  const { state: authState, saveCreds } = await useMultiFileAuthState(authDir);
+  const db = await getDb();
+  const { state: authState, saveCreds } = await useMongoAuthState(db, id, baileys);
   const { version } = await fetchLatestBaileysVersion();
 
   const logger = {
@@ -698,7 +805,7 @@ async function main() {
   console.log('[Baileys] Bridge iniciando...');
   console.log('[Baileys] API URL:', API_URL);
   console.log('[Baileys] Clients:', ACTIVE_CLIENT_IDS.join(', '));
-  console.log('[Baileys] MongoDB:', MONGODB_URI ? 'configurado' : 'NO — QR solo vía API');
+  console.log('[Baileys] MongoDB:', MONGODB_URI ? 'configurado (QR + sesiones whatsapp_sessions)' : 'NO — QR solo vía API');
 
   let baileys;
   try {
