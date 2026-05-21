@@ -84,6 +84,17 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
+  // Brief público por slug: ?clientSlug= → /portal/luciano/brief/{slug} (compat)
+  if (pathname === '/portal/luciano/brief') {
+    const raw = request.nextUrl.searchParams.get('clientSlug')?.trim().toLowerCase() ?? '';
+    if (raw && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(raw) && raw.length <= 80) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/portal/luciano/brief/${raw}`;
+      url.searchParams.delete('clientSlug');
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (pathname.startsWith('/portal/luciano/brief')) {
     const res = NextResponse.next();
     res.headers.set('Cache-Control', 'no-store, max-age=0');
@@ -197,6 +208,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/brief/:path*',
+    '/portal/luciano/brief/:path*',
     '/admin/:path*',
     '/dashboard/:path*',
     '/api/admin/:path*',

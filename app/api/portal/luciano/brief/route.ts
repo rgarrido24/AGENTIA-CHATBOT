@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
   });
 
   const base = publicBaseUrl(req);
-  const portalUrl = `${base}/portal/luciano/brief?clientSlug=${encodeURIComponent(clientSlug)}`;
+  const portalUrl = `${base}/portal/luciano/brief/${encodeURIComponent(clientSlug)}`;
 
   const alertMsg = [
     `✅ Brief Luciano completado`,
