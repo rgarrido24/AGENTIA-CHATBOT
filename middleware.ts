@@ -84,6 +84,12 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
+  if (pathname.startsWith('/portal/luciano/brief')) {
+    const res = NextResponse.next();
+    res.headers.set('Cache-Control', 'no-store, max-age=0');
+    return res;
+  }
+
   // ── Bot blocking on API routes ────────────────────────────────────────────
   if (pathname.startsWith('/api/') && isMaliciousBot(request.headers.get('user-agent'))) {
     await logBlocked(request, ip);

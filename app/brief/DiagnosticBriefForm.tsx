@@ -519,3 +519,5 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
     </div>
   );
 }
+
+export { LucianoDigitalBriefForm } from './LucianoDigitalBriefForm';
