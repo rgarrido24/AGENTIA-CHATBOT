@@ -101,6 +101,11 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
+  // ── Cron interno (Bearer o ?secret=) — antes del bloqueo por UA vacío (Vercel Cron) ──
+  if (pathname.startsWith('/api/cron/') && hasCronSecret(request)) {
+    return NextResponse.next();
+  }
+
   // ── Bot blocking on API routes ────────────────────────────────────────────
   if (pathname.startsWith('/api/') && isMaliciousBot(request.headers.get('user-agent'))) {
     await logBlocked(request, ip);

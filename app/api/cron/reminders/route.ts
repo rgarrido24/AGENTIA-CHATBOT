@@ -8,8 +8,9 @@ const WINDOW_MINUTES = 15;
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get('Authorization');
+  const querySecret = request.nextUrl.searchParams.get('secret');
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}` && querySecret !== cronSecret) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
