@@ -1,18 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-const BG = '#0a0a0a';
-const ACCENT = '#00B140';
-const WA_GREEN = '#25D366';
-const LOW_CUPOS = '#fb7185';
-const WA_URL =
-  'https://wa.me/529997642435?text=Hola!%20Vi%20la%20promo%20de%20%24100%20y%20quiero%20informes%20para%20M%C3%A9rida';
-
-/** Estado persistente: cupos y timestamp del próximo descenso (intervalo 8–12 min aleatorio). */
-const STORAGE_KEY = 'izzi_merida_cupos_timed_v1';
+const STORAGE_KEY = 'izzi_merida_cupos_v2';
 const CUPOS_START = 7;
 const CUPOS_MIN = 2;
+const ACCENT = '#00B140';
+const PINK = '#f472b6';
+const WA_GREEN = '#25D366';
+const WA_HREF =
+  'https://wa.me/529997642435?text=Hola!%20Vi%20la%20promo%20de%20izzi%20100%20megas%20y%20quiero%20contratar%20en%20M%C3%A9rida';
 
 type CuposState = { n: number; nextAt: number };
 
@@ -58,25 +55,44 @@ function reconcileAndPersist(): CuposState {
   return out;
 }
 
+const FLOAT_BOXES: Array<{
+  top: string;
+  left: string;
+  w: number;
+  h: number;
+  bg: string;
+  dur: string;
+  delay: string;
+}> = [
+  { top: '6%', left: '4%', w: 68, h: 68, bg: 'rgba(244,114,182,0.38)', dur: '13s', delay: '0s' },
+  { top: '18%', left: '78%', w: 52, h: 92, bg: 'rgba(250,204,21,0.32)', dur: '15s', delay: '1.2s' },
+  { top: '42%', left: '8%', w: 84, h: 56, bg: 'rgba(34,211,238,0.28)', dur: '17s', delay: '0.4s' },
+  { top: '58%', left: '82%', w: 72, h: 72, bg: 'rgba(251,146,60,0.34)', dur: '14s', delay: '2s' },
+  { top: '72%', left: '12%', w: 56, h: 56, bg: 'rgba(244,114,182,0.25)', dur: '16s', delay: '0.8s' },
+  { top: '12%', left: '42%', w: 44, h: 100, bg: 'rgba(250,204,21,0.22)', dur: '18s', delay: '1.5s' },
+  { top: '88%', left: '55%', w: 90, h: 48, bg: 'rgba(34,211,238,0.26)', dur: '12s', delay: '0.2s' },
+];
+
 export default function IzziMeridaPage() {
   const [cupos, setCupos] = useState<number | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const sync = useCallback(() => {
-    const s = reconcileAndPersist();
-    setCupos(s.n);
-    return s;
-  }, []);
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const sync = () => {
+      const s = reconcileAndPersist();
+      setCupos(s.n);
+      return s;
+    };
+
     const s0 = sync();
-    const interval = window.setInterval(() => sync(), 30_000);
+    const intervalId = window.setInterval(() => sync(), 30_000);
 
     const scheduleNext = (s: CuposState) => {
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+      if (timeoutId) window.clearTimeout(timeoutId);
       if (s.n <= CUPOS_MIN) return;
       const delay = Math.max(1000, s.nextAt - Date.now());
-      timeoutRef.current = window.setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         const s1 = sync();
         scheduleNext(s1);
       }, delay);
@@ -84,154 +100,260 @@ export default function IzziMeridaPage() {
     scheduleNext(s0);
 
     return () => {
-      window.clearInterval(interval);
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+      window.clearInterval(intervalId);
+      if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [sync]);
+  }, []);
 
   const cuposDisplay = cupos ?? CUPOS_START;
-  const cuposLow = cuposDisplay <= 3;
+  const cuposColor = cuposDisplay <= 3 ? PINK : ACCENT;
 
   return (
     <div
-      className="min-h-screen min-h-[100dvh] pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-white antialiased"
-      style={{ backgroundColor: BG }}
+      className="relative min-h-[100dvh] min-h-screen overflow-hidden antialiased"
+      style={{ backgroundColor: '#000', color: '#fafafa' }}
     >
       <style jsx global>{`
-        @keyframes izzi-pulse-badge {
+        @keyframes izzi-merida-float {
           0%,
           100% {
-            transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(0, 177, 64, 0.45);
+            transform: translate3d(0, 0, 0) rotate(0deg);
           }
-          50% {
-            transform: scale(1.02);
-            box-shadow: 0 0 0 10px rgba(0, 177, 64, 0);
+          33% {
+            transform: translate3d(10px, -22px, 0) rotate(6deg);
+          }
+          66% {
+            transform: translate3d(-12px, 14px, 0) rotate(-5deg);
           }
         }
-        .izzi-merida-pulse {
-          animation: izzi-pulse-badge 2s ease-in-out infinite;
+        @keyframes izzi-merida-dot-blink {
+          0%,
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.35;
+            transform: scale(0.92);
+          }
+        }
+        .izzi-merida-float-box {
+          position: absolute;
+          border-radius: 14px;
+          pointer-events: none;
+          z-index: 0;
+          will-change: transform;
+        }
+        .izzi-merida-dot-pink {
+          width: 8px;
+          height: 8px;
+          border-radius: 9999px;
+          background: #f472b6;
+          box-shadow: 0 0 12px #f472b6;
+          animation: izzi-merida-dot-blink 1.4s ease-in-out infinite;
         }
       `}</style>
 
-      <div className="flex justify-center px-4 pt-5 pb-1">
-        <img src="/izzi-logo.png" height={44} alt="izzi" className="h-11 w-auto max-w-[220px] object-contain" />
-      </div>
-
-      {/* Trust bar: sin "6 Meses promo"; cupos con temporizador */}
-      <div className="border-b border-white/[0.08] px-4">
-        <div className="mx-auto max-w-lg flex flex-wrap items-center justify-center gap-x-4 gap-y-2 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-white/50">
-          <span className="inline-flex items-center gap-1 whitespace-nowrap">✓ Instalación 24h</span>
-          <span className="inline-flex items-center gap-1 whitespace-nowrap">✓ Cobertura Mérida</span>
-          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            Cupos hoy
-            <span
-              className="text-sm font-extrabold tabular-nums"
-              style={{ color: cuposLow ? LOW_CUPOS : ACCENT }}
-              aria-live="polite"
-            >
-              {cuposDisplay}
-            </span>
-          </span>
-        </div>
-      </div>
-
-      <header className="px-4 pt-6 pb-8 text-center max-w-lg mx-auto">
+      {FLOAT_BOXES.map((b, i) => (
         <div
-          className="izzi-merida-pulse inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold mb-5 border"
+          key={i}
+          className="izzi-merida-float-box"
           style={{
-            backgroundColor: 'rgba(0,177,64,0.12)',
-            borderColor: 'rgba(0,177,64,0.45)',
-            color: ACCENT,
+            top: b.top,
+            left: b.left,
+            width: b.w,
+            height: b.h,
+            background: b.bg,
+            animation: `izzi-merida-float ${b.dur} ease-in-out infinite`,
+            animationDelay: b.delay,
+          }}
+        />
+      ))}
+
+      <div className="relative z-10 flex min-h-[100dvh] min-h-screen items-center justify-center px-4 py-10">
+        <div
+          className="w-full max-w-[380px] overflow-hidden rounded-[22px] shadow-2xl"
+          style={{
+            backgroundColor: '#0c0c0c',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 24px 80px rgba(0,0,0,0.65)',
           }}
         >
-          🔴 Oferta activa
-        </div>
-        <h1 className="text-[clamp(2rem,8vw,3.25rem)] font-bold leading-[1.08] tracking-tight text-[#fafafa]">
-          Internet en casa
-          <br />
-          <span style={{ color: ACCENT }}>desde $100</span>
-        </h1>
-        <p className="mt-4 text-base sm:text-lg text-white/70 font-medium">Tu primer mes. Solo en Mérida.</p>
-      </header>
+          <div
+            style={{
+              height: 4,
+              background: 'linear-gradient(90deg, #f472b6, #facc15, #22d3ee, #fb923c)',
+            }}
+          />
 
-      <section className="px-4 max-w-lg mx-auto pb-6">
-        <div
-          className="rounded-2xl border p-5 sm:p-6 shadow-lg"
-          style={{
-            background: 'linear-gradient(165deg, rgba(0,177,64,0.14) 0%, rgba(255,255,255,0.04) 100%)',
-            borderColor: 'rgba(0,177,64,0.35)',
-          }}
-        >
-          <ul className="space-y-4 text-left">
-            <li className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 border-b border-white/10 pb-4">
-              <span className="text-white/80 text-sm font-medium uppercase tracking-wide">Mes 1</span>
-              <span className="text-xl sm:text-2xl font-bold" style={{ color: ACCENT }}>
-                $100
-                <span className="text-white/90 font-semibold text-base sm:text-lg ml-2">— 100 megas</span>
-              </span>
-            </li>
-            <li className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 border-b border-white/10 pb-4">
-              <span className="text-white/80 text-sm font-medium uppercase tracking-wide">Mes 2 y 3</span>
-              <span className="text-xl sm:text-2xl font-bold text-white">
-                $349
-                <span className="text-white/85 font-semibold text-base sm:text-lg ml-2">— 80 megas</span>
-              </span>
-            </li>
-            <li className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
-              <span className="text-white/80 text-sm font-medium uppercase tracking-wide">Mes 4 en adelante</span>
-              <span className="text-xl sm:text-2xl font-bold text-white">
-                $389
-                <span className="text-white/85 font-semibold text-base sm:text-lg ml-2">— 80 megas</span>
-              </span>
-            </li>
-          </ul>
-          <p className="mt-5 text-center text-xs text-white/55">Instalación incluida</p>
-        </div>
-      </section>
+          <div style={{ padding: '28px 22px 24px' }}>
+            <img
+              src="/izzi-logo.png"
+              height={44}
+              alt="izzi"
+              style={{ display: 'block', margin: '0 auto 28px' }}
+            />
 
-      <section className="px-4 max-w-lg mx-auto pb-8">
-        <ul className="grid gap-3 sm:gap-4">
-          {[
-            { icon: '📶', text: '100 megas el primer mes' },
-            { icon: '🔧', text: 'Instalación sin costo adicional' },
-            { icon: '⚡', text: 'Conexión estable para toda la familia' },
-          ].map((item) => (
-            <li
-              key={item.text}
-              className="flex items-center gap-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5"
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                <span className="izzi-merida-dot-pink shrink-0" aria-hidden />
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(255,255,255,0.72)',
+                  }}
+                >
+                  Solo Mérida · Cupos limitados
+                </span>
+              </div>
+            </div>
+
+            <p
+              style={{
+                textAlign: 'center',
+                margin: '0 0 6px',
+                fontSize: 14,
+                fontWeight: 500,
+                color: 'rgba(255,255,255,0.55)',
+              }}
             >
-              <span className="text-2xl shrink-0" aria-hidden>
-                {item.icon}
+              Internet en casa desde
+            </p>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'center',
+                gap: 2,
+                marginBottom: 16,
+                lineHeight: 1,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 'clamp(2.5rem, 12vw, 3.75rem)',
+                  fontWeight: 800,
+                  color: PINK,
+                  fontFamily: 'inherit',
+                }}
+              >
+                $
               </span>
-              <span className="text-sm sm:text-base font-semibold text-white/90 leading-snug">{item.text}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+              <span
+                style={{
+                  fontSize: 'clamp(3.75rem, 18vw, 5.5rem)',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  letterSpacing: '-0.04em',
+                }}
+              >
+                100
+              </span>
+            </div>
 
-      <footer className="px-4 pb-6 max-w-lg mx-auto text-center">
-        <p className="text-xs text-white/45 leading-relaxed">
-          Servicio disponible solo en zonas con cobertura Izzi en Mérida, Yucatán
-        </p>
-      </footer>
+            <p
+              style={{
+                textAlign: 'center',
+                margin: '0 0 22px',
+                fontSize: 13,
+                lineHeight: 1.45,
+                fontWeight: 500,
+                color: 'rgba(255,255,255,0.62)',
+              }}
+            >
+              Primer mes completo · 100 megas / Instalación incluida sin costo
+            </p>
 
-      <div
-        className="fixed bottom-0 left-0 right-0 z-50 px-4 pt-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-white/10"
-        style={{ backgroundColor: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(10px)' }}
-      >
-        <a
-          href={WA_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex w-full max-w-lg mx-auto items-center justify-center gap-2.5 rounded-xl py-3.5 px-4 text-base font-bold text-white shadow-lg active:scale-[0.98] transition-transform"
-          style={{ backgroundColor: WA_GREEN, boxShadow: '0 6px 24px rgba(37,211,102,0.35)' }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-          </svg>
-          Quiero el internet de $100
-        </a>
+            <div
+              style={{
+                borderRadius: 14,
+                padding: '14px 16px',
+                marginBottom: 20,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                textAlign: 'center',
+                fontSize: 14,
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.88)',
+              }}
+            >
+              <span style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.45)', marginRight: 8 }}>
+                $480/mes
+              </span>
+              <span style={{ color: 'rgba(255,255,255,0.35)', marginRight: 8 }}>→</span>
+              <span style={{ color: ACCENT }}>$429/mes</span>
+              <div style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)' }}>
+                meses 2 al 6
+              </div>
+            </div>
+
+            <a
+              href={WA_HREF}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'center',
+                padding: '14px 16px',
+                borderRadius: 14,
+                fontSize: 16,
+                fontWeight: 800,
+                color: '#fff',
+                textDecoration: 'none',
+                backgroundColor: WA_GREEN,
+                boxShadow: '0 8px 28px rgba(37,211,102,0.35)',
+                marginBottom: 12,
+              }}
+            >
+              💬 Quiero contratar ahora
+            </a>
+
+            <p
+              style={{
+                textAlign: 'center',
+                margin: '0 0 22px',
+                fontSize: 12,
+                fontWeight: 500,
+                color: 'rgba(255,255,255,0.48)',
+              }}
+            >
+              Escríbenos · Te respondemos al instante
+            </p>
+
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px 14px',
+                paddingTop: 4,
+                borderTop: '1px solid rgba(255,255,255,0.08)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.45)',
+              }}
+            >
+              <span style={{ whiteSpace: 'nowrap' }}>✓ 100 Megas</span>
+              <span style={{ opacity: 0.35 }}>|</span>
+              <span style={{ whiteSpace: 'nowrap' }}>✓ Instalación 24h</span>
+              <span style={{ opacity: 0.35 }}>|</span>
+              <span style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                Cupos{' '}
+                <span style={{ color: cuposColor, fontSize: 13, fontVariantNumeric: 'tabular-nums' }} aria-live="polite">
+                  {cuposDisplay}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
