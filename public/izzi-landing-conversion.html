@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Internet en casa desde $100 | Izzi Mérida</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --accent: #00b140;
+        --wa: #25d366;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: 'DM Sans', system-ui, sans-serif;
+        background: var(--bg);
+        color: #fafafa;
+        min-height: 100dvh;
+        padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        max-width: 32rem;
+        margin: 0 auto;
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      .logo-row {
+        display: flex;
+        justify-content: center;
+        padding: 1.25rem 0 0.25rem;
+      }
+      .trust {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem 1rem;
+        padding: 0.75rem 0 1.25rem;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(255, 255, 255, 0.5);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .trust span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        white-space: nowrap;
+      }
+      .cupos-num {
+        font-variant-numeric: tabular-nums;
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: var(--accent);
+      }
+      .cupos-num.low {
+        color: #fb7185;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border-radius: 9999px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 1px solid rgba(0, 177, 64, 0.45);
+        background: rgba(0, 177, 64, 0.12);
+        color: var(--accent);
+        margin-bottom: 1.25rem;
+      }
+      .hero {
+        text-align: center;
+        padding: 1.5rem 0 2rem;
+      }
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(2rem, 8vw, 3.25rem);
+        font-weight: 700;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+      }
+      .hero h1 .accent {
+        color: var(--accent);
+      }
+      .hero p {
+        margin: 1rem 0 0;
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.72);
+        font-weight: 500;
+      }
+      .card {
+        border-radius: 1rem;
+        border: 1px solid rgba(0, 177, 64, 0.35);
+        padding: 1.35rem 1.25rem;
+        background: linear-gradient(165deg, rgba(0, 177, 64, 0.14) 0%, rgba(255, 255, 255, 0.04) 100%);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      }
+      .card ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .card li {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .card li:last-of-type {
+        border-bottom: 0;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+      .card .lbl {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: rgba(255, 255, 255, 0.78);
+      }
+      .card .price {
+        font-size: 1.35rem;
+        font-weight: 700;
+      }
+      .card .price.accent {
+        color: var(--accent);
+      }
+      .card .note {
+        text-align: center;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.55);
+        margin-top: 1.1rem;
+      }
+      .benefits {
+        padding: 2rem 0;
+      }
+      .benefits .row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.85rem 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+        margin-bottom: 0.85rem;
+      }
+      .benefits .row:last-child {
+        margin-bottom: 0;
+      }
+      .benefits .ico {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+      }
+      .benefits .txt {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.35;
+      }
+      footer {
+        text-align: center;
+        padding: 0 0 1.5rem;
+        font-size: 0.65rem;
+        color: rgba(255, 255, 255, 0.45);
+        line-height: 1.5;
+      }
+      .wa-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        padding: 0.5rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(10, 10, 10, 0.92);
+        backdrop-filter: blur(10px);
+      }
+      .wa-bar a {
+        display: flex;
+        max-width: 32rem;
+        margin: 0 auto;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        border-radius: 0.75rem;
+        padding: 0.9rem 1rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #fff;
+        text-decoration: none;
+        background: var(--wa);
+        box-shadow: 0 6px 24px rgba(37, 211, 102, 0.35);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="logo-row wrap">
+      <img src="/izzi-logo.png" height="44" alt="izzi" />
+    </div>
+
+    <div class="trust wrap">
+      <span>✓ Instalación 24h</span>
+      <span>✓ Cobertura Mérida</span>
+      <span>Cupos hoy <span class="cupos-num" id="cuposRef">7</span></span>
+    </div>
+
+    <header class="hero wrap">
+      <div class="badge">🔴 Oferta activa</div>
+      <h1>
+        Internet en casa<br />
+        <span class="accent">desde $100</span>
+      </h1>
+      <p>Tu primer mes. Solo en Mérida.</p>
+    </header>
+
+    <section class="wrap" style="padding-bottom: 1.5rem">
+      <div class="card">
+        <ul>
+          <li>
+            <span class="lbl">Mes 1</span>
+            <span class="price accent">$100<span style="color: rgba(255,255,255,0.9); font-weight: 600; font-size: 1rem; margin-left: 0.5rem">— 100 megas</span></span>
+          </li>
+          <li>
+            <span class="lbl">Mes 2 y 3</span>
+            <span class="price" style="color: #fff">$349<span style="color: rgba(255,255,255,0.85); font-weight: 600; font-size: 1rem; margin-left: 0.5rem">— 80 megas</span></span>
+          </li>
+          <li>
+            <span class="lbl">Mes 4 en adelante</span>
+            <span class="price" style="color: #fff">$389<span style="color: rgba(255,255,255,0.85); font-weight: 600; font-size: 1rem; margin-left: 0.5rem">— 80 megas</span></span>
+          </li>
+        </ul>
+        <p class="note">Instalación incluida</p>
+      </div>
+    </section>
+
+    <section class="benefits wrap">
+      <div class="row"><span class="ico" aria-hidden="true">📶</span><span class="txt">100 megas el primer mes</span></div>
+      <div class="row"><span class="ico" aria-hidden="true">🔧</span><span class="txt">Instalación sin costo adicional</span></div>
+      <div class="row"><span class="ico" aria-hidden="true">⚡</span><span class="txt">Conexión estable para toda la familia</span></div>
+    </section>
+
+    <footer class="wrap">
+      Servicio disponible solo en zonas con cobertura Izzi en Mérida, Yucatán
+    </footer>
+
+    <div class="wa-bar">
+      <a
+        href="https://wa.me/529997642435?text=Hola!%20Vi%20la%20promo%20de%20%24100%20y%20quiero%20informes%20para%20M%C3%A9rida"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+          />
+        </svg>
+        Quiero el internet de $100
+      </a>
+    </div>
+  </body>
+</html>
