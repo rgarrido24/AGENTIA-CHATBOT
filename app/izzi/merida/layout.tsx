@@ -7,6 +7,9 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
+/** Ruta estática; evita superficie innecesaria de Server Actions en esta landing. */
+export const dynamic = 'force-static';
+
 export const metadata: Metadata = {
   title: 'Internet en casa desde $100 | Izzi Mérida',
   description:

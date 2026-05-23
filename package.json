@@ -23,7 +23,8 @@
     "debug:export": "node scripts/generate-agentia-debug.js",
     "check:izzi": "node scripts/check-izzi-chat.js",
     "dev": "npx next dev -p 3010",
-    "build": "npm install && next build",
+    "build": "next build",
+    "build:install": "npm install && next build",
     "build:render": "npm install && next build && npm run typecheck",
     "start": "node scripts/start-next.js",
     "typecheck": "tsc --noEmit"
