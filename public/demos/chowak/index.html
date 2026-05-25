@@ -1124,8 +1124,7 @@ let conversationHistory = [];
 async function callClaude(userMessage) {
   conversationHistory.push({ role: 'user', content: userMessage });
 
-  const u = ['https://api','.anthropic.com/v1/messages'].join('');
-  const response = await fetch(u, {
+  const response = await fetch('/api/demos/chowak-chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
