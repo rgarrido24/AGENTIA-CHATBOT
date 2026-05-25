@@ -18,7 +18,9 @@ export async function storeOfferedSlots(
 
 export async function getOfferedSlots(sessionId: string): Promise<OfferedSlot[]> {
   const db = await getMongoDb();
-  const doc = await db.collection<{ slots: OfferedSlot[] }>('offered_slots').findOne({ sessionId });
+  const doc = await db
+    .collection<{ sessionId: string; slots: OfferedSlot[] }>('offered_slots')
+    .findOne({ sessionId });
   const slots = doc?.slots ?? [];
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
   const docDate = (doc as { updatedAt?: Date })?.updatedAt;

@@ -14,7 +14,14 @@ export async function GET(request: NextRequest) {
 
   const db = await getMongoDb();
   const pending = await db
-    .collection<{ _id?: unknown; appointmentId: unknown; senderId: string; message: string; platform: string }>('reminder_queue')
+    .collection<{
+      _id?: unknown;
+      appointmentId: unknown;
+      senderId: string;
+      message: string;
+      platform: string;
+      status?: string;
+    }>('reminder_queue')
     .find({ status: 'pending' })
     .limit(50)
     .toArray();

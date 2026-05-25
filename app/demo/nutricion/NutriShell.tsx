@@ -1,5 +1,6 @@
 'use client';
 
+import type { MouseEvent } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -155,10 +156,10 @@ function ShellInner({ children }: { children: React.ReactNode }) {
                     ? { background: ACCENT, color: '#fff', boxShadow: `0 8px 24px rgba(22,163,74,0.35)` }
                     : { color: navInactiveColor }
                 }
-                onMouseEnter={(e) => {
+                onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => {
                   if (!active) (e.currentTarget as HTMLAnchorElement).style.background = colors.hoverBg;
                 }}
-                onMouseLeave={(e) => {
+                onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => {
                   if (!active) (e.currentTarget as HTMLAnchorElement).style.background = 'transparent';
                 }}
               >

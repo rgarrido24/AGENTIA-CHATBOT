@@ -28,6 +28,8 @@ export interface Reseller {
 }
 
 export interface ResellerClient {
+  /** Discriminador en la colección `leads` para documentos de cliente de reseller. */
+  _collection_type?: 'reseller_client';
   resellerId:   string;
   clientSlug:   string;
   nombre:       string;
@@ -67,6 +69,9 @@ function parseCookieValue(value: string): { resellerId: string; token: string } 
   return { resellerId: value.slice(0, idx), token: value.slice(idx + 1) };
 }
 
+// Documento en la colección `leads` cuando representa un reseller (no un lead de chat).
+type ResellerLeadDoc = Reseller & { _collection_type: 'reseller' };
+
 // ─── Verification ──────────────────────────────────────────────────────────
 
 export async function verifyResellerCookie(cookieValue: string | undefined): Promise<Reseller | null> {
@@ -75,7 +80,10 @@ export async function verifyResellerCookie(cookieValue: string | undefined): Pro
   if (!parsed) return null;
   try {
     const db = await getMongoDb();
-    const reseller = await db.collection<Reseller>('leads').findOne({ resellerId: parsed.resellerId, _collection_type: 'reseller' });
+    const reseller = await db.collection<ResellerLeadDoc>('leads').findOne({
+      resellerId: parsed.resellerId,
+      _collection_type: 'reseller',
+    });
     if (!reseller || reseller.status !== 'activo') return null;
     const expected = buildCookieValue(parsed.resellerId, reseller.passwordHash);
     if (cookieValue !== expected) return null;
@@ -97,6 +105,8 @@ export async function getResellerAuth(resellerId: string): Promise<Reseller | nu
 // For server component pages — redirects if not authenticated
 export async function requireResellerAuth(resellerId: string): Promise<Reseller> {
   const reseller = await getResellerAuth(resellerId);
-  if (!reseller) redirect(`/portal/${resellerId}`);
+  if (!reseller) {
+    redirect(`/portal/${resellerId}`);
+  }
   return reseller;
 }

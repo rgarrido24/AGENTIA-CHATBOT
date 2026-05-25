@@ -8,6 +8,7 @@ import BriefAdminView from './ui/BriefAdminView';
 export const dynamic = 'force-dynamic';
 
 type BriefRow = {
+  resellerId: string;
   token: string;
   createdAt: Date;
   completedAt?: Date;

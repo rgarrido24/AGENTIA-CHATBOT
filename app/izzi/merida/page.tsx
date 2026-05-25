@@ -77,7 +77,7 @@ export default function IzziMeridaPage() {
   const [cupos, setCupos] = useState<number | null>(null);
 
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let timeoutId: number | null = null;
 
     const sync = () => {
       const s = reconcileAndPersist();

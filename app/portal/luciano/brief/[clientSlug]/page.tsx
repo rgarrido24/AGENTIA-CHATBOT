@@ -22,8 +22,9 @@ export default function LucianoClientBriefPage({
 }: {
   params: { clientSlug: string };
 }) {
-  const clientSlug = normalizeSlug(params.clientSlug);
-  if (!clientSlug) notFound();
+  const rawSlug = normalizeSlug(params.clientSlug);
+  if (!rawSlug) notFound();
+  const clientSlug = rawSlug;
 
   return (
     <div className="min-h-screen" style={{ background: '#f4f6f8' }}>

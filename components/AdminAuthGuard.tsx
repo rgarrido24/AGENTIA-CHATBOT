@@ -26,7 +26,7 @@ export default async function AdminAuthGuard({
   }
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
-  const expected = getExpectedToken(secret);
+  const expected = getExpectedToken(secret!);
   if (!token || token !== expected) {
     redirect(`/login?from=${encodeURIComponent(fromPath)}`);
   }

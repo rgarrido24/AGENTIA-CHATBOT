@@ -77,6 +77,8 @@ export type Lead = {
   status_vendedor?: AgentiaVentasStatusVendedor;
   createdAt: Date;
   updatedAt: Date;
+  /** Soft-delete: si es true, no se debe volver a upsertear el lead. */
+  deleted?: boolean;
 };
 
 export function toPipelineStatus(s: string | undefined): PipelineStatus {
@@ -114,7 +116,7 @@ export async function upsertLead(params: {
     const now = new Date();
 
     // Si el lead está marcado como eliminado (deleted: true), no lo re-creamos ni actualizamos.
-    const deletedDoc = await coll.findOne({ leadId, deleted: true as any });
+    const deletedDoc = await coll.findOne({ leadId, deleted: true });
     if (deletedDoc) {
       console.log('[leads] Lead marcado como deleted, no se actualiza:', leadId);
       return;
