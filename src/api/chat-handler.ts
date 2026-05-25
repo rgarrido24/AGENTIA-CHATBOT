@@ -11,9 +11,21 @@ import {
   appendMessageToSession,
   type ChatSession,
 } from '../lib/chat-sessions';
-import { upsertLead, getLeadById, makeLeadIdFromParams, isBotPaused, updateLeadDocumentExpedient, updateLeadStatus } from '../lib/leads';
+import { upsertLead, getLeadById, makeLeadIdFromParams, isBotPaused, updateLeadDocumentExpedient, updateLeadStatus, setBotPaused, type Lead } from '../lib/leads';
 import { getBotGlobalPaused } from '../lib/bot-settings';
-import { createAlertIfUrgent, createAlertForSaleClosed, createAlertForCPValidation, createAlertForLocationVerification, createAlertForDocumentsConfirmed, containsGoogleMapsLink, looksLikeSaleClosed } from '../lib/alerts';
+import {
+  createAlertIfUrgent,
+  createAlertForSaleClosed,
+  createAlertForCPValidation,
+  createAlertForLocationVerification,
+  createAlertForDocumentsConfirmed,
+  containsGoogleMapsLink,
+  looksLikeSaleClosed,
+  stripDecohousePauseMarker,
+  replyHasDecohousePauseMarker,
+  looksLikeDecohouseQuoteComplete,
+  upsertDecohouseLeadAlert,
+} from '../lib/alerts';
 import { classifyAndUpdateLead } from '../lib/lead-classifier';
 import {
   tryCancelFromMessage,
@@ -183,6 +195,42 @@ function inferTags(message: string): string[] {
     tags.add('bienes_raices');
   }
   return [...tags];
+}
+
+function extractMeasuresFromConversation(userMessage: string, botReply: string): string {
+  const t = `${userMessage}\n${botReply}`;
+  const m =
+    t.match(/\b\d{2,4}\s*[x×]\s*\d{2,4}\s*(?:cm|mm)?\b/i) ||
+    t.match(/\b\d{1,3}\s*[x×]\s*\d{1,3}\s*cm\b/i) ||
+    t.match(/\b\d+\s*mm\b/i);
+  return m ? m[0].trim() : 'No explícitas en el último turno';
+}
+
+function formatDecohouseWhatsAppSummary(args: {
+  senderName?: string | null;
+  existingLead: Lead | null;
+  userMessage: string;
+  botReply: string;
+  extraNote?: string;
+}): string {
+  const nombre = (args.senderName || args.existingLead?.senderName || 'N/D').trim() || 'N/D';
+  const status = args.existingLead?.status ?? 'nuevos';
+  const botSt = args.existingLead?.bot_status ?? 'active';
+  const consulta = (args.existingLead?.lastMessage || args.userMessage || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 320);
+  const medidas = extractMeasuresFromConversation(args.userMessage, args.botReply);
+  const lines = [
+    '🪟 *DECO HOUSE — Lead / cotización*',
+    `👤 *Nombre:* ${nombre}`,
+    `📦 *Producto / consulta:* ${consulta || 'N/D'}`,
+    `📐 *Medidas:* ${medidas}`,
+    `📌 *Estado:* ${String(status)} | *Bot:* ${botSt}`,
+  ];
+  if (args.extraNote) lines.push(`📎 *Nota:* ${args.extraNote}`);
+  lines.push('', '*Última respuesta Elisa (extracto):*', args.botReply.replace(/\s+/g, ' ').trim().slice(0, 900));
+  return lines.join('\n');
 }
 
 async function saveLead(params: {
@@ -742,7 +790,12 @@ El usuario acaba de enviar una imagen o documento. DEBES:
       console.log("=======================");
       throw geminiErr;
     }
-    const finalReply = entryType === 'comment' ? formatCommentReply(reply) : reply;
+    const decoCatalogPause = clientId === 'decohouse' && leadId && replyHasDecohousePauseMarker(reply);
+    if (decoCatalogPause) {
+      await setBotPaused(leadId, true).catch(() => {});
+    }
+    const replyForClient = stripDecohousePauseMarker(reply);
+    const finalReply = entryType === 'comment' ? formatCommentReply(replyForClient) : replyForClient;
     const tags = inferTags(message);
 
     // Persistir el turno en el historial de la sesión para la próxima llamada
@@ -779,7 +832,7 @@ El usuario acaba de enviar una imagen o documento. DEBES:
         outputTokensEstimated,
         totalTokensEstimated: inputTokensEstimated + outputTokensEstimated,
       }),
-      leadId
+      leadId && clientId !== 'decohouse'
         ? createAlertIfUrgent({
             leadId,
             clientId,
@@ -819,6 +872,31 @@ El usuario acaba de enviar una imagen o documento. DEBES:
           })
         : Promise.resolve(),
     ]).catch(() => {});
+
+    if (clientId === 'decohouse' && leadId) {
+      const shouldDecoAlert =
+        decoCatalogPause ||
+        nextMessageCount >= 2 ||
+        looksLikeDecohouseQuoteComplete(finalReply);
+      if (shouldDecoAlert) {
+        void upsertDecohouseLeadAlert({
+          leadId,
+          clientId,
+          senderId,
+          senderName,
+          platform,
+          summary: formatDecohouseWhatsAppSummary({
+            senderName,
+            existingLead,
+            userMessage,
+            botReply: finalReply,
+            extraNote: decoCatalogPause
+              ? 'Pausado: consulta fuera de catálogo / a medida (Jorfran).'
+              : undefined,
+          }),
+        }).catch(() => {});
+      }
+    }
 
     const responseJson: { clientId: string; reply: string; mediaUrl?: string } = {
       clientId,

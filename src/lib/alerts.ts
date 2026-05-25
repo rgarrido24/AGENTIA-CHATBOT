@@ -7,7 +7,15 @@ export type Alert = {
   senderName?: string;
   lastMessage: string;
   platform: string;
-  reason: 'urgent_keyword' | 'high_activity' | 'new_lead' | 'sale_closed' | 'cp_validation' | 'location_verification' | 'documents_confirmed';
+  reason:
+    | 'urgent_keyword'
+    | 'high_activity'
+    | 'new_lead'
+    | 'sale_closed'
+    | 'cp_validation'
+    | 'location_verification'
+    | 'documents_confirmed'
+    | 'decohouse_lead';
   senderId?: string;
   createdAt: Date;
   sentAt?: Date;
@@ -19,6 +27,56 @@ const SALE_CLOSED_KEYWORDS = /\b(te paso|te paso mi|te envío|te envio|adjunto|a
 
 export function isUrgentByKeywords(message: string): boolean {
   return URGENT_KEYWORDS.test(message);
+}
+
+const DECOHOUSE_PAUSE_MARKER = '[[DECOHOUSE:PAUSE_FOR_MANAGER]]';
+
+/** Eliminado del texto que ve el cliente en WhatsApp (lo añade Elisa por instrucción de sistema). */
+export function stripDecohousePauseMarker(reply: string): string {
+  if (!reply || !reply.includes(DECOHOUSE_PAUSE_MARKER)) return reply;
+  return reply.split(DECOHOUSE_PAUSE_MARKER).join('').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+export function replyHasDecohousePauseMarker(reply: string): boolean {
+  return typeof reply === 'string' && reply.includes(DECOHOUSE_PAUSE_MARKER);
+}
+
+/** Cotización lista: cierre típico del flujo Elisa (MAYÚSCULAS). */
+export function looksLikeDecohouseQuoteComplete(reply: string): boolean {
+  const u = (reply || '').toUpperCase();
+  return (
+    (u.includes('GRACIAS POR CONTACTAR') || u.includes('EN BREVE RECIBIR') || u.includes('TU COTIZACI')) &&
+    u.includes('DECO HOUSE')
+  );
+}
+
+/**
+ * Reemplaza la alerta pendiente del lead por un resumen actualizado (Deco House).
+ * Así la alerta WhatsApp (ALERT_WHATSAPP_NUMBER, ej. +56954970745) lleva nombre, consulta, medidas y estado.
+ */
+export async function upsertDecohouseLeadAlert(params: {
+  leadId: string;
+  clientId: string;
+  senderId?: string;
+  senderName?: string;
+  platform: string;
+  summary: string;
+}): Promise<void> {
+  const { leadId, clientId, senderId, senderName, platform, summary } = params;
+  if (clientId !== 'decohouse' || !leadId) return;
+  const db = await getMongoDb();
+  const col = db.collection<Alert>('lead_alerts');
+  await col.deleteMany({ leadId, sentAt: { $exists: false } });
+  await col.insertOne({
+    leadId,
+    clientId,
+    senderId,
+    senderName,
+    lastMessage: summary,
+    platform,
+    reason: 'decohouse_lead',
+    createdAt: new Date(),
+  });
 }
 
 export async function createAlertIfUrgent(params: {
