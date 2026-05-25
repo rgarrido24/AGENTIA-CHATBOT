@@ -1121,15 +1121,13 @@ Sé conciso y amable, como un anfitrión de restaurante.`;
 
 let conversationHistory = [];
 
-async function callClaude(userMessage) {
+async function callGemini(userMessage) {
   conversationHistory.push({ role: 'user', content: userMessage });
 
   const response = await fetch('/api/demos/chowak-chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
       system: SYSTEM_PROMPT,
       messages: conversationHistory
     })
@@ -1174,7 +1172,7 @@ async function sendMessage() {
   addMessage(text, 'user');
   showTyping();
   try {
-    const reply = await callClaude(text);
+    const reply = await callGemini(text);
     hideTyping();
     addMessage(reply, 'bot');
   } catch(e) {
