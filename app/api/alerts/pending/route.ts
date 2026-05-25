@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
         platform: a.platform,
         reason: a.reason,
         createdAt: a.createdAt,
+        notifyWhatsappTo: a.notifyWhatsappTo,
       })),
     });
   } catch (err) {

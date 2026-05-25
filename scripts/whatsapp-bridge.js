@@ -149,6 +149,14 @@ function normalizeWhatsappDigits(input) {
   return digits;
 }
 
+/** Destino de alertas admin: Chile/México sin heurística AR; resto usa normalizeWhatsappDigits. */
+function digitsForAlertDestination(raw) {
+  const d = String(raw || '').replace(/\D/g, '');
+  if (!d) return '';
+  if (d.startsWith('56') || d.startsWith('52')) return d;
+  return normalizeWhatsappDigits(raw);
+}
+
 async function callChatApi(clientId, message, senderId, senderName, mediaBase64, mimeType) {
   const webhookUrl = (getEnv('CHATBOT_WEBHOOK_URL', '') || `${getApiBase()}/api/webhook/whatsapp`).replace(/\/$/, '');
   const url = webhookUrl;
@@ -280,10 +288,11 @@ async function main() {
       console.warn(`[Agentia] Alertas: bridge no listo para clientId='${alertSenderClientId}'`);
       return;
     }
-    const alertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER;
-    if (!alertNumber) {
-      console.warn('[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas desactivadas.');
-      return;
+    const defaultAlertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER || '';
+    if (!defaultAlertNumber) {
+      console.warn(
+        '[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas sin destino por defecto (Deco House puede usar DECOHOUSE_ALERT_NUMBER en documento o env).'
+      );
     }
     try {
       const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
@@ -301,8 +310,20 @@ async function main() {
       const sentIds = [];
       for (const a of alerts) {
         try {
-          const normalized = normalizeWhatsappDigits(alertNumber);
-          const chatId = alertNumber.includes('@') ? alertNumber : `${normalized}@c.us`;
+          const fromDoc = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
+          const fromDecoEnv =
+            a.reason === 'decohouse_lead'
+              ? String(getEnv('DECOHOUSE_ALERT_NUMBER', '') || process.env.DECOHOUSE_ALERT_NUMBER || '')
+                  .trim()
+                  .replace(/\D/g, '')
+              : '';
+          const targetRaw = fromDoc || fromDecoEnv || defaultAlertNumber;
+          if (!targetRaw) {
+            console.warn('[Agentia] Alerta sin destino WA (omitir):', a.reason, a.id);
+            continue;
+          }
+          const normalized = digitsForAlertDestination(targetRaw);
+          const chatId = targetRaw.includes('@') ? targetRaw : `${normalized}@c.us`;
           const senderLine = a.senderId ? `📱 ${a.senderId.replace(/@.*$/, '')}` : '';
           let msg = '';
           switch (a.reason) {
@@ -326,7 +347,7 @@ async function main() {
           }
           await client.sendMessage(chatId, msg);
           sentIds.push(a.id);
-          console.log(`[Agentia] Alerta [${a.reason}] enviada a ${alertNumber}`);
+          console.log(`[Agentia] Alerta [${a.reason}] enviada a ${normalized || targetRaw}`);
         } catch (e) {
           console.error('[Agentia] Error enviando alerta:', e.message);
         }

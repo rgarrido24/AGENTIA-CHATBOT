@@ -873,6 +873,7 @@ El usuario acaba de enviar una imagen o documento. DEBES:
         : Promise.resolve(),
     ]).catch(() => {});
 
+    // Alertas Deco House: destino = DECOHOUSE_ALERT_NUMBER (ver getDecohouseAlertNumberFromEnv en alerts.ts), no ALERT_WHATSAPP_NUMBER global.
     if (clientId === 'decohouse' && leadId) {
       const shouldDecoAlert =
         decoCatalogPause ||

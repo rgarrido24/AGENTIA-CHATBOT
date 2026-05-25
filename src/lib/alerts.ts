@@ -19,6 +19,8 @@ export type Alert = {
   senderId?: string;
   createdAt: Date;
   sentAt?: Date;
+  /** Solo alertas Deco House: destino WA (env DECOHOUSE_ALERT_NUMBER), no usar ALERT_WHATSAPP_NUMBER global. */
+  notifyWhatsappTo?: string;
 };
 
 const URGENT_KEYWORDS = /\b(urgente|asap|ya|ahora|emergencia|inmediato|rápido|rapido|pronto)\b/i;
@@ -50,9 +52,17 @@ export function looksLikeDecohouseQuoteComplete(reply: string): boolean {
   );
 }
 
+/** Dígitos para WA desde DECOHOUSE_ALERT_NUMBER (ej. 56954970745). Sin variable → undefined. */
+export function getDecohouseAlertNumberFromEnv(): string | undefined {
+  const raw = (process.env.DECOHOUSE_ALERT_NUMBER || '').trim();
+  if (!raw) return undefined;
+  const digits = raw.replace(/\D/g, '');
+  return digits.length >= 8 ? digits : undefined;
+}
+
 /**
  * Reemplaza la alerta pendiente del lead por un resumen actualizado (Deco House).
- * Así la alerta WhatsApp (ALERT_WHATSAPP_NUMBER, ej. +56954970745) lleva nombre, consulta, medidas y estado.
+ * El envío va a notifyWhatsappTo (DECOHOUSE_ALERT_NUMBER), no al ALERT_WHATSAPP_NUMBER global.
  */
 export async function upsertDecohouseLeadAlert(params: {
   leadId: string;
@@ -64,6 +74,7 @@ export async function upsertDecohouseLeadAlert(params: {
 }): Promise<void> {
   const { leadId, clientId, senderId, senderName, platform, summary } = params;
   if (clientId !== 'decohouse' || !leadId) return;
+  const notifyWhatsappTo = getDecohouseAlertNumberFromEnv();
   const db = await getMongoDb();
   const col = db.collection<Alert>('lead_alerts');
   await col.deleteMany({ leadId, sentAt: { $exists: false } });
@@ -76,6 +87,7 @@ export async function upsertDecohouseLeadAlert(params: {
     platform,
     reason: 'decohouse_lead',
     createdAt: new Date(),
+    ...(notifyWhatsappTo ? { notifyWhatsappTo } : {}),
   });
 }
 

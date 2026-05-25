@@ -85,6 +85,8 @@ function normalizeLeadId(senderId) {
 function normalizeWhatsappDigits(input) {
   let digits = String(input || '').replace(/\D/g, '');
   if (!digits) return '';
+  if (digits.startsWith('56') && digits.length >= 10) return digits;
+  if (digits.startsWith('52') && digits.length >= 10) return digits;
   if (!digits.startsWith('54') && (digits.length === 10 || digits.length === 11)) {
     digits = `54${digits}`;
   }
@@ -491,8 +493,10 @@ async function pollAndSendAlerts() {
     .toLowerCase();
   const sock = getStrictReadySock(alertSenderClientId);
   if (!sock) return;
-  const alertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER;
-  if (!alertNumber) return;
+  const defaultAlertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER || '';
+  if (!defaultAlertNumber) {
+    console.warn('[Baileys] ALERT_WHATSAPP_NUMBER vacío — solo alertas con DECOHOUSE/notify.');
+  }
   const apiBase = getApiBase();
   const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
   try {
@@ -503,9 +507,25 @@ async function pollAndSendAlerts() {
     const data = await res.json().catch(() => ({}));
     const alerts = data.alerts || [];
     const sentIds = [];
-    const jid = toBaileysJid(alertNumber);
     for (const a of alerts) {
       try {
+        const fromDoc = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
+        const fromDecoEnv =
+          a.reason === 'decohouse_lead'
+            ? String(getEnv('DECOHOUSE_ALERT_NUMBER', '') || process.env.DECOHOUSE_ALERT_NUMBER || '')
+                .trim()
+                .replace(/\D/g, '')
+            : '';
+        const targetRaw = fromDoc || fromDecoEnv || defaultAlertNumber;
+        if (!targetRaw) {
+          console.warn('[Baileys] Alerta sin destino WA (omitir):', a.reason, a.id);
+          continue;
+        }
+        const jid = toBaileysJid(targetRaw);
+        if (!jid) {
+          console.warn('[Baileys] JID inválido para alerta:', a.reason, targetRaw);
+          continue;
+        }
         const senderLine = a.senderId ? `📱 ${String(a.senderId).replace(/@.*$/, '')}` : '';
         let msg = '';
         switch (a.reason) {

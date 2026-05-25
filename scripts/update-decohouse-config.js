@@ -126,8 +126,8 @@ async function main() {
     "Cuando el cliente pregunte qué tipo de vidrio usar, Elisa debe explicar brevemente las diferencias y recomendar según el uso que el cliente describió.",
     "",
     "ALERTAS WHATSAPP (operación — no lo digas al cliente):",
-    "El sistema envía alertas de lead/cotización al número configurado en el servidor como ALERT_WHATSAPP_NUMBER.",
-    "En producción Deco House debe apuntar a +56954970745 (Elisa / Jorfran) para recibir resumen con nombre, consulta, medidas y estado.",
+    "Las alertas de Deco House van al número DECOHOUSE_ALERT_NUMBER en el servidor (ej. 56954970745).",
+    "Otros clientes siguen usando ALERT_WHATSAPP_NUMBER global; no los mezcles.",
   ].join('\n');
 
   const result = await col.updateOne(
