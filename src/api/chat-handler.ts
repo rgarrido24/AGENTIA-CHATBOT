@@ -23,6 +23,8 @@ import {
   looksLikeSaleClosed,
   stripDecohousePauseMarker,
   replyHasDecohousePauseMarker,
+  stripDecohouseInstallPhotoMarker,
+  replyHasDecohouseInstallPhotoMarker,
   looksLikeDecohouseQuoteComplete,
   upsertDecohouseLeadAlert,
 } from '../lib/alerts';
@@ -746,7 +748,7 @@ export async function handleChat(params: {
       }
     }
 
-    if (mediaBase64 && mimeType) {
+    if (mediaBase64 && mimeType && clientId !== 'decohouse') {
       finalSystemInstruction += `
 
 ## REGLA CRITICA - IMAGEN/DOCUMENTO RECIBIDO
@@ -791,10 +793,11 @@ El usuario acaba de enviar una imagen o documento. DEBES:
       throw geminiErr;
     }
     const decoCatalogPause = clientId === 'decohouse' && leadId && replyHasDecohousePauseMarker(reply);
+    const decoInstallPhotoAlert = clientId === 'decohouse' && replyHasDecohouseInstallPhotoMarker(reply);
     if (decoCatalogPause) {
       await setBotPaused(leadId, true).catch(() => {});
     }
-    const replyForClient = stripDecohousePauseMarker(reply);
+    const replyForClient = stripDecohouseInstallPhotoMarker(stripDecohousePauseMarker(reply));
     const finalReply = entryType === 'comment' ? formatCommentReply(replyForClient) : replyForClient;
     const tags = inferTags(message);
 
@@ -891,9 +894,12 @@ El usuario acaba de enviar una imagen o documento. DEBES:
             existingLead,
             userMessage,
             botReply: finalReply,
-            extraNote: decoCatalogPause
-              ? 'Pausado: consulta fuera de catálogo / a medida (Jorfran).'
-              : undefined,
+            extraNote: [
+              decoCatalogPause ? 'Pausado: consulta fuera de catálogo / a medida (Jorfran).' : null,
+              decoInstallPhotoAlert ? '📸 Cliente envió foto de instalación' : null,
+            ]
+              .filter(Boolean)
+              .join(' ') || undefined,
           }),
         }).catch(() => {});
       }

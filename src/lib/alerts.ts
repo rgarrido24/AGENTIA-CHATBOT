@@ -32,6 +32,8 @@ export function isUrgentByKeywords(message: string): boolean {
 }
 
 const DECOHOUSE_PAUSE_MARKER = '[[DECOHOUSE:PAUSE_FOR_MANAGER]]';
+/** Marcador al final de la respuesta cuando el cliente envió foto del lugar de instalación (se quita del mensaje al cliente). */
+const DECOHOUSE_INSTALL_PHOTO_MARKER = '[[DECOHOUSE:INSTALL_PHOTO_RECEIVED]]';
 
 /** Eliminado del texto que ve el cliente en WhatsApp (lo añade Elisa por instrucción de sistema). */
 export function stripDecohousePauseMarker(reply: string): string {
@@ -39,8 +41,17 @@ export function stripDecohousePauseMarker(reply: string): string {
   return reply.split(DECOHOUSE_PAUSE_MARKER).join('').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+export function stripDecohouseInstallPhotoMarker(reply: string): string {
+  if (!reply || !reply.includes(DECOHOUSE_INSTALL_PHOTO_MARKER)) return reply;
+  return reply.split(DECOHOUSE_INSTALL_PHOTO_MARKER).join('').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 export function replyHasDecohousePauseMarker(reply: string): boolean {
   return typeof reply === 'string' && reply.includes(DECOHOUSE_PAUSE_MARKER);
+}
+
+export function replyHasDecohouseInstallPhotoMarker(reply: string): boolean {
+  return typeof reply === 'string' && reply.includes(DECOHOUSE_INSTALL_PHOTO_MARKER);
 }
 
 /** Cotización lista: cierre típico del flujo Elisa (MAYÚSCULAS). */
