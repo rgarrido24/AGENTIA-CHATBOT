@@ -115,12 +115,12 @@ export async function upsertLead(params: {
     const coll = db.collection<Lead>("leads");
     const now = new Date();
 
-    // Si el lead está marcado como eliminado (deleted: true), no lo re-creamos ni actualizamos.
-    const deletedDoc = await coll.findOne({ leadId, deleted: true });
-    if (deletedDoc) {
+    const existing = await coll.findOne({ leadId });
+    if (existing && existing.deleted === true) {
       console.log('[leads] Lead marcado como deleted, no se actualiza:', leadId);
       return;
     }
+    const prevMessageCount = existing?.messageCount ?? 0;
 
     const isAgentiaVentas = params.clientId === 'agentia-ventas';
 
@@ -163,6 +163,21 @@ export async function upsertLead(params: {
       { upsert: true }
     );
     console.log('[leads] Lead guardado correctamente:', leadId, 'clientId:', params.clientId);
+
+    if (params.clientId === 'izzi' && prevMessageCount === 0) {
+      const botActive =
+        !existing ||
+        (existing.bot_status !== 'paused' && !(existing.assignedTo && String(existing.assignedTo).trim()));
+      void import('./izzi-pipeline-notify')
+        .then(({ notifyIzziNewLeadWhatsApp }) =>
+          notifyIzziNewLeadWhatsApp({
+            senderName: params.senderName,
+            senderId: params.senderId,
+            botActive,
+          })
+        )
+        .catch((e) => console.error('[leads] notifyIzziNewLeadWhatsApp:', e));
+    }
   } catch (err) {
     console.error('[leads] Error al guardar lead:', leadId, err instanceof Error ? err.message : err);
     throw err;

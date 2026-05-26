@@ -19,6 +19,7 @@ import {
   Target,
   DollarSign,
   Building2,
+  Radio,
 } from 'lucide-react';
 
 export type BrandConfig = {
@@ -41,6 +42,7 @@ const defaultBrand: BrandConfig = {
 const navLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/leads', label: 'Leads', icon: Users },
+  { href: '/dashboard/pipeline', label: 'Pipeline Izzi', icon: Radio },
   { href: '/dashboard/prospectos', label: 'Prospectos', icon: Target },
   { href: '/dashboard/knowledge', label: 'Conocimiento', icon: BookOpen },
   { href: '/dashboard/campaigns', label: 'Campañas', icon: Megaphone },

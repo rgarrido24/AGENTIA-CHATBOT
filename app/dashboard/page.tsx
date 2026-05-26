@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { Users, BookOpen, Megaphone, Calendar, Settings, BarChart3 } from 'lucide-react';
+import { Users, BookOpen, Megaphone, Calendar, Settings, BarChart3, Radio } from 'lucide-react';
 import { DashboardDemosSection } from './DashboardDemosSection';
 
 const modules = [
+  { href: '/dashboard/pipeline', label: 'Pipeline Izzi', icon: Radio },
   { href: '/dashboard/leads', label: 'Leads', icon: Users },
   { href: '/dashboard/campaigns', label: 'Campañas', icon: Megaphone },
   { href: '/dashboard/knowledge', label: 'Conocimiento', icon: BookOpen },
