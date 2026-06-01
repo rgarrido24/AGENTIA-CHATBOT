@@ -584,11 +584,21 @@ async function main() {
   const client = new MongoClient(MONGODB_URI);
   await client.connect();
   const db = client.db();
+  const now = new Date();
   const result = await db.collection('business_configs').updateOne(
     { clientId: 'cwf' },
-    { $set: { systemPrompt, knowledge, model, updatedAt: new Date() } }
+    {
+      $set: { systemPrompt, knowledge, model, updatedAt: now },
+      $setOnInsert: { clientId: 'cwf', createdAt: now },
+    },
+    { upsert: true }
   );
-  console.log(result.modifiedCount === 1 ? '✅ Actualizado OK' : '⚠️ Sin cambios (documento idéntico o no existe)');
+  console.log(JSON.stringify({
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount,
+    upsertedCount: result.upsertedCount,
+    upsertedId: result.upsertedId,
+  }, null, 2));
   await client.close();
 }
 
