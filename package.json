@@ -22,6 +22,7 @@
     "test:comment": "node scripts/test-comment-webhook.js",
     "debug:export": "node scripts/generate-agentia-debug.js",
     "check:izzi": "node scripts/check-izzi-chat.js",
+    "update:cwf": "node scripts/seed-cwf-config.js",
     "dev": "npx next dev -p 3010",
     "build": "next build",
     "build:install": "npm install && next build",
