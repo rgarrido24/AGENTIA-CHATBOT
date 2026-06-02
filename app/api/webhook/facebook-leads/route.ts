@@ -40,6 +40,11 @@ export async function GET(req: NextRequest) {
 // ─── POST — Recibe leads de Meta Webhook O de Zapier (JSON plano) ─────────────
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
+  try {
+    console.log('WEBHOOK RECIBIDO:', JSON.stringify(JSON.parse(rawBody)));
+  } catch {
+    console.log('WEBHOOK RECIBIDO:', JSON.stringify(rawBody));
+  }
   console.log('[fb-leads] POST recibido, bytes:', rawBody.length);
 
   // Si llega firma de Meta, verificarla. Sin firma → Zapier/externo → continuar.
