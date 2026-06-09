@@ -14,6 +14,35 @@ import ClientLogin from './ClientLogin';
 
 export const dynamic = 'force-dynamic';
 
+async function isResellerClientSuspended(
+  resellerId: string,
+  clientSlug: string,
+): Promise<boolean> {
+  try {
+    const db = await getMongoDb();
+    const doc = await db.collection('leads').findOne(
+      { _collection_type: 'reseller_client', resellerId, clientSlug },
+      { projection: { status: 1 } },
+    );
+    return doc?.status === 'suspendido';
+  } catch {
+    return false;
+  }
+}
+
+function ClientSuspendedNotice() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-6">
+      <p className="max-w-md text-center text-base leading-relaxed text-zinc-100 md:text-lg">
+        Tu cuenta está temporalmente suspendida.
+        <br />
+        <br />
+        Contacta a tu asesor para más información.
+      </p>
+    </main>
+  );
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -74,15 +103,20 @@ export default async function ClientPage({
 
   // Reseller cookie → full access (Luciano viewing his client's panel)
   const reseller = await getResellerAuth(resellerId);
-  if (reseller) {
-    return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} allowLeadDelete />;
-  }
 
   // Client cookie → restricted access (client views their own leads)
   const cookieStore  = await cookies();
   const clientCookie = cookieStore.get(CLIENT_COOKIE_NAME)?.value;
-  const isAuthed     = await verifyClientCookie(clientCookie, resellerId, clientSlug);
-  if (isAuthed) {
+  const isClientAuthed =
+    !reseller && (await verifyClientCookie(clientCookie, resellerId, clientSlug));
+
+  if (reseller || isClientAuthed) {
+    if (await isResellerClientSuspended(resellerId, clientSlug)) {
+      return <ClientSuspendedNotice />;
+    }
+    if (reseller) {
+      return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} allowLeadDelete />;
+    }
     return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} />;
   }
 
