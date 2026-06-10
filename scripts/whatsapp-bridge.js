@@ -38,6 +38,48 @@ function isBrowserAlreadyRunningError(err) {
   return /browser is already running/i.test(msg) && /Use a different `userDataDir`/i.test(msg);
 }
 
+/** puppeteer-core no trae Chromium: usar env o rutas típicas (Linux / Render worker). */
+function resolveChromeExecutable() {
+  const env = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || process.env.GOOGLE_CHROME_BIN;
+  if (env && typeof env === 'string' && env.trim()) {
+    const p = env.trim();
+    try {
+      if (fs.existsSync(p)) return p;
+    } catch {
+      /* ignore */
+    }
+  }
+  const candidates = [
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+    '/snap/bin/chromium',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) return p;
+    } catch {
+      /* ignore */
+    }
+  }
+  if (process.platform === 'win32') {
+    const pf = process.env.ProgramFiles || 'C:\\Program Files';
+    const pf86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+    for (const p of [
+      `${pf}\\Google\\Chrome\\Application\\chrome.exe`,
+      `${pf86}\\Google\\Chrome\\Application\\chrome.exe`,
+    ]) {
+      try {
+        if (fs.existsSync(p)) return p;
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return undefined;
+}
+
 async function killOrphanChromeUsingProfile(profilePath) {
   // En Render (Linux), a veces queda un Chrome huérfano tras restart; bloquea el userDataDir.
   // Estrategia: listar procesos y matar los que tengan el profilePath en args.
@@ -713,9 +755,11 @@ async function main() {
       }
     } catch { /* ignore */ }
 
+    const executablePath = resolveChromeExecutable();
     const nextClient = new Client({
       authStrategy: new LocalAuth({ dataPath: sessionDir }),
       puppeteer: {
+        ...(executablePath ? { executablePath } : {}),
         headless: true,
         args: [
           '--no-sandbox',

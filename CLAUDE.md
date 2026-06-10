@@ -96,7 +96,7 @@ See `.env.example` for the full list. Critical ones:
 - **Render**: `Procfile` defines `web: npm start`. See `DEPLOY.md` for full guide.
 - **Vercel**: See `DEPLOY_VERCEL.md`.
 - WhatsApp bridge must run as a separate persistent process (not serverless).
-- **Render / CI builds**: el repo incluye `.npmrc` con `puppeteer_skip_download=true` para que `whatsapp-web.js` → `puppeteer` no descargue Chrome durante `npm install` (evita fallos de caché en Render). Si el build sigue fallando, en Render añade variable de entorno `PUPPETEER_SKIP_DOWNLOAD` = `true` y **Clear build cache** antes de redeploy.
+- **Render / CI builds**: `package.json` tiene **`overrides`** que sustituye `puppeteer` por **`puppeteer-core`** (sin descarga de Chrome en `npm install`, evita fallos en Render). El bridge `whatsapp-web.js` usa Chrome del sistema; configura `PUPPETEER_EXECUTABLE_PATH` o instala Chrome en el worker. Si el build falló antes, **Clear build cache** en Render.
 
 ### Izzi-Specific Notes
 
