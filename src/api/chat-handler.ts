@@ -24,8 +24,9 @@ import {
   stripDecohousePauseMarker,
   replyHasDecohousePauseMarker,
   stripDecohouseInstallPhotoMarker,
-  replyHasDecohouseInstallPhotoMarker,
-  looksLikeDecohouseQuoteComplete,
+  buildDecohouseFullContextForHeuristics,
+  shouldQueueDecohouseQuoteReadyAlert,
+  buildDecohouseQuoteReadyAlertSummary,
   upsertDecohouseLeadAlert,
 } from '../lib/alerts';
 import { classifyAndUpdateLead } from '../lib/lead-classifier';
@@ -197,42 +198,6 @@ function inferTags(message: string): string[] {
     tags.add('bienes_raices');
   }
   return [...tags];
-}
-
-function extractMeasuresFromConversation(userMessage: string, botReply: string): string {
-  const t = `${userMessage}\n${botReply}`;
-  const m =
-    t.match(/\b\d{2,4}\s*[x×]\s*\d{2,4}\s*(?:cm|mm)?\b/i) ||
-    t.match(/\b\d{1,3}\s*[x×]\s*\d{1,3}\s*cm\b/i) ||
-    t.match(/\b\d+\s*mm\b/i);
-  return m ? m[0].trim() : 'No explícitas en el último turno';
-}
-
-function formatDecohouseWhatsAppSummary(args: {
-  senderName?: string | null;
-  existingLead: Lead | null;
-  userMessage: string;
-  botReply: string;
-  extraNote?: string;
-}): string {
-  const nombre = (args.senderName || args.existingLead?.senderName || 'N/D').trim() || 'N/D';
-  const status = args.existingLead?.status ?? 'nuevos';
-  const botSt = args.existingLead?.bot_status ?? 'active';
-  const consulta = (args.existingLead?.lastMessage || args.userMessage || '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 320);
-  const medidas = extractMeasuresFromConversation(args.userMessage, args.botReply);
-  const lines = [
-    '🪟 *DECO HOUSE — Lead / cotización*',
-    `👤 *Nombre:* ${nombre}`,
-    `📦 *Producto / consulta:* ${consulta || 'N/D'}`,
-    `📐 *Medidas:* ${medidas}`,
-    `📌 *Estado:* ${String(status)} | *Bot:* ${botSt}`,
-  ];
-  if (args.extraNote) lines.push(`📎 *Nota:* ${args.extraNote}`);
-  lines.push('', '*Última respuesta Elisa (extracto):*', args.botReply.replace(/\s+/g, ' ').trim().slice(0, 900));
-  return lines.join('\n');
 }
 
 async function saveLead(params: {
@@ -793,7 +758,6 @@ El usuario acaba de enviar una imagen o documento. DEBES:
       throw geminiErr;
     }
     const decoCatalogPause = clientId === 'decohouse' && leadId && replyHasDecohousePauseMarker(reply);
-    const decoInstallPhotoAlert = clientId === 'decohouse' && replyHasDecohouseInstallPhotoMarker(reply);
     if (decoCatalogPause) {
       await setBotPaused(leadId, true).catch(() => {});
     }
@@ -876,30 +840,33 @@ El usuario acaba de enviar una imagen o documento. DEBES:
         : Promise.resolve(),
     ]).catch(() => {});
 
-    // Alertas Deco House: destino = DECOHOUSE_ALERT_NUMBER (ver getDecohouseAlertNumberFromEnv en alerts.ts), no ALERT_WHATSAPP_NUMBER global.
+    // Alertas Deco House: solo con datos listos para cotizar + cierre Elisa (BLOQUE 5) o pausa gerencia; nunca por volumen de mensajes.
     if (clientId === 'decohouse' && leadId) {
-      const shouldDecoAlert =
-        decoCatalogPause ||
-        nextMessageCount >= 2 ||
-        looksLikeDecohouseQuoteComplete(finalReply);
-      if (shouldDecoAlert) {
+      const decoFullContext = buildDecohouseFullContextForHeuristics({
+        conversationMessages,
+        userMessage,
+        botReply: finalReply,
+      });
+      if (
+        shouldQueueDecohouseQuoteReadyAlert({
+          fullContext: decoFullContext,
+          rawBotReply: reply,
+          finalBotReply: finalReply,
+        })
+      ) {
         void upsertDecohouseLeadAlert({
           leadId,
           clientId,
           senderId,
           senderName,
           platform,
-          summary: formatDecohouseWhatsAppSummary({
+          summary: buildDecohouseQuoteReadyAlertSummary({
             senderName,
             existingLead,
+            fullContext: decoFullContext,
             userMessage,
             botReply: finalReply,
-            extraNote: [
-              decoCatalogPause ? 'Pausado: consulta fuera de catálogo / a medida (Jorfran).' : null,
-              decoInstallPhotoAlert ? '📸 Cliente envió foto de instalación' : null,
-            ]
-              .filter(Boolean)
-              .join(' ') || undefined,
+            rawBotReply: reply,
           }),
         }).catch(() => {});
       }

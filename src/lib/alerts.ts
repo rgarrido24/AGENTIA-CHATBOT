@@ -74,6 +74,157 @@ export function looksLikeDecohouseQuoteComplete(reply: string): boolean {
   );
 }
 
+/** Contexto para heurísticas (historial + turno actual). */
+export function buildDecohouseFullContextForHeuristics(parts: {
+  conversationMessages: { role: 'user' | 'assistant'; content: string }[];
+  userMessage: string;
+  botReply: string;
+}): string {
+  return [...parts.conversationMessages.map((m) => m.content), parts.userMessage, parts.botReply].join('\n');
+}
+
+export function extractDecohouseMeasuresFromText(text: string): string | null {
+  const t = text || '';
+  const m =
+    t.match(/\b\d{2,4}\s*[x×]\s*\d{2,4}\s*(?:cm|mm)?\b/i) ||
+    t.match(/\b\d{1,3}\s*[x×]\s*\d{1,3}\s*cm\b/i) ||
+    t.match(/\b\d+\s*mm\b/i);
+  return m ? m[0].trim() : null;
+}
+
+function decohouseConversationHasMeasures(text: string): boolean {
+  return extractDecohouseMeasuresFromText(text) != null;
+}
+
+function decohouseConversationHasGlassOrProductType(text: string): boolean {
+  const t = text || '';
+  return (
+    /\b(templad[oa]s?|laminad[oa]s?|termopanel|monol[ií]tico|vidrio\s+crudo|vidrio\s+simple|espejo|seguridad|control\s+solar|privacidad|frost|esmerilad[oa]s?)\b/i.test(
+      t
+    ) ||
+    /\b(aluminio|PVC|policloruro|mampara|shower|ventana|puerta\s+de\s+cristal|divisi[oó]n|cerramiento|cierre\s+de\s+oficina|termopanel)\b/i.test(
+      t
+    )
+  );
+}
+
+function decohouseConversationHasInstallationDecision(text: string): boolean {
+  const t = (text || '').toLowerCase();
+  const installYes =
+    /\b(s[ií]|si)\b[\s\S]{0,100}\binstalaci[oó]n\b/.test(t) ||
+    /\binstalaci[oó]n\b[\s\S]{0,80}\b(s[ií]|si|claro|ok|dale|perfecto)\b/.test(t) ||
+    /\b(necesito|quiero|con|requiero)\s+instalaci[oó]n\b/.test(t) ||
+    /\binstalaci[oó]n\s*s[ií]\b/.test(t);
+  const installNo =
+    /\bno\s+(?:necesito|quiero|requiero)\s+(?:la\s+)?instalaci[oó]n\b/.test(t) ||
+    /\bsin\s+instalaci[oó]n\b/.test(t) ||
+    /\binstalaci[oó]n\s*no\b/.test(t) ||
+    /\b(solo|sólo)\s+(?:el\s+)?(?:vidrio|cristal|material)\b/.test(t) ||
+    /\bretiro\s+(?:en\s+)?(?:tienda|local|bodega)\b/.test(t) ||
+    /\bno\s*,?\s*(?:gracias\s*,?\s*)?(?:necesito\s+)?instalaci[oó]n\b/.test(t);
+  return installYes || installNo;
+}
+
+/** Medidas + tipo de vidrio/producto + decisión explícita de instalación (sí/no) en la conversación. */
+export function decohouseClientQuoteDataLooksComplete(fullContext: string): boolean {
+  const ctx = fullContext || '';
+  return (
+    decohouseConversationHasMeasures(ctx) &&
+    decohouseConversationHasGlassOrProductType(ctx) &&
+    decohouseConversationHasInstallationDecision(ctx)
+  );
+}
+
+/** Solo encolar alerta WA cuando hay datos para cotizar y Elisa cerró o pausó a gerencia. */
+export function shouldQueueDecohouseQuoteReadyAlert(params: {
+  fullContext: string;
+  rawBotReply: string;
+  finalBotReply: string;
+}): boolean {
+  if (!decohouseClientQuoteDataLooksComplete(params.fullContext)) return false;
+  if (replyHasDecohousePauseMarker(params.rawBotReply)) return true;
+  if (looksLikeDecohouseQuoteComplete(params.finalBotReply)) return true;
+  return false;
+}
+
+function inferDecohouseInstallationLabel(text: string): string {
+  const t = (text || '').toLowerCase();
+  const no =
+    /\bno\s+(?:necesito|quiero|requiero)\s+(?:la\s+)?instalaci[oó]n\b/.test(t) ||
+    /\bsin\s+instalaci[oó]n\b/.test(t) ||
+    /\binstalaci[oó]n\s*no\b/.test(t) ||
+    /\b(solo|sólo)\s+(?:el\s+)?(?:vidrio|cristal|material)\b/.test(t) ||
+    /\bretiro\s+(?:en\s+)?(?:tienda|local)\b/.test(t);
+  const yes =
+    /\b(necesito|quiero|con|requiero)\s+instalaci[oó]n\b/.test(t) ||
+    /\b(s[ií]|si)\b[\s\S]{0,100}\binstalaci[oó]n\b/.test(t) ||
+    /\binstalaci[oó]n\b[\s\S]{0,80}\b(s[ií]|si|claro|ok|dale)\b/.test(t);
+  if (yes && !no) return 'Sí';
+  if (no && !yes) return 'No';
+  if (yes && no) return 'Sí (revisar texto)';
+  return 'No indicado';
+}
+
+function extractDecohouseProductLine(context: string, botReply: string): string {
+  const br = botReply || '';
+  const block = /\b(?:TIPO|PRODUCTO)\s*(?:DE\s+)?(?:VIDRIO\s*)?[:：]\s*([^\n]+)/i.exec(br);
+  if (block?.[1]) return block[1].trim().replace(/\s+/g, ' ').slice(0, 140);
+  const ctx = context || '';
+  const long =
+    ctx.match(
+      /\b(mampara|shower|ventana|puerta|espejo|termopanel|divisi[oó]n|cerramiento|cierre\s+de\s+oficina|l[aá]mina)\b[^.\n]{0,80}/i
+    );
+  if (long?.[0]) return long[0].trim().replace(/\s+/g, ' ').slice(0, 140);
+  const g = ctx.match(/\b(templado|laminado|monol[ií]tico|aluminio|PVC)\b/gi);
+  if (g && g.length) return [...new Set(g.map((x) => x))].join(', ').slice(0, 140);
+  return 'No explicitado';
+}
+
+function extractDecohouseSector(context: string): string {
+  const t = context || '';
+  const labeled = t.match(/(?:COMUNA|SECTOR|ZONA)\s*[:：]\s*([^\n]+)/i);
+  if (labeled?.[1]) return labeled[1].replace(/\s+/g, ' ').trim().slice(0, 100);
+  const rm = t.match(
+    /\b(las\s+condes|providencia|ñuñoa|maip[uú]|santiago|vitacura|lo\s+barnechea|la\s+reina|peñalol[eé]n|huechuraba|recoleta|independencia|estaci[oó]n\s+central|quilicura|pudahuel|cerrillos|cerrillos|la\s+florida|puente\s+alto|san\s+miguel|la\s+cisterna|el\s+bosque|pedro\s+aguirre\s+cerda|san\s+joaqu[ií]n|macul|ñuñoa|renca|quinta\s+normal|conchal[ií]|lampa|colina|til\s*til|curacav[ií]|melipilla|talagante|isla\s+de\s+maipo)\b/i
+  );
+  if (rm?.[1]) return rm[1].replace(/\s+/g, ' ').trim().slice(0, 100);
+  return 'No indicado';
+}
+
+/**
+ * Texto de alerta WhatsApp (Deco House) — sin URLs; el bridge puede añadir dashboard si aplica.
+ */
+export function buildDecohouseQuoteReadyAlertSummary(args: {
+  senderName?: string | null;
+  existingLead: { senderName?: string | null } | null;
+  fullContext: string;
+  userMessage: string;
+  botReply: string;
+  rawBotReply: string;
+}): string {
+  const nombre =
+    (args.senderName || args.existingLead?.senderName || 'N/D').trim().replace(/\s+/g, ' ') || 'N/D';
+  const medidas = extractDecohouseMeasuresFromText(args.fullContext) || 'No indicadas';
+  const producto = extractDecohouseProductLine(args.fullContext, args.botReply);
+  const instalacion = inferDecohouseInstallationLabel(args.fullContext);
+  const sector = extractDecohouseSector(args.fullContext);
+  const detalleParts: string[] = [];
+  const lastUser = (args.userMessage || '').replace(/\s+/g, ' ').trim().slice(0, 220);
+  if (lastUser) detalleParts.push(`Último mensaje: ${lastUser}`);
+  if (replyHasDecohouseInstallPhotoMarker(args.rawBotReply)) detalleParts.push('Foto de instalación recibida.');
+  if (replyHasDecohousePauseMarker(args.rawBotReply)) detalleParts.push('Pausa gerencia / fuera de catálogo.');
+  const detalle = detalleParts.join(' ') || '—';
+  return [
+    '📋 Cotización lista para revisar',
+    `👤 Cliente: ${nombre}`,
+    `📐 Producto: ${producto}`,
+    `📏 Medidas: ${medidas}`,
+    `🔧 Instalación: ${instalacion}`,
+    `📍 Sector: ${sector}`,
+    `💬 Detalle: ${detalle}`,
+  ].join('\n');
+}
+
 /** Dígitos para WA desde DECOHOUSE_ALERT_NUMBER (ej. 56954970745). Sin variable → undefined. */
 export function getDecohouseAlertNumberFromEnv(): string | undefined {
   const raw = (process.env.DECOHOUSE_ALERT_NUMBER || '').trim();
@@ -124,6 +275,7 @@ export async function createAlertIfUrgent(params: {
 }): Promise<void> {
   const { leadId, clientId, senderName, lastMessage, platform, messageCount, assignedTo } = params;
 
+  if (clientId === 'decohouse') return;
   if (assignedTo) return;
 
   const hasKeyword = isUrgentByKeywords(lastMessage);
