@@ -394,6 +394,32 @@ function shouldAppendResellerReceiptSuffix(resellerId) {
   return s.length > 0 && s !== 'unknown';
 }
 
+function formatResellerLeadAlertTime(createdAt) {
+  try {
+    const d = createdAt ? new Date(createdAt) : new Date();
+    if (Number.isNaN(d.getTime())) {
+      return new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+    }
+    return d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+  } catch {
+    return new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+  }
+}
+
+/** Alerta high_activity para portal reseller: sin links (solo resumen). */
+function buildResellerHighActivityAlert(a) {
+  const nombre = a.senderName || 'Sin nombre';
+  const numero = a.senderId ? String(a.senderId).replace(/@.*$/, '').trim() || '(sin número)' : '(sin número)';
+  const hora = formatResellerLeadAlertTime(a.createdAt);
+  return (
+    `🔔 Nuevo lead recibido\n` +
+    `👤 ${nombre}\n` +
+    `📱 ${numero}\n` +
+    `⏰ ${hora}\n\n` +
+    `Entrá a tu portal para verlo y hacer el seguimiento.`
+  );
+}
+
 async function sendWithOptionalMedia(sock, jid, text, mediaUrl) {
   if (mediaUrl) {
     try {
@@ -549,7 +575,9 @@ async function pollAndSendAlerts() {
             msg = `🚨 *LEAD URGENTE*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
             break;
           case 'high_activity':
-            msg = `🔥 *LEAD MUY ACTIVO*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+            msg = shouldAppendResellerReceiptSuffix(a.resellerId)
+              ? buildResellerHighActivityAlert(a)
+              : `🔥 *LEAD MUY ACTIVO*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
             break;
           case 'decohouse_lead':
             msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;

@@ -199,6 +199,40 @@ function digitsForAlertDestination(raw) {
   return normalizeWhatsappDigits(raw);
 }
 
+const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recepción';
+
+function shouldAppendResellerReceiptSuffix(resellerId) {
+  const s = String(resellerId ?? '')
+    .trim()
+    .toLowerCase();
+  return s.length > 0 && s !== 'unknown';
+}
+
+function formatResellerLeadAlertTime(createdAt) {
+  try {
+    const d = createdAt ? new Date(createdAt) : new Date();
+    if (Number.isNaN(d.getTime())) {
+      return new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+    }
+    return d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+  } catch {
+    return new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+  }
+}
+
+function buildResellerHighActivityAlert(a) {
+  const nombre = a.senderName || 'Sin nombre';
+  const numero = a.senderId ? String(a.senderId).replace(/@.*$/, '').trim() || '(sin número)' : '(sin número)';
+  const hora = formatResellerLeadAlertTime(a.createdAt);
+  return (
+    `🔔 Nuevo lead recibido\n` +
+    `👤 ${nombre}\n` +
+    `📱 ${numero}\n` +
+    `⏰ ${hora}\n\n` +
+    `Entrá a tu portal para verlo y hacer el seguimiento.`
+  );
+}
+
 async function callChatApi(clientId, message, senderId, senderName, mediaBase64, mimeType) {
   const webhookUrl = (getEnv('CHATBOT_WEBHOOK_URL', '') || `${getApiBase()}/api/webhook/whatsapp`).replace(/\/$/, '');
   const url = webhookUrl;
@@ -378,14 +412,19 @@ async function main() {
             case 'urgent_keyword':
               msg = `🚨 *LEAD URGENTE*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
               break;
-          case 'high_activity':
-            msg = `🔥 *LEAD MUY ACTIVO*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
-            break;
-          case 'decohouse_lead':
-            msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
-            break;
-          default:
+            case 'high_activity':
+              msg = shouldAppendResellerReceiptSuffix(a.resellerId)
+                ? buildResellerHighActivityAlert(a)
+                : `🔥 *LEAD MUY ACTIVO*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+              break;
+            case 'decohouse_lead':
+              msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+              break;
+            default:
               msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+          }
+          if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
+            msg += RESELLER_ALERT_RECEIPT_SUFFIX;
           }
           await client.sendMessage(chatId, msg);
           sentIds.push(a.id);
