@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         reason: a.reason,
         createdAt: a.createdAt,
         notifyWhatsappTo: a.notifyWhatsappTo,
+        resellerId: a.resellerId,
       })),
     });
   } catch (err) {

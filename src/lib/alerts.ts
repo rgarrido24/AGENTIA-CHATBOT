@@ -1,5 +1,16 @@
 import { getMongoDb } from '../../lib/mongodb';
 
+/** Texto al final de alertas WhatsApp a resellers (Luciano, etc.) para confirmar lectura. */
+export const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recepción';
+
+/** Leads de portal reseller (p. ej. Luciano): tienen `resellerId` distinto de vacío / "unknown". */
+export function shouldAppendResellerReceiptSuffix(resellerId: unknown): boolean {
+  const s = String(resellerId ?? '')
+    .trim()
+    .toLowerCase();
+  return s.length > 0 && s !== 'unknown';
+}
+
 export type Alert = {
   _id?: unknown;
   leadId: string;
@@ -294,7 +305,9 @@ export async function createAlertForDocumentsConfirmed(params: {
   });
 }
 
-export async function getPendingAlerts(): Promise<Alert[]> {
+export type AlertWithReseller = Alert & { resellerId?: string };
+
+export async function getPendingAlerts(): Promise<AlertWithReseller[]> {
   const db = await getMongoDb();
   const col = db.collection<Alert>('lead_alerts');
   // Devolver como máximo 1 alerta por leadId.
@@ -332,7 +345,27 @@ export async function getPendingAlerts(): Promise<Alert[]> {
     }
   }
 
-  return keep;
+  const leadIds = [...new Set(keep.map((a) => a.leadId).filter(Boolean))];
+  const resellerByLeadId = new Map<string, string>();
+  if (leadIds.length > 0) {
+    const leads = await db
+      .collection('leads')
+      .find({ leadId: { $in: leadIds } })
+      .project({ leadId: 1, resellerId: 1 })
+      .toArray();
+    for (const row of leads) {
+      const lid = typeof row.leadId === 'string' ? row.leadId : '';
+      const rid = row.resellerId != null ? String(row.resellerId) : '';
+      if (lid) resellerByLeadId.set(lid, rid);
+    }
+  }
+
+  const out: AlertWithReseller[] = keep.map((a) => {
+    const resellerId = resellerByLeadId.get(a.leadId) || undefined;
+    return { ...a, resellerId };
+  });
+
+  return out;
 }
 
 export async function markAlertSent(alertId: string): Promise<boolean> {

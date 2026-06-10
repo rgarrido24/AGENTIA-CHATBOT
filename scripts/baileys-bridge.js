@@ -384,6 +384,16 @@ async function sendText(sock, jid, text) {
   await sock.sendMessage(jid, { text });
 }
 
+// Debe coincidir con `RESELLER_ALERT_RECEIPT_SUFFIX` en src/lib/alerts.ts (alertas a resellers / Luciano).
+const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recepción';
+
+function shouldAppendResellerReceiptSuffix(resellerId) {
+  const s = String(resellerId ?? '')
+    .trim()
+    .toLowerCase();
+  return s.length > 0 && s !== 'unknown';
+}
+
 async function sendWithOptionalMedia(sock, jid, text, mediaUrl) {
   if (mediaUrl) {
     try {
@@ -546,6 +556,9 @@ async function pollAndSendAlerts() {
             break;
           default:
             msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+        }
+        if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
+          msg += RESELLER_ALERT_RECEIPT_SUFFIX;
         }
         await sendText(sock, jid, msg);
         sentIds.push(a.id);
