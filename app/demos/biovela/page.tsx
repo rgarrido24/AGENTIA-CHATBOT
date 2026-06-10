@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'La Rueda Veladoras / BIOVELA — Demo | Agentia',
@@ -6,16 +7,12 @@ export const metadata: Metadata = {
 };
 
 /**
- * Demo de chat (clientId biovela). Misma idea que /demos/chowak: el iframe carga
- * `public/demos/biovela/index.html` para que el chat y estilos sean un documento completo.
+ * Carga directa del demo estático (sin iframe).
+ * Motivo: la cabecera CSP global (`/(.*)`) incluye `frame-ancestors 'none'` y la regla
+ * específica de `/demos/biovela/*` añade otra CSP; el navegador las combina y la
+ * intersección impide embeber el HTML en un iframe (pantalla en blanco / “cara triste”).
+ * Chowak puede verse afectado igual si el navegador aplica la misma lógica.
  */
 export default function BiovelaDemoPage() {
-  return (
-    <iframe
-      src="/demos/biovela/index.html"
-      title="La Rueda Veladoras — Velas artesanales · CDMX (demo)"
-      className="fixed inset-0 z-[100] block h-[100dvh] w-full border-0"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-    />
-  );
+  redirect('/demos/biovela/index.html');
 }
