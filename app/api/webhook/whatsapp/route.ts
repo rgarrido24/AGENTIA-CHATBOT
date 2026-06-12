@@ -1,6 +1,176 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 
+function resolveChatBaseUrl(): string {
+  return (
+    process.env.AGENTIA_CHATBOT_API_URL?.replace(/\/$/, '') ||
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ||
+    process.env.LEADS_API_BASE_URL?.replace(/\/$/, '') ||
+    'https://agentia-chatbot-ventas.onrender.com'
+  );
+}
+
+/** Payload WhatsApp Cloud API (Meta): tiene entry[0].changes[0].value */
+function getWhatsAppCloudChangeValue(body: unknown): Record<string, unknown> | null {
+  const entry = (body as { entry?: unknown })?.entry;
+  if (!Array.isArray(entry) || !entry[0] || typeof entry[0] !== 'object') return null;
+  const changes = (entry[0] as { changes?: unknown }).changes;
+  if (!Array.isArray(changes) || !changes[0] || typeof changes[0] !== 'object') return null;
+  const value = (changes[0] as { value?: unknown }).value;
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+}
+
+/** true si es webhook Cloud API con al menos un mensaje en value.messages */
+function isWhatsAppCloudApiWithMessages(body: unknown): boolean {
+  const value = getWhatsAppCloudChangeValue(body);
+  const messages = value?.messages;
+  return Array.isArray(messages) && messages.length > 0;
+}
+
+type CloudInboundText = {
+  phoneNumberId: string;
+  from: string;
+  text: string;
+  messageId: string;
+};
+
+function parseCloudApiTextMessage(body: unknown): CloudInboundText | null {
+  const value = getWhatsAppCloudChangeValue(body);
+  const messages = value?.messages;
+  if (!Array.isArray(messages) || !messages[0] || typeof messages[0] !== 'object') return null;
+  const msg = messages[0] as {
+    type?: string;
+    from?: string;
+    id?: string;
+    text?: { body?: string };
+  };
+  if (msg.type !== 'text' || typeof msg.text?.body !== 'string') return null;
+  const from = typeof msg.from === 'string' ? msg.from.trim() : '';
+  if (!from) return null;
+  const metadata = value?.metadata;
+  const phoneNumberId =
+    metadata && typeof metadata === 'object' && typeof (metadata as { phone_number_id?: string }).phone_number_id === 'string'
+      ? String((metadata as { phone_number_id: string }).phone_number_id).trim()
+      : '';
+  if (!phoneNumberId) return null;
+  const messageId = typeof msg.id === 'string' ? msg.id : `${from}:${msg.text.body.slice(0, 40)}`;
+  return {
+    phoneNumberId,
+    from,
+    text: msg.text.body,
+    messageId,
+  };
+}
+
+async function sendWhatsAppCloudApiTextReply(to: string, bodyText: string): Promise<Response> {
+  const phoneId = (process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
+  const token = (process.env.WHATSAPP_ACCESS_TOKEN || '').trim();
+  if (!phoneId || !token) {
+    throw new Error('WHATSAPP_ACCESS_TOKEN o WHATSAPP_PHONE_NUMBER_ID no configurados');
+  }
+  const url = `https://graph.facebook.com/v18.0/${phoneId}/messages`;
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'text',
+      text: { body: bodyText },
+    }),
+  });
+}
+
+/**
+ * Procesa mensajes entrantes de WhatsApp Cloud API (CWF cuando coincide phone_number_id).
+ */
+async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> {
+  if (!isWhatsAppCloudApiWithMessages(body)) {
+    // Webhook Cloud API sin mensajes (p. ej. solo estados): 200 para Meta
+    return NextResponse.json({ ok: true });
+  }
+
+  const parsed = parseCloudApiTextMessage(body);
+  if (!parsed) {
+    return NextResponse.json({ ok: true, skipped: true, reason: 'non-text or incomplete' });
+  }
+
+  const expectedPhoneNumberId = (process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
+  if (!expectedPhoneNumberId) {
+    console.error('[webhook/whatsapp] Cloud API: falta WHATSAPP_PHONE_NUMBER_ID');
+    return NextResponse.json({ ok: false, error: 'WHATSAPP_PHONE_NUMBER_ID no configurado' }, { status: 500 });
+  }
+  if (parsed.phoneNumberId !== expectedPhoneNumberId) {
+    console.log('[webhook/whatsapp] Cloud API ignorado — phone_number_id distinto:', parsed.phoneNumberId);
+    return NextResponse.json({ ok: true, ignored: true });
+  }
+  if (!(process.env.WHATSAPP_ACCESS_TOKEN || '').trim()) {
+    console.error('[webhook/whatsapp] Cloud API CWF: falta WHATSAPP_ACCESS_TOKEN');
+    return NextResponse.json({ ok: false, error: 'WHATSAPP_ACCESS_TOKEN no configurado' }, { status: 500 });
+  }
+
+  const key = dedupKey(parsed.from, `cloud:${parsed.messageId}`);
+  if (isDuplicate(key)) {
+    console.log('[webhook/whatsapp] Cloud API DEDUP:', parsed.from, parsed.messageId);
+    return NextResponse.json({ ok: true, skipped: true });
+  }
+
+  {
+    const db = await getMongoDb();
+    const cfg = await db.collection('business_configs').findOne({ clientId: 'cwf' }, { projection: { status: 1 } });
+    if (cfg?.status && cfg.status !== 'activo') {
+      console.log('[webhook/whatsapp] business_config inactivo — CWF');
+      return NextResponse.json({ ok: true, botInactive: true });
+    }
+  }
+
+  const baseUrl = resolveChatBaseUrl();
+  const chatRes = await fetch(`${baseUrl}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      clientId: 'cwf',
+      platform: 'whatsapp',
+      entryType: 'dm',
+      message: parsed.text,
+      senderId: parsed.from,
+      senderName: parsed.from,
+      pageId: 'whatsapp-cloud',
+    }),
+  });
+
+  const chatJson = (await chatRes.json().catch(() => ({}))) as { reply?: string; error?: string };
+  const replyText =
+    typeof chatJson.reply === 'string' && chatJson.reply.trim()
+      ? chatJson.reply
+      : 'En este momento no puedo responderte. Intenta de nuevo en unos minutos.';
+
+  let graphStatus = 0;
+  try {
+    const waRes = await sendWhatsAppCloudApiTextReply(parsed.from, replyText);
+    graphStatus = waRes.status;
+    if (!waRes.ok) {
+      const errText = await waRes.text().catch(() => '');
+      console.error('[webhook/whatsapp] Graph API error:', waRes.status, errText.slice(0, 500));
+    }
+  } catch (e) {
+    console.error('[webhook/whatsapp] Graph API send failed:', e instanceof Error ? e.message : e);
+    return NextResponse.json(
+      { ok: false, chatStatus: chatRes.status, error: e instanceof Error ? e.message : 'graph send failed' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    ok: true,
+    chatStatus: chatRes.status,
+    graphStatus,
+  });
+}
+
 function normalizeLeadId(raw: unknown): string | undefined {
   if (typeof raw !== 'string') return undefined;
   const trimmed = raw.trim();
@@ -189,6 +359,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
 
+    if (getWhatsAppCloudChangeValue(body) !== null) {
+      return await handleWhatsAppCloudApiPost(body);
+    }
+
     const leadId = normalizeLeadId(body?.leadId);
     const mensaje = typeof body?.mensaje === 'string' ? body.mensaje : '';
     const mediaBase64 = typeof body?.mediaBase64 === 'string' ? body.mediaBase64 : undefined;
@@ -227,12 +401,7 @@ export async function POST(request: NextRequest) {
       await ensureAgentiaVentasLead({ leadId, senderId: leadId, senderName, mensaje });
     }
 
-    const baseUrl =
-      process.env.AGENTIA_CHATBOT_API_URL?.replace(/\/$/, '') ||
-      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ||
-      process.env.LEADS_API_BASE_URL?.replace(/\/$/, '') ||
-      'https://agentia-chatbot-ventas.onrender.com';
-
+    const baseUrl = resolveChatBaseUrl();
     console.log('[webhook/whatsapp] baseUrl:', baseUrl, 'leadId:', leadId, 'clientId:', clientId, 'hasMedia:', !!mediaBase64);
 
     const chatRes = await fetch(`${baseUrl}/api/chat`, {
