@@ -2,14 +2,14 @@ import { enqueueOutbound } from './outbound-queue';
 
 /**
  * Alerta WhatsApp al número configurado cuando entra el primer mensaje de un lead Izzi nuevo.
- * El bridge `izzi` envía el mensaje a `IZZI_PIPELINE_ALERT_WHATSAPP` (default 529997642435).
+ * El bridge `izzi` envía el mensaje a `IZZI_PIPELINE_ALERT_WHATSAPP` (default 529844927769).
  */
 export async function notifyIzziNewLeadWhatsApp(params: {
   senderName?: string;
   senderId?: string;
   botActive: boolean;
 }): Promise<void> {
-  const raw = (process.env.IZZI_PIPELINE_ALERT_WHATSAPP || '529997642435').replace(/\D/g, '');
+  const raw = (process.env.IZZI_PIPELINE_ALERT_WHATSAPP || '529844927769').replace(/\D/g, '');
   if (raw.length < 10) {
     console.warn('[izzi-pipeline-notify] IZZI_PIPELINE_ALERT_WHATSAPP inválido o ausente');
     return;

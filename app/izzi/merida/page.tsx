@@ -9,7 +9,7 @@ const ACCENT = '#00B140';
 const PINK = '#f472b6';
 const WA_GREEN = '#25D366';
 const WA_HREF =
-  'https://wa.me/529997642435?text=Hola!%20Vi%20la%20promo%20de%20izzi%20100%20megas%20y%20quiero%20contratar%20en%20M%C3%A9rida';
+  'https://wa.me/529844927769?text=Hola!%20Vi%20la%20promo%20de%20izzi%20100%20megas%20y%20quiero%20contratar%20en%20M%C3%A9rida';
 
 type CuposState = { n: number; nextAt: number };
 
