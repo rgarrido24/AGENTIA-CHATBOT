@@ -421,6 +421,33 @@ async function isIzziInboundFromResellerLead(senderId) {
 }
 
 /**
+ * Cliente portal (`leads`): `alertNumber` contiene los dígitos del número (destino de la alerta).
+ * @returns {Promise<{ clientSlug?: string, resellerId?: string, alertNumber?: string } | null>}
+ */
+async function getClienteDocByAlertNumber(notifyWhatsappTo) {
+  if (!MONGODB_URI) return null;
+  const digits = String(notifyWhatsappTo ?? '')
+    .replace(/\D/g, '');
+  if (digits.length < 8) return null;
+  try {
+    const db = await getDb();
+    const tail = digits.slice(-10);
+    const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const doc = await db.collection('leads').findOne(
+      {
+        alertNumber: { $exists: true, $nin: ['', null] },
+        $or: [{ alertNumber: { $regex: esc(tail) } }, { alertNumber: { $regex: esc(digits) } }],
+      },
+      { projection: { clientSlug: 1, resellerId: 1, alertNumber: 1 }, sort: { updatedAt: -1 } }
+    );
+    return doc;
+  } catch (e) {
+    console.warn('[Baileys] getClienteDocByAlertNumber:', e?.message || e);
+    return null;
+  }
+}
+
+/**
  * Busca en `leads` por leadId o senderId para armar el link del portal reseller.
  * @returns {{ resellerId: string, clientSlug: string, leadId: string } | null}
  */
@@ -674,7 +701,14 @@ async function pollAndSendAlerts() {
             if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
               resellerHighActivity = true;
             } else {
-              msg = `🔥 *LEAD MUY ACTIVO*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+              const clienteDoc = await getClienteDocByAlertNumber(a.notifyWhatsappTo);
+              const clientSlug = clienteDoc?.clientSlug || '';
+              const resellerId = clienteDoc?.resellerId || 'luciano';
+              const portalLink = clientSlug
+                ? `https://agentia.software/portal/${resellerId}/cliente/${clientSlug}`
+                : 'https://agentia.software/dashboard/leads';
+
+              msg = `⚠️ ATENCION⚠️\n¡Tenes un NUEVO LEAD en tu panel!\nNo dejes que se enfríe y contactalo rápidamente📲\nDale click al enlace para gestionarlo👇\n${portalLink}`;
             }
             break;
           case 'decohouse_lead':
