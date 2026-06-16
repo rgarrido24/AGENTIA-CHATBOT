@@ -499,31 +499,30 @@ async function findResellerPortalMetaForAlert(a) {
   }
 }
 
-function buildResellerHighActivityPortalUrl(meta, fallbackResellerId, fallbackLeadId) {
-  const rid = meta?.resellerId || String(fallbackResellerId || '').trim().toLowerCase();
-  const slug = meta?.clientSlug || '';
-  const lid = encodeURIComponent(String(meta?.leadId || fallbackLeadId || '').trim());
-  if (rid && slug && lid && lid !== 'undefined') {
-    return `https://agentia.software/portal/${encodeURIComponent(rid)}/cliente/${encodeURIComponent(slug)}?lid=${lid}`;
-  }
-  if (rid && slug) {
-    return `https://agentia.software/portal/${encodeURIComponent(rid)}/cliente/${encodeURIComponent(slug)}`;
-  }
-  if (rid) {
-    return `https://agentia.software/portal/${encodeURIComponent(rid)}/dashboard`;
-  }
-  return 'https://agentia.software/portal/luciano/dashboard';
-}
-
-/** Alerta high_activity reseller: texto fijo + link portal + imagen OG + recibo. */
+/** Alerta high_activity reseller: texto fijo + link portal (slug desde Mongo) + imagen OG + recibo. */
 async function sendResellerHighActivityWithOg(sock, jid, a) {
-  const meta = await findResellerPortalMetaForAlert(a);
-  const portalLink = buildResellerHighActivityPortalUrl(meta, a.resellerId, a.leadId);
+  let meta = await findResellerPortalMetaForAlert(a);
+  let resellerId = meta?.resellerId ? String(meta.resellerId).trim().toLowerCase() : '';
+  let clientSlug = meta?.clientSlug ? String(meta.clientSlug).trim() : '';
+
+  if (!resellerId || resellerId === 'unknown' || !clientSlug) {
+    const cliente = await getClienteDocByAlertNumber(a.notifyWhatsappTo);
+    if (cliente) {
+      resellerId = String(cliente.resellerId || '').trim().toLowerCase() || resellerId;
+      clientSlug = String(cliente.clientSlug || '').trim() || clientSlug;
+    }
+  }
+
+  const portalLink =
+    resellerId && resellerId !== 'unknown' && clientSlug
+      ? `https://agentia.software/portal/${encodeURIComponent(resellerId)}/cliente/${encodeURIComponent(clientSlug)}`
+      : 'https://agentia.software/dashboard/leads';
+
   const body =
-    `⚠️ ATENCION⚠️\n` +
-    `¡Tenes un NUEVO LEAD en tu panel!\n` +
-    `No dejes que se enfríe y contactalo rápidamente📲\n` +
-    `Dale click al enlace para gestionarlo👇\n` +
+    '⚠️ ATENCION⚠️\n' +
+    '¡Tenes un NUEVO LEAD en tu panel!\n' +
+    'No dejes que se enfríe y contactalo rápidamente📲\n' +
+    'Dale click al enlace para gestionarlo👇\n' +
     `${portalLink}`;
   const full = body + RESELLER_ALERT_RECEIPT_SUFFIX;
 
