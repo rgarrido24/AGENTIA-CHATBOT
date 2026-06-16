@@ -394,30 +394,99 @@ function shouldAppendResellerReceiptSuffix(resellerId) {
   return s.length > 0 && s !== 'unknown';
 }
 
-function formatResellerLeadAlertTime(createdAt) {
+/**
+ * Busca en `leads` por leadId o senderId para armar el link del portal reseller.
+ * @returns {{ resellerId: string, clientSlug: string, leadId: string } | null}
+ */
+async function findResellerPortalMetaForAlert(a) {
+  if (!MONGODB_URI) return null;
   try {
-    const d = createdAt ? new Date(createdAt) : new Date();
-    if (Number.isNaN(d.getTime())) {
-      return new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+    const db = await getDb();
+    const leadId = String(a.leadId || '').trim();
+    const senderRaw = a.senderId ? String(a.senderId).replace(/@.*$/, '').trim() : '';
+    const senderDigits = senderRaw.replace(/\D/g, '');
+
+    let doc = null;
+    if (leadId) {
+      doc = await db.collection('leads').findOne(
+        { leadId },
+        { projection: { resellerId: 1, clientSlug: 1, leadId: 1 } }
+      );
     }
-    return d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-  } catch {
-    return new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+    if (!doc && senderRaw) {
+      const or = [{ senderId: senderRaw }];
+      if (senderDigits && senderDigits !== senderRaw) or.push({ senderId: senderDigits });
+      doc = await db.collection('leads').findOne(
+        { $or: or },
+        { projection: { resellerId: 1, clientSlug: 1, leadId: 1 }, sort: { updatedAt: -1 } }
+      );
+    }
+    if (!doc && senderRaw && shouldAppendResellerReceiptSuffix(a.resellerId)) {
+      const rid = String(a.resellerId || '').trim();
+      doc = await db.collection('leads').findOne(
+        {
+          resellerId: rid,
+          $or: [{ senderId: senderRaw }, ...(senderDigits ? [{ senderId: senderDigits }] : [])],
+        },
+        { projection: { resellerId: 1, clientSlug: 1, leadId: 1 }, sort: { updatedAt: -1 } }
+      );
+    }
+    if (!doc) return null;
+
+    const resellerId = String(doc.resellerId || a.resellerId || '')
+      .trim()
+      .toLowerCase();
+    const clientSlug = String(doc.clientSlug || '').trim();
+    const outLeadId = String(doc.leadId || leadId || '').trim();
+    if (!resellerId || resellerId === 'unknown' || !clientSlug) return null;
+    return { resellerId, clientSlug, leadId: outLeadId };
+  } catch (e) {
+    console.warn('[Baileys] findResellerPortalMetaForAlert:', e?.message || e);
+    return null;
   }
 }
 
-/** Alerta high_activity para portal reseller: sin links (solo resumen). */
-function buildResellerHighActivityAlert(a) {
-  const nombre = a.senderName || 'Sin nombre';
-  const numero = a.senderId ? String(a.senderId).replace(/@.*$/, '').trim() || '(sin número)' : '(sin número)';
-  const hora = formatResellerLeadAlertTime(a.createdAt);
-  return (
-    `🔔 Nuevo lead recibido\n` +
-    `👤 ${nombre}\n` +
-    `📱 ${numero}\n` +
-    `⏰ ${hora}\n\n` +
-    `Entrá a tu portal para verlo y hacer el seguimiento.`
-  );
+function buildResellerHighActivityPortalUrl(meta, fallbackResellerId, fallbackLeadId) {
+  const rid = meta?.resellerId || String(fallbackResellerId || '').trim().toLowerCase();
+  const slug = meta?.clientSlug || '';
+  const lid = encodeURIComponent(String(meta?.leadId || fallbackLeadId || '').trim());
+  if (rid && slug && lid && lid !== 'undefined') {
+    return `https://agentia.software/portal/${encodeURIComponent(rid)}/cliente/${encodeURIComponent(slug)}?lid=${lid}`;
+  }
+  if (rid && slug) {
+    return `https://agentia.software/portal/${encodeURIComponent(rid)}/cliente/${encodeURIComponent(slug)}`;
+  }
+  if (rid) {
+    return `https://agentia.software/portal/${encodeURIComponent(rid)}/dashboard`;
+  }
+  return 'https://agentia.software/portal/luciano/dashboard';
+}
+
+/** Alerta high_activity reseller: texto fijo + link portal + imagen OG + recibo. */
+async function sendResellerHighActivityWithOg(sock, jid, a) {
+  const meta = await findResellerPortalMetaForAlert(a);
+  const portalLink = buildResellerHighActivityPortalUrl(meta, a.resellerId, a.leadId);
+  const body =
+    `⚠️ ATENCION⚠️\n` +
+    `¡Tenes un NUEVO LEAD en tu panel!\n` +
+    `No dejes que se enfríe y contactalo rápidamente📲\n` +
+    `Dale click al enlace para gestionarlo👇\n` +
+    `${portalLink}`;
+  const full = body + RESELLER_ALERT_RECEIPT_SUFFIX;
+
+  const ogPath = path.join(__dirname, '..', 'public', 'luciano-og-image.jpg');
+  try {
+    if (fs.existsSync(ogPath)) {
+      const buf = fs.readFileSync(ogPath);
+      await sock.sendMessage(jid, { image: buf, mimetype: 'image/jpeg', caption: full });
+    } else {
+      console.warn('[Baileys] luciano-og-image.jpg no encontrado en public/, enviando solo texto');
+      await sendText(sock, jid, full);
+    }
+  } catch (e) {
+    console.error('[Baileys] Error enviando alerta reseller high_activity:', e?.message || e);
+    await sendText(sock, jid, full);
+  }
 }
 
 async function sendWithOptionalMedia(sock, jid, text, mediaUrl) {
@@ -564,6 +633,7 @@ async function pollAndSendAlerts() {
         }
         const senderLine = a.senderId ? `📱 ${String(a.senderId).replace(/@.*$/, '')}` : '';
         let msg = '';
+        let resellerHighActivity = false;
         switch (a.reason) {
           case 'documents_confirmed':
             msg = `📋 *CAPTURAR EN IZZI – VENTA LISTA*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
@@ -575,9 +645,11 @@ async function pollAndSendAlerts() {
             msg = `🚨 *LEAD URGENTE*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
             break;
           case 'high_activity':
-            msg = shouldAppendResellerReceiptSuffix(a.resellerId)
-              ? buildResellerHighActivityAlert(a)
-              : `🔥 *LEAD MUY ACTIVO*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+            if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
+              resellerHighActivity = true;
+            } else {
+              msg = `🔥 *LEAD MUY ACTIVO*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+            }
             break;
           case 'decohouse_lead':
             msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
@@ -585,10 +657,14 @@ async function pollAndSendAlerts() {
           default:
             msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
         }
-        if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
-          msg += RESELLER_ALERT_RECEIPT_SUFFIX;
+        if (resellerHighActivity) {
+          await sendResellerHighActivityWithOg(sock, jid, a);
+        } else {
+          if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
+            msg += RESELLER_ALERT_RECEIPT_SUFFIX;
+          }
+          await sendText(sock, jid, msg);
         }
-        await sendText(sock, jid, msg);
         sentIds.push(a.id);
         await new Promise((r) => setTimeout(r, 3000 + Math.random() * 2000));
       } catch (e) {
