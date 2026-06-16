@@ -620,6 +620,7 @@ async function startClient(clientId, baileys) {
     downloadMediaMessage,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
+    Browsers,
   } = baileys;
 
   let state = clients.get(id);
@@ -670,7 +671,7 @@ async function startClient(clientId, baileys) {
     },
     printQRInTerminal: false,
     logger,
-    browser: ['Agentia', 'Chrome', '120.0.0'],
+    browser: Browsers.ubuntu('Chrome'),
     syncFullHistory: false,
     markOnlineOnConnect: false,
   });
