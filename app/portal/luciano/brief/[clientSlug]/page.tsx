@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { LucianoDigitalBriefForm } from '@/app/brief/LucianoDigitalBriefForm';
 
 export const metadata = {
-  title: 'Brief digital · Luciano',
   robots: { index: false, follow: false },
 };
 
