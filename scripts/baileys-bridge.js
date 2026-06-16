@@ -590,6 +590,7 @@ async function pollAndSendAlerts() {
         }
         await sendText(sock, jid, msg);
         sentIds.push(a.id);
+        await new Promise((r) => setTimeout(r, 3000 + Math.random() * 2000));
       } catch (e) {
         console.error('[Baileys] Error enviando alerta:', e?.message || e);
       }
