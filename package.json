@@ -13,6 +13,7 @@
     "whatsapp:kill-browser": "node scripts/whatsapp-kill-browser.js",
     "seed": "node scripts/seed-business-configs.js",
     "update:decohouse": "node scripts/update-decohouse-config.js",
+    "update:agentia": "node scripts/seed-agentia-config.js",
     "cancel:outbound": "node scripts/cancel-pending-outbound.js",
     "set:client-pw": "node scripts/set-client-password.js",
     "set:antonio-fb-alert": "node scripts/set-antonio-campetella-alert.js",
