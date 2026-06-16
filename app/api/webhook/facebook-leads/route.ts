@@ -310,6 +310,54 @@ async function enqueueAdminAlert(
   );
 }
 
+/** Cola alerta WhatsApp vía `lead_alerts` (bridge pollAndSendAlerts) al ingresar lead FB. */
+async function insertFbLeadHighActivityAlert(
+  db: Awaited<ReturnType<typeof getMongoDb>>,
+  params: {
+    leadId: string;
+    resellerMatch: ResellerMatch;
+    nombre: string;
+    whatsapp: string;
+    email: string;
+  }
+): Promise<void> {
+  const resellerId = params.resellerMatch?.resellerId?.trim();
+  if (!resellerId || resellerId === 'unknown') {
+    console.warn('[fb-leads] lead_alerts omitido: sin resellerId válido');
+    return;
+  }
+
+  const alertNumber =
+    params.resellerMatch?.alertNumber?.trim() || process.env.FB_ALERT_NUMBER?.trim() || '';
+  if (!alertNumber) {
+    console.warn('[fb-leads] lead_alerts omitido: sin alertNumber en reseller_client ni FB_ALERT_NUMBER');
+    return;
+  }
+
+  const existing = await db.collection('lead_alerts').findOne({ leadId: params.leadId });
+  if (existing) {
+    console.log(`[fb-leads] lead_alerts ya existe para leadId=${params.leadId}, omitiendo`);
+    return;
+  }
+
+  const whatsapp = params.whatsapp.trim();
+  const email = params.email.trim();
+  const nombre = params.nombre.trim();
+
+  await db.collection('lead_alerts').insertOne({
+    clientId: resellerId,
+    leadId: params.leadId,
+    platform: 'facebook',
+    reason: 'high_activity',
+    senderId: whatsapp ? `${whatsapp}@s.whatsapp.net` : '',
+    senderName: nombre || undefined,
+    notifyWhatsappTo: alertNumber,
+    lastMessage: `Nuevo lead: ${nombre || 'Sin nombre'} - ${whatsapp || email || 'sin contacto'}`,
+    createdAt: new Date(),
+  });
+  console.log(`[fb-leads] lead_alerts high_activity → ${alertNumber} (reseller ${resellerId})`);
+}
+
 // ─── Formato Zapier: JSON plano ───────────────────────────────────────────────
 const ZAPIER_STANDARD_KEYS = new Set([
   'full_name','nombre','phone_number','phone','telefono','email','correo',
@@ -417,6 +465,14 @@ async function processZapierLead(data: Record<string, unknown>) {
   }
 
   console.log(`[fb-leads/zapier] Lead insertado: ${leadId}`);
+
+  await insertFbLeadHighActivityAlert(db, {
+    leadId,
+    resellerMatch,
+    nombre: full_name,
+    whatsapp: phone,
+    email,
+  });
 
   // NO enviar nada al teléfono del lead: solo cola hacia el WhatsApp del reseller/cliente (admin-alert).
   // dedup: mismo Lead Id de Meta en reintentos; si no viene Lead Id, cada alta tiene leadId distinto (pruebas Zapier no se bloquean por teléfono).
@@ -528,6 +584,14 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
           delete snap._id;
           await insertLeadBackup(db, snap);
         }
+
+        await insertFbLeadHighActivityAlert(db, {
+          leadId,
+          resellerMatch,
+          nombre: full_name,
+          whatsapp: phone,
+          email,
+        });
       }
 
       // NO enviar ningún mensaje al lead. Solo alerta al admin (Luciano).
