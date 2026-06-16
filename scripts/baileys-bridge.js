@@ -394,6 +394,32 @@ function shouldAppendResellerReceiptSuffix(resellerId) {
   return s.length > 0 && s !== 'unknown';
 }
 
+/** Lead en Mongo con resellerId válido (ej. cliente de Luciano vía mismo WhatsApp Izzi). */
+async function isIzziInboundFromResellerLead(senderId) {
+  if (!MONGODB_URI) return false;
+  try {
+    const db = await getDb();
+    const full = String(senderId || '').trim();
+    const bare = full.replace(/@[^@]+$/, '');
+    const digits = bare.replace(/\D/g, '');
+    const or = [];
+    if (full) or.push({ senderId: full });
+    if (bare && bare !== full) or.push({ senderId: bare });
+    if (digits) {
+      or.push({ senderId: digits });
+      if (digits.length >= 10) {
+        or.push({ senderId: { $regex: digits.slice(-10) } });
+      }
+    }
+    if (!or.length) return false;
+    const doc = await db.collection('leads').findOne({ $or: or }, { projection: { resellerId: 1 } });
+    return !!(doc && shouldAppendResellerReceiptSuffix(doc.resellerId));
+  } catch (e) {
+    console.warn('[Baileys] isIzziInboundFromResellerLead:', e?.message || e);
+    return false;
+  }
+}
+
 /**
  * Busca en `leads` por leadId o senderId para armar el link del portal reseller.
  * @returns {{ resellerId: string, clientSlug: string, leadId: string } | null}
@@ -833,10 +859,19 @@ async function startClient(clientId, baileys) {
 
         const body = extractMessageText(msg);
         const hasMedia = hasMediaContent(msg);
-        if (!body && !hasMedia) continue;
+        const trimmedBody = String(body || '').trim();
+        if (!trimmedBody && !hasMedia) continue;
 
         const senderId = remoteJid;
         const senderName = msg.pushName || undefined;
+
+        if (id === 'izzi' && !hasMedia && trimmedBody) {
+          const shortInbound = [...trimmedBody].length < 5;
+          if (shortInbound && (await isIzziInboundFromResellerLead(senderId))) {
+            await sendText(sock, senderId, '✅ Recibido. ¡Mucha suerte con tu lead!');
+            continue;
+          }
+        }
 
         let mediaBase64 = null;
         let mimeType = null;
@@ -861,7 +896,7 @@ async function startClient(clientId, baileys) {
         const processMessage = async () => {
           const { reply, mediaUrl, botPaused } = await callChatApi(
             id,
-            body || '[imagen adjunta]',
+            trimmedBody || '[imagen adjunta]',
             senderId,
             senderName,
             mediaBase64,
