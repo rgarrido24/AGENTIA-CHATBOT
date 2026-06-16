@@ -499,24 +499,21 @@ async function findResellerPortalMetaForAlert(a) {
   }
 }
 
-/** Alerta high_activity reseller: texto fijo + link portal (slug desde Mongo) + imagen OG + recibo. */
+/** Alerta high_activity reseller: texto fijo + link portal Luciano + imagen OG + recibo. */
 async function sendResellerHighActivityWithOg(sock, jid, a) {
   let meta = await findResellerPortalMetaForAlert(a);
-  let resellerId = meta?.resellerId ? String(meta.resellerId).trim().toLowerCase() : '';
   let clientSlug = meta?.clientSlug ? String(meta.clientSlug).trim() : '';
 
-  if (!resellerId || resellerId === 'unknown' || !clientSlug) {
+  if (!clientSlug) {
     const cliente = await getClienteDocByAlertNumber(a.notifyWhatsappTo);
-    if (cliente) {
-      resellerId = String(cliente.resellerId || '').trim().toLowerCase() || resellerId;
-      clientSlug = String(cliente.clientSlug || '').trim() || clientSlug;
+    if (cliente?.clientSlug) {
+      clientSlug = String(cliente.clientSlug).trim();
     }
   }
 
-  const portalLink =
-    resellerId && resellerId !== 'unknown' && clientSlug
-      ? `https://agentia.software/portal/${encodeURIComponent(resellerId)}/cliente/${encodeURIComponent(clientSlug)}`
-      : 'https://agentia.software/dashboard/leads';
+  const portalLink = clientSlug
+    ? `https://agentia.software/portal/luciano/cliente/${encodeURIComponent(clientSlug)}`
+    : 'https://agentia.software/portal/luciano/dashboard';
 
   const body =
     '⚠️ ATENCION⚠️\n' +
