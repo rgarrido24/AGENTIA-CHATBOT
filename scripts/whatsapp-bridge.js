@@ -16,6 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
+const { MongoClient } = require('mongodb');
 const qrcode = require('qrcode');
 const http = require('http');
 const { execFile } = require('child_process');
@@ -199,6 +200,88 @@ function digitsForAlertDestination(raw) {
   return normalizeWhatsappDigits(raw);
 }
 
+let leadsMongoClient = null;
+let leadsMongoDb = null;
+
+async function getLeadsMongoDb() {
+  const uri = (getEnv('MONGODB_URI', '') || process.env.MONGODB_URI || '').trim();
+  if (!uri) return null;
+  try {
+    if (!leadsMongoDb) {
+      leadsMongoClient = new MongoClient(uri, { serverSelectionTimeoutMS: 10_000 });
+      await leadsMongoClient.connect();
+      const dbName = (getEnv('MONGODB_DB', '') || process.env.MONGODB_DB || '').trim();
+      leadsMongoDb = dbName ? leadsMongoClient.db(dbName) : leadsMongoClient.db();
+    }
+    return leadsMongoDb;
+  } catch (e) {
+    console.warn('[Agentia] Mongo (leads lookup alertas):', e?.message || e);
+    return null;
+  }
+}
+
+/**
+ * clientSlug para URL portal Luciano: busca en `leads` por leadId, senderId/telefono o alertNumber.
+ * @returns {string|null}
+ */
+async function findClientSlugForHighActivityAlert(a) {
+  const db = await getLeadsMongoDb();
+  if (!db) return null;
+  const leadId = String(a.leadId || '').trim();
+  const raw = a.senderId ? String(a.senderId).replace(/@.*$/, '').trim() : '';
+  const digits = raw.replace(/\D/g, '');
+  const proj = { projection: { clientSlug: 1 } };
+
+  let doc = null;
+  if (leadId) {
+    doc = await db.collection('leads').findOne({ leadId }, proj);
+  }
+  if (!doc?.clientSlug && raw) {
+    const or = [{ senderId: raw }, { telefono: raw }];
+    if (digits && digits !== raw) {
+      or.push({ senderId: digits }, { telefono: digits });
+    }
+    if (digits.length >= 10) {
+      const tail = digits.slice(-10);
+      or.push({ senderId: { $regex: tail } }, { telefono: { $regex: tail } });
+    }
+    doc = await db.collection('leads').findOne({ $or: or }, { ...proj, sort: { updatedAt: -1 } });
+  }
+  const notifyDigits = a.notifyWhatsappTo ? String(a.notifyWhatsappTo).replace(/\D/g, '') : '';
+  if (!doc?.clientSlug && notifyDigits.length >= 8) {
+    const ntail = notifyDigits.slice(-10);
+    doc = await db.collection('leads').findOne(
+      {
+        _collection_type: 'reseller_client',
+        $or: [{ alertNumber: notifyDigits }, { alertNumber: { $regex: ntail } }],
+      },
+      { ...proj, sort: { updatedAt: -1 } }
+    );
+  }
+  if (!doc?.clientSlug && digits.length >= 8) {
+    const tail = digits.slice(-10);
+    doc = await db.collection('leads').findOne(
+      {
+        $or: [{ alertNumber: digits }, { alertNumber: raw }, { alertNumber: { $regex: tail } }],
+      },
+      { ...proj, sort: { updatedAt: -1 } }
+    );
+  }
+  const slug = doc?.clientSlug != null ? String(doc.clientSlug).trim() : '';
+  return slug || null;
+}
+
+async function buildHighActivityAlertMessage(a) {
+  const slug = (await findClientSlugForHighActivityAlert(a)) || 'sin-cliente';
+  return (
+    '⚠️ ATENCION⚠️\n' +
+    '¡Tenes un NUEVO LEAD en tu panel!\n' +
+    'No dejes que se enfríe y contactalo rápidamente📲\n' +
+    'Dale click al enlace para gestionarlo👇\n' +
+    `https://agentia.software/portal/luciano/cliente/${encodeURIComponent(slug)}`
+  );
+}
+
 const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recepción';
 
 function shouldAppendResellerReceiptSuffix(resellerId) {
@@ -206,31 +289,6 @@ function shouldAppendResellerReceiptSuffix(resellerId) {
     .trim()
     .toLowerCase();
   return s.length > 0 && s !== 'unknown';
-}
-
-function formatResellerLeadAlertTime(createdAt) {
-  try {
-    const d = createdAt ? new Date(createdAt) : new Date();
-    if (Number.isNaN(d.getTime())) {
-      return new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-    }
-    return d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-  } catch {
-    return new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-  }
-}
-
-function buildResellerHighActivityAlert(a) {
-  const nombre = a.senderName || 'Sin nombre';
-  const numero = a.senderId ? String(a.senderId).replace(/@.*$/, '').trim() || '(sin número)' : '(sin número)';
-  const hora = formatResellerLeadAlertTime(a.createdAt);
-  return (
-    `🔔 Nuevo lead recibido\n` +
-    `👤 ${nombre}\n` +
-    `📱 ${numero}\n` +
-    `⏰ ${hora}\n\n` +
-    `Entrá a tu portal para verlo y hacer el seguimiento.`
-  );
 }
 
 async function callChatApi(clientId, message, senderId, senderName, mediaBase64, mimeType) {
@@ -413,9 +471,7 @@ async function main() {
               msg = `🚨 *LEAD URGENTE*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
               break;
             case 'high_activity':
-              msg = shouldAppendResellerReceiptSuffix(a.resellerId)
-                ? buildResellerHighActivityAlert(a)
-                : `🔥 *LEAD MUY ACTIVO*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
+              msg = await buildHighActivityAlertMessage(a);
               break;
             case 'decohouse_lead':
               msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
