@@ -94,9 +94,35 @@ const SKIP_RESPONSE_HEADERS = new Set([
   'set-cookie',
 ]);
 
+function isInternalHost(host: string): boolean {
+  const h = host.split(':')[0].toLowerCase();
+  return (
+    h === '0.0.0.0' ||
+    h === '127.0.0.1' ||
+    h === 'localhost' ||
+    h.startsWith('10.') ||
+    h.startsWith('192.168.') ||
+    h.endsWith('.internal')
+  );
+}
+
+/** Origen público real de la petición (Render escucha en 0.0.0.0:10000). */
+function requestPublicOrigin(req: NextRequest): string {
+  const forwardedHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
+  const hostHeader = req.headers.get('host')?.split(',')[0]?.trim();
+  const host = forwardedHost || hostHeader;
+
+  if (host && !isInternalHost(host)) {
+    const proto = req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() || 'https';
+    return `${proto}://${host}`;
+  }
+
+  return publicOrigin();
+}
+
 function absoluteRedirectUrl(req: NextRequest, rewritten: string): string {
   if (/^https?:\/\//i.test(rewritten)) return rewritten;
-  return new URL(rewritten, req.nextUrl.origin).href;
+  return new URL(rewritten, requestPublicOrigin(req)).href;
 }
 
 function resolveUpstreamUrl(location: string): string {
@@ -131,7 +157,7 @@ export async function proxyAnuarioK3Request(
     if (v) headers.set(name, v);
   }
   headers.set('host', upstreamHost());
-  headers.set('x-forwarded-host', new URL(publicOrigin()).host);
+  headers.set('x-forwarded-host', new URL(requestPublicOrigin(req)).host);
   headers.set('x-forwarded-proto', 'https');
 
   const bypass = bypassSecret();
