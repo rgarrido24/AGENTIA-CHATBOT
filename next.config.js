@@ -90,11 +90,7 @@ const nextConfig = {
 
   async rewrites() {
     return [
-      // Anuario K3 (proxy a Vercel)
-      {
-        source: '/anuariok3asbaje/:path*',
-        destination: 'https://anuario-k3-git-main-rgos-projects-0215a8f4.vercel.app/:path*',
-      },
+      // Anuario K3: proxy transparente vía app/anuariok3asbaje/[[...path]]/route.ts (no rewrite externo).
       // Demo de fotos-escuela: URLs limpias sin .html
       { source: '/demo/fotos-escuela',                    destination: '/demo-fotos-escuela/index.html' },
       { source: '/demo/fotos-escuela/anuario',            destination: '/demo-fotos-escuela/anuario.html' },
@@ -130,6 +126,27 @@ const nextConfig = {
         source: '/(.*)\\.(jpg|jpeg|png|webp|avif|svg|ico|woff|woff2)',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+        ],
+      },
+      // Anuario K3 (proxy): CSP relajado para HTML/JS del upstream embebido
+      {
+        source: '/anuariok3asbaje/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self' https: data: blob:",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+              "style-src 'self' 'unsafe-inline' https:",
+              "img-src 'self' data: blob: https:",
+              "connect-src 'self' https: wss:",
+              "font-src 'self' data: https:",
+              "frame-ancestors 'self'",
+              "object-src 'none'",
+              "base-uri 'self'",
+            ].join('; '),
+          },
         ],
       },
       {
