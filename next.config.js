@@ -128,27 +128,6 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
         ],
       },
-      // Anuario K3 (proxy): CSP relajado para HTML/JS del upstream embebido
-      {
-        source: '/anuariok3asbaje/:path*',
-        headers: [
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self' https: data: blob:",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
-              "style-src 'self' 'unsafe-inline' https:",
-              "img-src 'self' data: blob: https:",
-              "connect-src 'self' https: wss:",
-              "font-src 'self' data: https:",
-              "frame-ancestors 'self'",
-              "object-src 'none'",
-              "base-uri 'self'",
-            ].join('; '),
-          },
-        ],
-      },
       {
         source: '/(.*)',
         headers: [

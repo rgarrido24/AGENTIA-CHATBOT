@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import {
-  ANUARIO_K3_PUBLIC_PREFIX,
-  anuarioPathFromPathname,
-  proxyAnuarioK3Request,
-} from '@/lib/anuario-k3-proxy';
 
 const COOKIE_NAME = 'admin_auth';
 const AUTH_SALT = 'agentia_admin_salt';
@@ -80,19 +75,6 @@ async function logBlocked(req: NextRequest, ip: string): Promise<void> {
 // ─── Middleware ───────────────────────────────────────────────────────────────
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Anuario K3: proxy en middleware — absorbe 307/308 de Vercel sin pasarlos al navegador
-  if (
-    pathname === ANUARIO_K3_PUBLIC_PREFIX ||
-    pathname.startsWith(`${ANUARIO_K3_PUBLIC_PREFIX}/`)
-  ) {
-    const normalized =
-      pathname.length > ANUARIO_K3_PUBLIC_PREFIX.length && pathname.endsWith('/')
-        ? pathname.slice(0, -1)
-        : pathname;
-    return proxyAnuarioK3Request(request, anuarioPathFromPathname(normalized));
-  }
-
   const ip = clientIP(request);
 
   // ── Disable caching for /brief (conversion flow) ───────────────────────────
@@ -230,8 +212,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/anuariok3asbaje',
-    '/anuariok3asbaje/:path*',
     '/brief/:path*',
     '/portal/luciano/brief/:path*',
     '/admin/:path*',
