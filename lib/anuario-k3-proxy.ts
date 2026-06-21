@@ -4,6 +4,8 @@ export const ANUARIO_K3_PUBLIC_PREFIX = '/anuariok3asbaje';
 
 const DEFAULT_UPSTREAM = 'https://anuario-k3-git-main-rgos-projects-0215a8f4.vercel.app';
 
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
 function upstreamOrigin(): string {
   return (process.env.ANUARIO_K3_UPSTREAM_URL || DEFAULT_UPSTREAM).replace(/\/$/, '');
 }
@@ -22,7 +24,48 @@ function bypassSecret(): string | undefined {
 
 export function anuarioPathFromPathname(pathname: string): string {
   if (!pathname.startsWith(ANUARIO_K3_PUBLIC_PREFIX)) return '';
-  return pathname.slice(ANUARIO_K3_PUBLIC_PREFIX.length).replace(/^\//, '');
+  return pathname
+    .slice(ANUARIO_K3_PUBLIC_PREFIX.length)
+    .replace(/^\//, '')
+    .replace(/\/$/, '');
+}
+
+/** Location puede ser /dashboard/ o /anuariok3asbaje/dashboard/ — mapear a URL upstream. */
+function stripPublicPrefix(pathname: string): string {
+  if (pathname.startsWith(ANUARIO_K3_PUBLIC_PREFIX)) {
+    const rest = pathname.slice(ANUARIO_K3_PUBLIC_PREFIX.length) || '/';
+    return rest.startsWith('/') ? rest : `/${rest}`;
+  }
+  return pathname.startsWith('/') ? pathname : `/${pathname}`;
+}
+
+function resolveUpstreamRedirectLocation(location: string, currentUrl: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(location, currentUrl);
+  } catch {
+    return null;
+  }
+
+  if (parsed.hostname !== upstreamHostname()) return null;
+
+  const upstreamPath = stripPublicPrefix(parsed.pathname);
+  return `${upstreamOrigin()}${upstreamPath}${parsed.search}${parsed.hash}`;
+}
+
+function normalizeVisitKey(url: string): string {
+  try {
+    const u = new URL(url);
+    let p = u.pathname;
+    if (p.length > 1 && p.endsWith('/')) p = p.slice(0, -1);
+    return `${u.hostname}${p}${u.search}`;
+  } catch {
+    return url;
+  }
+}
+
+function isRedirectStatus(status: number): boolean {
+  return REDIRECT_STATUSES.has(status);
 }
 
 function rewriteAnuarioBody(text: string): string {
@@ -62,40 +105,65 @@ function upstreamUrlCandidates(path: string, search: string): string[] {
   const base = upstreamOrigin();
   const p = path.replace(/^\/+|\/+$/g, '');
   const q = search || '';
-  const urls = [
-    p ? `${base}/${p}${q}` : `${base}/${q}`,
-    p ? `${base}/${p}/${q}` : `${base}/${q}`,
-  ];
+  const urls: string[] = [];
+  if (p) {
+    urls.push(`${base}/${p}${q}`, `${base}/${p}/${q}`);
+  } else {
+    urls.push(`${base}/${q}`);
+  }
   return [...new Set(urls)];
 }
 
+/** Sigue 307/308 (y otros 3xx) solo dentro del host Vercel; nunca devuelve redirect al cliente. */
 async function fetchUpstreamFinal(url: string, init: RequestInit): Promise<Response> {
-  const allowedHost = upstreamHostname();
   const visited = new Set<string>();
   let current = url;
 
-  for (let hop = 0; hop < 10; hop++) {
-    if (visited.has(current)) break;
-    visited.add(current);
+  for (let hop = 0; hop < 15; hop++) {
+    const key = normalizeVisitKey(current);
+    if (visited.has(key)) break;
+    visited.add(key);
 
     const res = await fetch(current, { ...init, redirect: 'manual' });
-    if (![301, 302, 303, 307, 308].includes(res.status)) return res;
+    if (!isRedirectStatus(res.status)) return res;
 
     const loc = res.headers.get('location');
     if (!loc) return res;
 
-    let next: string;
-    try {
-      next = new URL(loc, current).href;
-    } catch {
-      return res;
-    }
-
-    if (new URL(next).hostname !== allowedHost) return res;
+    const next = resolveUpstreamRedirectLocation(loc, current);
+    if (!next) return res;
     current = next;
   }
 
   return fetch(current, { ...init, redirect: 'manual' });
+}
+
+async function resolveUpstreamResponse(
+  path: string,
+  search: string,
+  init: RequestInit
+): Promise<Response | null> {
+  let lastRes: Response | null = null;
+
+  for (const candidate of upstreamUrlCandidates(path, search)) {
+    try {
+      const res = await fetchUpstreamFinal(candidate, init);
+      lastRes = res;
+      if (!isRedirectStatus(res.status)) return res;
+
+      const loc = res.headers.get('location');
+      const next = loc ? resolveUpstreamRedirectLocation(loc, candidate) : null;
+      if (next) {
+        const followed = await fetchUpstreamFinal(next, init);
+        lastRes = followed;
+        if (!isRedirectStatus(followed.status)) return followed;
+      }
+    } catch {
+      /* siguiente candidato */
+    }
+  }
+
+  return lastRes;
 }
 
 /** Proxy transparente: fetch a Vercel, reescribe URLs, sin redirects al cliente. */
@@ -122,28 +190,32 @@ export async function proxyAnuarioK3Request(
       redirect: 'manual',
     };
 
-    let upstreamRes: Response | null = null;
-    for (const candidate of upstreamUrlCandidates(path, search)) {
-      try {
-        const res = await fetchUpstreamFinal(candidate, init);
-        upstreamRes = res;
-        if (![301, 302, 303, 307, 308].includes(res.status)) break;
-      } catch {
-        /* probar siguiente candidato */
-      }
-    }
+    let upstreamRes = await resolveUpstreamResponse(path, search, init);
 
     if (!upstreamRes) {
       return NextResponse.json({ error: 'No se pudo conectar al anuario upstream' }, { status: 502 });
     }
 
-    // Nunca reenviar redirects al navegador (evita loops)
-    if ([301, 302, 303, 307, 308].includes(upstreamRes.status)) {
+    // Último intento: si sigue en 307/308, seguir Location una vez más (solo Vercel)
+    if (isRedirectStatus(upstreamRes.status)) {
+      const loc = upstreamRes.headers.get('location');
+      const base = upstreamUrlCandidates(path, search)[0];
+      const next = loc && base ? resolveUpstreamRedirectLocation(loc, base) : null;
+      if (next) {
+        upstreamRes = await fetchUpstreamFinal(next, init);
+      }
+    }
+
+    // Nunca reenviar redirects al navegador
+    if (isRedirectStatus(upstreamRes.status)) {
       const body = await upstreamRes.text().catch(() => '');
       if (body) {
         return new NextResponse(rewriteAnuarioBody(body), {
           status: 200,
-          headers: { 'content-type': upstreamRes.headers.get('content-type') || 'text/html; charset=utf-8' },
+          headers: {
+            'content-type': upstreamRes.headers.get('content-type') || 'text/html; charset=utf-8',
+            'cache-control': 'no-store',
+          },
         });
       }
       return NextResponse.json({ error: 'Upstream devolvió redirect sin contenido' }, { status: 502 });

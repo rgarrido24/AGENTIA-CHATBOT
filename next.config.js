@@ -67,6 +67,7 @@ class ExFatReadlinkPlugin {
 const nextConfig = {
   compress: true,
   poweredByHeader: false,
+  trailingSlash: false,
   productionBrowserSourceMaps: false,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',

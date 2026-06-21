@@ -81,12 +81,16 @@ async function logBlocked(req: NextRequest, ip: string): Promise<void> {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Anuario K3: proxy en middleware (sin rewrite en next.config.js)
+  // Anuario K3: proxy en middleware — absorbe 307/308 de Vercel sin pasarlos al navegador
   if (
     pathname === ANUARIO_K3_PUBLIC_PREFIX ||
     pathname.startsWith(`${ANUARIO_K3_PUBLIC_PREFIX}/`)
   ) {
-    return proxyAnuarioK3Request(request, anuarioPathFromPathname(pathname));
+    const normalized =
+      pathname.length > ANUARIO_K3_PUBLIC_PREFIX.length && pathname.endsWith('/')
+        ? pathname.slice(0, -1)
+        : pathname;
+    return proxyAnuarioK3Request(request, anuarioPathFromPathname(normalized));
   }
 
   const ip = clientIP(request);
