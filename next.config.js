@@ -90,7 +90,6 @@ const nextConfig = {
 
   async rewrites() {
     return [
-      // Anuario K3: proxy transparente vía app/anuariok3asbaje/[[...path]]/route.ts (no rewrite externo).
       // Demo de fotos-escuela: URLs limpias sin .html
       { source: '/demo/fotos-escuela',                    destination: '/demo-fotos-escuela/index.html' },
       { source: '/demo/fotos-escuela/anuario',            destination: '/demo-fotos-escuela/anuario.html' },

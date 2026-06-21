@@ -8,20 +8,8 @@ function upstreamOrigin(): string {
   return (process.env.ANUARIO_K3_UPSTREAM_URL || DEFAULT_UPSTREAM).replace(/\/$/, '');
 }
 
-/** Origen público con protocolo (Render a veces tiene solo el host sin https://). */
-function publicOrigin(): string {
-  const raw = (process.env.NEXT_PUBLIC_APP_URL || 'https://agentia.software').trim().replace(/\/$/, '');
-  if (!raw) return 'https://agentia.software';
-  try {
-    const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-    return new URL(withProto).origin;
-  } catch {
-    return 'https://agentia.software';
-  }
-}
-
-function upstreamHost(): string {
-  return new URL(upstreamOrigin()).host;
+function upstreamHostname(): string {
+  return new URL(upstreamOrigin()).hostname;
 }
 
 function bypassSecret(): string | undefined {
@@ -32,52 +20,27 @@ function bypassSecret(): string | undefined {
   return s.trim() || undefined;
 }
 
-/** Reescribe URLs del upstream / Vercel → agentia.software/anuariok3asbaje */
-export function rewriteAnuarioPublicUrl(url: string): string {
-  if (!url) return url;
-  const origin = upstreamOrigin();
-  const host = upstreamHost();
-  const pub = publicOrigin();
-  const prefix = ANUARIO_K3_PUBLIC_PREFIX;
-
-  if (url.startsWith(origin)) {
-    const rest = url.slice(origin.length) || '/';
-    return `${pub}${prefix}${rest.startsWith('/') ? rest : `/${rest}`}`;
-  }
-
-  if (url.startsWith(`https://${host}`) || url.startsWith(`http://${host}`)) {
-    const u = new URL(url);
-    return `${pub}${prefix}${u.pathname}${u.search}${u.hash}`;
-  }
-
-  // Rutas absolutas del app Next en Vercel (/_next, /dashboard, etc.)
-  if (url.startsWith('/') && !url.startsWith(prefix)) {
-    return `${prefix}${url}`;
-  }
-
-  return url;
+export function anuarioPathFromPathname(pathname: string): string {
+  if (!pathname.startsWith(ANUARIO_K3_PUBLIC_PREFIX)) return '';
+  return pathname.slice(ANUARIO_K3_PUBLIC_PREFIX.length).replace(/^\//, '');
 }
 
 function rewriteAnuarioBody(text: string): string {
   const origin = upstreamOrigin();
-  const host = upstreamHost();
-  const pub = publicOrigin();
+  const host = upstreamHostname();
   const prefix = ANUARIO_K3_PUBLIC_PREFIX;
-  const pubBase = `${pub}${prefix}`;
 
   let out = text
-    .replaceAll(origin, pubBase)
-    .replaceAll(`https://${host}`, pubBase)
-    .replaceAll(`http://${host}`, pubBase)
-    .replaceAll(`//${host}`, `//${new URL(publicOrigin()).host}${prefix}`);
+    .replaceAll(origin, prefix)
+    .replaceAll(`https://${host}`, prefix)
+    .replaceAll(`http://${host}`, prefix)
+    .replaceAll(`//${host}`, prefix);
 
-  // SSO / redirects embebidos de Vercel Protection
   out = out.replace(
     /https:\/\/vercel\.com\/sso-api\?url=https%3A%2F%2F[^"&]+/g,
-    `${pubBase}/dashboard`
+    `${prefix}/dashboard`
   );
 
-  // Assets y rutas Next en el HTML/JS del upstream (servido en /)
   out = out.replaceAll('"/_next/', `"${prefix}/_next/`);
   out = out.replaceAll("'/_next/", `'${prefix}/_next/`);
   out = out.replaceAll('href="/', `href="${prefix}/`);
@@ -92,68 +55,22 @@ const SKIP_RESPONSE_HEADERS = new Set([
   'transfer-encoding',
   'connection',
   'set-cookie',
+  'location',
 ]);
 
-function isInternalHost(host: string): boolean {
-  const h = host.split(':')[0].toLowerCase();
-  return (
-    h === '0.0.0.0' ||
-    h === '127.0.0.1' ||
-    h === 'localhost' ||
-    h.startsWith('10.') ||
-    h.startsWith('192.168.') ||
-    h.endsWith('.internal')
-  );
+function upstreamUrlCandidates(path: string, search: string): string[] {
+  const base = upstreamOrigin();
+  const p = path.replace(/^\/+|\/+$/g, '');
+  const q = search || '';
+  const urls = [
+    p ? `${base}/${p}${q}` : `${base}/${q}`,
+    p ? `${base}/${p}/${q}` : `${base}/${q}`,
+  ];
+  return [...new Set(urls)];
 }
 
-/** Origen público real de la petición (Render escucha en 0.0.0.0:10000). */
-function requestPublicOrigin(req: NextRequest): string {
-  const forwardedHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
-  const hostHeader = req.headers.get('host')?.split(',')[0]?.trim();
-  const host = forwardedHost || hostHeader;
-
-  if (host && !isInternalHost(host)) {
-    const proto = req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() || 'https';
-    return `${proto}://${host}`;
-  }
-
-  return publicOrigin();
-}
-
-function normalizePathname(pathname: string): string {
-  if (pathname.length > 1 && pathname.endsWith('/')) return pathname.slice(0, -1);
-  return pathname;
-}
-
-function isSamePublicPath(req: NextRequest, targetHref: string): boolean {
-  try {
-    return normalizePathname(req.nextUrl.pathname) === normalizePathname(new URL(targetHref).pathname);
-  } catch {
-    return false;
-  }
-}
-
-function absoluteRedirectUrl(req: NextRequest, rewritten: string): string {
-  if (/^https?:\/\//i.test(rewritten)) return rewritten;
-  return new URL(rewritten, requestPublicOrigin(req)).href;
-}
-
-
-function resolveUpstreamUrl(location: string, fromUrl: string): string | null {
-  if (/^https?:\/\//i.test(location)) {
-    try {
-      const loc = new URL(location);
-      const upstream = new URL(upstreamOrigin());
-      if (loc.hostname !== upstream.hostname) return null;
-      return loc.href;
-    } catch {
-      return null;
-    }
-  }
-  return new URL(location, fromUrl).href;
-}
-
-async function fetchUpstream(url: string, init: RequestInit): Promise<Response> {
+async function fetchUpstreamFinal(url: string, init: RequestInit): Promise<Response> {
+  const allowedHost = upstreamHostname();
   const visited = new Set<string>();
   let current = url;
 
@@ -167,108 +84,95 @@ async function fetchUpstream(url: string, init: RequestInit): Promise<Response> 
     const loc = res.headers.get('location');
     if (!loc) return res;
 
-    const next = resolveUpstreamUrl(loc, current);
-    if (!next) return res;
+    let next: string;
+    try {
+      next = new URL(loc, current).href;
+    } catch {
+      return res;
+    }
+
+    if (new URL(next).hostname !== allowedHost) return res;
     current = next;
   }
 
   return fetch(current, { ...init, redirect: 'manual' });
 }
 
+/** Proxy transparente: fetch a Vercel, reescribe URLs, sin redirects al cliente. */
 export async function proxyAnuarioK3Request(
   req: NextRequest,
-  pathSegments: string[] | undefined
+  path: string
 ): Promise<NextResponse> {
   try {
-  const path = (pathSegments || []).filter(Boolean).join('/');
-  const upstreamUrl = `${upstreamOrigin()}/${path}${req.nextUrl.search}`;
+    const search = req.nextUrl.search;
+    const headers = new Headers();
+    headers.set('accept', req.headers.get('accept') || '*/*');
+    const ua = req.headers.get('user-agent');
+    if (ua) headers.set('user-agent', ua);
 
-  const headers = new Headers();
-  const forward = [
-    'accept',
-    'accept-language',
-    'accept-encoding',
-    'content-type',
-    'cache-control',
-    'if-none-match',
-    'if-modified-since',
-    'range',
-    'user-agent',
-  ];
-  for (const name of forward) {
-    const v = req.headers.get(name);
-    if (v) headers.set(name, v);
-  }
+    const bypass = bypassSecret();
+    if (bypass) {
+      headers.set('x-vercel-protection-bypass', bypass);
+      headers.set('x-vercel-set-bypass-cookie', 'true');
+    }
 
-  const bypass = bypassSecret();
-  if (bypass) {
-    headers.set('x-vercel-protection-bypass', bypass);
-    headers.set('x-vercel-set-bypass-cookie', 'true');
-  }
+    const init: RequestInit = {
+      method: req.method === 'HEAD' ? 'HEAD' : req.method,
+      headers,
+      redirect: 'manual',
+    };
 
-  const init: RequestInit = {
-    method: req.method,
-    headers,
-    redirect: 'manual',
-  };
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    init.body = await req.arrayBuffer();
-  }
-
-  let upstreamRes: Response;
-  try {
-    upstreamRes = await fetchUpstream(upstreamUrl, init);
-  } catch (e) {
-    console.error('[anuario-k3-proxy] fetch error:', e instanceof Error ? e.message : e);
-    return NextResponse.json({ error: 'No se pudo conectar al anuario upstream' }, { status: 502 });
-  }
-
-  if ([301, 302, 303, 307, 308].includes(upstreamRes.status)) {
-    const loc = upstreamRes.headers.get('location');
-    if (loc) {
-      const target = absoluteRedirectUrl(req, rewriteAnuarioPublicUrl(loc));
-      if (!isSamePublicPath(req, target)) {
-        return NextResponse.redirect(target, upstreamRes.status);
-      }
-      const altPath = path.endsWith('/') ? path.replace(/\/$/, '') : `${path}/`;
+    let upstreamRes: Response | null = null;
+    for (const candidate of upstreamUrlCandidates(path, search)) {
       try {
-        upstreamRes = await fetchUpstream(`${upstreamOrigin()}/${altPath}${req.nextUrl.search}`, init);
+        const res = await fetchUpstreamFinal(candidate, init);
+        upstreamRes = res;
+        if (![301, 302, 303, 307, 308].includes(res.status)) break;
       } catch {
-        /* mantener respuesta anterior */
+        /* probar siguiente candidato */
       }
     }
-  }
 
-  const contentType = upstreamRes.headers.get('content-type') || '';
-  const rewriteBody =
-    req.method !== 'HEAD' &&
-    (contentType.includes('text/html') ||
-      contentType.includes('javascript') ||
-      contentType.includes('json') ||
-      contentType.includes('text/css') ||
-      contentType.includes('application/javascript'));
-
-  const outHeaders = new Headers();
-  upstreamRes.headers.forEach((value, key) => {
-    const k = key.toLowerCase();
-    if (SKIP_RESPONSE_HEADERS.has(k)) return;
-    if (k === 'location') {
-      const abs = absoluteRedirectUrl(req, rewriteAnuarioPublicUrl(value));
-      if (!isSamePublicPath(req, abs)) {
-        outHeaders.set('location', abs);
-      }
-      return;
+    if (!upstreamRes) {
+      return NextResponse.json({ error: 'No se pudo conectar al anuario upstream' }, { status: 502 });
     }
-    outHeaders.set(key, value);
-  });
 
-  if (rewriteBody) {
-    const text = rewriteAnuarioBody(await upstreamRes.text());
+    // Nunca reenviar redirects al navegador (evita loops)
+    if ([301, 302, 303, 307, 308].includes(upstreamRes.status)) {
+      const body = await upstreamRes.text().catch(() => '');
+      if (body) {
+        return new NextResponse(rewriteAnuarioBody(body), {
+          status: 200,
+          headers: { 'content-type': upstreamRes.headers.get('content-type') || 'text/html; charset=utf-8' },
+        });
+      }
+      return NextResponse.json({ error: 'Upstream devolvió redirect sin contenido' }, { status: 502 });
+    }
+
+    const contentType = upstreamRes.headers.get('content-type') || '';
+    const rewriteBody =
+      req.method !== 'HEAD' &&
+      (contentType.includes('text/html') ||
+        contentType.includes('javascript') ||
+        contentType.includes('json') ||
+        contentType.includes('text/css') ||
+        contentType.includes('application/javascript'));
+
+    const outHeaders = new Headers();
+    upstreamRes.headers.forEach((value, key) => {
+      if (SKIP_RESPONSE_HEADERS.has(key.toLowerCase())) return;
+      outHeaders.set(key, value);
+    });
+
+    if (rewriteBody) {
+      const text = rewriteAnuarioBody(await upstreamRes.text());
+      outHeaders.delete('content-length');
+      return new NextResponse(text, { status: upstreamRes.status, headers: outHeaders });
+    }
+
+    const buf = await upstreamRes.arrayBuffer();
     outHeaders.delete('content-length');
-    return new NextResponse(text, { status: upstreamRes.status, headers: outHeaders });
-  }
-
-  return new NextResponse(upstreamRes.body, { status: upstreamRes.status, headers: outHeaders });
+    return new NextResponse(buf, { status: upstreamRes.status, headers: outHeaders });
   } catch (e) {
     console.error('[anuario-k3-proxy] error:', e instanceof Error ? e.stack || e.message : e);
     return NextResponse.json({ error: 'Error interno del proxy anuario' }, { status: 500 });
