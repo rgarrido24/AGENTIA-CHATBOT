@@ -1,0 +1,420 @@
+.anuario-viewer {
+  min-height: 100vh;
+  background: #0a1628;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.anuario-stage-wrap {
+  position: relative;
+  width: min(800px, 100%);
+  perspective: 2200px;
+}
+
+.anuario-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: min(600px, 80vh);
+  transform-style: preserve-3d;
+}
+
+.anuario-page {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  backface-visibility: hidden;
+  transform-origin: left center;
+  transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+}
+
+.anuario-page.is-current {
+  z-index: 3;
+  transform: rotateY(0deg);
+  opacity: 1;
+}
+
+.anuario-page.is-hidden {
+  z-index: 1;
+  transform: rotateY(0deg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.anuario-page.is-flip-out-forward {
+  z-index: 4;
+  transform: rotateY(-180deg);
+  opacity: 1;
+}
+
+.anuario-page.is-flip-out-back {
+  z-index: 4;
+  transform: rotateY(180deg);
+  opacity: 1;
+}
+
+.anuario-page-inner {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+  box-sizing: border-box;
+  color: #1a1a1a;
+}
+
+.anuario-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 214, 0, 0.95);
+  color: #1565c0;
+  font-size: 1.4rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.anuario-nav-btn:hover:not(:disabled) {
+  transform: translateY(-50%) scale(1.08);
+}
+
+.anuario-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.anuario-nav-btn.prev {
+  left: -12px;
+}
+
+.anuario-nav-btn.next {
+  right: -12px;
+}
+
+@media (max-width: 860px) {
+  .anuario-nav-btn.prev {
+    left: 4px;
+  }
+  .anuario-nav-btn.next {
+    right: 4px;
+  }
+}
+
+.anuario-indicator {
+  margin-top: 1.25rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+}
+
+.anuario-title {
+  font-weight: 900;
+  margin: 0 0 0.75rem;
+  line-height: 1.15;
+}
+
+.anuario-sub {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Página 1 — Portada */
+.page-portada {
+  background: linear-gradient(180deg, #87ceeb 0%, #1565c0 55%, #0d47a1 100%);
+  color: #fff;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.page-portada .cloud {
+  position: absolute;
+  font-size: 2.5rem;
+  opacity: 0.85;
+}
+
+.page-portada .cloud-1 { top: 8%; left: 10%; }
+.page-portada .cloud-2 { top: 15%; right: 12%; }
+.page-portada .cloud-3 { bottom: 18%; left: 15%; }
+
+.page-portada .nombre {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: 900;
+  color: #ffd600;
+  text-shadow: 2px 2px 0 #c62828;
+  margin-bottom: 0.25rem;
+}
+
+.page-portada .foto-grad {
+  width: min(180px, 40vw);
+  height: min(180px, 40vw);
+  object-fit: cover;
+  border-radius: 12px;
+  border: 4px solid #ffd600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  margin: 1rem 0;
+}
+
+/* Página 2 — Bienvenida */
+.page-bienvenida {
+  background: linear-gradient(135deg, #7c4dff 0%, #512da8 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.page-bienvenida .emoji-row {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+/* Página 3 — Bitácora */
+.page-bitacora {
+  background: #fffde7;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 600px) {
+  .page-bitacora {
+    grid-template-columns: 1fr;
+  }
+}
+
+.polaroid {
+  background: #fff;
+  padding: 0.75rem 0.75rem 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transform: rotate(-3deg);
+}
+
+.polaroid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.pergamino {
+  background: linear-gradient(180deg, #f5e6c8, #e8d4a8);
+  border: 2px solid #c4a574;
+  border-radius: 4px;
+  padding: 1rem;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.08);
+}
+
+.pergamino dt {
+  font-weight: 800;
+  font-size: 0.75rem;
+  color: #5d4037;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+}
+
+.pergamino dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Página 4 — Guardianas */
+.page-guardianas {
+  background: #f5f5f5;
+  text-align: center;
+}
+
+.guardianas-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.guardiana-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-top: 4px solid #1565c0;
+}
+
+.guardiana-card .icon {
+  font-size: 2rem;
+}
+
+.guardiana-card strong {
+  display: block;
+  margin-top: 0.5rem;
+  color: #1565c0;
+  font-weight: 900;
+}
+
+/* Página 5 — Maestra */
+.page-maestra {
+  background: #fffde7;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #1a1a1a;
+}
+
+/* Página 6 — Misión completada */
+.page-mision {
+  background: linear-gradient(180deg, #87ceeb, #1565c0);
+  color: #fff;
+  text-align: center;
+}
+
+.page-mision .titulo-ts {
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 900;
+  color: #ffd600;
+  text-shadow: 2px 2px 0 #c62828;
+}
+
+.foto-grupal-placeholder {
+  width: min(280px, 80%);
+  height: 120px;
+  margin: 1rem auto;
+  background: rgba(255, 255, 255, 0.2);
+  border: 3px dashed rgba(255, 214, 0, 0.7);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+}
+
+.nombres-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.nombres-lista span {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+}
+
+/* Página 7 — Recuerdos */
+.page-recuerdos {
+  background: #fff;
+}
+
+.fotos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.fotos-grid a {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fotos-grid a:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  z-index: 1;
+}
+
+.fotos-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+/* Página 8 — Comando estelar */
+.page-comando {
+  background: linear-gradient(180deg, #87ceeb 0%, #1565c0 100%);
+  color: #fff;
+}
+
+.etch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 500px) {
+  .etch-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.etch-card {
+  background: #fff;
+  border: 4px solid #c62828;
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: #1a1a1a;
+  min-height: 100px;
+}
+
+.etch-card h4 {
+  margin: 0 0 0.5rem;
+  color: #c62828;
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+
+.etch-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+/* Página 9 — Despedida */
+.page-despedida {
+  background: linear-gradient(180deg, #87ceeb, #1565c0);
+  color: #fff;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.nombres-colores span:nth-child(5n + 1) { color: #ffd600; }
+.nombres-colores span:nth-child(5n + 2) { color: #ff7043; }
+.nombres-colores span:nth-child(5n + 3) { color: #81c784; }
+.nombres-colores span:nth-child(5n + 4) { color: #ffeb3b; }
+.nombres-colores span:nth-child(5n + 5) { color: #f48fb1; }
+
+.pelota-ts {
+  font-size: 3rem;
+  margin-top: 1rem;
+}
