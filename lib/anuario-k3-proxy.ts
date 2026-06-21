@@ -120,16 +120,33 @@ function requestPublicOrigin(req: NextRequest): string {
   return publicOrigin();
 }
 
+function normalizePathname(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith('/')) return pathname.slice(0, -1);
+  return pathname;
+}
+
+function isSamePublicPath(req: NextRequest, targetHref: string): boolean {
+  try {
+    return normalizePathname(req.nextUrl.pathname) === normalizePathname(new URL(targetHref).pathname);
+  } catch {
+    return false;
+  }
+}
+
 function absoluteRedirectUrl(req: NextRequest, rewritten: string): string {
   if (/^https?:\/\//i.test(rewritten)) return rewritten;
   return new URL(rewritten, requestPublicOrigin(req)).href;
 }
 
-function resolveUpstreamUrl(location: string): string {
-  if (/^https?:\/\//i.test(location)) return location;
-  const base = upstreamOrigin();
-  if (location.startsWith('/')) return `${base}${location}`;
-  return `${base}/${location}`;
+
+function isExternalRedirect(targetHref: string): boolean {
+  try {
+    const host = new URL(targetHref).hostname;
+    const pubHost = new URL(publicOrigin()).hostname;
+    return host !== pubHost;
+  } catch {
+    return false;
+  }
 }
 
 export async function proxyAnuarioK3Request(
@@ -138,7 +155,7 @@ export async function proxyAnuarioK3Request(
 ): Promise<NextResponse> {
   try {
   const path = (pathSegments || []).filter(Boolean).join('/');
-  let upstreamUrl = `${upstreamOrigin()}/${path}${req.nextUrl.search}`;
+  const upstreamUrl = `${upstreamOrigin()}/${path}${req.nextUrl.search}`;
 
   const headers = new Headers();
   const forward = [
@@ -169,7 +186,8 @@ export async function proxyAnuarioK3Request(
   const init: RequestInit = {
     method: req.method,
     headers,
-    redirect: 'manual',
+    // Seguir redirects del upstream (trailing slash, etc.) sin reenviarlos al cliente
+    redirect: 'follow',
   };
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     init.body = await req.arrayBuffer();
@@ -183,21 +201,22 @@ export async function proxyAnuarioK3Request(
     return NextResponse.json({ error: 'No se pudo conectar al anuario upstream' }, { status: 502 });
   }
 
-  // Seguir redirects del upstream internamente (trailing slash, etc.)
-  for (let hop = 0; hop < 5; hop++) {
-    if (![301, 302, 303, 307, 308].includes(upstreamRes.status)) break;
-    const loc = upstreamRes.headers.get('location');
-    if (!loc) break;
-    upstreamUrl = resolveUpstreamUrl(loc);
-    upstreamRes = await fetch(upstreamUrl, init);
-  }
-
-  // Si aún queda redirect (p. ej. login externo), reenviar con URL absoluta
+  // Fallback: si el upstream aún devuelve redirect, resolver sin bucle al cliente
   if ([301, 302, 303, 307, 308].includes(upstreamRes.status)) {
     const loc = upstreamRes.headers.get('location');
     if (loc) {
       const target = absoluteRedirectUrl(req, rewriteAnuarioPublicUrl(loc));
-      return NextResponse.redirect(target, upstreamRes.status);
+      if (!isSamePublicPath(req, target)) {
+        return NextResponse.redirect(target, upstreamRes.status);
+      }
+      // Mismo path público (p. ej. trailing slash): probar variante upstream
+      const altPath = path.endsWith('/') ? path.replace(/\/$/, '') : `${path}/`;
+      const altUrl = `${upstreamOrigin()}/${altPath}${req.nextUrl.search}`;
+      try {
+        upstreamRes = await fetch(altUrl, init);
+      } catch {
+        /* usar respuesta original */
+      }
     }
   }
 
@@ -215,7 +234,10 @@ export async function proxyAnuarioK3Request(
     const k = key.toLowerCase();
     if (SKIP_RESPONSE_HEADERS.has(k)) return;
     if (k === 'location') {
-      outHeaders.set('location', absoluteRedirectUrl(req, rewriteAnuarioPublicUrl(value)));
+      const abs = absoluteRedirectUrl(req, rewriteAnuarioPublicUrl(value));
+      if (!isSamePublicPath(req, abs) && isExternalRedirect(abs)) {
+        outHeaders.set('location', abs);
+      }
       return;
     }
     outHeaders.set(key, value);
