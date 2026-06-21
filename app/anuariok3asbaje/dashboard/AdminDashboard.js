@@ -30,6 +30,8 @@ export default function AdminDashboard({ alumnos }) {
     a.href=url; a.download='anuario-k3.csv'; a.click()
   }
 
+  const TEXT_DARK = '#1a1a1a'
+
   return (
     <div style={{ minHeight:'100vh', background:'#F0F4FF', fontFamily:"'Nunito',sans-serif" }}>
       <header style={{ background:'linear-gradient(135deg,#1B4F8A,#7C4DFF)', padding:'1.5rem 2rem', color:'white', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'1rem' }}>
@@ -102,7 +104,7 @@ export default function AdminDashboard({ alumnos }) {
 
       {seleccionado && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:'1rem' }} onClick={()=>setSeleccionado(null)}>
-          <div style={{ background:'white', borderRadius:'20px', padding:'2rem', maxWidth:'600px', width:'100%', maxHeight:'80vh', overflowY:'auto' }} onClick={e=>e.stopPropagation()}>
+          <div style={{ background:'white', borderRadius:'20px', padding:'2rem', maxWidth:'600px', width:'100%', maxHeight:'80vh', overflowY:'auto', color: TEXT_DARK }} onClick={e=>e.stopPropagation()}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.5rem' }}>
               <h2 style={{ fontFamily:"'Fredoka One',cursive", fontSize:'1.8rem', color:'#1B4F8A', margin:0 }}>{seleccionado.nombreCorto}</h2>
               <button onClick={()=>setSeleccionado(null)} style={{ background:'#F0F0F0', border:'none', borderRadius:'50%', width:'36px', height:'36px', cursor:'pointer', fontSize:'1.2rem' }}>×</button>
@@ -120,16 +122,16 @@ export default function AdminDashboard({ alumnos }) {
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.8rem', marginBottom:'1.5rem' }}>
                   {[['Nombre completo',seleccionado.nombreCompleto],['Tutor',seleccionado.nombreTutor],['🚒 Sueño',seleccionado.suenioDeGrande],['🍕 Comida',seleccionado.comidaFavorita],['🎨 Color',seleccionado.colorFavorito],['👫 Mejor amigo',seleccionado.mejorAmigo],['💬 Frase',seleccionado.fraseFavorita||'—'],['⭐ Le gustó',seleccionado.loQueMasLeGusto]].map(([l,v])=>(
                     <div key={l} style={{ background:'#F8F9FF', borderRadius:'10px', padding:'0.8rem' }}>
-                      <p style={{ color:'#999', fontSize:'0.75rem', margin:'0 0 0.2rem', fontWeight:'700', textTransform:'uppercase' }}>{l}</p>
-                      <p style={{ margin:0, fontWeight:'600' }}>{v}</p>
+                      <p style={{ color:'#666', fontSize:'0.75rem', margin:'0 0 0.2rem', fontWeight:'700', textTransform:'uppercase' }}>{l}</p>
+                      <p style={{ margin:0, fontWeight:'600', color: TEXT_DARK }}>{v || '—'}</p>
                     </div>
                   ))}
                 </div>
                 {(seleccionado.dedicatoriaMama||seleccionado.dedicatoriaPapa) && (
                   <div style={{ marginBottom:'1.5rem' }}>
                     <h3 style={{ color:'#7C4DFF', marginBottom:'0.8rem' }}>💌 Dedicatorias</h3>
-                    {seleccionado.dedicatoriaMama && <div style={{ background:'#FFF0FB', borderRadius:'10px', padding:'1rem', marginBottom:'0.5rem' }}><strong>Mamá:</strong> {seleccionado.dedicatoriaMama}</div>}
-                    {seleccionado.dedicatoriaPapa && <div style={{ background:'#F0F8FF', borderRadius:'10px', padding:'1rem' }}><strong>Papá:</strong> {seleccionado.dedicatoriaPapa}</div>}
+                    {seleccionado.dedicatoriaMama && <div style={{ background:'#FFF0FB', borderRadius:'10px', padding:'1rem', marginBottom:'0.5rem', color: TEXT_DARK }}><strong>Mamá:</strong> {seleccionado.dedicatoriaMama}</div>}
+                    {seleccionado.dedicatoriaPapa && <div style={{ background:'#F0F8FF', borderRadius:'10px', padding:'1rem', color: TEXT_DARK }}><strong>Papá:</strong> {seleccionado.dedicatoriaPapa}</div>}
                   </div>
                 )}
                 {seleccionado.fotos?.length > 0 && (
