@@ -90,6 +90,11 @@ const nextConfig = {
 
   async rewrites() {
     return [
+      // Anuario K3 (proxy a Vercel)
+      {
+        source: '/anuariok3asbaje/:path*',
+        destination: 'https://anuario-k3-git-main-rgos-projects-0215a8f4.vercel.app/:path*',
+      },
       // Demo de fotos-escuela: URLs limpias sin .html
       { source: '/demo/fotos-escuela',                    destination: '/demo-fotos-escuela/index.html' },
       { source: '/demo/fotos-escuela/anuario',            destination: '/demo-fotos-escuela/anuario.html' },
