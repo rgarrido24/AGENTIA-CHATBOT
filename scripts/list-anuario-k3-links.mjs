@@ -25,7 +25,16 @@ const UPSTREAM = (getEnv('ANUARIO_K3_UPSTREAM_URL') || 'https://anuario-k3-git-m
   /\/$/,
   ''
 );
-const PUBLIC = (getEnv('NEXT_PUBLIC_APP_URL') || 'https://agentia.software').replace(/\/$/, '');
+const PUBLIC = (() => {
+  const raw = (getEnv('NEXT_PUBLIC_APP_URL') || 'https://agentia.software').trim().replace(/\/$/, '');
+  if (!raw) return 'https://agentia.software';
+  try {
+    const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    return new URL(withProto).origin;
+  } catch {
+    return 'https://agentia.software';
+  }
+})();
 const PREFIX = '/anuariok3asbaje';
 const bypass = getEnv('ANUARIO_VERCEL_BYPASS_SECRET') || getEnv('VERCEL_AUTOMATION_BYPASS_SECRET');
 

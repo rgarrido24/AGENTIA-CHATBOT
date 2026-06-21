@@ -8,8 +8,16 @@ function upstreamOrigin(): string {
   return (process.env.ANUARIO_K3_UPSTREAM_URL || DEFAULT_UPSTREAM).replace(/\/$/, '');
 }
 
+/** Origen público con protocolo (Render a veces tiene solo el host sin https://). */
 function publicOrigin(): string {
-  return (process.env.NEXT_PUBLIC_APP_URL || 'https://agentia.software').replace(/\/$/, '');
+  const raw = (process.env.NEXT_PUBLIC_APP_URL || 'https://agentia.software').trim().replace(/\/$/, '');
+  if (!raw) return 'https://agentia.software';
+  try {
+    const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    return new URL(withProto).origin;
+  } catch {
+    return 'https://agentia.software';
+  }
 }
 
 function upstreamHost(): string {
@@ -61,7 +69,7 @@ function rewriteAnuarioBody(text: string): string {
     .replaceAll(origin, pubBase)
     .replaceAll(`https://${host}`, pubBase)
     .replaceAll(`http://${host}`, pubBase)
-    .replaceAll(`//${host}`, `//${new URL(pub).host}${prefix}`);
+    .replaceAll(`//${host}`, `//${new URL(publicOrigin()).host}${prefix}`);
 
   // SSO / redirects embebidos de Vercel Protection
   out = out.replace(
@@ -83,12 +91,20 @@ const SKIP_RESPONSE_HEADERS = new Set([
   'content-length',
   'transfer-encoding',
   'connection',
+  'set-cookie',
 ]);
+
+function absolutePublicUrl(pathOrUrl: string): string {
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const base = publicOrigin();
+  return `${base}${pathOrUrl.startsWith('/') ? pathOrUrl : `/${pathOrUrl}`}`;
+}
 
 export async function proxyAnuarioK3Request(
   req: NextRequest,
   pathSegments: string[] | undefined
 ): Promise<NextResponse> {
+  try {
   const path = (pathSegments || []).filter(Boolean).join('/');
   const upstreamUrl = `${upstreamOrigin()}/${path}${req.nextUrl.search}`;
 
@@ -138,7 +154,7 @@ export async function proxyAnuarioK3Request(
   if ([301, 302, 303, 307, 308].includes(upstreamRes.status)) {
     const loc = upstreamRes.headers.get('location');
     if (loc) {
-      return NextResponse.redirect(rewriteAnuarioPublicUrl(loc), upstreamRes.status);
+      return NextResponse.redirect(absolutePublicUrl(rewriteAnuarioPublicUrl(loc)), upstreamRes.status);
     }
   }
 
@@ -169,4 +185,8 @@ export async function proxyAnuarioK3Request(
   }
 
   return new NextResponse(upstreamRes.body, { status: upstreamRes.status, headers: outHeaders });
+  } catch (e) {
+    console.error('[anuario-k3-proxy] error:', e instanceof Error ? e.stack || e.message : e);
+    return NextResponse.json({ error: 'Error interno del proxy anuario' }, { status: 500 });
+  }
 }

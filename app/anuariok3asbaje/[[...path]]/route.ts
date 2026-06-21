@@ -6,14 +6,30 @@ export const runtime = 'nodejs';
 
 type RouteCtx = { params: { path?: string[] } };
 
-async function handle(req: NextRequest, ctx: RouteCtx) {
-  return proxyAnuarioK3Request(req, ctx.params.path);
+export async function GET(req: NextRequest, ctx: RouteCtx) {
+  return proxyAnuarioK3Request(req, ctx?.params?.path);
 }
 
-export const GET = handle;
-export const POST = handle;
-export const PUT = handle;
-export const PATCH = handle;
-export const DELETE = handle;
-export const HEAD = handle;
-export const OPTIONS = handle;
+export async function POST(req: NextRequest, ctx: RouteCtx) {
+  return proxyAnuarioK3Request(req, ctx?.params?.path);
+}
+
+export async function PUT(req: NextRequest, ctx: RouteCtx) {
+  return proxyAnuarioK3Request(req, ctx?.params?.path);
+}
+
+export async function PATCH(req: NextRequest, ctx: RouteCtx) {
+  return proxyAnuarioK3Request(req, ctx?.params?.path);
+}
+
+export async function DELETE(req: NextRequest, ctx: RouteCtx) {
+  return proxyAnuarioK3Request(req, ctx?.params?.path);
+}
+
+export async function HEAD(req: NextRequest, ctx: RouteCtx) {
+  return proxyAnuarioK3Request(req, ctx?.params?.path);
+}
+
+export async function OPTIONS(req: NextRequest, ctx: RouteCtx) {
+  return proxyAnuarioK3Request(req, ctx?.params?.path);
+}
