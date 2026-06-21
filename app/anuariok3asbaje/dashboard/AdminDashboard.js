@@ -20,6 +20,19 @@ export default function AdminDashboard({ alumnos }) {
     alert('✅ Link copiado')
   }
 
+  const permitirEdicion = async (token) => {
+    const res = await fetch(anuarioPath('/api/admin/reset'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    })
+    const data = await res.json()
+    if (data.ok) {
+      alert('✅ Ya puede volver a llenar el formulario')
+      window.location.reload()
+    }
+  }
+
   const descargarCSV = () => {
     const headers = ['Nombre','Nombre Completo','Tutor','Sueño','Comida','Color','Mejor Amigo','Frase','Le Gustó','Dedicatoria Mamá','Dedicatoria Papá','Fotos','Enviado']
     const rows = alumnos.map(a => [a.nombreCorto,a.nombreCompleto,a.nombreTutor,a.suenioDeGrande,a.comidaFavorita,a.colorFavorito,a.mejorAmigo,a.fraseFavorita,a.loQueMasLeGusto,a.dedicatoriaMama,a.dedicatoriaPapa,(a.fotos||[]).map(f=>f.url).join(' | '),a.formularioEnviado?'Sí':'No'])
@@ -89,13 +102,18 @@ export default function AdminDashboard({ alumnos }) {
                   📸 {(alumno.fotos||[]).length} fotos · {alumno.fechaEnvio?new Date(alumno.fechaEnvio).toLocaleDateString('es-MX'):'—'}
                 </div>
               )}
-              <div style={{ marginTop:'0.8rem', display:'flex', gap:'0.5rem' }}>
+              <div style={{ marginTop:'0.8rem', display:'flex', gap:'0.5rem', flexWrap:'wrap' }}>
                 <button onClick={()=>copiarLink(alumno.token)} style={{ flex:1, padding:'0.4rem', borderRadius:'8px', background:'#F0F4FF', color:'#1B4F8A', border:'none', cursor:'pointer', fontSize:'0.8rem', fontWeight:'700', fontFamily:"'Nunito',sans-serif" }}>
                   🔗 Copiar link
                 </button>
                 <button onClick={()=>setSeleccionado(alumno)} style={{ flex:1, padding:'0.4rem', borderRadius:'8px', background:'#F0F4FF', color:'#7C4DFF', border:'none', cursor:'pointer', fontSize:'0.8rem', fontWeight:'700', fontFamily:"'Nunito',sans-serif" }}>
                   👁️ Ver datos
                 </button>
+                {alumno.formularioEnviado && (
+                  <button onClick={()=>permitirEdicion(alumno.token)} style={{ width:'100%', padding:'0.4rem', borderRadius:'8px', background:'#FFF3E0', color:'#E65100', border:'none', cursor:'pointer', fontSize:'0.8rem', fontWeight:'700', fontFamily:"'Nunito',sans-serif" }}>
+                    🔓 Permitir edición
+                  </button>
+                )}
               </div>
             </div>
           ))}
