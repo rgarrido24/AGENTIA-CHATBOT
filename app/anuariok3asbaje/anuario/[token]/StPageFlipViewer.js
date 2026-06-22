@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import 'page-flip/dist/css/page-flip.css';
 import './st-pageflip-viewer.css';
 
 const PAGE_SOUND =
