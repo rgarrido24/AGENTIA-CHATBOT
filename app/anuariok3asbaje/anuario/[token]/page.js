@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import connectDB from '@/lib/anuario-k3/mongodb';
 import Alumno from '@/lib/anuario-k3/models/Alumno';
-import AnuarioFlipbook from './AnuarioFlipbook';
+
+const StPageFlipViewer = dynamic(() => import('./StPageFlipViewer'), { ssr: false });
+const AnuarioFlipbook = dynamic(() => import('./AnuarioFlipbook'), { ssr: false });
 
 export const metadata = {
   title: 'Anuario K3 — Colegio Asbaje',
@@ -14,5 +17,14 @@ export default async function AnuarioPage({ params }) {
 
   if (!alumno) notFound();
 
-  return <AnuarioFlipbook alumno={JSON.parse(JSON.stringify(alumno))} />;
+  const data = JSON.parse(JSON.stringify(alumno));
+  const paginasAnuario = (data.paginasAnuario || []).filter(
+    (url) => typeof url === 'string' && url.trim()
+  );
+
+  if (paginasAnuario.length > 0) {
+    return <StPageFlipViewer pages={paginasAnuario} alumnoNombre={data.nombreCorto} />;
+  }
+
+  return <AnuarioFlipbook alumno={data} />;
 }

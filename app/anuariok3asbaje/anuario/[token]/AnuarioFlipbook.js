@@ -336,24 +336,6 @@ function FlipbookShell({ totalPages, imageMode, renderPage }) {
 }
 
 export default function AnuarioFlipbook({ alumno }) {
-  const paginasAnuario = (alumno.paginasAnuario || []).filter(
-    (url) => typeof url === 'string' && url.trim()
-  );
-
-  if (paginasAnuario.length > 0) {
-    return (
-      <FlipbookShell
-        totalPages={paginasAnuario.length}
-        imageMode
-        renderPage={(i) => (
-          <div className="anuario-page-inner anuario-page-image">
-            <img src={paginasAnuario[i]} alt={`Página ${i + 1}`} draggable={false} />
-          </div>
-        )}
-      />
-    );
-  }
-
   return (
     <FlipbookShell
       totalPages={LEGACY_TOTAL}
