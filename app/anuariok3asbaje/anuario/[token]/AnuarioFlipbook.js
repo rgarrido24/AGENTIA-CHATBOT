@@ -20,7 +20,7 @@ const SALON_NOMBRES = [
   'Romina',
 ];
 
-const TOTAL_PAGES = 9;
+const LEGACY_TOTAL = 9;
 
 function bitacoraTitulo(nombreCorto) {
   const n = (nombreCorto || '').trim().toLowerCase();
@@ -28,7 +28,7 @@ function bitacoraTitulo(nombreCorto) {
   return fem.includes(n) ? 'Bitácora de una Aventurera' : 'Bitácora de un Aventurero';
 }
 
-function PageContent({ index, alumno }) {
+function LegacyPageContent({ index, alumno }) {
   const nombre = alumno.nombreCompleto || alumno.nombreCorto;
   const fotoGrad = alumno.fotos?.[0]?.url;
   const fotoPolaroid = alumno.fotos?.[1]?.url || alumno.fotos?.[0]?.url;
@@ -52,7 +52,16 @@ function PageContent({ index, alumno }) {
           {fotoGrad ? (
             <img src={fotoGrad} alt={nombre} className="foto-grad" />
           ) : (
-            <div className="foto-grad" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)', fontSize: '3rem' }}>
+            <div
+              className="foto-grad"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(255,255,255,0.2)',
+                fontSize: '3rem',
+              }}
+            >
               🎓
             </div>
           )}
@@ -79,9 +88,22 @@ function PageContent({ index, alumno }) {
             {fotoPolaroid ? (
               <img src={fotoPolaroid} alt={alumno.nombreCorto} />
             ) : (
-              <div style={{ aspectRatio: '1', background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem' }}>📷</div>
+              <div
+                style={{
+                  aspectRatio: '1',
+                  background: '#eee',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '2.5rem',
+                }}
+              >
+                📷
+              </div>
             )}
-            <p style={{ textAlign: 'center', margin: '0.5rem 0 0', fontWeight: 800, color: '#1565C0' }}>{alumno.nombreCorto}</p>
+            <p style={{ textAlign: 'center', margin: '0.5rem 0 0', fontWeight: 800, color: '#1565C0' }}>
+              {alumno.nombreCorto}
+            </p>
           </div>
           <div>
             <h2 className="anuario-title" style={{ color: '#1565C0', fontSize: '1.25rem' }}>
@@ -108,7 +130,9 @@ function PageContent({ index, alumno }) {
     case 3:
       return (
         <div className="anuario-page-inner page-guardianas">
-          <h2 className="anuario-title" style={{ color: '#1565C0' }}>Nuestras Guardianas</h2>
+          <h2 className="anuario-title" style={{ color: '#1565C0' }}>
+            Nuestras Guardianas
+          </h2>
           <div className="guardianas-grid">
             {['Miss Vale', 'Miss Paty', 'Magaly'].map((name) => (
               <div key={name} className="guardiana-card">
@@ -126,11 +150,14 @@ function PageContent({ index, alumno }) {
     case 4:
       return (
         <div className="anuario-page-inner page-maestra">
-          <h2 className="anuario-title" style={{ color: '#1565C0' }}>Mensaje de la Maestra</h2>
+          <h2 className="anuario-title" style={{ color: '#1565C0' }}>
+            Mensaje de la Maestra
+          </h2>
           <p className="anuario-sub">
-            ¡Nuestra primera gran misión está cumplida! Hoy cerramos una etapa hermosa llena de aprendizajes,
+            ¡Nuestra primera gran misión está cumplida! Hoy cerramos una etapa herosa llena de aprendizajes,
             risas y aventuras. Cada uno de ustedes lleva en el corazón la magia de estos años en el kinder.
-            <br /><br />
+            <br />
+            <br />
             ¡Al infinito y más allá! 🤠🧸
           </p>
         </div>
@@ -153,7 +180,9 @@ function PageContent({ index, alumno }) {
     case 6:
       return (
         <div className="anuario-page-inner page-recuerdos">
-          <h2 className="anuario-title" style={{ color: '#1565C0' }}>Recuerdos de Nuestra Misión</h2>
+          <h2 className="anuario-title" style={{ color: '#1565C0' }}>
+            Recuerdos de Nuestra Misión
+          </h2>
           {fotos.length > 0 ? (
             <div className="fotos-grid">
               {fotos.map((f, i) => (
@@ -171,7 +200,9 @@ function PageContent({ index, alumno }) {
     case 7:
       return (
         <div className="anuario-page-inner page-comando">
-          <h2 className="anuario-title" style={{ color: '#FFD600' }}>Mensaje del Comando Estelar</h2>
+          <h2 className="anuario-title" style={{ color: '#FFD600' }}>
+            Mensaje del Comando Estelar
+          </h2>
           <div className="etch-grid">
             <div className="etch-card">
               <h4>💜 Mamá</h4>
@@ -207,7 +238,7 @@ function PageContent({ index, alumno }) {
   }
 }
 
-export default function AnuarioFlipbook({ alumno }) {
+function FlipbookShell({ totalPages, imageMode, renderPage }) {
   const [page, setPage] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [flipDir, setFlipDir] = useState(0);
@@ -215,7 +246,7 @@ export default function AnuarioFlipbook({ alumno }) {
 
   const go = useCallback(
     (next) => {
-      if (animating || next < 0 || next >= TOTAL_PAGES || next === page) return;
+      if (animating || next < 0 || next >= totalPages || next === page) return;
       setFlipDir(next > page ? 1 : -1);
       setAnimating(true);
       setTimeout(() => {
@@ -224,7 +255,7 @@ export default function AnuarioFlipbook({ alumno }) {
         setFlipDir(0);
       }, 650);
     },
-    [animating, page]
+    [animating, page, totalPages]
   );
 
   const prev = () => go(page - 1);
@@ -261,33 +292,73 @@ export default function AnuarioFlipbook({ alumno }) {
     return 'anuario-page is-hidden';
   };
 
+  const viewerClass = imageMode ? 'anuario-viewer anuario-viewer--images' : 'anuario-viewer';
+  const navClass = imageMode ? 'anuario-nav-btn anuario-nav-btn--minimal' : 'anuario-nav-btn';
+  const indicatorClass = imageMode ? 'anuario-indicator anuario-indicator--top-right' : 'anuario-indicator';
+
   return (
-    <div
-      className="anuario-viewer"
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-    >
-      <div className="anuario-stage-wrap">
-        <button type="button" className="anuario-nav-btn prev" onClick={prev} disabled={page === 0 || animating} aria-label="Página anterior">
+    <div className={viewerClass} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className={`anuario-stage-wrap${imageMode ? ' anuario-stage-wrap--images' : ''}`}>
+        <button
+          type="button"
+          className={`${navClass} prev`}
+          onClick={prev}
+          disabled={page === 0 || animating}
+          aria-label="Página anterior"
+        >
           ‹
         </button>
 
-        <div className="anuario-stage">
-          {Array.from({ length: TOTAL_PAGES }, (_, i) => (
-            <div key={i} className={pageClass(i)}>
-              <PageContent index={i} alumno={alumno} />
+        <div className={`anuario-stage${imageMode ? ' anuario-stage--images' : ''}`}>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <div key={i} className={`${pageClass(i)}${imageMode ? ' anuario-page--image' : ''}`}>
+              {renderPage(i)}
             </div>
           ))}
         </div>
 
-        <button type="button" className="anuario-nav-btn next" onClick={next} disabled={page === TOTAL_PAGES - 1 || animating} aria-label="Página siguiente">
+        <button
+          type="button"
+          className={`${navClass} next`}
+          onClick={next}
+          disabled={page === totalPages - 1 || animating}
+          aria-label="Página siguiente"
+        >
           ›
         </button>
       </div>
 
-      <div className="anuario-indicator">
-        {page + 1} / {TOTAL_PAGES}
+      <div className={indicatorClass}>
+        {page + 1} / {totalPages}
       </div>
     </div>
+  );
+}
+
+export default function AnuarioFlipbook({ alumno }) {
+  const paginasAnuario = (alumno.paginasAnuario || []).filter(
+    (url) => typeof url === 'string' && url.trim()
+  );
+
+  if (paginasAnuario.length > 0) {
+    return (
+      <FlipbookShell
+        totalPages={paginasAnuario.length}
+        imageMode
+        renderPage={(i) => (
+          <div className="anuario-page-inner anuario-page-image">
+            <img src={paginasAnuario[i]} alt={`Página ${i + 1}`} draggable={false} />
+          </div>
+        )}
+      />
+    );
+  }
+
+  return (
+    <FlipbookShell
+      totalPages={LEGACY_TOTAL}
+      imageMode={false}
+      renderPage={(i) => <LegacyPageContent index={i} alumno={alumno} />}
+    />
   );
 }

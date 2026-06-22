@@ -418,3 +418,74 @@
   font-size: 3rem;
   margin-top: 1rem;
 }
+
+/* ── Modo imágenes (paginasAnuario) ── */
+.anuario-viewer--images {
+  background: #0a0a0a;
+  position: relative;
+}
+
+.anuario-stage-wrap--images {
+  width: min(800px, 100vw);
+}
+
+.anuario-stage--images {
+  max-height: min(600px, 85vh);
+}
+
+.anuario-page--image {
+  background: #0a0a0a;
+  border-radius: 4px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+}
+
+.anuario-page-image {
+  padding: 0;
+  overflow: hidden;
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.anuario-page-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.anuario-nav-btn--minimal {
+  background: transparent;
+  color: #fff;
+  box-shadow: none;
+  width: 44px;
+  height: 44px;
+  font-size: 2rem;
+  font-weight: 300;
+  opacity: 0.9;
+}
+
+.anuario-nav-btn--minimal:hover:not(:disabled) {
+  transform: translateY(-50%) scale(1.12);
+  opacity: 1;
+}
+
+.anuario-nav-btn--minimal:disabled {
+  opacity: 0.2;
+}
+
+.anuario-indicator--top-right {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  margin-top: 0;
+  z-index: 20;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+}
