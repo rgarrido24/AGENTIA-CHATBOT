@@ -356,6 +356,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('WEBHOOK POST recibido:', request.method);
   try {
     const body = await request.json().catch(() => ({}));
 
