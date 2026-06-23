@@ -70,7 +70,8 @@ const nextConfig = {
   trailingSlash: false,
   productionBrowserSourceMaps: false,
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    // En prod solo quita console.log/debug; console.error/warn siguen visibles en Render
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
   experimental: {
     serverComponentsExternalPackages: ['mongodb', 'qrcode', 'pdf-parse', 'ai', '@ai-sdk/google'],

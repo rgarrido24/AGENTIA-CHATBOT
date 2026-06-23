@@ -54,7 +54,7 @@ const BOT_UA_PATTERNS = [
   /python-requests|scrapy|wget|libwww|zgrab|masscan|nuclei/i,
 ];
 // SEO crawlers we WANT to allow
-const ALLOWED_BOTS = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp/i;
+const ALLOWED_BOTS = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|facebookplatform|twitterbot|linkedinbot|whatsapp/i;
 
 function isMaliciousBot(ua: string | null): boolean {
   if (!ua || ua.trim().length === 0) return true;
@@ -103,6 +103,11 @@ export async function middleware(request: NextRequest) {
 
   // ── Cron interno (Bearer o ?secret=) — antes del bloqueo por UA vacío (Vercel Cron) ──
   if (pathname.startsWith('/api/cron/') && hasCronSecret(request)) {
+    return NextResponse.next();
+  }
+
+  // ── Webhooks Meta/WhatsApp: sin bloqueo por User-Agent (suele venir vacío o genérico) ──
+  if (pathname.startsWith('/api/webhook/')) {
     return NextResponse.next();
   }
 

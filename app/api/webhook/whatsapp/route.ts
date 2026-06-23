@@ -356,11 +356,19 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: NextRequest) {
-  console.log('WEBHOOK POST recibido:', request.method);
+  // console.error sobrevive removeConsole en producción (console.log no)
+  console.error('[webhook/whatsapp] POST recibido', {
+    method: request.method,
+    ua: request.headers.get('user-agent') ?? '(vacío)',
+    at: new Date().toISOString(),
+  });
   try {
     const body = await request.json().catch(() => ({}));
 
     if (getWhatsAppCloudChangeValue(body) !== null) {
+      console.error('[webhook/whatsapp] payload Cloud API', {
+        hasMessages: isWhatsAppCloudApiWithMessages(body),
+      });
       return await handleWhatsAppCloudApiPost(body);
     }
 
