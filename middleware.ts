@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import crypto from 'crypto';
 
 const COOKIE_NAME = 'admin_auth';
 const AUTH_SALT = 'agentia_admin_salt';
 
-function sha256Hex(text: string): string {
-  return crypto.createHash('sha256').update(text).digest('hex');
+async function sha256Hex(text: string): Promise<string> {
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 // ─── In-Edge rate limiter ────────────────────────────────────────────────────
@@ -191,8 +194,8 @@ export async function middleware(request: NextRequest) {
     }
     const dashToken    = request.cookies.get('dashboard_auth')?.value;
     const adminToken   = request.cookies.get('admin_auth')?.value;
-    const dashExpected = sha256Hex(adminUser + ':' + adminPass + 'agentia_dashboard_v2');
-    const adminExpected = sha256Hex(adminPass + 'agentia_admin_salt');
+    const dashExpected = await sha256Hex(adminUser + ':' + adminPass + 'agentia_dashboard_v2');
+    const adminExpected = await sha256Hex(adminPass + 'agentia_admin_salt');
 
     const okDashboard = !!dashToken && dashToken === dashExpected;
     const okAdmin = !!adminToken && adminToken === adminExpected;
@@ -231,7 +234,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  const expected = sha256Hex(secret + AUTH_SALT);
+  const expected = await sha256Hex(secret + AUTH_SALT);
   if (!token || token !== expected) {
     if (isAdminApi) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     const loginUrl = new URL('/login', request.url);

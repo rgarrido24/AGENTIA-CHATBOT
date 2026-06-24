@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,8 +7,12 @@ const COOKIE_NAME = 'dashboard_auth';
 const COOKIE_MAX_AGE = 60 * 60 * 8; // 8h
 const AUTH_SALT = 'agentia_dashboard_v2';
 
-function dashboardToken(user: string, pass: string): string {
-  return crypto.createHash('sha256').update(user + ':' + pass + AUTH_SALT).digest('hex');
+async function dashboardToken(user: string, pass: string): Promise<string> {
+  const data = new TextEncoder().encode(user + ':' + pass + AUTH_SALT);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 export async function POST(request: NextRequest) {
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Usuario o contraseña incorrectos' }, { status: 401 });
   }
 
-  const token = dashboardToken(adminUser, adminPass);
+  const token = await dashboardToken(adminUser, adminPass);
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
