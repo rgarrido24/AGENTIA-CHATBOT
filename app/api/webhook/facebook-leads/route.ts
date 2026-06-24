@@ -351,7 +351,7 @@ async function insertFbLeadHighActivityAlert(
     reason: 'high_activity',
     senderId: whatsapp ? `${whatsapp}@s.whatsapp.net` : '',
     senderName: nombre || undefined,
-    notifyWhatsappTo: alertNumber,
+    notifyWhatsappTo: normalizePhone(alertNumber),
     lastMessage: `Nuevo lead: ${nombre || 'Sin nombre'} - ${whatsapp || email || 'sin contacto'}`,
     createdAt: new Date(),
   });

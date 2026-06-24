@@ -108,6 +108,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname === '/api/dashboard/auth/login') {
+    return NextResponse.next();
+  }
+
   // ── Bot blocking on API routes ────────────────────────────────────────────
   if (pathname.startsWith('/api/') && isMaliciousBot(request.headers.get('user-agent'))) {
     await logBlocked(request, ip);
@@ -123,6 +127,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Rate limiting: /api/auth/login (10 per 5 min per IP) ───────────────────
+  if (pathname === '/api/dashboard/auth/login') {
+    return NextResponse.next();
+  }
+
   if (pathname === '/api/auth/login' && request.method === 'POST') {
     const allowed = edgeRateLimit(`login:${ip}`, 10, 5 * 60 * 1000);
     if (!allowed) {
@@ -159,7 +167,8 @@ export async function middleware(request: NextRequest) {
 
   // ── Auth: dashboard + CWF panel + Agentia panel ─────────────────────────────
   const isDashboardPage = pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/login');
-  const isDashboardApi  = pathname.startsWith('/api/dashboard');
+  const isDashboardApi =
+    pathname.startsWith('/api/dashboard') && pathname !== '/api/dashboard/auth/login';
   const isCwfPanelPage  = pathname.startsWith('/cwf-panel') && !pathname.startsWith('/cwf-panel/login');
   const isCwfPanelApi   = pathname.startsWith('/api/cwf-panel');
   const isAgentiaPanelPage =
