@@ -4,6 +4,9 @@
  * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_panel`.
  */
 
+const LUCIANO_PANEL_HEADER_IMAGE =
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/luciano-og-image.jpg';
+
 function formatLeadDateDdMmYyyy(value) {
   const dt = value instanceof Date ? value : new Date(value || Date.now());
   if (Number.isNaN(dt.getTime())) {
@@ -76,11 +79,20 @@ async function sendResellerLeadPanelTemplate(opts) {
         language: { code: 'es' },
         components: [
           {
+            type: 'header',
+            parameters: [
+              {
+                type: 'image',
+                image: { link: LUCIANO_PANEL_HEADER_IMAGE },
+              },
+            ],
+          },
+          {
             type: 'body',
             parameters: [
-              { type: 'text', text: leadNombre },
-              { type: 'text', text: leadFecha },
-              { type: 'text', text: portalLink },
+              { type: 'text', parameter_name: 'lead_nombre', text: leadNombre },
+              { type: 'text', parameter_name: 'lead_fecha', text: leadFecha },
+              { type: 'text', parameter_name: 'portal_link', text: portalLink },
             ],
           },
         ],
