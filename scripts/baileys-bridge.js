@@ -679,6 +679,14 @@ async function pollAndSendAlerts() {
     const sentIds = [];
     for (const a of alerts) {
       try {
+        console.log('[POLL] Alerta encontrada:', {
+          id: a._id,
+          reason: a.reason,
+          resellerId: a.resellerId || a.clientId,
+          notifyWhatsappTo: a.notifyWhatsappTo,
+          isReseller: !!(a.resellerId && a.resellerId !== 'unknown' && a.notifyWhatsappTo),
+        });
+
         if (isResellerGraphHighActivityAlert(a)) {
           const alertDoc = { ...a, resellerId: effectiveResellerId(a) };
           await sendResellerHighActivityWithOg(null, null, alertDoc);
