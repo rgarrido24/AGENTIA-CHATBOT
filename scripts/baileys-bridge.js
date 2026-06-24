@@ -644,7 +644,11 @@ async function pollAndSendAlerts() {
     .trim()
     .toLowerCase();
   const sock = getStrictReadySock(alertSenderClientId);
-  if (!sock) return;
+  if (!sock) {
+    console.warn(
+      '[Baileys] Sin socket Baileys para alertas — solo alertas reseller high_activity vía Graph API'
+    );
+  }
   const defaultAlertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER || '';
   if (!defaultAlertNumber) {
     console.warn('[Baileys] ALERT_WHATSAPP_NUMBER vacío — solo alertas con DECOHOUSE/notify.');
@@ -671,11 +675,6 @@ async function pollAndSendAlerts() {
         const targetRaw = fromDoc || fromDecoEnv || defaultAlertNumber;
         if (!targetRaw) {
           console.warn('[Baileys] Alerta sin destino WA (omitir):', a.reason, a.id);
-          continue;
-        }
-        const jid = toBaileysJid(targetRaw);
-        if (!jid) {
-          console.warn('[Baileys] JID inválido para alerta:', a.reason, targetRaw);
           continue;
         }
         const senderLine = a.senderId ? `📱 ${String(a.senderId).replace(/@.*$/, '')}` : '';
@@ -712,8 +711,17 @@ async function pollAndSendAlerts() {
             msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
         }
         if (resellerHighActivity) {
-          await sendResellerHighActivityWithOg(sock, jid, a);
+          await sendResellerHighActivityWithOg(sock, null, a);
         } else {
+          if (!sock) {
+            console.warn('[Baileys] Alerta omitida (sin socket Baileys):', a.reason, a.id);
+            continue;
+          }
+          const jid = toBaileysJid(targetRaw);
+          if (!jid) {
+            console.warn('[Baileys] JID inválido para alerta:', a.reason, targetRaw);
+            continue;
+          }
           if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
             msg += RESELLER_ALERT_RECEIPT_SUFFIX;
           }
