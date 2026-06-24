@@ -20,6 +20,11 @@ const { MongoClient } = require('mongodb');
 const qrcode = require('qrcode');
 const http = require('http');
 const { execFile } = require('child_process');
+const {
+  formatLeadDateDdMmYyyy,
+  buildPortalLink,
+  sendResellerLeadPanelTemplate,
+} = require('./lib/reseller-lead-panel-alert');
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -282,6 +287,23 @@ async function buildHighActivityAlertMessage(a) {
   );
 }
 
+/** Alerta reseller Luciano vía plantilla oficial WhatsApp Cloud API. */
+async function sendResellerHighActivityTemplate(a, targetRaw) {
+  const slug = (await findClientSlugForHighActivityAlert(a)) || '';
+  const resellerId = String(a.resellerId || 'luciano').trim().toLowerCase();
+  const portalLink = buildPortalLink(resellerId, slug);
+  const alertNumber = digitsForAlertDestination(targetRaw);
+  return sendResellerLeadPanelTemplate({
+    alertNumber,
+    leadNombre: a.senderName || 'Sin nombre',
+    leadFecha: formatLeadDateDdMmYyyy(a.createdAt || new Date()),
+    portalLink,
+    phoneNumberId: getEnv('AGENTIA_WHATSAPP_PHONE_NUMBER_ID', '') || process.env.AGENTIA_WHATSAPP_PHONE_NUMBER_ID,
+    accessToken: getEnv('WHATSAPP_ACCESS_TOKEN', '') || process.env.WHATSAPP_ACCESS_TOKEN,
+    logPrefix: '[Agentia]',
+  });
+}
+
 const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recepción';
 
 function shouldAppendResellerReceiptSuffix(resellerId) {
@@ -460,6 +482,7 @@ async function main() {
           const chatId = targetRaw.includes('@') ? targetRaw : `${normalized}@c.us`;
           const senderLine = a.senderId ? `📱 ${a.senderId.replace(/@.*$/, '')}` : '';
           let msg = '';
+          let resellerHighActivity = false;
           switch (a.reason) {
             case 'documents_confirmed':
               msg = `📋 *CAPTURAR EN IZZI – VENTA LISTA*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
@@ -471,7 +494,11 @@ async function main() {
               msg = `🚨 *LEAD URGENTE*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
               break;
             case 'high_activity':
-              msg = await buildHighActivityAlertMessage(a);
+              if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
+                resellerHighActivity = true;
+              } else {
+                msg = await buildHighActivityAlertMessage(a);
+              }
               break;
             case 'decohouse_lead':
               msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
@@ -479,10 +506,15 @@ async function main() {
             default:
               msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
           }
-          if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
-            msg += RESELLER_ALERT_RECEIPT_SUFFIX;
+          if (resellerHighActivity) {
+            const ok = await sendResellerHighActivityTemplate(a, targetRaw);
+            if (!ok) continue;
+          } else {
+            if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
+              msg += RESELLER_ALERT_RECEIPT_SUFFIX;
+            }
+            await client.sendMessage(chatId, msg);
           }
-          await client.sendMessage(chatId, msg);
           sentIds.push(a.id);
           console.log(`[Agentia] Alerta [${a.reason}] enviada a ${normalized || targetRaw}`);
         } catch (e) {

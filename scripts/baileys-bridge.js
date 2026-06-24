@@ -384,7 +384,12 @@ async function sendText(sock, jid, text) {
   await sock.sendMessage(jid, { text });
 }
 
-// Debe coincidir con `RESELLER_ALERT_RECEIPT_SUFFIX` en src/lib/alerts.ts (alertas a resellers / Luciano).
+const {
+  formatLeadDateDdMmYyyy,
+  normalizeWhatsAppTo,
+  buildPortalLink,
+  sendResellerLeadPanelTemplate,
+} = require('./lib/reseller-lead-panel-alert');
 const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recepción';
 
 function shouldAppendResellerReceiptSuffix(resellerId) {
@@ -499,43 +504,36 @@ async function findResellerPortalMetaForAlert(a) {
   }
 }
 
-/** Alerta high_activity reseller: texto fijo + link portal Luciano + imagen OG + recibo. */
-async function sendResellerHighActivityWithOg(sock, jid, a) {
+/** Alerta high_activity reseller: plantilla oficial WhatsApp Cloud API `nuevo_lead_panel`. */
+async function sendResellerHighActivityWithOg(_sock, _jid, a) {
   let meta = await findResellerPortalMetaForAlert(a);
   let clientSlug = meta?.clientSlug ? String(meta.clientSlug).trim() : '';
+  let resellerId = meta?.resellerId || String(a.resellerId || 'luciano').trim().toLowerCase();
 
   if (!clientSlug) {
     const cliente = await getClienteDocByAlertNumber(a.notifyWhatsappTo);
     if (cliente?.clientSlug) {
       clientSlug = String(cliente.clientSlug).trim();
     }
-  }
-
-  const portalLink = clientSlug
-    ? `https://agentia.software/portal/luciano/cliente/${encodeURIComponent(clientSlug)}`
-    : 'https://agentia.software/portal/luciano/dashboard';
-
-  const body =
-    '⚠️ ATENCION⚠️\n' +
-    '¡Tenes un NUEVO LEAD en tu panel!\n' +
-    'No dejes que se enfríe y contactalo rápidamente📲\n' +
-    'Dale click al enlace para gestionarlo👇\n' +
-    `${portalLink}`;
-  const full = body + RESELLER_ALERT_RECEIPT_SUFFIX;
-
-  const ogPath = path.join(__dirname, '..', 'public', 'luciano-og-image.jpg');
-  try {
-    if (fs.existsSync(ogPath)) {
-      const buf = fs.readFileSync(ogPath);
-      await sock.sendMessage(jid, { image: buf, mimetype: 'image/jpeg', caption: full });
-    } else {
-      console.warn('[Baileys] luciano-og-image.jpg no encontrado en public/, enviando solo texto');
-      await sendText(sock, jid, full);
+    if (cliente?.resellerId) {
+      resellerId = String(cliente.resellerId).trim().toLowerCase();
     }
-  } catch (e) {
-    console.error('[Baileys] Error enviando alerta reseller high_activity:', e?.message || e);
-    await sendText(sock, jid, full);
   }
+
+  const portalLink = buildPortalLink(resellerId, clientSlug);
+  const alertNumber =
+    normalizeWhatsAppTo(a.notifyWhatsappTo) ||
+    normalizeWhatsAppTo(getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER);
+
+  await sendResellerLeadPanelTemplate({
+    alertNumber,
+    leadNombre: a.senderName || 'Sin nombre',
+    leadFecha: formatLeadDateDdMmYyyy(a.createdAt || new Date()),
+    portalLink,
+    phoneNumberId: getEnv('AGENTIA_WHATSAPP_PHONE_NUMBER_ID', '') || process.env.AGENTIA_WHATSAPP_PHONE_NUMBER_ID,
+    accessToken: getEnv('WHATSAPP_ACCESS_TOKEN', '') || process.env.WHATSAPP_ACCESS_TOKEN,
+    logPrefix: '[Baileys]',
+  });
 }
 
 async function sendWithOptionalMedia(sock, jid, text, mediaUrl) {
