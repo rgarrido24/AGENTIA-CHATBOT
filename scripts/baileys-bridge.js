@@ -399,6 +399,20 @@ function shouldAppendResellerReceiptSuffix(resellerId) {
   return s.length > 0 && s !== 'unknown';
 }
 
+function effectiveResellerId(a) {
+  return String(a.resellerId || a.clientId || '')
+    .trim()
+    .toLowerCase();
+}
+
+/** high_activity reseller → plantilla Graph API (no requiere socket Baileys). */
+function isResellerGraphHighActivityAlert(a) {
+  if (a.reason !== 'high_activity') return false;
+  const notify = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
+  if (!notify) return false;
+  return shouldAppendResellerReceiptSuffix(effectiveResellerId(a));
+}
+
 /** Lead en Mongo con resellerId válido (ej. cliente de Luciano vía mismo WhatsApp Izzi). */
 async function isIzziInboundFromResellerLead(senderId) {
   if (!MONGODB_URI) return false;
@@ -665,6 +679,14 @@ async function pollAndSendAlerts() {
     const sentIds = [];
     for (const a of alerts) {
       try {
+        if (isResellerGraphHighActivityAlert(a)) {
+          const alertDoc = { ...a, resellerId: effectiveResellerId(a) };
+          await sendResellerHighActivityWithOg(null, null, alertDoc);
+          sentIds.push(a.id);
+          await new Promise((r) => setTimeout(r, 3000 + Math.random() * 2000));
+          continue;
+        }
+
         const fromDoc = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
         const fromDecoEnv =
           a.reason === 'decohouse_lead'
@@ -679,7 +701,6 @@ async function pollAndSendAlerts() {
         }
         const senderLine = a.senderId ? `📱 ${String(a.senderId).replace(/@.*$/, '')}` : '';
         let msg = '';
-        let resellerHighActivity = false;
         switch (a.reason) {
           case 'documents_confirmed':
             msg = `📋 *CAPTURAR EN IZZI – VENTA LISTA*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
@@ -690,43 +711,36 @@ async function pollAndSendAlerts() {
           case 'urgent_keyword':
             msg = `🚨 *LEAD URGENTE*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
             break;
-          case 'high_activity':
-            if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
-              resellerHighActivity = true;
-            } else {
-              const clienteDoc = await getClienteDocByAlertNumber(a.notifyWhatsappTo);
-              const clientSlug = clienteDoc?.clientSlug || '';
-              const resellerId = clienteDoc?.resellerId || 'luciano';
-              const portalLink = clientSlug
-                ? `https://agentia.software/portal/${resellerId}/cliente/${clientSlug}`
-                : 'https://agentia.software/dashboard/leads';
+          case 'high_activity': {
+            const clienteDoc = await getClienteDocByAlertNumber(a.notifyWhatsappTo);
+            const clientSlug = clienteDoc?.clientSlug || '';
+            const resellerId = clienteDoc?.resellerId || 'luciano';
+            const portalLink = clientSlug
+              ? `https://agentia.software/portal/${resellerId}/cliente/${clientSlug}`
+              : 'https://agentia.software/dashboard/leads';
 
-              msg = `⚠️ ATENCION⚠️\n¡Tenes un NUEVO LEAD en tu panel!\nNo dejes que se enfríe y contactalo rápidamente📲\nDale click al enlace para gestionarlo👇\n${portalLink}`;
-            }
+            msg = `⚠️ ATENCION⚠️\n¡Tenes un NUEVO LEAD en tu panel!\nNo dejes que se enfríe y contactalo rápidamente📲\nDale click al enlace para gestionarlo👇\n${portalLink}`;
             break;
+          }
           case 'decohouse_lead':
             msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
             break;
           default:
             msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
         }
-        if (resellerHighActivity) {
-          await sendResellerHighActivityWithOg(sock, null, a);
-        } else {
-          if (!sock) {
-            console.warn('[Baileys] Alerta omitida (sin socket Baileys):', a.reason, a.id);
-            continue;
-          }
-          const jid = toBaileysJid(targetRaw);
-          if (!jid) {
-            console.warn('[Baileys] JID inválido para alerta:', a.reason, targetRaw);
-            continue;
-          }
-          if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
-            msg += RESELLER_ALERT_RECEIPT_SUFFIX;
-          }
-          await sendText(sock, jid, msg);
+        if (!sock) {
+          console.warn('[Baileys] Alerta omitida (sin socket Baileys):', a.reason, a.id);
+          continue;
         }
+        const jid = toBaileysJid(targetRaw);
+        if (!jid) {
+          console.warn('[Baileys] JID inválido para alerta:', a.reason, targetRaw);
+          continue;
+        }
+        if (shouldAppendResellerReceiptSuffix(effectiveResellerId(a))) {
+          msg += RESELLER_ALERT_RECEIPT_SUFFIX;
+        }
+        await sendText(sock, jid, msg);
         sentIds.push(a.id);
         await new Promise((r) => setTimeout(r, 3000 + Math.random() * 2000));
       } catch (e) {
