@@ -13,6 +13,7 @@ import {
 } from '../lib/chat-sessions';
 import { upsertLead, getLeadById, makeLeadIdFromParams, isBotPaused, updateLeadDocumentExpedient, updateLeadStatus, setBotPaused, type Lead } from '../lib/leads';
 import { getBotGlobalPaused } from '../lib/bot-settings';
+import { usesPanelConversations } from '../../lib/panel-conversations';
 import {
   createAlertIfUrgent,
   createAlertForSaleClosed,
@@ -341,6 +342,21 @@ export async function handleChat(params: {
     const lead = await getLeadById(leadId);
     if (isBotPaused(lead)) {
       console.log('[chat-handler] Kill switch LEAD activo - bot pausado para leadId:', leadId);
+      if (usesPanelConversations(clientId) && senderId) {
+        void import('../../lib/panel-conversations')
+          .then(({ recordPanelInboundWhilePaused, platformToChannel }) =>
+            recordPanelInboundWhilePaused({
+              clientId,
+              senderId,
+              senderName,
+              pageId,
+              platform,
+              channel: platformToChannel(platform),
+              message: effectiveMessage,
+            })
+          )
+          .catch(() => {});
+      }
       return { status: 200, json: { clientId, reply: '', botPaused: true } };
     }
   }
@@ -768,6 +784,23 @@ El usuario acaba de enviar una imagen o documento. DEBES:
     // Persistir el turno en el historial de la sesión para la próxima llamada
     if (session?.sessionId) {
       appendMessageToSession(session.sessionId, userMessage, finalReply).catch(() => {});
+    }
+
+    if (usesPanelConversations(clientId) && senderId) {
+      void import('../../lib/panel-conversations')
+        .then(({ appendPanelConversationTurn, platformToChannel }) =>
+          appendPanelConversationTurn({
+            clientId,
+            senderId,
+            senderName,
+            pageId,
+            platform,
+            channel: platformToChannel(platform),
+            userMessage,
+            botReply: finalReply,
+          })
+        )
+        .catch(() => {});
     }
 
     const inputTokensEstimated =

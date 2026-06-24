@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
+import {
+  AGENTIA_CLOUD_PAGE_ID,
+  AGENTIA_PANEL_CLIENT_ID,
+  getAgentiaWhatsAppPhoneNumberId,
+} from '@/lib/agentia-panel';
 
 function resolveChatBaseUrl(): string {
   return (
@@ -62,13 +67,38 @@ function parseCloudApiTextMessage(body: unknown): CloudInboundText | null {
   };
 }
 
-async function sendWhatsAppCloudApiTextReply(to: string, bodyText: string): Promise<Response> {
-  const phoneId = (process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
-  const token = (process.env.WHATSAPP_ACCESS_TOKEN || '').trim();
-  if (!phoneId || !token) {
-    throw new Error('WHATSAPP_ACCESS_TOKEN o WHATSAPP_PHONE_NUMBER_ID no configurados');
+type CloudTenant = {
+  clientId: string;
+  phoneNumberId: string;
+  pageId: string;
+};
+
+function resolveCloudTenant(phoneNumberId: string): CloudTenant | null {
+  const cwfId = (process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
+  const agentiaId = getAgentiaWhatsAppPhoneNumberId();
+  if (cwfId && phoneNumberId === cwfId) {
+    return { clientId: 'cwf', phoneNumberId: cwfId, pageId: 'whatsapp-cloud' };
   }
-  const url = `https://graph.facebook.com/v18.0/${phoneId}/messages`;
+  if (agentiaId && phoneNumberId === agentiaId) {
+    return {
+      clientId: AGENTIA_PANEL_CLIENT_ID,
+      phoneNumberId: agentiaId,
+      pageId: AGENTIA_CLOUD_PAGE_ID,
+    };
+  }
+  return null;
+}
+
+async function sendWhatsAppCloudApiTextReply(
+  to: string,
+  bodyText: string,
+  phoneNumberId: string
+): Promise<Response> {
+  const token = (process.env.WHATSAPP_ACCESS_TOKEN || '').trim();
+  if (!phoneNumberId || !token) {
+    throw new Error('WHATSAPP_ACCESS_TOKEN o phone_number_id no configurados');
+  }
+  const url = `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`;
   return fetch(url, {
     method: 'POST',
     headers: {
@@ -85,11 +115,10 @@ async function sendWhatsAppCloudApiTextReply(to: string, bodyText: string): Prom
 }
 
 /**
- * Procesa mensajes entrantes de WhatsApp Cloud API (CWF cuando coincide phone_number_id).
+ * Procesa mensajes entrantes de WhatsApp Cloud API (CWF o Agentia según phone_number_id).
  */
 async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> {
   if (!isWhatsAppCloudApiWithMessages(body)) {
-    // Webhook Cloud API sin mensajes (p. ej. solo estados): 200 para Meta
     return NextResponse.json({ ok: true });
   }
 
@@ -98,33 +127,43 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
     return NextResponse.json({ ok: true, skipped: true, reason: 'non-text or incomplete' });
   }
 
-  const expectedPhoneNumberId = (process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
-  if (!expectedPhoneNumberId) {
-    console.error('[webhook/whatsapp] Cloud API: falta WHATSAPP_PHONE_NUMBER_ID');
-    return NextResponse.json({ ok: false, error: 'WHATSAPP_PHONE_NUMBER_ID no configurado' }, { status: 500 });
-  }
-  if (parsed.phoneNumberId !== expectedPhoneNumberId) {
-    console.log('[webhook/whatsapp] Cloud API ignorado — phone_number_id distinto:', parsed.phoneNumberId);
+  const tenant = resolveCloudTenant(parsed.phoneNumberId);
+  if (!tenant) {
+    console.log('[webhook/whatsapp] Cloud API ignorado — phone_number_id sin tenant:', parsed.phoneNumberId);
     return NextResponse.json({ ok: true, ignored: true });
   }
+
   if (!(process.env.WHATSAPP_ACCESS_TOKEN || '').trim()) {
-    console.error('[webhook/whatsapp] Cloud API CWF: falta WHATSAPP_ACCESS_TOKEN');
+    console.error('[webhook/whatsapp] Cloud API: falta WHATSAPP_ACCESS_TOKEN');
     return NextResponse.json({ ok: false, error: 'WHATSAPP_ACCESS_TOKEN no configurado' }, { status: 500 });
   }
 
-  const key = dedupKey(parsed.from, `cloud:${parsed.messageId}`);
+  const key = dedupKey(parsed.from, `cloud:${tenant.clientId}:${parsed.messageId}`);
   if (isDuplicate(key)) {
-    console.log('[webhook/whatsapp] Cloud API DEDUP:', parsed.from, parsed.messageId);
+    console.log('[webhook/whatsapp] Cloud API DEDUP:', tenant.clientId, parsed.from, parsed.messageId);
     return NextResponse.json({ ok: true, skipped: true });
   }
 
   {
     const db = await getMongoDb();
-    const cfg = await db.collection('business_configs').findOne({ clientId: 'cwf' }, { projection: { status: 1 } });
+    const cfg = await db.collection('business_configs').findOne(
+      { clientId: tenant.clientId },
+      { projection: { status: 1 } }
+    );
     if (cfg?.status && cfg.status !== 'activo') {
-      console.log('[webhook/whatsapp] business_config inactivo — CWF');
+      console.log('[webhook/whatsapp] business_config inactivo —', tenant.clientId);
       return NextResponse.json({ ok: true, botInactive: true });
     }
+  }
+
+  if (tenant.clientId === AGENTIA_PANEL_CLIENT_ID) {
+    await ensureAgentiaVentasLead({
+      leadId: `${parsed.from}_${tenant.pageId}_${tenant.clientId}`,
+      senderId: parsed.from,
+      senderName: parsed.from,
+      mensaje: parsed.text,
+      pageId: tenant.pageId,
+    });
   }
 
   const baseUrl = resolveChatBaseUrl();
@@ -132,17 +171,26 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      clientId: 'cwf',
+      clientId: tenant.clientId,
       platform: 'whatsapp',
       entryType: 'dm',
       message: parsed.text,
       senderId: parsed.from,
       senderName: parsed.from,
-      pageId: 'whatsapp-cloud',
+      pageId: tenant.pageId,
     }),
   });
 
-  const chatJson = (await chatRes.json().catch(() => ({}))) as { reply?: string; error?: string };
+  const chatJson = (await chatRes.json().catch(() => ({}))) as {
+    reply?: string;
+    error?: string;
+    botPaused?: boolean;
+  };
+
+  if (chatJson.botPaused) {
+    return NextResponse.json({ ok: true, chatStatus: chatRes.status, botPaused: true, clientId: tenant.clientId });
+  }
+
   const replyText =
     typeof chatJson.reply === 'string' && chatJson.reply.trim()
       ? chatJson.reply
@@ -150,7 +198,7 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
 
   let graphStatus = 0;
   try {
-    const waRes = await sendWhatsAppCloudApiTextReply(parsed.from, replyText);
+    const waRes = await sendWhatsAppCloudApiTextReply(parsed.from, replyText, tenant.phoneNumberId);
     graphStatus = waRes.status;
     if (!waRes.ok) {
       const errText = await waRes.text().catch(() => '');
@@ -166,6 +214,7 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
 
   return NextResponse.json({
     ok: true,
+    clientId: tenant.clientId,
     chatStatus: chatRes.status,
     graphStatus,
   });
@@ -234,6 +283,7 @@ async function ensureAgentiaVentasLead(params: {
   senderId: string;
   senderName: string | undefined;
   mensaje: string;
+  pageId?: string;
 }): Promise<void> {
   // Never create a lead for the admin number
   if (isAdminNumber(params.senderId)) {
@@ -284,7 +334,8 @@ async function ensureAgentiaVentasLead(params: {
       return;
     }
 
-    const leadMongoId = `${params.senderId}_whatsapp-bridge_agentia-ventas`;
+    const leadMongoId = params.leadId.trim() || `${params.senderId}_whatsapp-bridge_agentia-ventas`;
+    const pageId = params.pageId?.trim() || 'whatsapp-bridge';
 
     await db.collection('leads').updateOne(
       { leadId: leadMongoId },
@@ -302,10 +353,9 @@ async function ensureAgentiaVentasLead(params: {
         },
         $setOnInsert: {
           // Campos que se escriben UNA SOLA VEZ al crear el documento
-          // Ninguno de estos campos puede repetirse en $set ni en $inc
           leadId: leadMongoId,
           clientId: 'agentia-ventas',
-          pageId: 'whatsapp-bridge',
+          pageId,
           senderId: params.senderId,
           pipeline: 'agentia',
           canal_origen: 'whatsapp',

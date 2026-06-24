@@ -160,11 +160,23 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── Auth: dashboard ──────────────────────────────────────────────────────────
+  // ── Auth: dashboard + CWF panel + Agentia panel ─────────────────────────────
   const isDashboardPage = pathname.startsWith('/dashboard') && !pathname.startsWith('/dashboard/login');
   const isDashboardApi  = pathname.startsWith('/api/dashboard');
+  const isCwfPanelPage  = pathname.startsWith('/cwf-panel') && !pathname.startsWith('/cwf-panel/login');
+  const isCwfPanelApi   = pathname.startsWith('/api/cwf-panel');
+  const isAgentiaPanelPage =
+    pathname.startsWith('/agentia-panel') && !pathname.startsWith('/agentia-panel/login');
+  const isAgentiaPanelApi = pathname.startsWith('/api/agentia-panel');
 
-  if (isDashboardPage || isDashboardApi) {
+  if (
+    isDashboardPage ||
+    isDashboardApi ||
+    isCwfPanelPage ||
+    isCwfPanelApi ||
+    isAgentiaPanelPage ||
+    isAgentiaPanelApi
+  ) {
     const adminUser = process.env.ADMIN_USER || 'admin';
     const adminPass = process.env.ADMIN_PASSWORD;
     if (!adminPass) {
@@ -180,8 +192,17 @@ export async function middleware(request: NextRequest) {
     const okAdmin = !!adminToken && adminToken === adminExpected;
 
     if (!okDashboard && !okAdmin) {
-      if (isDashboardApi) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-      const loginUrl = new URL('/dashboard/login', request.url);
+      if (isDashboardApi || isCwfPanelApi || isAgentiaPanelApi) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      }
+      const loginUrl = new URL(
+        isAgentiaPanelPage || isAgentiaPanelApi
+          ? '/agentia-panel/login'
+          : isCwfPanelPage || isCwfPanelApi
+            ? '/cwf-panel/login'
+            : '/dashboard/login',
+        request.url
+      );
       loginUrl.searchParams.set('from', pathname);
       return NextResponse.redirect(loginUrl);
     }
@@ -221,8 +242,12 @@ export const config = {
     '/portal/luciano/brief/:path*',
     '/admin/:path*',
     '/dashboard/:path*',
+    '/cwf-panel/:path*',
+    '/agentia-panel/:path*',
     '/api/admin/:path*',
     '/api/dashboard/:path*',
+    '/api/cwf-panel/:path*',
+    '/api/agentia-panel/:path*',
     '/api/chat',
     '/api/demo/:path*',
     '/api/brief/diagnostic',
