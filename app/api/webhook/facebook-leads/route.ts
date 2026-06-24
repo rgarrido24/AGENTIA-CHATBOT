@@ -321,14 +321,16 @@ async function insertFbLeadHighActivityAlert(
     email: string;
   }
 ): Promise<void> {
-  const resellerId = params.resellerMatch?.resellerId?.trim();
+  const resellerClient = params.resellerMatch;
+  const resellerId = resellerClient?.resellerId?.trim();
   if (!resellerId || resellerId === 'unknown') {
     console.warn('[fb-leads] lead_alerts omitido: sin resellerId válido');
     return;
   }
 
+  const clientSlug = resellerClient?.clientSlug?.trim() || '';
   const alertNumber =
-    params.resellerMatch?.alertNumber?.trim() || process.env.FB_ALERT_NUMBER?.trim() || '';
+    resellerClient?.alertNumber?.trim() || process.env.FB_ALERT_NUMBER?.trim() || '';
   if (!alertNumber) {
     console.warn('[fb-leads] lead_alerts omitido: sin alertNumber en reseller_client ni FB_ALERT_NUMBER');
     return;
@@ -343,19 +345,25 @@ async function insertFbLeadHighActivityAlert(
   const whatsapp = params.whatsapp.trim();
   const email = params.email.trim();
   const nombre = params.nombre.trim();
+  const notifyWhatsappTo = normalizePhone(alertNumber);
 
   await db.collection('lead_alerts').insertOne({
     clientId: resellerId,
+    resellerId,
     leadId: params.leadId,
     platform: 'facebook',
     reason: 'high_activity',
     senderId: whatsapp ? `${whatsapp}@s.whatsapp.net` : '',
     senderName: nombre || undefined,
-    notifyWhatsappTo: normalizePhone(alertNumber),
+    notifyWhatsappTo,
     lastMessage: `Nuevo lead: ${nombre || 'Sin nombre'} - ${whatsapp || email || 'sin contacto'}`,
     createdAt: new Date(),
   });
-  console.log(`[fb-leads] lead_alerts high_activity → ${alertNumber} (reseller ${resellerId})`);
+  console.log('ALERTA INSERTADA:', {
+    clientSlug,
+    alertNumber: resellerClient?.alertNumber,
+    notifyWhatsappTo,
+  });
 }
 
 // ─── Formato Zapier: JSON plano ───────────────────────────────────────────────
