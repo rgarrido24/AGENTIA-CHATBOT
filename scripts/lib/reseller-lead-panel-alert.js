@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_panel`.
+ * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_agentia`.
  */
 
 const LUCIANO_PANEL_HEADER_IMAGE =
@@ -55,7 +55,7 @@ async function sendResellerLeadPanelTemplate(opts) {
     return false;
   }
   if (!to || to.length < 8) {
-    console.warn(`${logPrefix} Número destino inválido para plantilla nuevo_lead_panel`);
+    console.warn(`${logPrefix} Número destino inválido para plantilla nuevo_lead_agentia`);
     return false;
   }
 
@@ -75,7 +75,7 @@ async function sendResellerLeadPanelTemplate(opts) {
       to,
       type: 'template',
       template: {
-        name: 'nuevo_lead_panel',
+        name: 'nuevo_lead_agentia',
         language: { code: 'es' },
         components: [
           {
@@ -102,11 +102,11 @@ async function sendResellerLeadPanelTemplate(opts) {
 
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
-    console.error(`${logPrefix} Graph API nuevo_lead_panel error:`, res.status, errText.slice(0, 500));
+    console.error(`${logPrefix} Graph API nuevo_lead_agentia error:`, res.status, errText.slice(0, 500));
     return false;
   }
 
-  console.log(`${logPrefix} Plantilla nuevo_lead_panel enviada → ${to}`);
+  console.log(`${logPrefix} Plantilla nuevo_lead_agentia enviada → ${to}`);
   return true;
 }
 
