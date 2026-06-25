@@ -392,6 +392,9 @@ const {
 } = require('./lib/reseller-lead-panel-alert');
 const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recepción';
 
+/** Resellers con alertas high_activity vía plantilla Graph API (no clientes internos). */
+const EXTERNAL_RESELLERS = ['luciano'];
+
 function shouldAppendResellerReceiptSuffix(resellerId) {
   const s = String(resellerId ?? '')
     .trim()
@@ -405,21 +408,26 @@ function effectiveResellerId(a) {
     .toLowerCase();
 }
 
-/** high_activity reseller → plantilla Graph API (no requiere socket Baileys). */
+/** high_activity reseller externo → plantilla Graph API (no requiere socket Baileys). */
 function isResellerGraphHighActivityAlert(a) {
+  const resellerId = effectiveResellerId(a);
+  const notify = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
+  const passes =
+    EXTERNAL_RESELLERS.includes(resellerId) &&
+    a.reason === 'high_activity' &&
+    !!notify;
   console.log('[RESELLER CHECK]', {
     reason: a.reason,
     resellerId: a.resellerId,
     clientId: a.clientId,
+    effectiveResellerId: resellerId,
     notifyWhatsappTo: a.notifyWhatsappTo,
     check1_reason: a.reason === 'high_activity',
-    check2_notify: !!a.notifyWhatsappTo,
-    check3_reseller: !!(a.resellerId && a.resellerId !== 'unknown'),
+    check2_notify: !!notify,
+    check3_reseller: EXTERNAL_RESELLERS.includes(resellerId),
+    passes,
   });
-  if (a.reason !== 'high_activity') return false;
-  const notify = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
-  if (!notify) return false;
-  return shouldAppendResellerReceiptSuffix(effectiveResellerId(a));
+  return passes;
 }
 
 /** Lead en Mongo con resellerId válido (ej. cliente de Luciano vía mismo WhatsApp Izzi). */
