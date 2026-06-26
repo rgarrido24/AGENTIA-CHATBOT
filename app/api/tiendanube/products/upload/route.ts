@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  createTiendanubeProduct,
-  getCatalogForClient,
-  getTiendanubeToken,
-  sleep,
-} from '@/lib/tiendanube';
+import { getAppBaseUrl, getCatalogForClient, getTiendanubeToken } from '@/lib/tiendanube';
+import { createUploadJob, runTiendanubeUploadJob } from '@/lib/tiendanube-upload-job';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +16,7 @@ export async function POST(request: NextRequest) {
     if (!tokenDoc?.accessToken || !tokenDoc.storeId) {
       return NextResponse.json(
         { error: 'Tiendanube no conectado para este cliente. Instala la app primero.' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -30,32 +25,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Catálogo vacío en business_configs' }, { status: 400 });
     }
 
-    let uploaded = 0;
-    let failed = 0;
-    const errors: { name: string; error: string }[] = [];
+    const job = await createUploadJob(clientId, catalog.length);
 
-    for (const product of catalog) {
-      try {
-        await createTiendanubeProduct(tokenDoc.storeId, tokenDoc.accessToken, product);
-        uploaded += 1;
-      } catch (err) {
-        failed += 1;
-        errors.push({
-          name: product.name,
-          error: err instanceof Error ? err.message : 'upload_failed',
-        });
-      }
-      await sleep(600);
-    }
-
-    return NextResponse.json({
-      uploaded,
-      failed,
-      total: catalog.length,
-      errors: errors.slice(0, 20),
+    runTiendanubeUploadJob(job.jobId, clientId).catch((err) => {
+      console.error('[tiendanube/upload]', job.jobId, err);
     });
+
+    const baseUrl = getAppBaseUrl();
+    return NextResponse.json(
+      {
+        jobId: job.jobId,
+        status: job.status,
+        total: job.total,
+        statusUrl: `${baseUrl}/api/tiendanube/products/upload/${job.jobId}`,
+      },
+      { status: 202 },
+    );
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Error al subir productos';
+    const msg = err instanceof Error ? err.message : 'Error al iniciar subida';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
