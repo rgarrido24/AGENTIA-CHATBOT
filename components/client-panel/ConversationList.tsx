@@ -57,14 +57,13 @@ export function ConversationList({
       style={{ width: '100%', maxWidth: 280, borderColor: brand.border, background: '#fff' }}
     >
       <div className="p-4 border-b" style={{ borderColor: brand.border }}>
-        <img
-          src={brand.logoUrl}
-          alt={brand.name}
-          className="h-12 w-auto object-contain mb-4"
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = 'none';
-          }}
-        />
+        <div className="mb-4 flex justify-center">
+          <img
+            src={brand.logoUrl}
+            alt={`Logo ${brand.name}`}
+            className="h-16 w-full max-w-[220px] object-contain"
+          />
+        </div>
 
         {waConnected ? (
           <div
