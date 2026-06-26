@@ -2,7 +2,7 @@
 
 import type { ClientPanelBrand } from '@/lib/client-panel-config';
 import type { CatalogProduct } from '@/lib/biovela-catalog';
-import { formatProductMessage } from '@/lib/biovela-catalog';
+import { catalogImageUrl, formatProductMessage } from '@/lib/biovela-catalog';
 import { relativeTime } from '@/lib/client-panel-hooks';
 import { Send, Hand } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -153,9 +153,9 @@ export function ChatColumn({
                   boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                 }}
               >
-                <img src={p.image} alt="" className="w-full h-24 object-contain mb-2" />
+                <img src={catalogImageUrl(p)} alt="" className="w-full h-24 object-contain mb-2" />
                 <div className="font-semibold text-[15px]">{p.name}</div>
-                <div style={{ color: brand.primary }}>{p.price}</div>
+                <div style={{ color: brand.primary }}>${p.price} MXN</div>
               </button>
             ))}
           </div>
