@@ -34,7 +34,8 @@
     "lib/**/*.ts",
     "app/**/*.tsx",
     "app/**/*.ts",
-    "components/**/*.tsx"
+    "components/**/*.tsx",
+    "middleware.ts"
   ],
   "exclude": [
     "node_modules",

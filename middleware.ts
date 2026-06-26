@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { extractClientPanelToken, getExpectedClientPanelToken } from '@/lib/client-panel-auth';
 
 const COOKIE_NAME = 'admin_auth';
 const AUTH_SALT = 'agentia_admin_salt';
@@ -72,6 +73,38 @@ async function logBlocked(req: NextRequest, ip: string): Promise<void> {
   } catch { /* fire-and-forget */ }
 }
 
+function handleClientPanelAuth(request: NextRequest): NextResponse | null {
+  const { pathname } = request.nextUrl;
+  const panelPage = pathname.match(/^\/clientes\/([^/]+)\/panel/);
+  const panelApi = pathname.match(/^\/api\/panel\/([^/]+)/);
+  const clientId = (panelPage?.[1] || panelApi?.[1] || '').toLowerCase();
+  if (!clientId) return null;
+
+  const expected = getExpectedClientPanelToken(clientId);
+  if (!expected) {
+    if (panelApi) {
+      return NextResponse.json({ error: 'Panel no configurado para este cliente' }, { status: 503 });
+    }
+    return new NextResponse('Panel no configurado', { status: 503 });
+  }
+
+  const token = extractClientPanelToken(request);
+  if (!token || token !== expected) {
+    if (panelPage && request.nextUrl.searchParams.get('auth') === 'required') {
+      return NextResponse.next();
+    }
+    if (panelApi) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = `/clientes/${clientId}/panel`;
+    loginUrl.searchParams.set('auth', 'required');
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -114,6 +147,9 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/api/dashboard/auth/login') {
     return NextResponse.next();
   }
+
+  const clientPanelResponse = handleClientPanelAuth(request);
+  if (clientPanelResponse) return clientPanelResponse;
 
   // ── Bot blocking on API routes ────────────────────────────────────────────
   if (pathname.startsWith('/api/') && isMaliciousBot(request.headers.get('user-agent'))) {
@@ -257,6 +293,8 @@ export const config = {
     '/api/dashboard/:path*',
     '/api/cwf-panel/:path*',
     '/api/agentia-panel/:path*',
+    '/api/panel/:path*',
+    '/clientes/:clientId/panel/:path*',
     '/api/chat',
     '/api/demo/:path*',
     '/api/brief/diagnostic',
