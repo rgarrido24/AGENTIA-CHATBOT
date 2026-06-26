@@ -45,8 +45,6 @@ type Lead = {
   createdAt:          string;
 };
 
-type FormOption = { id: string; name: string };
-
 // ─── Utils ────────────────────────────────────────────────────────────────────
 
 const ACCENT = '#CCFF00';
@@ -876,8 +874,6 @@ export function LeadsPanel({
   }
 
   const [leads,        setLeads]        = useState<Lead[]>([]);
-  const [formOptions,  setFormOptions]  = useState<FormOption[]>([]);
-  const [selectedForm, setSelectedForm] = useState('');
   const [clientNombre, setClientNombre] = useState(clientSlug);
   const [newIds,       setNewIds]       = useState<Set<string>>(new Set());
   const [loading,      setLoading]      = useState(true);
@@ -887,14 +883,12 @@ export function LeadsPanel({
 
   const apiBase = `/api/portal/${resellerId}/client/${clientSlug}/leads`;
 
-  const fetchLeads = useCallback(async (isFirst = false, formId = '') => {
+  const fetchLeads = useCallback(async (isFirst = false) => {
     try {
-      const qs   = formId ? `?formId=${encodeURIComponent(formId)}` : '';
-      const res  = await fetch(`${apiBase}${qs}`, { cache: 'no-store' });
+      const res  = await fetch(apiBase, { cache: 'no-store' });
       if (!res.ok) { if (isFirst) setLoading(false); return; }
-      const data = await res.json() as { leads: Lead[]; formIds: FormOption[]; clientNombre: string };
+      const data = await res.json() as { leads: Lead[]; clientNombre: string };
       const incoming = data.leads ?? [];
-      setFormOptions(data.formIds ?? []);
       setClientNombre(data.clientNombre || clientSlug);
 
       if (isFirst) {
@@ -923,18 +917,12 @@ export function LeadsPanel({
     }
   }, [apiBase, clientSlug]);
 
-  useEffect(() => { fetchLeads(true, selectedForm); }, [fetchLeads]);
+  useEffect(() => { fetchLeads(true); }, [fetchLeads]);
 
   useEffect(() => {
-    knownIds.current = new Set();
-    setLoading(true);
-    fetchLeads(true, selectedForm);
-  }, [selectedForm, fetchLeads]);
-
-  useEffect(() => {
-    const t = setInterval(() => fetchLeads(false, selectedForm), 30_000);
+    const t = setInterval(() => fetchLeads(false), 30_000);
     return () => clearInterval(t);
-  }, [fetchLeads, selectedForm]);
+  }, [fetchLeads]);
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -1025,7 +1013,7 @@ export function LeadsPanel({
               {/* Refresh + live indicator */}
               <button
                 type="button"
-                onClick={() => fetchLeads(false, selectedForm)}
+                onClick={() => fetchLeads(false)}
                 className="rounded-lg p-2"
                 style={{
                   background: ui.refreshBtnBg,
@@ -1064,22 +1052,6 @@ export function LeadsPanel({
             </div>
           </div>
 
-          {/* Form selector */}
-          {formOptions.length > 0 && (
-            <div className="mt-2">
-              <select
-                value={selectedForm}
-                onChange={(e) => setSelectedForm(e.target.value)}
-                className="max-w-xs appearance-none rounded-lg px-3 py-1.5 text-xs font-medium outline-none"
-                style={{ background: ui.selectBg, color: ui.selectColor, border: `1px solid ${ui.selectBorder}` }}
-              >
-                <option value="">Todos los formularios</option>
-                {formOptions.map((f) => (
-                  <option key={f.id} value={f.id}>{f.name || f.id}</option>
-                ))}
-              </select>
-            </div>
-          )}
         </header>
 
         {/* ── Two-column body ── */}
