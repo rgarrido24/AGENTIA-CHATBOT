@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { getMongoDb } from '@/lib/mongodb';
-import type { FunnelStage, PanelTag } from '@/lib/client-panel-config';
+import type { FunnelStage, PanelTag, ClientConfigDoc } from '@/lib/client-panel-config';
 
 export type PanelMessageRole = 'user' | 'bot' | 'advisor';
 
@@ -44,9 +44,9 @@ export function convIdFromDoc(doc: PanelConversation): string {
   return doc._id ? String(doc._id) : normalizePhone(doc.phone);
 }
 
-export async function getClientConfig(clientId: string) {
+export async function getClientConfig(clientId: string): Promise<ClientConfigDoc | null> {
   const db = await getMongoDb();
-  return db.collection('client_configs').findOne({ clientId });
+  return db.collection<ClientConfigDoc>('client_configs').findOne({ clientId });
 }
 
 export async function listConversations(
