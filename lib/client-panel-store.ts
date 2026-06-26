@@ -131,7 +131,7 @@ export async function updateConversationLead(
   if (patch.notes !== undefined) $set.notes = patch.notes;
   if (patch.tags !== undefined) $set.tags = patch.tags;
 
-  await db.collection(COLLECTION).updateOne({ _id: existing._id }, { $set });
+  await db.collection<PanelConversation>(COLLECTION).updateOne({ _id: existing._id }, { $set });
   return getConversation(clientId, convId);
 }
 
@@ -151,7 +151,7 @@ export async function appendAdvisorMessage(
     createdAt: new Date(),
   };
 
-  await db.collection(COLLECTION).updateOne(
+  await db.collection<PanelConversation>(COLLECTION).updateOne(
     { _id: existing._id },
     {
       $push: { messages: msg },
@@ -167,7 +167,7 @@ export async function setHumanMode(clientId: string, convId: string, humanMode: 
   const existing = await getConversation(clientId, convId);
   if (!existing?._id) return false;
 
-  await db.collection(COLLECTION).updateOne(
+  await db.collection<PanelConversation>(COLLECTION).updateOne(
     { _id: existing._id },
     { $set: { humanMode, updatedAt: new Date() } }
   );
@@ -178,7 +178,7 @@ export async function markConversationRead(clientId: string, convId: string) {
   const db = await getMongoDb();
   const existing = await getConversation(clientId, convId);
   if (!existing?._id) return;
-  await db.collection(COLLECTION).updateOne({ _id: existing._id }, { $set: { unreadCount: 0 } });
+  await db.collection<PanelConversation>(COLLECTION).updateOne({ _id: existing._id }, { $set: { unreadCount: 0 } });
 }
 
 export function computePurchaseIntent(conv: PanelConversation): number {
