@@ -182,7 +182,27 @@ const nextConfig = {
           },
         ],
       },
-      // Demo Biovela: mismo patrón que Chowak (iframe carga index.html en /demos/biovela).
+      // Catálogo público Biovela + demo legacy (redirect a /biovela).
+      {
+        source: '/biovela/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https:",
+              "connect-src 'self' https://generativelanguage.googleapis.com",
+              "font-src 'self' data: https://fonts.gstatic.com",
+              "frame-ancestors 'self'",
+              "object-src 'none'",
+              "base-uri 'self'",
+            ].join('; '),
+          },
+        ],
+      },
       {
         source: '/demos/biovela/:path*',
         headers: [

@@ -92,7 +92,7 @@ async function main() {
     '',
     'DEMOS DISPONIBLES en agentia.software:',
     '- /demos/chowak — restaurante con menú y reservaciones',
-    '- /demos/biovela — tienda de velas artesanales',
+    '- /biovela — catálogo público La Rueda Veladoras (velas artesanales)',
     '- /demo/dentista — clínica dental',
     '- /demo/nutricion — nutriólogo',
     '- /demo/spa — spa y belleza',
