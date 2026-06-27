@@ -15,7 +15,10 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'ids requerido (array)' }, { status: 400 });
     }
 
-    const results = await Promise.all(ids.map((id: string) => markAlertSent(id)));
+    const fromBaileysBridge = request.headers.get('x-alert-marker') === 'baileys-bridge';
+    const results = await Promise.all(
+      ids.map((id: string) => markAlertSent(id, { fromBaileysBridge }))
+    );
     return Response.json({ ok: true, marked: results.filter(Boolean).length });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Error';

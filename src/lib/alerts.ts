@@ -32,7 +32,37 @@ export type Alert = {
   sentAt?: Date;
   /** Solo alertas Deco House: destino WA (env DECOHOUSE_ALERT_NUMBER), no usar ALERT_WHATSAPP_NUMBER global. */
   notifyWhatsappTo?: string;
+  /** Reseller portal (p. ej. luciano) cuando la alerta es high_activity de cliente externo. */
+  resellerId?: string;
 };
+
+/** Clientes internos Agentia — no son resellers externos de portal. */
+export const INTERNAL_ALERT_CLIENT_IDS = new Set([
+  'izzi',
+  'decohouse',
+  'cwf',
+  'biovela',
+  'agentia-ventas',
+]);
+
+export function effectiveAlertResellerId(alert: {
+  resellerId?: string;
+  clientId?: string;
+}): string {
+  return String(alert.resellerId || alert.clientId || '')
+    .trim()
+    .toLowerCase();
+}
+
+/** Reseller externo (Luciano, etc.): no marcar sentAt desde Render, solo bridge Railway + Graph API. */
+export function isExternalResellerAlert(alert: {
+  resellerId?: string;
+  clientId?: string;
+}): boolean {
+  const id = effectiveAlertResellerId(alert);
+  if (!id || id === 'unknown') return false;
+  return !INTERNAL_ALERT_CLIENT_IDS.has(id);
+}
 
 const URGENT_KEYWORDS = /\b(urgente|asap|ya|ahora|emergencia|inmediato|rápido|rapido|pronto)\b/i;
 
@@ -477,7 +507,9 @@ export async function getPendingAlerts(): Promise<AlertWithReseller[]> {
   for (const a of candidates) {
     if (!a.leadId) continue;
     if (seen.has(a.leadId)) {
-      if (a._id) suppressIds.push(String(a._id));
+      if (a._id && !isExternalResellerAlert({ resellerId: a.resellerId, clientId: a.clientId })) {
+        suppressIds.push(String(a._id));
+      }
       continue;
     }
     seen.add(a.leadId);
@@ -513,14 +545,32 @@ export async function getPendingAlerts(): Promise<AlertWithReseller[]> {
   }
 
   const out: AlertWithReseller[] = keep.map((a) => {
-    const resellerId = resellerByLeadId.get(a.leadId) || undefined;
+    const resellerId =
+      (a.resellerId != null ? String(a.resellerId) : '') ||
+      resellerByLeadId.get(a.leadId) ||
+      undefined;
     return { ...a, resellerId };
   });
 
   return out;
 }
 
-export async function markAlertSent(alertId: string): Promise<boolean> {
+async function enrichAlertResellerId(
+  alert: Alert & { resellerId?: string }
+): Promise<AlertWithReseller> {
+  if (alert.resellerId) return alert;
+  const db = await getMongoDb();
+  const lead = await db
+    .collection('leads')
+    .findOne({ leadId: alert.leadId }, { projection: { resellerId: 1 } });
+  const resellerId = lead?.resellerId != null ? String(lead.resellerId) : undefined;
+  return { ...alert, resellerId };
+}
+
+export async function markAlertSent(
+  alertId: string,
+  opts?: { fromBaileysBridge?: boolean }
+): Promise<boolean> {
   const db = await getMongoDb();
   const { ObjectId } = await import('mongodb');
   let oid: import('mongodb').ObjectId;
@@ -529,10 +579,22 @@ export async function markAlertSent(alertId: string): Promise<boolean> {
   } catch {
     return false;
   }
-  const result = await db.collection<Alert>('lead_alerts').updateOne(
-    { _id: oid },
-    { $set: { sentAt: new Date() } }
-  );
+
+  const col = db.collection<Alert>('lead_alerts');
+  const alert = await col.findOne({ _id: oid });
+  if (!alert) return false;
+
+  const enriched = await enrichAlertResellerId(alert as Alert & { resellerId?: string });
+  if (isExternalResellerAlert(enriched) && !opts?.fromBaileysBridge) {
+    console.log(
+      '[alerts] sentAt omitido para reseller externo (solo bridge Railway):',
+      alertId,
+      effectiveAlertResellerId(enriched)
+    );
+    return false;
+  }
+
+  const result = await col.updateOne({ _id: oid }, { $set: { sentAt: new Date() } });
   return result.modifiedCount > 0;
 }
 

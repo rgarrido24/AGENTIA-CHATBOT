@@ -557,7 +557,7 @@ async function sendResellerHighActivityWithOg(_sock, _jid, a) {
     normalizeWhatsAppTo(a.notifyWhatsappTo) ||
     normalizeWhatsAppTo(getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER);
 
-  await sendResellerLeadPanelTemplate({
+  return sendResellerLeadPanelTemplate({
     alertNumber,
     leadNombre: a.senderName || 'Sin nombre',
     leadFecha: formatLeadDateDdMmYyyy(a.createdAt || new Date()),
@@ -707,8 +707,8 @@ async function pollAndSendAlerts() {
 
         if (isResellerGraphHighActivityAlert(a)) {
           const alertDoc = { ...a, resellerId: effectiveResellerId(a) };
-          await sendResellerHighActivityWithOg(null, null, alertDoc);
-          sentIds.push(a.id);
+          const ok = await sendResellerHighActivityWithOg(null, null, alertDoc);
+          if (ok) sentIds.push(a.id);
           await new Promise((r) => setTimeout(r, 3000 + Math.random() * 2000));
           continue;
         }
@@ -778,6 +778,7 @@ async function pollAndSendAlerts() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Alert-Marker': 'baileys-bridge',
           ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
         },
         body: JSON.stringify({ ids: sentIds }),
