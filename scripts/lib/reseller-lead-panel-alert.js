@@ -5,7 +5,7 @@
  */
 
 const LUCIANO_PANEL_HEADER_IMAGE =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/luciano-og-image.jpg';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1782083589/WhatsApp_Image_2026-06-21_at_4.36.44_PM_3_hpig8a.jpg';
 
 function formatLeadDateDdMmYyyy(value) {
   const dt = value instanceof Date ? value : new Date(value || Date.now());
