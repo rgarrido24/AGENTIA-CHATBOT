@@ -410,21 +410,22 @@ function effectiveResellerId(a) {
 
 /** high_activity reseller externo → plantilla Graph API (no requiere socket Baileys). */
 function isResellerGraphHighActivityAlert(a) {
-  const resellerId = effectiveResellerId(a);
-  const notify = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
+  const effectiveId = String(a.resellerId || a.clientId || '')
+    .trim()
+    .toLowerCase();
   const passes =
-    EXTERNAL_RESELLERS.includes(resellerId) &&
+    EXTERNAL_RESELLERS.includes(effectiveId) &&
     a.reason === 'high_activity' &&
-    !!notify;
+    !!a.notifyWhatsappTo;
   console.log('[RESELLER CHECK]', {
     reason: a.reason,
     resellerId: a.resellerId,
     clientId: a.clientId,
-    effectiveResellerId: resellerId,
+    effectiveId,
     notifyWhatsappTo: a.notifyWhatsappTo,
     check1_reason: a.reason === 'high_activity',
-    check2_notify: !!notify,
-    check3_reseller: EXTERNAL_RESELLERS.includes(resellerId),
+    check2_notify: !!a.notifyWhatsappTo,
+    check3_reseller: EXTERNAL_RESELLERS.includes(effectiveId),
     passes,
   });
   return passes;
