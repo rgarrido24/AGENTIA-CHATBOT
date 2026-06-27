@@ -1,13 +1,8 @@
 'use strict';
 
 /**
- * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_agentia`.
- */
-
-const LUCIANO_PANEL_HEADER_IMAGE =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1782579834/WhatsApp_Image_2026-06-27_at_11.03.20_AM_tzq2rn.jpg';
-
-function formatLeadDateDdMmYyyy(value) {
+ * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_agentia` (solo body, sin header).
+ */function formatLeadDateDdMmYyyy(value) {
   const dt = value instanceof Date ? value : new Date(value || Date.now());
   if (Number.isNaN(dt.getTime())) {
     const now = new Date();
@@ -79,15 +74,6 @@ async function sendResellerLeadPanelTemplate(opts) {
         language: { code: 'es' },
         components: [
           {
-            type: 'header',
-            parameters: [
-              {
-                type: 'image',
-                image: { link: LUCIANO_PANEL_HEADER_IMAGE },
-              },
-            ],
-          },
-          {
             type: 'body',
             parameters: [
               { type: 'text', parameter_name: 'lead_nombre', text: leadNombre },
@@ -95,8 +81,7 @@ async function sendResellerLeadPanelTemplate(opts) {
               { type: 'text', parameter_name: 'portal_link', text: portalLink },
             ],
           },
-        ],
-      },
+        ],      },
     }),
   });
 
