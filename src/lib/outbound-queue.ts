@@ -6,7 +6,7 @@
  */
 import { getMongoDb } from '../../lib/mongodb';
 
-export type OutboundMessageType = 'reactivation' | 'confirmation' | 'review' | 'manual';
+export type OutboundMessageType = 'reactivation' | 'confirmation' | 'review' | 'manual' | 'followup';
 
 /** Retraso aleatorio entre 30 y 60 segundos para proteger el número del baneo */
 function randomDelaySecs(min = 30, max = 60): number {

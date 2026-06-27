@@ -28,6 +28,8 @@ export type PanelConversation = {
   tags: string[];
   notes: string;
   humanMode: boolean;
+  followupSent?: boolean;
+  followupSentAt?: Date;
   unreadCount?: number;
   connectedNumber?: string;
   updatedAt: Date;
