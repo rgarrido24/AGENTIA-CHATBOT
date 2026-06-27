@@ -1,8 +1,10 @@
 'use strict';
 
 /**
- * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_agentia` (solo body, sin header).
- */function formatLeadDateDdMmYyyy(value) {
+ * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_texto` (solo body, sin header).
+ */
+
+function formatLeadDateDdMmYyyy(value) {
   const dt = value instanceof Date ? value : new Date(value || Date.now());
   if (Number.isNaN(dt.getTime())) {
     const now = new Date();
@@ -50,7 +52,7 @@ async function sendResellerLeadPanelTemplate(opts) {
     return false;
   }
   if (!to || to.length < 8) {
-    console.warn(`${logPrefix} Número destino inválido para plantilla nuevo_lead_agentia`);
+    console.warn(`${logPrefix} Número destino inválido para plantilla nuevo_lead_texto`);
     return false;
   }
 
@@ -70,7 +72,7 @@ async function sendResellerLeadPanelTemplate(opts) {
       to,
       type: 'template',
       template: {
-        name: 'nuevo_lead_agentia',
+        name: 'nuevo_lead_texto',
         language: { code: 'es' },
         components: [
           {
@@ -81,17 +83,18 @@ async function sendResellerLeadPanelTemplate(opts) {
               { type: 'text', parameter_name: 'portal_link', text: portalLink },
             ],
           },
-        ],      },
+        ],
+      },
     }),
   });
 
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
-    console.error(`${logPrefix} Graph API nuevo_lead_agentia error:`, res.status, errText.slice(0, 500));
+    console.error(`${logPrefix} Graph API nuevo_lead_texto error:`, res.status, errText.slice(0, 500));
     return false;
   }
 
-  console.log(`${logPrefix} Plantilla nuevo_lead_agentia enviada → ${to}`);
+  console.log(`${logPrefix} Plantilla nuevo_lead_texto enviada → ${to}`);
   return true;
 }
 
