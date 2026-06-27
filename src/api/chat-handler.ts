@@ -39,6 +39,7 @@ import {
 } from '../lib/appointment-flow';
 import { getLoyaltyPoints, formatLoyaltyReply } from '../lib/loyalty';
 import { handleConfirmationReply } from '../lib/noshow-confirmation';
+import { handleBiovelaPickupMessage } from '../../lib/biovela-pickup-flow';
 import {
   lookupCoverageByCP,
   formatCoverageContext,
@@ -390,8 +391,31 @@ export async function handleChat(params: {
     }
   }
 
+  // Biovela: agendar recolección en almacén (Lun/Mie/Vie)
+  if (
+    clientId === 'biovela' &&
+    senderId &&
+    pageId &&
+    userMessage &&
+    !mediaBase64
+  ) {
+    try {
+      const pickup = await handleBiovelaPickupMessage({
+        message: userMessage,
+        senderId,
+        senderName,
+        pageId,
+        platform,
+      });
+      if (pickup.handled && pickup.reply) {
+        return { status: 200, json: { clientId, reply: pickup.reply } };
+      }
+    } catch (pickupErr) {
+      console.error('[chat-handler] biovela pickup:', pickupErr instanceof Error ? pickupErr.message : pickupErr);
+    }
+  }
+
   try {
-  // Flujo de confirmación de documentos (sí / es correcto)
   const isConfirmation = /\b(s[ií]|si|es correcto|correcto|est[aá] bien|estan bien|ok|confirmo|confirmado)\b/i.test(userMessage);
   if (leadId && isConfirmation && !mediaBase64) {
     const db = await getMongoDb();
@@ -620,7 +644,7 @@ export async function handleChat(params: {
     }
 
     let availabilityBlock = '';
-    if (/cita|agendar|disponibilidad|horario|hora/i.test(effectiveMessage)) {
+    if (clientId !== 'biovela' && /cita|agendar|disponibilidad|horario|hora/i.test(effectiveMessage)) {
       const sessionId = senderId && pageId ? `${senderId}_${pageId}_${clientId}` : '';
       let date = new Date();
       if (/mañana|manana/i.test(effectiveMessage)) {

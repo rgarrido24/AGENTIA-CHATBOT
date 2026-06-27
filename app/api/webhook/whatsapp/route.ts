@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
+import { handleBiovelaPickupMessage } from '@/lib/biovela-pickup-flow';
 import {
   AGENTIA_CLOUD_PAGE_ID,
   AGENTIA_PANEL_CLIENT_ID,
@@ -458,6 +459,24 @@ export async function POST(request: NextRequest) {
     // Persistir lead de agentia-ventas antes del chat (seguro ante fallos del chat API)
     if (clientId === 'agentia-ventas') {
       await ensureAgentiaVentasLead({ leadId, senderId: leadId, senderName, mensaje });
+    }
+
+    // Biovela: agendar recolección en almacén (flujo programático antes del LLM)
+    if (clientId === 'biovela' && mensaje.trim()) {
+      try {
+        const pickup = await handleBiovelaPickupMessage({
+          message: mensaje,
+          senderId: leadId,
+          senderName,
+          pageId: 'whatsapp-bridge',
+          platform: 'whatsapp',
+        });
+        if (pickup.handled && pickup.reply) {
+          return NextResponse.json({ clientId, reply: pickup.reply });
+        }
+      } catch (pickupErr) {
+        console.error('[webhook/whatsapp] biovela pickup:', pickupErr instanceof Error ? pickupErr.message : pickupErr);
+      }
     }
 
     const baseUrl = resolveChatBaseUrl();
