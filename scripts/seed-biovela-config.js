@@ -29,16 +29,13 @@ TELÉFONO: 55 5657 9035
 INSTAGRAM: @laruedabiov
 TIENDA: biovela2.mitiendanube.com
 
-DÍAS DE RECOLECCIÓN PRESENCIAL (ALMACÉN): lunes, miércoles y viernes — solo con cita previa
-UBICACIÓN RECOLECCIÓN: Iztacalco, CDMX (almacén, por cita)
 ENVÍOS: WeShip a todo México
 
-AGENDAR RECOLECCIÓN EN ALMACÉN:
-- Si el cliente pregunta por recolección, recoger pedido, cita en almacén o visita presencial, ofrece agendar cita.
-- Pide: nombre, fecha preferida (solo lun/mie/vie), hora aproximada y productos a recoger.
-- Horarios válidos: Lunes, Miércoles y Viernes. Si piden otro día, explícales amablemente los días disponibles.
-- Cuando el cliente dé todos los datos, confirma que quedará agendado (el sistema crea el evento en calendario automáticamente).
-- Frases útiles: "agendar recolección", "cita en almacén", "pasar a recoger".
+RECOLECCIÓN EN ALMACÉN:
+- Disponible Lunes, Miércoles y Viernes únicamente
+- Requiere cita previa por WhatsApp
+- Ubicación: Iztacalco, CDMX (se da dirección exacta al confirmar cita)
+- Cuando el cliente quiera recoger en almacén, pregunta nombre, día preferido y hora aproximada para agendar su cita
 
 FLUJO DE VENTA:
 1. Saluda calurosamente
