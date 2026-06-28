@@ -31,6 +31,94 @@ type FilterId = (typeof FILTERS)[number]['id'];
 
 const SERIF = 'Georgia, "Times New Roman", Times, serif';
 
+const REVEAL_STYLES = `
+@keyframes bv-fade-in-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bv-fade-in-left {
+  from { opacity: 0; transform: translateX(-32px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.bv-reveal { opacity: 0; }
+.bv-reveal--fade-up.bv-reveal--visible {
+  animation: bv-fade-in-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--bv-delay, 0ms);
+}
+.bv-reveal--fade-left.bv-reveal--visible {
+  animation: bv-fade-in-left 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--bv-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bv-reveal { opacity: 1; }
+  .bv-reveal--fade-up.bv-reveal--visible,
+  .bv-reveal--fade-left.bv-reveal--visible {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+`;
+
+function useInView(options?: IntersectionObserverInit) {
+  const [visible, setVisible] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const ref = useCallback(
+    (node: HTMLElement | null) => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+      if (!node || visible) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry?.isIntersecting) {
+            setVisible(true);
+            observer.unobserve(node);
+          }
+        },
+        { threshold: 0.1, rootMargin: '0px 0px -32px 0px', ...options }
+      );
+
+      observer.observe(node);
+      observerRef.current = observer;
+    },
+    [visible, options]
+  );
+
+  useEffect(() => () => observerRef.current?.disconnect(), []);
+
+  return { ref, visible };
+}
+
+function Reveal({
+  children,
+  animation,
+  delay = 0,
+  className = '',
+  as: Tag = 'div',
+}: {
+  children: React.ReactNode;
+  animation: 'fade-up' | 'fade-left';
+  delay?: number;
+  className?: string;
+  as?: 'div' | 'article';
+}) {
+  const { ref, visible } = useInView();
+
+  return (
+    <Tag
+      ref={ref}
+      className={`bv-reveal bv-reveal--${animation}${visible ? ' bv-reveal--visible' : ''}${className ? ` ${className}` : ''}`}
+      style={{ '--bv-delay': `${delay}ms` } as React.CSSProperties}
+    >
+      {children}
+    </Tag>
+  );
+}
+
 function productWhatsAppUrl(product: CatalogProduct): string {
   const text = `Hola! Me interesa ${product.name} ($${product.price} MXN), ¿tienen disponibilidad?`;
   return `https://wa.me/${WA_PHONE}?text=${encodeURIComponent(text)}`;
@@ -44,9 +132,14 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-function LogoMark({ variant = 'light' }: { variant?: 'light' | 'dark' }) {
+function LogoMark({ variant = 'light' }: { variant?: 'light' | 'dark' | 'hero' }) {
   const [failed, setFailed] = useState(false);
-  const borderColor = variant === 'dark' ? `${BV.gold}99` : `${BV.gold}40`;
+  const borderColor =
+    variant === 'hero'
+      ? 'rgba(255,255,255,0.5)'
+      : variant === 'dark'
+        ? `${BV.gold}99`
+        : `${BV.gold}40`;
 
   if (failed) {
     return (
@@ -54,8 +147,8 @@ function LogoMark({ variant = 'light' }: { variant?: 'light' | 'dark' }) {
         className="flex h-20 w-20 items-center justify-center rounded-full text-2xl"
         style={{
           border: `1px solid ${borderColor}`,
-          background: variant === 'dark' ? BV.dark : BV.cream,
-          color: BV.gold,
+          background: variant === 'dark' ? BV.dark : variant === 'hero' ? 'rgba(0,0,0,0.25)' : BV.cream,
+          color: variant === 'hero' ? '#fff' : BV.gold,
         }}
         aria-hidden
       >
@@ -78,12 +171,12 @@ function LogoMark({ variant = 'light' }: { variant?: 'light' | 'dark' }) {
   );
 }
 
-function ProductCard({ product }: { product: CatalogProduct }) {
+function ProductCard({ product, index }: { product: CatalogProduct; index: number }) {
   const [imgFailed, setImgFailed] = useState(false);
   const hasImage = Boolean(product.imageUrl) && !imgFailed;
 
   return (
-    <article className="group flex flex-col bg-white">
+    <Reveal animation="fade-up" delay={index * 60} as="article" className="group flex flex-col bg-white">
       <div
         className="relative aspect-square w-full overflow-hidden transition-shadow duration-300 group-hover:shadow-[0_8px_32px_rgba(193,122,43,0.15)]"
         style={{ borderRadius: 4 }}
@@ -143,7 +236,7 @@ function ProductCard({ product }: { product: CatalogProduct }) {
           ${product.price} MXN
         </p>
       </div>
-    </article>
+    </Reveal>
   );
 }
 
@@ -215,17 +308,19 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
         } as React.CSSProperties
       }
     >
-      {/* Hero — full viewport */}
-      <header
-        className="relative flex min-h-[100vh] flex-col items-center justify-center px-8 text-center"
-        style={{
-          backgroundColor: BV.cream,
-          backgroundImage: 'radial-gradient(circle, #C17A2B08 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-        }}
-      >
-        <div className="mx-auto flex max-w-xl flex-col items-center gap-6">
-          <LogoMark />
+      <style dangerouslySetInnerHTML={{ __html: REVEAL_STYLES }} />
+      {/* Hero — imagen de fondo con overlay */}
+      <header className="relative flex min-h-[70vh] flex-col items-center justify-center overflow-hidden px-8 text-center md:min-h-[100vh]">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.2) 100%), url('/logos/biovela-hero.jpg')",
+          }}
+          aria-hidden
+        />
+        <div className="relative z-10 mx-auto flex max-w-xl flex-col items-center gap-6 text-white">
+          <LogoMark variant="hero" />
           <h1
             style={{
               fontFamily: SERIF,
@@ -233,7 +328,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
               fontWeight: 400,
               letterSpacing: '-0.02em',
               lineHeight: 1.15,
-              color: BV.dark,
+              color: '#fff',
             }}
           >
             La Rueda Veladoras
@@ -243,7 +338,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
               maxWidth: 400,
               fontSize: '1.1rem',
               lineHeight: 1.8,
-              color: BV.muted,
+              color: 'rgba(255,255,255,0.85)',
             }}
           >
             Insumos artesanales para hacer velas · Iztacalco, CDMX
@@ -252,10 +347,9 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
             <button
               type="button"
               onClick={scrollToCatalog}
-              className="px-8 py-3 text-sm font-medium transition hover:opacity-80"
+              className="px-8 py-3 text-sm font-medium text-white transition hover:bg-white/10"
               style={{
-                border: `1px solid ${BV.gold}`,
-                color: BV.gold,
+                border: '1px solid #fff',
                 background: 'transparent',
                 borderRadius: 50,
                 letterSpacing: '0.04em',
@@ -276,7 +370,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
           </div>
           <div
             className="mt-4 flex items-center gap-2"
-            style={{ color: BV.gold, fontSize: 18, letterSpacing: '0.5em' }}
+            style={{ color: 'rgba(255,255,255,0.7)', fontSize: 18, letterSpacing: '0.5em' }}
             aria-hidden
           >
             <span>·</span>
@@ -378,8 +472,8 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
-              {filtered.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {filtered.map((product, index) => (
+                <ProductCard key={product.id} product={product} index={index} />
               ))}
             </div>
           )}
@@ -393,8 +487,8 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
             { n: '01', title: 'Aromas naturales' },
             { n: '02', title: 'Envíos a toda la República' },
             { n: '03', title: 'Atención por WhatsApp' },
-          ].map(({ n, title }) => (
-            <div key={n} className="flex flex-col gap-4">
+          ].map(({ n, title }, index) => (
+            <Reveal key={n} animation="fade-left" delay={index * 100} className="flex flex-col gap-4">
               <span
                 style={{
                   fontFamily: SERIF,
@@ -419,7 +513,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
               >
                 {title}
               </p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
