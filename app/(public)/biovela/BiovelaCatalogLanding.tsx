@@ -315,7 +315,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
           className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage:
-              "linear-gradient(to right, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.2) 100%), url('/logos/biovela-hero.jpg')",
+              "linear-gradient(to right, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.2) 100%), url('/logos/biovela-hero.jpeg')",
           }}
           aria-hidden
         />
