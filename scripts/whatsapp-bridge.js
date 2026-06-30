@@ -20,11 +20,21 @@ const { MongoClient } = require('mongodb');
 const qrcode = require('qrcode');
 const http = require('http');
 const { execFile } = require('child_process');
-const {
-  formatLeadDateDdMmYyyy,
-  buildPortalLink,
-  sendResellerLeadPanelTemplate,
-} = require('./lib/reseller-lead-panel-alert');
+
+/** Clientes internos — resellers externos (Luciano) los procesa solo baileys-bridge. */
+const INTERNAL_ALERT_CLIENT_IDS = new Set(['izzi', 'decohouse', 'cwf', 'biovela', 'agentia-ventas']);
+
+function effectiveAlertResellerId(a) {
+  return String(a.resellerId || a.clientId || '')
+    .trim()
+    .toLowerCase();
+}
+
+function isExternalResellerAlert(a) {
+  const id = effectiveAlertResellerId(a);
+  if (!id || id === 'unknown') return false;
+  return !INTERNAL_ALERT_CLIENT_IDS.has(id);
+}
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -287,23 +297,6 @@ async function buildHighActivityAlertMessage(a) {
   );
 }
 
-/** Alerta reseller Luciano vía plantilla oficial WhatsApp Cloud API. */
-async function sendResellerHighActivityTemplate(a, targetRaw) {
-  const slug = (await findClientSlugForHighActivityAlert(a)) || '';
-  const resellerId = String(a.resellerId || 'luciano').trim().toLowerCase();
-  const portalLink = buildPortalLink(resellerId, slug);
-  const alertNumber = digitsForAlertDestination(targetRaw);
-  return sendResellerLeadPanelTemplate({
-    alertNumber,
-    leadNombre: a.senderName || 'Sin nombre',
-    leadFecha: formatLeadDateDdMmYyyy(a.createdAt || new Date()),
-    portalLink,
-    phoneNumberId: getEnv('AGENTIA_WHATSAPP_PHONE_NUMBER_ID', '') || process.env.AGENTIA_WHATSAPP_PHONE_NUMBER_ID,
-    accessToken: getEnv('WHATSAPP_ACCESS_TOKEN', '') || process.env.WHATSAPP_ACCESS_TOKEN,
-    logPrefix: '[Agentia]',
-  });
-}
-
 const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recepción';
 
 function shouldAppendResellerReceiptSuffix(resellerId) {
@@ -430,6 +423,24 @@ async function main() {
     return st?.ready && st?.client ? st.client : null;
   }
 
+  async function tryClaimAlert(apiBase, secret, alertId) {
+    try {
+      const res = await fetch(`${apiBase}/api/alerts/sent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
+        },
+        body: JSON.stringify({ ids: [alertId] }),
+      });
+      if (!res.ok) return false;
+      const data = await res.json().catch(() => ({}));
+      return (data.marked || 0) > 0;
+    } catch {
+      return false;
+    }
+  }
+
   async function pollAndSendAlerts() {
     if (!ENABLE_ALERTS) return;
     // Alertas: SIEMPRE deben salir del número correcto (no “prestar” otro clientId).
@@ -463,9 +474,24 @@ async function main() {
       }
       const data = await res.json().catch(() => ({}));
       const alerts = data.alerts || [];
-      const sentIds = [];
       for (const a of alerts) {
         try {
+          if (isExternalResellerAlert(a)) {
+            console.log(
+              '[Agentia] Alerta reseller externo omitida (solo baileys-bridge):',
+              a.id,
+              effectiveAlertResellerId(a),
+              a.reason
+            );
+            continue;
+          }
+
+          const claimed = await tryClaimAlert(apiBase, secret, a.id);
+          if (!claimed) {
+            console.log('[Agentia] Alerta ya reclamada/enviada (omitir):', a.id, a.reason);
+            continue;
+          }
+
           const fromDoc = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
           const fromDecoEnv =
             a.reason === 'decohouse_lead'
@@ -482,7 +508,6 @@ async function main() {
           const chatId = targetRaw.includes('@') ? targetRaw : `${normalized}@c.us`;
           const senderLine = a.senderId ? `📱 ${a.senderId.replace(/@.*$/, '')}` : '';
           let msg = '';
-          let resellerHighActivity = false;
           switch (a.reason) {
             case 'documents_confirmed':
               msg = `📋 *CAPTURAR EN IZZI – VENTA LISTA*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
@@ -494,11 +519,7 @@ async function main() {
               msg = `🚨 *LEAD URGENTE*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
               break;
             case 'high_activity':
-              if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
-                resellerHighActivity = true;
-              } else {
-                msg = await buildHighActivityAlertMessage(a);
-              }
+              msg = await buildHighActivityAlertMessage(a);
               break;
             case 'decohouse_lead':
               msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
@@ -506,31 +527,13 @@ async function main() {
             default:
               msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
           }
-          if (resellerHighActivity) {
-            const ok = await sendResellerHighActivityTemplate(a, targetRaw);
-            if (!ok) continue;
-          } else {
-            if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
-              msg += RESELLER_ALERT_RECEIPT_SUFFIX;
-            }
-            await client.sendMessage(chatId, msg);
+          if (shouldAppendResellerReceiptSuffix(a.resellerId)) {
+            msg += RESELLER_ALERT_RECEIPT_SUFFIX;
           }
-          sentIds.push(a.id);
+          await client.sendMessage(chatId, msg);
           console.log(`[Agentia] Alerta [${a.reason}] enviada a ${normalized || targetRaw}`);
         } catch (e) {
           console.error('[Agentia] Error enviando alerta:', e.message);
-        }
-      }
-      if (sentIds.length > 0) {
-        const secret2 = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
-        const sentRes = await fetch(`${apiBase}/api/alerts/sent`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(secret2 ? { Authorization: `Bearer ${secret2}` } : {}) },
-          body: JSON.stringify({ ids: sentIds }),
-        });
-        if (!sentRes.ok) {
-          const body = await sentRes.text().catch(() => '');
-          console.error('[Agentia] Alertas: /api/alerts/sent fallo', sentRes.status, body.slice(0, 300));
         }
       }
     } catch (e) {

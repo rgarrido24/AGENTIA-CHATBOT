@@ -385,7 +385,6 @@ async function sendText(sock, jid, text) {
 }
 
 const {
-  formatLeadDateDdMmYyyy,
   normalizeWhatsAppTo,
   buildPortalLink,
   sendResellerLeadPanelTemplate,
@@ -566,8 +565,6 @@ async function sendResellerHighActivityWithOg(_sock, _jid, a) {
 
   return sendResellerLeadPanelTemplate({
     alertNumber,
-    leadNombre: a.senderName || 'Sin nombre',
-    leadFecha: formatLeadDateDdMmYyyy(a.createdAt || new Date()),
     portalLink,
     phoneNumberId: getResellerAlertPhoneNumberId(),
     accessToken: getEnv('WHATSAPP_ACCESS_TOKEN', '') || process.env.WHATSAPP_ACCESS_TOKEN,
@@ -675,6 +672,25 @@ async function pollAndSendOutboundMessages() {
   }
 }
 
+async function tryClaimAlert(apiBase, secret, alertId) {
+  try {
+    const res = await fetch(`${apiBase}/api/alerts/sent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Alert-Marker': 'baileys-bridge',
+        ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
+      },
+      body: JSON.stringify({ ids: [alertId] }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => ({}));
+    return (data.marked || 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
 async function pollAndSendAlerts() {
   if (!ENABLE_ALERTS) return;
   const alertSenderClientId = String(
@@ -706,7 +722,6 @@ async function pollAndSendAlerts() {
       alerts.length,
       alerts.map((a) => ({ reason: a.reason, resellerId: a.resellerId || a.clientId }))
     );
-    const sentIds = [];
     for (const a of alerts) {
       try {
         console.log('[POLL] Alerta encontrada:', {
@@ -717,10 +732,15 @@ async function pollAndSendAlerts() {
           isReseller: !!(a.resellerId && a.resellerId !== 'unknown' && a.notifyWhatsappTo),
         });
 
+        const claimed = await tryClaimAlert(apiBase, secret, a.id);
+        if (!claimed) {
+          console.log('[Baileys] Alerta ya reclamada/enviada (omitir):', a.id, a.reason);
+          continue;
+        }
+
         if (isResellerGraphHighActivityAlert(a)) {
           const alertDoc = { ...a, resellerId: effectiveResellerId(a) };
-          const ok = await sendResellerHighActivityWithOg(null, null, alertDoc);
-          if (ok) sentIds.push(a.id);
+          await sendResellerHighActivityWithOg(null, null, alertDoc);
           await new Promise((r) => setTimeout(r, 3000 + Math.random() * 2000));
           continue;
         }
@@ -779,22 +799,10 @@ async function pollAndSendAlerts() {
           msg += RESELLER_ALERT_RECEIPT_SUFFIX;
         }
         await sendText(sock, jid, msg);
-        sentIds.push(a.id);
         await new Promise((r) => setTimeout(r, 3000 + Math.random() * 2000));
       } catch (e) {
         console.error('[Baileys] Error enviando alerta:', e?.message || e);
       }
-    }
-    if (sentIds.length > 0) {
-      await fetch(`${apiBase}/api/alerts/sent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Alert-Marker': 'baileys-bridge',
-          ...(secret ? { Authorization: `Bearer ${secret}` } : {}),
-        },
-        body: JSON.stringify({ ids: sentIds }),
-      }).catch(() => {});
     }
   } catch (e) {
     console.error('[Baileys] Error poll alerts:', e?.message || e);

@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_agentia`.
+ * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_alerta`.
  */
 
 const LUCIANO_PANEL_HEADER_IMAGE =
@@ -32,8 +32,6 @@ function buildPortalLink(resellerId, clientSlug) {
 /**
  * @param {object} opts
  * @param {string} opts.alertNumber - dígitos E.164 sin +
- * @param {string} opts.leadNombre
- * @param {string} opts.leadFecha - dd/mm/yyyy
  * @param {string} opts.portalLink
  * @param {string} [opts.phoneNumberId]
  * @param {string} [opts.accessToken]
@@ -57,12 +55,10 @@ async function sendResellerLeadPanelTemplate(opts) {
     return false;
   }
   if (!to || to.length < 8) {
-    console.warn(`${logPrefix} Número destino inválido para plantilla nuevo_lead_agentia`);
+    console.warn(`${logPrefix} Número destino inválido para plantilla nuevo_lead_alerta`);
     return false;
   }
 
-  const leadNombre = String(opts.leadNombre || 'Sin nombre').trim() || 'Sin nombre';
-  const leadFecha = String(opts.leadFecha || formatLeadDateDdMmYyyy(new Date())).trim();
   const portalLink = String(opts.portalLink || buildPortalLink('luciano', '')).trim();
 
   const url = `https://graph.facebook.com/v18.0/${phoneId}/messages`;
@@ -77,7 +73,7 @@ async function sendResellerLeadPanelTemplate(opts) {
       to,
       type: 'template',
       template: {
-        name: 'nuevo_lead_agentia',
+        name: 'nuevo_lead_alerta',
         language: { code: 'es' },
         components: [
           {
@@ -91,11 +87,7 @@ async function sendResellerLeadPanelTemplate(opts) {
           },
           {
             type: 'body',
-            parameters: [
-              { type: 'text', parameter_name: 'lead_nombre', text: leadNombre },
-              { type: 'text', parameter_name: 'lead_fecha', text: leadFecha },
-              { type: 'text', parameter_name: 'portal_link', text: portalLink },
-            ],
+            parameters: [{ type: 'text', parameter_name: 'portal_link', text: portalLink }],
           },
         ],
       },
@@ -104,11 +96,11 @@ async function sendResellerLeadPanelTemplate(opts) {
 
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
-    console.error(`${logPrefix} Graph API nuevo_lead_agentia error:`, res.status, errText.slice(0, 500));
+    console.error(`${logPrefix} Graph API nuevo_lead_alerta error:`, res.status, errText.slice(0, 500));
     return false;
   }
 
-  console.log(`${logPrefix} Plantilla nuevo_lead_agentia enviada → ${to}`);
+  console.log(`${logPrefix} Plantilla nuevo_lead_alerta enviada → ${to}`);
   return true;
 }
 

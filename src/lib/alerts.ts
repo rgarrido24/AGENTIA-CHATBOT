@@ -567,7 +567,7 @@ async function enrichAlertResellerId(
   return { ...alert, resellerId };
 }
 
-export async function markAlertSent(
+export async function claimAlertForSend(
   alertId: string,
   opts?: { fromBaileysBridge?: boolean }
 ): Promise<boolean> {
@@ -581,21 +581,32 @@ export async function markAlertSent(
   }
 
   const col = db.collection<Alert>('lead_alerts');
-  const alert = await col.findOne({ _id: oid });
-  if (!alert) return false;
+  const pending = await col.findOne({ _id: oid, sentAt: { $exists: false } });
+  if (!pending) return false;
 
-  const enriched = await enrichAlertResellerId(alert as Alert & { resellerId?: string });
+  const enriched = await enrichAlertResellerId(pending as Alert & { resellerId?: string });
   if (isExternalResellerAlert(enriched) && !opts?.fromBaileysBridge) {
     console.log(
-      '[alerts] sentAt omitido para reseller externo (solo bridge Railway):',
+      '[alerts] claim omitido para reseller externo (solo baileys-bridge):',
       alertId,
       effectiveAlertResellerId(enriched)
     );
     return false;
   }
 
-  const result = await col.updateOne({ _id: oid }, { $set: { sentAt: new Date() } });
-  return result.modifiedCount > 0;
+  const result = await col.findOneAndUpdate(
+    { _id: oid, sentAt: { $exists: false } },
+    { $set: { sentAt: new Date() } },
+    { returnDocument: 'after' }
+  );
+  return result != null;
+}
+
+export async function markAlertSent(
+  alertId: string,
+  opts?: { fromBaileysBridge?: boolean }
+): Promise<boolean> {
+  return claimAlertForSend(alertId, opts);
 }
 
 export async function getRecentAlerts(limit = 50): Promise<Alert[]> {
