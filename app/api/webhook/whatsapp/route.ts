@@ -121,8 +121,8 @@ async function sendWhatsAppCloudApiTextReply(
 async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> {
   if (!isWhatsAppCloudApiWithMessages(body)) {
     const value = getWhatsAppCloudChangeValue(body);
-    if (value?.statuses) {
-      console.log('[webhook/whatsapp] statuses:', JSON.stringify(value.statuses));
+    if (value) {
+      console.error('[webhook/whatsapp] STATUSES DEBUG:', JSON.stringify(value));
     }
     return NextResponse.json({ ok: true });
   }
@@ -421,8 +421,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
 
     if (getWhatsAppCloudChangeValue(body) !== null) {
+      const cloudValue = getWhatsAppCloudChangeValue(body);
       console.error('[webhook/whatsapp] payload Cloud API', {
         hasMessages: isWhatsAppCloudApiWithMessages(body),
+        value: JSON.stringify(cloudValue),
       });
       return await handleWhatsAppCloudApiPost(body);
     }
