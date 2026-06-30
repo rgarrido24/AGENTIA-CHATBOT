@@ -701,6 +701,11 @@ async function pollAndSendAlerts() {
     if (!res.ok) return;
     const data = await res.json().catch(() => ({}));
     const alerts = data.alerts || [];
+    console.log(
+      '[PENDING] Total alertas:',
+      alerts.length,
+      alerts.map((a) => ({ reason: a.reason, resellerId: a.resellerId || a.clientId }))
+    );
     const sentIds = [];
     for (const a of alerts) {
       try {
