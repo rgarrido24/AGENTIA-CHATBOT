@@ -37,15 +37,17 @@ function buildPortalLink(resellerId, clientSlug) {
  * @param {string} [opts.logPrefix]
  */
 async function sendResellerLeadPanelTemplate(opts) {
-  const phoneId = String(
-    opts.phoneNumberId ||
-      process.env.AGENTIA_WHATSAPP_PHONE_NUMBER_ID ||
-      process.env.WHATSAPP_PHONE_NUMBER_ID ||
-      ''
-  ).trim();
+  const logPrefix = opts.logPrefix || '[reseller-alert]';
+  const phoneId = String(opts.phoneNumberId || process.env.AGENTIA_WHATSAPP_PHONE_NUMBER_ID || '').trim();
+  const cwfPhoneId = String(process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
+  if (cwfPhoneId && phoneId === cwfPhoneId) {
+    console.error(
+      `${logPrefix} Las alertas reseller deben enviarse solo desde AGENTIA_WHATSAPP_PHONE_NUMBER_ID, no CWF`
+    );
+    return false;
+  }
   const token = String(opts.accessToken || process.env.WHATSAPP_ACCESS_TOKEN || '').trim();
   const to = normalizeWhatsAppTo(opts.alertNumber);
-  const logPrefix = opts.logPrefix || '[reseller-alert]';
 
   if (!phoneId || !token) {
     console.error(`${logPrefix} AGENTIA_WHATSAPP_PHONE_NUMBER_ID o WHATSAPP_ACCESS_TOKEN no configurados`);

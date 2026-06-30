@@ -536,6 +536,13 @@ async function findResellerPortalMetaForAlert(a) {
   }
 }
 
+/** Solo AGENTIA Cloud API — nunca WHATSAPP_PHONE_NUMBER_ID (CWF). */
+function getResellerAlertPhoneNumberId() {
+  return String(
+    getEnv('AGENTIA_WHATSAPP_PHONE_NUMBER_ID', '') || process.env.AGENTIA_WHATSAPP_PHONE_NUMBER_ID || ''
+  ).trim();
+}
+
 /** Alerta high_activity reseller: plantilla oficial WhatsApp Cloud API `nuevo_lead_panel`. */
 async function sendResellerHighActivityWithOg(_sock, _jid, a) {
   let meta = await findResellerPortalMetaForAlert(a);
@@ -562,7 +569,7 @@ async function sendResellerHighActivityWithOg(_sock, _jid, a) {
     leadNombre: a.senderName || 'Sin nombre',
     leadFecha: formatLeadDateDdMmYyyy(a.createdAt || new Date()),
     portalLink,
-    phoneNumberId: getEnv('AGENTIA_WHATSAPP_PHONE_NUMBER_ID', '') || process.env.AGENTIA_WHATSAPP_PHONE_NUMBER_ID,
+    phoneNumberId: getResellerAlertPhoneNumberId(),
     accessToken: getEnv('WHATSAPP_ACCESS_TOKEN', '') || process.env.WHATSAPP_ACCESS_TOKEN,
     logPrefix: '[Baileys]',
   });
