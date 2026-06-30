@@ -120,6 +120,10 @@ async function sendWhatsAppCloudApiTextReply(
  */
 async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> {
   if (!isWhatsAppCloudApiWithMessages(body)) {
+    const value = getWhatsAppCloudChangeValue(body);
+    if (value?.statuses) {
+      console.log('[webhook/whatsapp] statuses:', JSON.stringify(value.statuses));
+    }
     return NextResponse.json({ ok: true });
   }
 
