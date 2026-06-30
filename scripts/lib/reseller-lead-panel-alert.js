@@ -1,8 +1,11 @@
 'use strict';
 
 /**
- * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_texto` (solo body, sin header).
+ * Alerta reseller (Luciano): plantilla oficial WhatsApp Cloud API `nuevo_lead_agentia`.
  */
+
+const LUCIANO_PANEL_HEADER_IMAGE =
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1782579834/WhatsApp_Image_2026-06-27_at_11.03.20_AM_tzq2rn.jpg';
 
 function formatLeadDateDdMmYyyy(value) {
   const dt = value instanceof Date ? value : new Date(value || Date.now());
@@ -54,7 +57,7 @@ async function sendResellerLeadPanelTemplate(opts) {
     return false;
   }
   if (!to || to.length < 8) {
-    console.warn(`${logPrefix} Número destino inválido para plantilla nuevo_lead_texto`);
+    console.warn(`${logPrefix} Número destino inválido para plantilla nuevo_lead_agentia`);
     return false;
   }
 
@@ -74,9 +77,18 @@ async function sendResellerLeadPanelTemplate(opts) {
       to,
       type: 'template',
       template: {
-        name: 'nuevo_lead_texto',
+        name: 'nuevo_lead_agentia',
         language: { code: 'es' },
         components: [
+          {
+            type: 'header',
+            parameters: [
+              {
+                type: 'image',
+                image: { link: LUCIANO_PANEL_HEADER_IMAGE },
+              },
+            ],
+          },
           {
             type: 'body',
             parameters: [
@@ -92,11 +104,11 @@ async function sendResellerLeadPanelTemplate(opts) {
 
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
-    console.error(`${logPrefix} Graph API nuevo_lead_texto error:`, res.status, errText.slice(0, 500));
+    console.error(`${logPrefix} Graph API nuevo_lead_agentia error:`, res.status, errText.slice(0, 500));
     return false;
   }
 
-  console.log(`${logPrefix} Plantilla nuevo_lead_texto enviada → ${to}`);
+  console.log(`${logPrefix} Plantilla nuevo_lead_agentia enviada → ${to}`);
   return true;
 }
 
