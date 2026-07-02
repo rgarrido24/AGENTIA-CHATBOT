@@ -54,7 +54,7 @@ export async function GET(
   const leads = docs.map((d) => ({
     id:                 d.leadId as string,
     nombre:             (d.nombre || d.senderName || d.senderId || 'Sin nombre') as string,
-    telefono:           (d.telefono || '') as string,
+    telefono:           readLeadTelefono(d),
     email:              (d.email || '') as string,
     campana:            (d.campana || '') as string,
     adset:              (d.adset || '') as string,
@@ -104,6 +104,13 @@ export async function DELETE(
 
 function buildLeadQuery(resellerId: string, clientSlug: string): Record<string, unknown> {
   return { resellerId, clientSlug };
+}
+
+/** Teléfono del lead: en MongoDB el campo es `telefono` (no whatsapp/phone). */
+function readLeadTelefono(doc: Record<string, unknown>): string {
+  const raw = doc.telefono;
+  if (raw === null || raw === undefined) return '';
+  return String(raw).trim();
 }
 
 function mapEstado(sv: string | undefined): 'nuevo' | 'contactado' | 'en_seguimiento' {

@@ -326,11 +326,6 @@ function normalizePhoneForWa(tel: string): string {
   return d;
 }
 
-function waUrl(tel: string) {
-  const normalized = normalizePhoneForWa(tel);
-  return `https://wa.me/${normalized}`;
-}
-
 function formatPhone(tel: string) {
   const d = normalizePhoneForWa(tel);
   if (!d) return tel || '—';
@@ -789,11 +784,11 @@ function LeadDetail({
         </div>
       </div>
 
-      {/* WhatsApp CTA — sticky bottom */}
-      {lead.telefono && (
+      {/* WhatsApp CTA — sticky bottom (MongoDB: campo `telefono`) */}
+      {lead.telefono.trim() && (
         <div className="border-t p-4" style={{ borderColor: ui.waBarBorder }}>
           <a
-            href={waUrl(lead.telefono)}
+            href={`https://wa.me/${lead.telefono.replace(/\D/g, '')}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold"
