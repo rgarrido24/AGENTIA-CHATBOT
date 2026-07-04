@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MessageSquare, Pause, Play, RefreshCw, User } from 'lucide-react';
+import { CwfPanelNav } from '@/components/cwf/CwfPanelNav';
 import { PanelMessageBubble } from '@/components/panel/PanelMessageBubble';
 import { PanelReplyComposer } from '@/components/panel/PanelReplyComposer';
 
@@ -244,28 +245,31 @@ export default function CwfConversacionesPage() {
       style={{ background: `linear-gradient(160deg, ${BRAND.bg} 0%, #2a1a0c 50%, #1a1208 100%)` }}
     >
       <header
-        className="border-b px-4 py-4 flex flex-wrap items-center justify-between gap-3"
+        className="border-b px-4 py-4 space-y-3"
         style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.25)' }}
       >
-        <div>
-          <p className="text-xs uppercase tracking-widest text-amber-500/80 font-semibold">CWF México</p>
-          <h1 className="text-xl font-bold text-amber-50 flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-amber-500" />
-            Conversaciones WhatsApp
-          </h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-amber-500/80 font-semibold">CWF México</p>
+            <h1 className="text-xl font-bold text-amber-50 flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-amber-500" />
+              Conversaciones WhatsApp
+            </h1>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              void loadList();
+              if (selectedId) void loadDetail(selectedId);
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-amber-100/90 hover:bg-white/5 transition"
+            style={{ borderColor: BRAND.border }}
+          >
+            <RefreshCw className={`h-4 w-4 ${loadingList ? 'animate-spin' : ''}`} />
+            Actualizar
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            void loadList();
-            if (selectedId) void loadDetail(selectedId);
-          }}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-amber-100/90 hover:bg-white/5 transition"
-          style={{ borderColor: BRAND.border }}
-        >
-          <RefreshCw className={`h-4 w-4 ${loadingList ? 'animate-spin' : ''}`} />
-          Actualizar
-        </button>
+        <CwfPanelNav />
       </header>
 
       {error && (
