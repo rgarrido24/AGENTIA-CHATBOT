@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isDashboardAuthenticated } from '@/lib/dashboard-auth';
 import { AGENTIA_PANEL_CLIENT_ID } from '@/lib/agentia-panel';
 import { getPanelConversationById, panelConversationPublicId } from '@/lib/panel-conversations';
+import { serializePanelMessages } from '@/lib/panel-message-dto';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,11 +30,7 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
       pageId: conv.pageId,
       botPaused: conv.botPaused,
       lastMessageAt: conv.lastMessageAt.toISOString(),
-      messages: conv.messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-        at: m.at.toISOString(),
-      })),
+      messages: serializePanelMessages(conv),
     },
   });
 }

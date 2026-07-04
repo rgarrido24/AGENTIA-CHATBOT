@@ -8,9 +8,10 @@ import {
   Pause,
   Play,
   RefreshCw,
-  Send,
   User,
 } from 'lucide-react';
+import { PanelMessageBubble } from '@/components/panel/PanelMessageBubble';
+import { PanelReplyComposer } from '@/components/panel/PanelReplyComposer';
 
 type PanelChannel = 'whatsapp' | 'facebook' | 'instagram';
 type ChannelFilter = PanelChannel | 'all';
@@ -32,6 +33,9 @@ type ConversationMessage = {
   role: 'user' | 'assistant' | 'agent';
   content: string;
   at: string;
+  mediaType?: 'image' | 'document';
+  mediaUrl?: string;
+  fileName?: string;
 };
 
 type ConversationDetail = ConversationSummary & {
@@ -203,6 +207,25 @@ export default function AgentiaConversacionesPage() {
     }
   };
 
+  const applyReplyResponse = (data: {
+    conversation?: { messages?: ConversationMessage[]; lastMessageAt?: string };
+  }) => {
+    if (data.conversation?.messages) {
+      setDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              messages: data.conversation!.messages!,
+              lastMessageAt: data.conversation!.lastMessageAt ?? prev.lastMessageAt,
+              botPaused: true,
+            }
+          : prev
+      );
+    } else if (selectedId) {
+      void loadDetail(selectedId);
+    }
+  };
+
   const sendReply = async () => {
     if (!selectedId || !replyText.trim()) return;
     setSending(true);
@@ -222,20 +245,32 @@ export default function AgentiaConversacionesPage() {
         return;
       }
       setReplyText('');
-      if (data.conversation?.messages) {
-        setDetail((prev) =>
-          prev
-            ? {
-                ...prev,
-                messages: data.conversation.messages,
-                lastMessageAt: data.conversation.lastMessageAt,
-                botPaused: true,
-              }
-            : prev
-        );
-      } else {
-        await loadDetail(selectedId);
+      applyReplyResponse(data);
+      await loadList();
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const sendAttachment = async (file: File) => {
+    if (!selectedId) return;
+    setSending(true);
+    setError('');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      if (replyText.trim()) form.append('message', replyText.trim());
+      const res = await fetch(
+        `/api/agentia-panel/conversations/${encodeURIComponent(selectedId)}/reply`,
+        { method: 'POST', body: form }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.error || 'No se pudo enviar el adjunto');
+        return;
       }
+      setReplyText('');
+      applyReplyResponse(data);
       await loadList();
     } finally {
       setSending(false);
@@ -429,31 +464,19 @@ export default function AgentiaConversacionesPage() {
                 ) : !detail?.messages?.length ? (
                   <p className="text-sm text-slate-500">Sin mensajes en esta conversación.</p>
                 ) : (
-                  detail.messages.map((m, i) => {
-                    const isUser = m.role === 'user';
-                    const isAgent = m.role === 'agent';
-                    return (
-                      <div
-                        key={`${m.at}-${i}`}
-                        className={`flex ${isUser ? 'justify-start' : 'justify-end'}`}
-                      >
-                        <div
-                          className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-                            isUser
-                              ? 'rounded-tl-sm bg-slate-800/80 text-slate-100'
-                              : isAgent
-                                ? 'rounded-tr-sm bg-blue-800/50 text-blue-50 border border-blue-600/30'
-                                : 'rounded-tr-sm bg-slate-700/60 text-slate-200 border border-slate-600/30'
-                          }`}
-                        >
-                          <p className="text-[10px] uppercase tracking-wide opacity-60 mb-1">
-                            {roleLabel(m.role)} · {fmtWhen(m.at)}
-                          </p>
-                          <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                        </div>
-                      </div>
-                    );
-                  })
+                  detail.messages.map((m, i) => (
+                    <PanelMessageBubble
+                      key={`${m.at}-${i}`}
+                      message={m}
+                      isUser={m.role === 'user'}
+                      isAgent={m.role === 'agent'}
+                      roleLabel={roleLabel(m.role)}
+                      fmtWhen={fmtWhen}
+                      userBubbleClass="rounded-tl-sm bg-slate-800/80 text-slate-100"
+                      agentBubbleClass="rounded-tr-sm bg-blue-800/50 text-blue-50 border border-blue-600/30"
+                      botBubbleClass="rounded-tr-sm bg-slate-700/60 text-slate-200 border border-slate-600/30"
+                    />
+                  ))
                 )}
               </div>
 
@@ -472,36 +495,28 @@ export default function AgentiaConversacionesPage() {
                     Por ahora puedes registrar notas internas en el historial.
                   </p>
                 )}
-                <div className="flex gap-2">
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder={
-                      !botPaused
-                        ? 'Toma control primero para responder...'
-                        : canSendWhatsApp
-                          ? 'Escribe tu respuesta por WhatsApp...'
-                          : 'Nota interna (se guarda en el historial)...'
-                    }
-                    disabled={!botPaused || sending}
-                    rows={2}
-                    className="flex-1 resize-none rounded-xl px-4 py-3 bg-slate-900/80 border border-slate-700 text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-sm"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey && botPaused && replyText.trim()) {
-                        e.preventDefault();
-                        void sendReply();
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    disabled={!botPaused || sending || !replyText.trim()}
-                    onClick={() => void sendReply()}
-                    className="self-end px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-40 transition"
-                  >
-                    <Send className="h-5 w-5" />
-                  </button>
-                </div>
+                <PanelReplyComposer
+                  replyText={replyText}
+                  onReplyTextChange={setReplyText}
+                  onSendText={sendReply}
+                  onSendFile={sendAttachment}
+                  disabled={!botPaused}
+                  sending={sending}
+                  placeholder={
+                    !botPaused
+                      ? 'Toma control primero para responder...'
+                      : canSendWhatsApp
+                        ? 'Escribe tu respuesta por WhatsApp...'
+                        : 'Nota interna (se guarda en el historial)...'
+                  }
+                  attachHint={
+                    botPaused && !canSendWhatsApp
+                      ? 'Los adjuntos se guardan en el historial; el envío por Meta DMs llegará en una fase siguiente.'
+                      : undefined
+                  }
+                  accentSendClass="bg-blue-600 hover:bg-blue-500"
+                  textareaClass="flex-1 resize-none rounded-xl px-4 py-3 bg-slate-900/80 border border-slate-700 text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-sm"
+                />
               </div>
             </>
           )}

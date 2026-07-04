@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { MessageSquare, Pause, Play, RefreshCw, Send, User } from 'lucide-react';
+import { MessageSquare, Pause, Play, RefreshCw, User } from 'lucide-react';
+import { PanelMessageBubble } from '@/components/panel/PanelMessageBubble';
+import { PanelReplyComposer } from '@/components/panel/PanelReplyComposer';
 
 type ConversationSummary = {
   id: string;
@@ -19,6 +21,9 @@ type ConversationMessage = {
   role: 'user' | 'assistant' | 'agent';
   content: string;
   at: string;
+  mediaType?: 'image' | 'document';
+  mediaUrl?: string;
+  fileName?: string;
 };
 
 type ConversationDetail = ConversationSummary & {
@@ -163,6 +168,25 @@ export default function CwfConversacionesPage() {
     }
   };
 
+  const applyReplyResponse = (data: {
+    conversation?: { messages?: ConversationMessage[]; lastMessageAt?: string };
+  }) => {
+    if (data.conversation?.messages) {
+      setDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              messages: data.conversation!.messages!,
+              lastMessageAt: data.conversation!.lastMessageAt ?? prev.lastMessageAt,
+              botPaused: true,
+            }
+          : prev
+      );
+    } else if (selectedId) {
+      void loadDetail(selectedId);
+    }
+  };
+
   const sendReply = async () => {
     if (!selectedId || !replyText.trim()) return;
     setSending(true);
@@ -182,20 +206,32 @@ export default function CwfConversacionesPage() {
         return;
       }
       setReplyText('');
-      if (data.conversation?.messages) {
-        setDetail((prev) =>
-          prev
-            ? {
-                ...prev,
-                messages: data.conversation.messages,
-                lastMessageAt: data.conversation.lastMessageAt,
-                botPaused: true,
-              }
-            : prev
-        );
-      } else {
-        await loadDetail(selectedId);
+      applyReplyResponse(data);
+      await loadList();
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const sendAttachment = async (file: File) => {
+    if (!selectedId) return;
+    setSending(true);
+    setError('');
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      if (replyText.trim()) form.append('message', replyText.trim());
+      const res = await fetch(
+        `/api/cwf-panel/conversations/${encodeURIComponent(selectedId)}/reply`,
+        { method: 'POST', body: form }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.error || 'No se pudo enviar el adjunto');
+        return;
       }
+      setReplyText('');
+      applyReplyResponse(data);
       await loadList();
     } finally {
       setSending(false);
@@ -344,31 +380,19 @@ export default function CwfConversacionesPage() {
                 ) : !detail?.messages?.length ? (
                   <p className="text-sm text-stone-500">Sin mensajes en esta conversación.</p>
                 ) : (
-                  detail.messages.map((m, i) => {
-                    const isUser = m.role === 'user';
-                    const isAgent = m.role === 'agent';
-                    return (
-                      <div
-                        key={`${m.at}-${i}`}
-                        className={`flex ${isUser ? 'justify-start' : 'justify-end'}`}
-                      >
-                        <div
-                          className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-                            isUser
-                              ? 'rounded-tl-sm bg-stone-800/80 text-stone-100'
-                              : isAgent
-                                ? 'rounded-tr-sm bg-amber-800/50 text-amber-50 border border-amber-600/30'
-                                : 'rounded-tr-sm bg-stone-700/60 text-stone-200 border border-stone-600/30'
-                          }`}
-                        >
-                          <p className="text-[10px] uppercase tracking-wide opacity-60 mb-1">
-                            {roleLabel(m.role)} · {fmtWhen(m.at)}
-                          </p>
-                          <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                        </div>
-                      </div>
-                    );
-                  })
+                  detail.messages.map((m, i) => (
+                    <PanelMessageBubble
+                      key={`${m.at}-${i}`}
+                      message={m}
+                      isUser={m.role === 'user'}
+                      isAgent={m.role === 'agent'}
+                      roleLabel={roleLabel(m.role)}
+                      fmtWhen={fmtWhen}
+                      userBubbleClass="rounded-tl-sm bg-stone-800/80 text-stone-100"
+                      agentBubbleClass="rounded-tr-sm bg-amber-800/50 text-amber-50 border border-amber-600/30"
+                      botBubbleClass="rounded-tr-sm bg-stone-700/60 text-stone-200 border border-stone-600/30"
+                    />
+                  ))
                 )}
               </div>
 
@@ -381,34 +405,21 @@ export default function CwfConversacionesPage() {
                     Usa &quot;Tomar control&quot; para pausar el bot y responder manualmente.
                   </p>
                 )}
-                <div className="flex gap-2">
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder={
-                      botPaused
-                        ? 'Escribe tu respuesta por WhatsApp...'
-                        : 'Toma control primero para responder...'
-                    }
-                    disabled={!botPaused || sending}
-                    rows={2}
-                    className="flex-1 resize-none rounded-xl px-4 py-3 bg-stone-900/80 border border-amber-900/40 text-stone-100 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-600 disabled:opacity-50 text-sm"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey && botPaused && replyText.trim()) {
-                        e.preventDefault();
-                        void sendReply();
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    disabled={!botPaused || sending || !replyText.trim()}
-                    onClick={() => void sendReply()}
-                    className="self-end px-4 py-3 rounded-xl bg-amber-700 hover:bg-amber-600 text-white disabled:opacity-40 transition"
-                  >
-                    <Send className="h-5 w-5" />
-                  </button>
-                </div>
+                <PanelReplyComposer
+                  replyText={replyText}
+                  onReplyTextChange={setReplyText}
+                  onSendText={sendReply}
+                  onSendFile={sendAttachment}
+                  disabled={!botPaused}
+                  sending={sending}
+                  placeholder={
+                    botPaused
+                      ? 'Escribe tu respuesta por WhatsApp...'
+                      : 'Toma control primero para responder...'
+                  }
+                  accentSendClass="bg-amber-700 hover:bg-amber-600"
+                  textareaClass="flex-1 resize-none rounded-xl px-4 py-3 bg-stone-900/80 border border-amber-900/40 text-stone-100 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-600 disabled:opacity-50 text-sm"
+                />
               </div>
             </>
           )}

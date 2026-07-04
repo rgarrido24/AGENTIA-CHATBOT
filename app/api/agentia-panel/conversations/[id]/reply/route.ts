@@ -9,11 +9,15 @@ import {
   getPanelConversationById,
   panelConversationPublicId,
 } from '@/lib/panel-conversations';
-import { sendWhatsAppCloudText } from '@/lib/whatsapp-cloud';
+import { serializePanelMessages } from '@/lib/panel-message-dto';
+import { parsePanelReplyRequest, sendPanelWhatsAppReply, buildAttachmentFromPayload } from '@/lib/panel-reply-route';
+import { sendWhatsAppCloudMedia, sendWhatsAppCloudText } from '@/lib/whatsapp-cloud';
 
 export const dynamic = 'force-dynamic';
 
 type RouteCtx = { params: Promise<{ id: string }> };
+
+const agentiaPhoneId = () => getAgentiaWhatsAppPhoneNumberId();
 
 export async function POST(req: NextRequest, ctx: RouteCtx) {
   if (!isDashboardAuthenticated(req)) {
@@ -21,10 +25,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
   }
 
   const { id } = await ctx.params;
-  const body = await req.json().catch(() => ({}));
-  const text = typeof body?.message === 'string' ? body.message.trim() : '';
-  if (!text) {
-    return NextResponse.json({ error: 'message requerido' }, { status: 400 });
+  const parsed = await parsePanelReplyRequest(req);
+  if ('error' in parsed) {
+    return NextResponse.json({ error: parsed.error }, { status: parsed.status });
   }
 
   const conv = await getPanelConversationById(AGENTIA_PANEL_CLIENT_ID, id);
@@ -32,20 +35,48 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     return NextResponse.json({ error: 'Conversación no encontrada' }, { status: 404 });
   }
 
+  let entry: {
+    role: 'agent';
+    content: string;
+    mediaType?: 'image' | 'document';
+    mediaUrl?: string;
+    fileName?: string;
+  };
+
   if (conv.channel === 'whatsapp') {
-    const sent = await sendWhatsAppCloudText({
-      to: conv.senderId,
-      bodyText: text,
-      phoneNumberId: getAgentiaWhatsAppPhoneNumberId(),
-    });
-    if (!sent.ok) {
-      return NextResponse.json(
-        { error: sent.error || 'No se pudo enviar por WhatsApp', status: sent.status },
-        { status: 502 }
-      );
+    const result = await sendPanelWhatsAppReply(
+      conv,
+      parsed,
+      {
+        sendText: (to, text) =>
+          sendWhatsAppCloudText({ to, bodyText: text, phoneNumberId: agentiaPhoneId() }),
+        sendMedia: (to, params) =>
+          sendWhatsAppCloudMedia({ to, ...params, phoneNumberId: agentiaPhoneId() }),
+      },
+      `panel-agentia/${conv.conversationId}`,
+    );
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error, status: result.status }, { status: result.status });
     }
+    entry = result.entry;
+  } else if (parsed.kind === 'attachment') {
+    const prepared = await buildAttachmentFromPayload(
+      parsed,
+      `panel-agentia/${conv.conversationId}`,
+    );
+    if (!prepared.ok) {
+      return NextResponse.json({ error: prepared.error }, { status: prepared.status });
+    }
+    entry = {
+      role: 'agent',
+      content: prepared.data.caption,
+      mediaType: prepared.data.mediaType,
+      mediaUrl: prepared.data.mediaUrl,
+      fileName: prepared.data.fileName,
+    };
+  } else {
+    entry = { role: 'agent', content: parsed.text };
   }
-  // facebook / instagram: persistir en panel; envío Graph API en fase siguiente
 
   await appendPanelMessages({
     clientId: AGENTIA_PANEL_CLIENT_ID,
@@ -54,7 +85,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     pageId: conv.pageId,
     platform: conv.platform,
     channel: conv.channel,
-    entries: [{ role: 'agent', content: text }],
+    entries: [entry],
   });
 
   const updated = await getPanelConversationById(AGENTIA_PANEL_CLIENT_ID, id);
@@ -63,11 +94,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     conversation: updated
       ? {
           id: panelConversationPublicId(updated),
-          messages: updated.messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-            at: m.at.toISOString(),
-          })),
+          messages: serializePanelMessages(updated),
           lastMessageAt: updated.lastMessageAt.toISOString(),
         }
       : null,

@@ -5,7 +5,9 @@ import {
   conversationPublicId,
   getCwfConversationById,
 } from '@/lib/cwf-conversations';
-import { sendCwfWhatsAppText } from '@/lib/cwf-whatsapp';
+import { serializePanelMessages } from '@/lib/panel-message-dto';
+import { parsePanelReplyRequest, sendPanelWhatsAppReply } from '@/lib/panel-reply-route';
+import { sendCwfWhatsAppMedia, sendCwfWhatsAppText } from '@/lib/cwf-whatsapp';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +19,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
   }
 
   const { id } = await ctx.params;
-  const body = await req.json().catch(() => ({}));
-  const text = typeof body?.message === 'string' ? body.message.trim() : '';
-  if (!text) {
-    return NextResponse.json({ error: 'message requerido' }, { status: 400 });
+  const parsed = await parsePanelReplyRequest(req);
+  if ('error' in parsed) {
+    return NextResponse.json({ error: parsed.error }, { status: parsed.status });
   }
 
   const conv = await getCwfConversationById(id);
@@ -28,12 +29,13 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     return NextResponse.json({ error: 'Conversación no encontrada' }, { status: 404 });
   }
 
-  const sent = await sendCwfWhatsAppText(conv.senderId, text);
-  if (!sent.ok) {
-    return NextResponse.json(
-      { error: sent.error || 'No se pudo enviar por WhatsApp', status: sent.status },
-      { status: 502 }
-    );
+  const result = await sendPanelWhatsAppReply(conv, parsed, {
+    sendText: sendCwfWhatsAppText,
+    sendMedia: sendCwfWhatsAppMedia,
+  }, `panel-cwf/${conv.conversationId}`);
+
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error, status: result.status }, { status: result.status });
   }
 
   await appendCwfMessages({
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     senderName: conv.senderName,
     pageId: conv.pageId,
     platform: conv.platform,
-    entries: [{ role: 'agent', content: text }],
+    entries: [result.entry],
   });
 
   const updated = await getCwfConversationById(id);
@@ -50,11 +52,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     conversation: updated
       ? {
           id: conversationPublicId(updated),
-          messages: updated.messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-            at: m.at.toISOString(),
-          })),
+          messages: serializePanelMessages(updated),
           lastMessageAt: updated.lastMessageAt.toISOString(),
         }
       : null,

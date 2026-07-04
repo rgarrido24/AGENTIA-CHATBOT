@@ -9,10 +9,15 @@ export const PANEL_CHANNELS: PanelChannel[] = ['whatsapp', 'facebook', 'instagra
 
 export type PanelMessageRole = 'user' | 'assistant' | 'agent';
 
+export type PanelMediaType = 'image' | 'document';
+
 export type PanelConversationMessage = {
   role: PanelMessageRole;
   content: string;
   at: Date;
+  mediaType?: PanelMediaType;
+  mediaUrl?: string;
+  fileName?: string;
 };
 
 export type PanelConversation = {
@@ -38,6 +43,9 @@ type RawMessage = {
   at?: Date | string;
   timestamp?: Date | string;
   createdAt?: Date | string;
+  mediaType?: string;
+  mediaUrl?: string;
+  fileName?: string;
 };
 
 type RawConversation = {
@@ -82,6 +90,12 @@ function normalizeRole(raw: unknown): PanelMessageRole {
   return 'assistant';
 }
 
+function normalizeMediaType(raw: unknown): PanelMediaType | undefined {
+  const t = String(raw || '').toLowerCase();
+  if (t === 'image' || t === 'document') return t;
+  return undefined;
+}
+
 function normalizeMessages(doc: RawConversation): PanelConversationMessage[] {
   const raw = Array.isArray(doc.messages) ? doc.messages : Array.isArray(doc.history) ? doc.history : [];
   return raw
@@ -89,8 +103,11 @@ function normalizeMessages(doc: RawConversation): PanelConversationMessage[] {
       role: normalizeRole(m.role),
       content: typeof m.content === 'string' ? m.content : '',
       at: parseDate(m.at ?? m.timestamp ?? m.createdAt),
+      mediaType: normalizeMediaType(m.mediaType),
+      mediaUrl: typeof m.mediaUrl === 'string' ? m.mediaUrl : undefined,
+      fileName: typeof m.fileName === 'string' ? m.fileName : undefined,
     }))
-    .filter((m) => m.content.trim());
+    .filter((m) => m.content.trim() || m.mediaUrl);
 }
 
 export function normalizePanelConversation(doc: RawConversation, defaultClientId: string): PanelConversation {
@@ -226,15 +243,24 @@ export async function appendPanelMessages(params: {
   pageId?: string;
   platform?: string;
   channel?: PanelChannel;
-  entries: Array<{ role: PanelMessageRole; content: string }>;
+  entries: Array<{
+    role: PanelMessageRole;
+    content: string;
+    mediaType?: PanelMediaType;
+    mediaUrl?: string;
+    fileName?: string;
+  }>;
 }): Promise<void> {
   const entries = params.entries
     .map((e) => ({
       role: e.role,
       content: e.content.trim(),
       at: new Date(),
+      ...(e.mediaType ? { mediaType: e.mediaType } : {}),
+      ...(e.mediaUrl ? { mediaUrl: e.mediaUrl } : {}),
+      ...(e.fileName ? { fileName: e.fileName } : {}),
     }))
-    .filter((e) => e.content);
+    .filter((e) => e.content || e.mediaUrl);
 
   if (!entries.length) return;
 
@@ -242,11 +268,14 @@ export async function appendPanelMessages(params: {
   const coll = await conversationsColl();
   const last = entries[entries.length - 1]!;
   const now = new Date();
+  const lastMessage =
+    last.content ||
+    (last.mediaType === 'image' ? '📷 Imagen' : `📎 ${last.fileName || 'Documento'}`);
 
   await coll.updateOne(filter, {
     $push: { messages: { $each: entries } },
     $set: {
-      lastMessage: last.content,
+      lastMessage,
       lastMessageAt: now,
       updatedAt: now,
       ...(params.senderName ? { senderName: params.senderName } : {}),
