@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isDashboardAuthenticated } from '@/lib/dashboard-auth';
 import { renderCotizacionPdf } from '@/lib/cotizacion-pdf';
-import { getCwfCotizacionByFolio } from '@/lib/cwf-cotizaciones';
+import { getCwfCotizacionByFolio } from '@/lib/cwf-cotizaciones-db';
 
 export const dynamic = 'force-dynamic';
 

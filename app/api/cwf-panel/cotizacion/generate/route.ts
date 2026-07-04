@@ -4,12 +4,14 @@ import { renderCotizacionPdf } from '@/lib/cotizacion-pdf';
 import {
   getNextCwfFolio,
   saveCwfCotizacion,
-  type CotizacionCliente,
-  type CotizacionColor,
-  type CotizacionEstado,
-  type CotizacionPresentacion,
-  type CotizacionProducto,
-  type CwfCotizacion,
+} from '@/lib/cwf-cotizaciones-db';
+import type {
+  CotizacionCliente,
+  CotizacionColor,
+  CotizacionEstado,
+  CotizacionPresentacion,
+  CotizacionProducto,
+  CwfCotizacion,
 } from '@/lib/cwf-cotizaciones';
 
 export const dynamic = 'force-dynamic';

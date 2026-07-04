@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isDashboardAuthenticated } from '@/lib/dashboard-auth';
-import { getNextCwfFolio, listCwfCotizaciones, peekNextCwfFolio } from '@/lib/cwf-cotizaciones';
+import { peekNextCwfFolio, listCwfCotizaciones } from '@/lib/cwf-cotizaciones-db';
 
 export const dynamic = 'force-dynamic';
 
