@@ -243,6 +243,8 @@ export async function appendPanelMessages(params: {
   pageId?: string;
   platform?: string;
   channel?: PanelChannel;
+  /** Evita push duplicado cuando el webhook Cloud API ya llamó sendPushNotification */
+  skipPushNotification?: boolean;
   entries: Array<{
     role: PanelMessageRole;
     content: string;
@@ -283,10 +285,10 @@ export async function appendPanelMessages(params: {
   });
 
   const userEntry = entries.find((e) => e.role === 'user');
-  if (userEntry) {
+  if (userEntry && !params.skipPushNotification) {
     void import('./panel-push')
-      .then(({ notifyPanelNewInbound }) =>
-        notifyPanelNewInbound({
+      .then(({ sendPushNotification }) =>
+        sendPushNotification({
           clientId: params.clientId,
           senderId: params.senderId,
           senderName: params.senderName,
@@ -304,6 +306,7 @@ export async function appendPanelConversationTurn(params: {
   pageId?: string;
   platform?: string;
   channel?: PanelChannel;
+  skipPushNotification?: boolean;
   userMessage: string;
   botReply: string;
 }): Promise<void> {
@@ -323,6 +326,7 @@ export async function recordPanelInboundWhilePaused(params: {
   pageId?: string;
   platform?: string;
   channel?: PanelChannel;
+  skipPushNotification?: boolean;
   message: string;
 }): Promise<void> {
   await appendPanelMessages({

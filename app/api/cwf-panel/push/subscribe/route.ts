@@ -16,6 +16,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Suscripción push inválida' }, { status: 400 });
   }
 
+  console.error('[cwf-panel/push/subscribe] Guardando suscripción push', {
+    endpoint: endpoint.slice(0, 48) + '…',
+    hasP256dh: Boolean(keys.p256dh),
+    hasAuth: Boolean(keys.auth),
+    userAgent: req.headers.get('user-agent')?.slice(0, 80) ?? null,
+  });
+
   await savePanelPushSubscription(
     'cwf',
     {
@@ -25,6 +32,8 @@ export async function POST(req: NextRequest) {
     },
     req.headers.get('user-agent') || undefined,
   );
+
+  console.error('[cwf-panel/push/subscribe] Suscripción guardada en MongoDB (panel_push_subscriptions)');
 
   return NextResponse.json({ ok: true });
 }

@@ -344,6 +344,7 @@ export async function handleChat(params: {
     if (isBotPaused(lead)) {
       console.log('[chat-handler] Kill switch LEAD activo - bot pausado para leadId:', leadId);
       if (usesPanelConversations(clientId) && senderId) {
+        const skipPushNotification = clientId === 'cwf' && pageId === 'whatsapp-cloud';
         void import('../../lib/panel-conversations')
           .then(({ recordPanelInboundWhilePaused, platformToChannel }) =>
             recordPanelInboundWhilePaused({
@@ -354,6 +355,7 @@ export async function handleChat(params: {
               platform,
               channel: platformToChannel(platform),
               message: effectiveMessage,
+              skipPushNotification,
             })
           )
           .catch(() => {});
@@ -811,6 +813,7 @@ El usuario acaba de enviar una imagen o documento. DEBES:
     }
 
     if (usesPanelConversations(clientId) && senderId) {
+      const skipPushNotification = clientId === 'cwf' && pageId === 'whatsapp-cloud';
       void import('../../lib/panel-conversations')
         .then(({ appendPanelConversationTurn, platformToChannel }) =>
           appendPanelConversationTurn({
@@ -822,6 +825,7 @@ El usuario acaba de enviar una imagen o documento. DEBES:
             channel: platformToChannel(platform),
             userMessage,
             botReply: finalReply,
+            skipPushNotification,
           })
         )
         .catch(() => {});

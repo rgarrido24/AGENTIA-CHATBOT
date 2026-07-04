@@ -34,6 +34,11 @@ function panelConfig(panel: PanelPushId) {
   return panel === 'cwf' ? CWF_PANEL_PWA : AGENTIA_PANEL_PWA;
 }
 
+function maskKey(key: string): string {
+  if (key.length <= 12) return '(corta)';
+  return `${key.slice(0, 8)}…${key.slice(-4)}`;
+}
+
 function getVapidKeys(): { publicKey: string; privateKey: string; subject: string } | null {
   const publicKey = (
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
@@ -42,14 +47,31 @@ function getVapidKeys(): { publicKey: string; privateKey: string; subject: strin
   ).trim();
   const privateKey = (process.env.VAPID_PRIVATE_KEY || '').trim();
   const subject = (process.env.VAPID_SUBJECT || 'mailto:admin@agentia.software').trim();
+
+  console.error('[panel-push] VAPID env', {
+    publicKey: publicKey ? maskKey(publicKey) : '(vacío)',
+    publicKeySource: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      ? 'NEXT_PUBLIC_VAPID_PUBLIC_KEY'
+      : process.env.VAPID_PUBLIC_KEY
+        ? 'VAPID_PUBLIC_KEY'
+        : 'ninguna',
+    privateKey: privateKey ? `SET (${privateKey.length} chars)` : '(vacío)',
+    subject,
+    ok: Boolean(publicKey && privateKey),
+  });
+
   if (!publicKey || !privateKey) return null;
   return { publicKey, privateKey, subject };
 }
 
 function configureWebPush() {
   const keys = getVapidKeys();
-  if (!keys) return false;
+  if (!keys) {
+    console.error('[panel-push] configureWebPush: claves VAPID incompletas — push deshabilitado');
+    return false;
+  }
   webpush.setVapidDetails(keys.subject, keys.publicKey, keys.privateKey);
+  console.error('[panel-push] configureWebPush: VAPID configurado correctamente');
   return true;
 }
 
@@ -64,7 +86,7 @@ export async function savePanelPushSubscription(
 ): Promise<void> {
   const db = await getMongoDb();
   const now = new Date();
-  await db.collection('panel_push_subscriptions').updateOne(
+  const result = await db.collection('panel_push_subscriptions').updateOne(
     { endpoint: subscription.endpoint },
     {
       $set: {
@@ -79,6 +101,15 @@ export async function savePanelPushSubscription(
     },
     { upsert: true },
   );
+
+  console.error('[panel-push] Suscripción guardada en MongoDB', {
+    panel,
+    endpoint: maskKey(subscription.endpoint),
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount,
+    upsertedId: result.upsertedId?.toString() ?? null,
+    collection: 'panel_push_subscriptions',
+  });
 }
 
 export async function removePanelPushSubscription(endpoint: string): Promise<void> {
@@ -101,14 +132,25 @@ async function listPanelPushSubscriptions(panel: PanelPushId): Promise<PushSubsc
 }
 
 /** Envía notificación push a todos los dispositivos suscritos del panel. */
-export async function notifyPanelNewInbound(params: {
+export async function sendPushNotification(params: {
   clientId: string;
   senderName?: string;
   senderId: string;
   message: string;
 }): Promise<void> {
+  console.error('[panel-push] sendPushNotification() llamado', {
+    clientId: params.clientId,
+    senderId: params.senderId,
+    senderName: params.senderName ?? null,
+    messagePreview: params.message.trim().slice(0, 80),
+    at: new Date().toISOString(),
+  });
+
   const panel = clientIdToPanel(params.clientId);
-  if (!panel) return;
+  if (!panel) {
+    console.error('[panel-push] sendPushNotification: clientId sin panel PWA', params.clientId);
+    return;
+  }
   if (!configureWebPush()) return;
 
   const cfg = panelConfig(panel);
@@ -123,10 +165,17 @@ export async function notifyPanelNewInbound(params: {
   };
 
   const subs = await listPanelPushSubscriptions(panel);
-  if (!subs.length) return;
+  console.error('[panel-push] sendPushNotification: suscriptores', {
+    panel,
+    count: subs.length,
+  });
+  if (!subs.length) {
+    console.error('[panel-push] sendPushNotification: sin suscriptores — no se envía push');
+    return;
+  }
 
   const json = JSON.stringify(payload);
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     subs.map(async (sub) => {
       try {
         await webpush.sendNotification(
@@ -136,15 +185,39 @@ export async function notifyPanelNewInbound(params: {
           },
           json,
         );
+        console.error('[panel-push] sendPushNotification: enviado OK', {
+          panel,
+          endpoint: maskKey(sub.endpoint),
+        });
       } catch (err: unknown) {
         const status = (err as { statusCode?: number })?.statusCode;
+        console.error('[panel-push] sendPushNotification: error al enviar', {
+          panel,
+          endpoint: maskKey(sub.endpoint),
+          statusCode: status ?? null,
+          message: err instanceof Error ? err.message : String(err),
+        });
         if (status === 404 || status === 410) {
           await removePanelPushSubscription(sub.endpoint);
+          console.error('[panel-push] sendPushNotification: suscripción expirada eliminada', {
+            endpoint: maskKey(sub.endpoint),
+          });
         }
       }
     }),
   );
+
+  const ok = results.filter((r) => r.status === 'fulfilled').length;
+  console.error('[panel-push] sendPushNotification: resumen', {
+    panel,
+    total: subs.length,
+    ok,
+    failed: subs.length - ok,
+  });
 }
+
+/** @deprecated Usar sendPushNotification */
+export const notifyPanelNewInbound = sendPushNotification;
 
 export function getVapidPublicKey(): string | null {
   return getVapidKeys()?.publicKey ?? null;

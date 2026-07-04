@@ -6,6 +6,7 @@ import {
   AGENTIA_PANEL_CLIENT_ID,
   getAgentiaWhatsAppPhoneNumberId,
 } from '@/lib/agentia-panel';
+import { sendPushNotification } from '@/lib/panel-push';
 
 function resolveChatBaseUrl(): string {
   return (
@@ -168,6 +169,25 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
       senderName: parsed.from,
       mensaje: parsed.text,
       pageId: tenant.pageId,
+    });
+  }
+
+  if (tenant.clientId === 'cwf') {
+    console.error('[webhook/whatsapp] CWF mensaje entrante → sendPushNotification()', {
+      from: parsed.from,
+      messageId: parsed.messageId,
+      preview: parsed.text.slice(0, 80),
+    });
+    void sendPushNotification({
+      clientId: 'cwf',
+      senderId: parsed.from,
+      senderName: parsed.from,
+      message: parsed.text,
+    }).catch((err) => {
+      console.error(
+        '[webhook/whatsapp] sendPushNotification CWF falló:',
+        err instanceof Error ? err.message : err,
+      );
     });
   }
 
