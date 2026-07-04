@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
+import { PanelPwaProvider } from '@/components/panel/PanelPwaProvider';
+import { AGENTIA_PANEL_PWA } from '@/lib/panel-pwa-config';
 
 const DASHBOARD_COOKIE_NAME = 'dashboard_auth';
 const ADMIN_COOKIE_NAME = 'admin_auth';
@@ -35,5 +37,13 @@ export default async function AgentiaAuthGuard({
   ) {
     redirect('/agentia-panel/login');
   }
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <PanelPwaProvider
+        config={AGENTIA_PANEL_PWA}
+        vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+      />
+    </>
+  );
 }

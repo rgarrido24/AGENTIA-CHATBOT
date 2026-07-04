@@ -74,7 +74,7 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
   },
   experimental: {
-    serverComponentsExternalPackages: ['mongodb', 'qrcode', 'pdf-parse', 'ai', '@ai-sdk/google'],
+    serverComponentsExternalPackages: ['mongodb', 'qrcode', 'pdf-parse', 'ai', '@ai-sdk/google', 'web-push'],
   },
   transpilePackages: ['lucide-react'],
 
@@ -153,6 +153,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https:",
               "connect-src 'self' https://generativelanguage.googleapis.com",
+              "worker-src 'self'",
               "font-src 'self' data: https://fonts.gstatic.com",
               "frame-ancestors 'none'",
               "object-src 'none'",

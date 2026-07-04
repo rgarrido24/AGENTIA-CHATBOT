@@ -281,6 +281,20 @@ export async function appendPanelMessages(params: {
       ...(params.senderName ? { senderName: params.senderName } : {}),
     },
   });
+
+  const userEntry = entries.find((e) => e.role === 'user');
+  if (userEntry) {
+    void import('./panel-push')
+      .then(({ notifyPanelNewInbound }) =>
+        notifyPanelNewInbound({
+          clientId: params.clientId,
+          senderId: params.senderId,
+          senderName: params.senderName,
+          message: userEntry.content || lastMessage,
+        }),
+      )
+      .catch(() => {});
+  }
 }
 
 export async function appendPanelConversationTurn(params: {

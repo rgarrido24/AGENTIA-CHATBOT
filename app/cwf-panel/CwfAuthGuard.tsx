@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
+import { PanelPwaProvider } from '@/components/panel/PanelPwaProvider';
+import { CWF_PANEL_PWA } from '@/lib/panel-pwa-config';
 
 const DASHBOARD_COOKIE_NAME = 'dashboard_auth';
 const ADMIN_COOKIE_NAME = 'admin_auth';
@@ -34,5 +36,13 @@ export default async function CwfAuthGuard({
   if (dashboardToken !== expectedDashboardToken && adminToken !== expectedAdminToken) {
     redirect('/cwf-panel/login');
   }
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <PanelPwaProvider
+        config={CWF_PANEL_PWA}
+        vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+      />
+    </>
+  );
 }

@@ -1,0 +1,33 @@
+{
+  "name": "CWF México — Panel",
+  "short_name": "CWF Panel",
+  "description": "Conversaciones WhatsApp y cotizaciones Flood CWF México",
+  "start_url": "/cwf-panel/conversaciones",
+  "scope": "/cwf-panel/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1a1208",
+  "theme_color": "#1a1208",
+  "lang": "es-MX",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/pwa/cwf/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/cwf/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/cwf/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
