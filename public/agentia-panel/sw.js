@@ -27,7 +27,10 @@ self.addEventListener('push', (event) => {
       body: payload.body,
       icon: payload.icon || '/pwa/agentia/icon-192.png',
       badge: '/pwa/agentia/icon-192.png',
-      tag: payload.tag || 'agentia-panel-message',
+      vibrate: [200, 100, 200, 100, 200],
+      sound: '/notification.mp3',
+      requireInteraction: true,
+      tag: payload.tag || 'nuevo-mensaje',
       data: { url: payload.url || '/agentia-panel/conversaciones' },
     }),
   );

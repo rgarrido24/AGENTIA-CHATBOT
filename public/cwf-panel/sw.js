@@ -22,7 +22,10 @@ self.addEventListener('push', (event) => {
       body: payload.body,
       icon: payload.icon || '/pwa/cwf/icon-192.png',
       badge: '/pwa/cwf/icon-192.png',
-      tag: payload.tag || 'cwf-panel-message',
+      vibrate: [200, 100, 200, 100, 200],
+      sound: '/notification.mp3',
+      requireInteraction: true,
+      tag: payload.tag || 'nuevo-mensaje',
       data: { url: payload.url || '/cwf-panel/conversaciones' },
     }),
   );
