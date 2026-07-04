@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { CwfPanelShell } from './CwfPanelShell';
 
 export const metadata: Metadata = {
   title: 'CWF Panel',
@@ -24,5 +25,10 @@ export default function CwfPanelRootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      <CwfPanelShell />
+      {children}
+    </>
+  );
 }
