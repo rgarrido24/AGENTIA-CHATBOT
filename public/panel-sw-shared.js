@@ -58,7 +58,7 @@ function handlePanelPush(registration, payload, defaults) {
   };
 
   if (cachedPrefs.vibration) {
-    options.vibrate = [200, 100, 200];
+    options.vibrate = [300, 100, 300, 100, 300];
   }
   if (cachedPrefs.sound) {
     options.sound = cachedPrefs.soundUrl || '/notification.mp3';
