@@ -224,6 +224,26 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/tracking-panel/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https:",
+              "connect-src 'self' https://generativelanguage.googleapis.com https://maps.googleapis.com",
+              "worker-src 'self'",
+              "font-src 'self' data: https://fonts.gstatic.com",
+              "frame-ancestors 'none'",
+              "object-src 'none'",
+              "base-uri 'self'",
+            ].join('; '),
+          },
+        ],
+      },
     ];
   },
 };
