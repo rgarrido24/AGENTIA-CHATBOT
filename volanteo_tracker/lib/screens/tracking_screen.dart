@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/location_service.dart';
+import 'login_screen.dart';
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
@@ -78,10 +79,51 @@ class _TrackingScreenState extends State<TrackingScreen> {
     });
   }
 
+  Future<void> _cerrarSesion() async {
+    if (_jornadaActiva) {
+      final confirmar = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Cerrar sesión"),
+          content: const Text(
+            "Tienes una jornada activa, ¿seguro que quieres cerrar sesión?",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Cerrar sesión"),
+            ),
+          ],
+        ),
+      );
+      if (confirmar != true) return;
+    }
+
+    await AuthService().logout();
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Hola, ${_userName ?? ''}")),
+      appBar: AppBar(
+        title: Text("Hola, ${_userName ?? ''}"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: "Cerrar Sesión",
+            onPressed: _cerrarSesion,
+          ),
+        ],
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
