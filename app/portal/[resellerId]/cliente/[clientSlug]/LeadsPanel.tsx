@@ -29,6 +29,7 @@ type Lead = {
   id:                 string;
   nombre:             string;
   telefono:           string;
+  whatsapp?:          string;
   email:              string;
   campana:            string;
   adset:              string;
@@ -326,6 +327,66 @@ function normalizePhoneForWa(tel: string): string {
   return d;
 }
 
+function isNonEmptyPhone(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function formFieldValue(ff: Record<string, string>, key: string): string | undefined {
+  const direct = ff[key];
+  if (isNonEmptyPhone(direct)) return direct.trim();
+  const target = key.toLowerCase();
+  for (const [k, v] of Object.entries(ff)) {
+    if (k.toLowerCase() === target && isNonEmptyPhone(v)) return v.trim();
+  }
+  return undefined;
+}
+
+/** Detecta números argentinos (+54 / 54) en texto libre. */
+function looksLikeArgentinePhone(text: string): boolean {
+  const t = text.trim();
+  if (!t) return false;
+  if (/\+54\b|\b54[\s\-(]?\d/.test(t)) return true;
+  const d = t.replace(/\D/g, '');
+  if (d.startsWith('549') && d.length >= 12) return true;
+  if (d.startsWith('54') && d.length >= 11) return true;
+  if (d.startsWith('0') && d.length === 11) return true;
+  if (d.length === 10 && /^[1-9]/.test(d)) return true;
+  return false;
+}
+
+/**
+ * Resuelve el teléfono para WhatsApp en este orden:
+ * 1. telefono  2. whatsapp  3. form_fields.whatsapp_number
+ * 4. form_fields["WHATSAPP NUMBER"]  5. cualquier form_field con número AR (+54/54)
+ */
+function resolveLeadWhatsAppPhone(lead: Pick<Lead, 'telefono' | 'whatsapp' | 'form_fields'>): string {
+  const ff = lead.form_fields || {};
+
+  const ordered: (string | undefined)[] = [
+    lead.telefono,
+    lead.whatsapp,
+    formFieldValue(ff, 'whatsapp_number'),
+    formFieldValue(ff, 'WHATSAPP NUMBER'),
+  ];
+
+  for (const candidate of ordered) {
+    if (isNonEmptyPhone(candidate)) {
+      const normalized = normalizePhoneForWa(candidate);
+      if (normalized) return normalized;
+    }
+  }
+
+  for (const value of Object.values(ff)) {
+    if (!isNonEmptyPhone(value)) continue;
+    if (looksLikeArgentinePhone(value)) {
+      const normalized = normalizePhoneForWa(value);
+      if (normalized) return normalized;
+    }
+  }
+
+  return '';
+}
+
 function formatPhone(tel: string) {
   const d = normalizePhoneForWa(String(tel ?? ''));
   if (!d) return tel || '—';
@@ -387,7 +448,7 @@ function LeadCard({
 }) {
   const ui = useContext(LeadUiContext);
   const cfg = ui.statusSeg[lead.status_seguimiento];
-  const telefono = String(lead.telefono ?? '').trim();
+  const telefono = resolveLeadWhatsAppPhone(lead);
   return (
     <button
       type="button"
@@ -556,7 +617,7 @@ function LeadDetail({
     return rows;
   }, [ff]);
 
-  const telefono = String(lead.telefono ?? '').trim();
+  const telefono = resolveLeadWhatsAppPhone(lead);
 
   const detailRows: [string, string][] = [
     ['NOMBRE',   lead.nombre || '—'],
@@ -787,7 +848,7 @@ function LeadDetail({
         </div>
       </div>
 
-      {/* WhatsApp CTA — sticky bottom (MongoDB: campo `telefono`) */}
+      {/* WhatsApp CTA — sticky bottom */}
       {telefono && (
         <div className="border-t p-4" style={{ borderColor: ui.waBarBorder }}>
           <a
