@@ -47,6 +47,43 @@ export function usesClientPanelStore(clientId: string): boolean {
   return clientId.trim().toLowerCase() === 'biovela';
 }
 
+async function upsertClientPanelConversationMeta(params: {
+  clientId: string;
+  phone: string;
+  contactName?: string;
+}): Promise<{ clientId: string; phone: string } | null> {
+  const clientId = params.clientId.trim().toLowerCase();
+  const phone = normalizePhone(params.phone);
+  if (!phone) return null;
+
+  const db = await getMongoDb();
+  const col = db.collection<PanelConversation>(COLLECTION);
+  const now = new Date();
+
+  await col.updateOne(
+    { clientId, phone },
+    {
+      $setOnInsert: {
+        clientId,
+        phone,
+        stage: 'pregunton',
+        tags: [],
+        notes: '',
+        humanMode: false,
+        unreadCount: 0,
+        createdAt: now,
+      },
+      $set: {
+        updatedAt: now,
+        ...(params.contactName?.trim() ? { contactName: params.contactName.trim() } : {}),
+      },
+    },
+    { upsert: true }
+  );
+
+  return { clientId, phone };
+}
+
 export async function recordClientPanelInbound(params: {
   clientId: string;
   phone: string;
@@ -57,6 +94,13 @@ export async function recordClientPanelInbound(params: {
   const phone = normalizePhone(params.phone);
   const content = params.message.trim();
   if (!phone || !content) return;
+
+  const key = await upsertClientPanelConversationMeta({
+    clientId,
+    phone,
+    contactName: params.contactName,
+  });
+  if (!key) return;
 
   const db = await getMongoDb();
   const col = db.collection<PanelConversation>(COLLECTION);
@@ -69,27 +113,12 @@ export async function recordClientPanelInbound(params: {
   };
 
   await col.updateOne(
-    { clientId, phone },
+    { clientId: key.clientId, phone: key.phone },
     {
-      $setOnInsert: {
-        clientId,
-        phone,
-        stage: 'pregunton',
-        tags: [],
-        notes: '',
-        humanMode: false,
-        messages: [],
-        unreadCount: 0,
-        createdAt: now,
-      },
-      $set: {
-        updatedAt: now,
-        ...(params.contactName?.trim() ? { contactName: params.contactName.trim() } : {}),
-      },
       $push: { messages: msg },
+      $set: { updatedAt: now },
       $inc: { unreadCount: 1 },
-    },
-    { upsert: true }
+    }
   );
 }
 
@@ -105,6 +134,13 @@ export async function appendClientPanelBotReply(params: {
   const content = params.reply.trim();
   if (!phone || !content) return;
 
+  const key = await upsertClientPanelConversationMeta({
+    clientId,
+    phone,
+    contactName: params.contactName,
+  });
+  if (!key) return;
+
   const db = await getMongoDb();
   const col = db.collection<PanelConversation>(COLLECTION);
   const now = new Date();
@@ -117,26 +153,11 @@ export async function appendClientPanelBotReply(params: {
   };
 
   await col.updateOne(
-    { clientId, phone },
+    { clientId: key.clientId, phone: key.phone },
     {
-      $setOnInsert: {
-        clientId,
-        phone,
-        stage: 'pregunton',
-        tags: [],
-        notes: '',
-        humanMode: false,
-        messages: [],
-        unreadCount: 0,
-        createdAt: now,
-      },
-      $set: {
-        updatedAt: now,
-        ...(params.contactName?.trim() ? { contactName: params.contactName.trim() } : {}),
-      },
       $push: { messages: msg },
-    },
-    { upsert: true }
+      $set: { updatedAt: now },
+    }
   );
 }
 
