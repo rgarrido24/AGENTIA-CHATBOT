@@ -79,6 +79,16 @@ export async function createBiovelaPickupEvent(params: {
   start: Date;
   end: Date;
 }): Promise<{ id: string; htmlLink?: string | null }> {
+  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL?.trim();
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.trim() ?? '';
+  const calendarId = process.env.GOOGLE_CALENDAR_ID?.trim();
+
+  console.log('[google-calendar] createPickupEvent creds check:', {
+    GOOGLE_CLIENT_EMAIL: Boolean(clientEmail),
+    GOOGLE_PRIVATE_KEY_gt_100_chars: privateKey.length > 100,
+    GOOGLE_CALENDAR_ID: Boolean(calendarId),
+  });
+
   return createCalendarEvent({
     title: `Cita recolección - ${params.customerName} - ${params.whatsapp}`,
     description: params.products,
