@@ -17,6 +17,10 @@ const BV = {
 const WA_PHONE = '525534489552';
 const WA_CATALOG =
   'https://wa.me/525534489552?text=Hola!%20Vi%20su%20cat%C3%A1logo%20y%20me%20gustar%C3%ADa%20m%C3%A1s%20informaci%C3%B3n';
+const STORE_URL = 'https://biovela2.mitiendanube.com';
+const COURSE_WA_URL =
+  'https://wa.me/525534489552?text=Hola!%20Quiero%20informes%20sobre%20el%20curso%20de%20Jab%C3%B3n%20Artesanal%20y%20Velas%20de%20Soya';
+const SAGE = '#4A5E4A';
 
 const FILTERS = [
   { id: 'Todos', label: 'Todos' },
@@ -235,8 +239,44 @@ function ProductCard({ product, index }: { product: CatalogProduct; index: numbe
         <p style={{ fontSize: 18, fontWeight: 400, color: BV.gold }}>
           ${product.price} MXN
         </p>
+        <a
+          href={STORE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-block text-xs font-medium transition hover:opacity-80"
+          style={{ color: BV.muted, letterSpacing: '0.04em' }}
+        >
+          Comprar en tienda
+        </a>
       </div>
     </Reveal>
+  );
+}
+
+function CourseImage() {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div
+        className="flex aspect-[4/3] w-full items-center justify-center text-5xl md:aspect-auto md:min-h-[320px]"
+        style={{ background: SAGE, borderRadius: 12 }}
+        aria-hidden
+      >
+        🕯
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/logos/biovela-curso.jpeg"
+      alt="Curso de Jabón Artesanal y Velas de Soya para Masaje"
+      className="aspect-[4/3] w-full object-cover md:aspect-auto md:min-h-[320px]"
+      style={{ borderRadius: 12 }}
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -343,29 +383,40 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
           >
             Insumos artesanales para hacer velas · Iztacalco, CDMX
           </p>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={scrollToCatalog}
-              className="px-8 py-3 text-sm font-medium text-white transition hover:bg-white/10"
-              style={{
-                border: '1px solid #fff',
-                background: 'transparent',
-                borderRadius: 50,
-                letterSpacing: '0.04em',
-              }}
-            >
-              Ver catálogo
-            </button>
+          <div className="mt-2 flex flex-col items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={scrollToCatalog}
+                className="px-8 py-3 text-sm font-medium text-white transition hover:bg-white/10"
+                style={{
+                  border: '1px solid #fff',
+                  background: 'transparent',
+                  borderRadius: 50,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                Ver catálogo
+              </button>
+              <a
+                href={WA_CATALOG}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-3 text-sm font-medium text-white transition hover:opacity-90"
+                style={{ background: BV.wa, borderRadius: 50 }}
+              >
+                <WhatsAppIcon className="h-4 w-4" />
+                Escribir por WhatsApp
+              </a>
+            </div>
             <a
-              href={WA_CATALOG}
+              href={STORE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-8 py-3 text-sm font-medium text-white transition hover:opacity-90"
-              style={{ background: BV.wa, borderRadius: 50 }}
+              className="text-sm font-medium transition hover:opacity-80"
+              style={{ color: BV.gold, background: 'transparent', letterSpacing: '0.04em' }}
             >
-              <WhatsAppIcon className="h-4 w-4" />
-              Escribir por WhatsApp
+              Ver tienda completa →
             </a>
           </div>
           <div
@@ -479,6 +530,62 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
           )}
         </div>
       </main>
+
+      {/* Curso */}
+      <section style={{ background: BV.dark }}>
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-8 py-16 md:grid-cols-2 md:gap-12 md:py-20">
+          <Reveal animation="fade-left">
+            <CourseImage />
+          </Reveal>
+          <Reveal animation="fade-up" delay={80} className="flex flex-col gap-5 text-white">
+            <span
+              className="self-start uppercase"
+              style={{ color: BV.gold, fontSize: 11, letterSpacing: '0.1em', fontWeight: 600 }}
+            >
+              Próximamente
+            </span>
+            <h2
+              style={{
+                fontFamily: SERIF,
+                fontSize: 'clamp(1.4rem, 3vw, 2rem)',
+                fontWeight: 400,
+                color: '#fff',
+                lineHeight: 1.3,
+              }}
+            >
+              Curso de Jabón Artesanal y Velas de Soya para Masaje
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.05rem', lineHeight: 1.7 }}>
+              Aprende, crea y transforma tu pasión en bienestar
+            </p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                { icon: '💰', text: 'Inversión: $950 por alumno' },
+                { icon: '👥', text: 'Cupo mínimo: 5 alumnos' },
+                { icon: '📦', text: 'Incluye todo el material' },
+              ].map(({ icon, text }) => (
+                <div key={text} className="flex flex-col gap-2">
+                  <span className="text-xl" aria-hidden>
+                    {icon}
+                  </span>
+                  <p className="text-sm leading-snug" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                    {text}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <a
+              href={COURSE_WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex w-fit items-center justify-center px-8 py-3 text-sm font-medium text-white transition hover:opacity-90"
+              style={{ background: BV.gold, borderRadius: 50 }}
+            >
+              Apartar mi lugar por WhatsApp
+            </a>
+          </Reveal>
+        </div>
+      </section>
 
       {/* Values */}
       <section style={{ background: BV.warm }}>
