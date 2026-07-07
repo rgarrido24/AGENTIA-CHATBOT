@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getMongoDb } from '@/lib/mongodb';
+import { notifyPortalNewLead } from '@/lib/portal-push';
 
 const DEFAULT_PUBLIC_ORIGIN = 'https://agentia.software';
 
@@ -493,6 +494,16 @@ async function processZapierLead(data: Record<string, unknown>) {
     lead_id_meta || leadId,
   ].join('|');
   await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
+
+  if (resellerMatch?.resellerId && resellerMatch?.clientSlug) {
+    void notifyPortalNewLead({
+      resellerId: resellerMatch.resellerId,
+      clientSlug: resellerMatch.clientSlug,
+      nombre: full_name,
+      telefono: phone,
+      leadId,
+    });
+  }
 }
 
 // ─── Formato Meta nativo (entry.changes[].field === 'leadgen') ────────────────
@@ -612,6 +623,16 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
         leadgen_id || senderId,
       ].join('|');
       await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
+
+      if (result.upsertedCount > 0 && resellerMatch?.resellerId && resellerMatch?.clientSlug) {
+        void notifyPortalNewLead({
+          resellerId: resellerMatch.resellerId,
+          clientSlug: resellerMatch.clientSlug,
+          nombre: full_name,
+          telefono: phone,
+          leadId,
+        });
+      }
 
       console.log(`[fb-leads/meta] Lead guardado: ${leadId} | campaña: ${campaign_name}`);
     }

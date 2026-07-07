@@ -45,6 +45,9 @@ export interface ResellerClient {
   alertNumber?:        string;
   clientPasswordHash?: string;
   status:              'activo' | 'suspendido';
+  /** Habilita PWA + push para asesoras de este cliente (default: false). */
+  pwa_enabled?:        boolean;
+  pwaBadgeCount?:      number;
   legacyQuery?:        Record<string, unknown>;
   createdAt:           Date;
 }

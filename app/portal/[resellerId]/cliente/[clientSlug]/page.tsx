@@ -11,6 +11,7 @@ import {
 } from '@/lib/portal-luciano-ui';
 import { LeadsPanel } from './LeadsPanel';
 import ClientLogin from './ClientLogin';
+import { PwaProvider } from './PwaProvider';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +76,13 @@ export async function generateMetadata({
       metadataBase,
       title,
       description: desc,
+      manifest: `/portal/${params.resellerId}/cliente/${params.clientSlug}/manifest.webmanifest`,
+      themeColor: '#0a0f1a',
+      appleWebApp: {
+        capable: true,
+        title: 'Mis Leads',
+        statusBarStyle: 'black-translucent',
+      },
       openGraph: {
         title: ogTitle,
         description: desc,
@@ -115,9 +123,27 @@ export default async function ClientPage({
       return <ClientSuspendedNotice />;
     }
     if (reseller) {
-      return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} allowLeadDelete />;
+      return (
+        <>
+          <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} allowLeadDelete />
+          <PwaProvider
+            resellerId={resellerId}
+            clientSlug={clientSlug}
+            vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+          />
+        </>
+      );
     }
-    return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} />;
+    return (
+      <>
+        <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} />
+        <PwaProvider
+          resellerId={resellerId}
+          clientSlug={clientSlug}
+          vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+        />
+      </>
+    );
   }
 
   // Not authenticated → show login
