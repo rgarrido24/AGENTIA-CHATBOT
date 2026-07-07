@@ -15,6 +15,11 @@ import { upsertLead, getLeadById, makeLeadIdFromParams, isBotPaused, updateLeadD
 import { getBotGlobalPaused } from '../lib/bot-settings';
 import { usesPanelConversations } from '../../lib/panel-conversations';
 import {
+  usesClientPanelStore,
+  recordClientPanelInbound,
+  appendClientPanelConversationTurn,
+} from '../../lib/client-panel-store';
+import {
   createAlertIfUrgent,
   createAlertForSaleClosed,
   createAlertForCPValidation,
@@ -337,6 +342,14 @@ export async function handleChat(params: {
   const globalPaused = await getBotGlobalPaused(clientId);
   if (globalPaused) {
     console.log('[chat-handler] Kill switch GLOBAL activo - bot pausado para clientId:', clientId);
+    if (usesClientPanelStore(clientId) && senderId && effectiveMessage) {
+      void recordClientPanelInbound({
+        clientId,
+        phone: senderId,
+        contactName: senderName,
+        message: effectiveMessage,
+      }).catch(() => {});
+    }
     return { status: 200, json: { clientId, reply: '', botPaused: true } };
   }
   if (leadId) {
@@ -359,6 +372,14 @@ export async function handleChat(params: {
             })
           )
           .catch(() => {});
+      }
+      if (usesClientPanelStore(clientId) && senderId && effectiveMessage) {
+        void recordClientPanelInbound({
+          clientId,
+          phone: senderId,
+          contactName: senderName,
+          message: effectiveMessage,
+        }).catch(() => {});
       }
       return { status: 200, json: { clientId, reply: '', botPaused: true } };
     }
@@ -410,6 +431,15 @@ export async function handleChat(params: {
         platform,
       });
       if (pickup.handled && pickup.reply) {
+        if (usesClientPanelStore(clientId)) {
+          void appendClientPanelConversationTurn({
+            clientId,
+            phone: senderId,
+            contactName: senderName,
+            userMessage,
+            botReply: pickup.reply,
+          }).catch(() => {});
+        }
         return { status: 200, json: { clientId, reply: pickup.reply } };
       }
     } catch (pickupErr) {
@@ -829,6 +859,16 @@ El usuario acaba de enviar una imagen o documento. DEBES:
           })
         )
         .catch(() => {});
+    }
+
+    if (usesClientPanelStore(clientId) && senderId) {
+      void appendClientPanelConversationTurn({
+        clientId,
+        phone: senderId,
+        contactName: senderName,
+        userMessage: effectiveMessage,
+        botReply: finalReply,
+      }).catch(() => {});
     }
 
     const inputTokensEstimated =

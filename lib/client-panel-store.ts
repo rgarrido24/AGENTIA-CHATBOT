@@ -42,6 +42,129 @@ function normalizePhone(phone: string): string {
   return String(phone || '').replace(/\D/g, '');
 }
 
+/** Clientes cuyo panel CRM usa la colección `conversations` (schema phone/contactName/stage). */
+export function usesClientPanelStore(clientId: string): boolean {
+  return clientId.trim().toLowerCase() === 'biovela';
+}
+
+export async function recordClientPanelInbound(params: {
+  clientId: string;
+  phone: string;
+  contactName?: string;
+  message: string;
+}): Promise<void> {
+  const clientId = params.clientId.trim().toLowerCase();
+  const phone = normalizePhone(params.phone);
+  const content = params.message.trim();
+  if (!phone || !content) return;
+
+  const db = await getMongoDb();
+  const col = db.collection<PanelConversation>(COLLECTION);
+  const now = new Date();
+  const msg: PanelMessage = {
+    id: new ObjectId().toHexString(),
+    role: 'user',
+    content,
+    createdAt: now,
+  };
+
+  await col.updateOne(
+    { clientId, phone },
+    {
+      $setOnInsert: {
+        clientId,
+        phone,
+        stage: 'pregunton',
+        tags: [],
+        notes: '',
+        humanMode: false,
+        messages: [],
+        unreadCount: 0,
+        createdAt: now,
+      },
+      $set: {
+        updatedAt: now,
+        ...(params.contactName?.trim() ? { contactName: params.contactName.trim() } : {}),
+      },
+      $push: { messages: msg },
+      $inc: { unreadCount: 1 },
+    },
+    { upsert: true }
+  );
+}
+
+export async function appendClientPanelBotReply(params: {
+  clientId: string;
+  phone: string;
+  contactName?: string;
+  reply: string;
+  productCard?: ProductCard;
+}): Promise<void> {
+  const clientId = params.clientId.trim().toLowerCase();
+  const phone = normalizePhone(params.phone);
+  const content = params.reply.trim();
+  if (!phone || !content) return;
+
+  const db = await getMongoDb();
+  const col = db.collection<PanelConversation>(COLLECTION);
+  const now = new Date();
+  const msg: PanelMessage = {
+    id: new ObjectId().toHexString(),
+    role: 'bot',
+    content,
+    createdAt: now,
+    ...(params.productCard ? { productCard: params.productCard } : {}),
+  };
+
+  await col.updateOne(
+    { clientId, phone },
+    {
+      $setOnInsert: {
+        clientId,
+        phone,
+        stage: 'pregunton',
+        tags: [],
+        notes: '',
+        humanMode: false,
+        messages: [],
+        unreadCount: 0,
+        createdAt: now,
+      },
+      $set: {
+        updatedAt: now,
+        ...(params.contactName?.trim() ? { contactName: params.contactName.trim() } : {}),
+      },
+      $push: { messages: msg },
+    },
+    { upsert: true }
+  );
+}
+
+export async function appendClientPanelConversationTurn(params: {
+  clientId: string;
+  phone: string;
+  contactName?: string;
+  userMessage: string;
+  botReply?: string;
+  productCard?: ProductCard;
+}): Promise<void> {
+  await recordClientPanelInbound({
+    clientId: params.clientId,
+    phone: params.phone,
+    contactName: params.contactName,
+    message: params.userMessage,
+  });
+  if (params.botReply?.trim()) {
+    await appendClientPanelBotReply({
+      clientId: params.clientId,
+      phone: params.phone,
+      contactName: params.contactName,
+      reply: params.botReply,
+      productCard: params.productCard,
+    });
+  }
+}
+
 export function convIdFromDoc(doc: PanelConversation): string {
   return doc._id ? String(doc._id) : normalizePhone(doc.phone);
 }

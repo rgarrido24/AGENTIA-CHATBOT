@@ -7,6 +7,11 @@ import {
   getAgentiaWhatsAppPhoneNumberId,
 } from '@/lib/agentia-panel';
 import { sendPushNotification } from '@/lib/panel-push';
+import {
+  usesClientPanelStore,
+  recordClientPanelInbound,
+  appendClientPanelConversationTurn,
+} from '@/lib/client-panel-store';
 
 function resolveChatBaseUrl(): string {
   return (
@@ -478,6 +483,19 @@ export async function POST(request: NextRequest) {
       );
       if (cfg?.status && cfg.status !== 'activo') {
         console.log('[webhook/whatsapp] business_config inactivo — bot desactivado para clientId:', clientId);
+        if (usesClientPanelStore(clientId) && mensaje.trim()) {
+          await recordClientPanelInbound({
+            clientId,
+            phone: leadId,
+            contactName: senderName,
+            message: mensaje,
+          }).catch((err) => {
+            console.error(
+              '[webhook/whatsapp] client-panel inbound (inactivo):',
+              err instanceof Error ? err.message : err,
+            );
+          });
+        }
         return NextResponse.json({ ok: true, botInactive: true });
       }
     }
@@ -498,6 +516,20 @@ export async function POST(request: NextRequest) {
           platform: 'whatsapp',
         });
         if (pickup.handled && pickup.reply) {
+          if (usesClientPanelStore(clientId)) {
+            await appendClientPanelConversationTurn({
+              clientId,
+              phone: leadId,
+              contactName: senderName,
+              userMessage: mensaje,
+              botReply: pickup.reply,
+            }).catch((err) => {
+              console.error(
+                '[webhook/whatsapp] client-panel pickup:',
+                err instanceof Error ? err.message : err,
+              );
+            });
+          }
           return NextResponse.json({ clientId, reply: pickup.reply });
         }
       } catch (pickupErr) {
