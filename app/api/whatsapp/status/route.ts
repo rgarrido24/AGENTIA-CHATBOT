@@ -70,9 +70,18 @@ export async function DELETE(req: Request) {
     // Borrar por _id=clientId y también el legacy _id='current' si aplica
     const ids: string[] = [clientId];
     if (clientId === 'agentia') ids.push('current');
-    const result = await db.collection('whatsapp_qr').deleteMany({ _id: { $in: ids } as any });
-    console.log(`[whatsapp/status] DELETE bridge '${clientId}' — ${result.deletedCount} doc(s) eliminado(s)`);
-    return NextResponse.json({ ok: true, deleted: result.deletedCount });
+    const [qrResult, sessionResult] = await Promise.all([
+      db.collection('whatsapp_qr').deleteMany({ _id: { $in: ids } as any }),
+      db.collection('whatsapp_sessions').deleteMany({ clientId }),
+    ]);
+    console.log(
+      `[whatsapp/status] DELETE bridge '${clientId}' — qr: ${qrResult.deletedCount}, sessions: ${sessionResult.deletedCount}`,
+    );
+    return NextResponse.json({
+      ok: true,
+      deleted: qrResult.deletedCount,
+      sessionsDeleted: sessionResult.deletedCount,
+    });
   } catch (err) {
     console.error('[whatsapp/status] DELETE error:', err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

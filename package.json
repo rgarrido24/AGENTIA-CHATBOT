@@ -8,6 +8,7 @@
   },
   "scripts": {
     "bridge:baileys": "node scripts/start-baileys.js",
+    "reset:baileys": "node scripts/reset-baileys-session.js",
     "whatsapp": "node scripts/whatsapp-bridge.js",
     "whatsapp:reset": "node scripts/whatsapp-reset-session.js",
     "whatsapp:kill-browser": "node scripts/whatsapp-kill-browser.js",
