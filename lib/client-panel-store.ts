@@ -63,25 +63,44 @@ async function upsertClientPanelConversationMeta(params: {
   await col.updateOne(
     { clientId, phone },
     {
-      $setOnInsert: {
+      $set: {
         clientId,
         phone,
-        stage: 'pregunton',
-        tags: [],
-        notes: '',
-        humanMode: false,
-        unreadCount: 0,
-        createdAt: now,
-      },
-      $set: {
         updatedAt: now,
         ...(params.contactName?.trim() ? { contactName: params.contactName.trim() } : {}),
+      },
+      $setOnInsert: {
+        stage: 'pregunton',
+        humanMode: false,
+        tags: [],
+        notes: '',
+        unreadCount: 0,
+        createdAt: now,
       },
     },
     { upsert: true }
   );
 
   return { clientId, phone };
+}
+
+async function pushClientPanelMessage(
+  key: { clientId: string; phone: string },
+  msg: PanelMessage,
+  opts?: { incrementUnread?: boolean }
+): Promise<void> {
+  const db = await getMongoDb();
+  const col = db.collection<PanelConversation>(COLLECTION);
+  const now = new Date();
+
+  await col.updateOne(
+    { clientId: key.clientId, phone: key.phone },
+    {
+      $push: { messages: msg },
+      $set: { updatedAt: now },
+      ...(opts?.incrementUnread ? { $inc: { unreadCount: 1 } } : {}),
+    }
+  );
 }
 
 export async function recordClientPanelInbound(params: {
@@ -102,8 +121,6 @@ export async function recordClientPanelInbound(params: {
   });
   if (!key) return;
 
-  const db = await getMongoDb();
-  const col = db.collection<PanelConversation>(COLLECTION);
   const now = new Date();
   const msg: PanelMessage = {
     id: new ObjectId().toHexString(),
@@ -112,14 +129,7 @@ export async function recordClientPanelInbound(params: {
     createdAt: now,
   };
 
-  await col.updateOne(
-    { clientId: key.clientId, phone: key.phone },
-    {
-      $push: { messages: msg },
-      $set: { updatedAt: now },
-      $inc: { unreadCount: 1 },
-    }
-  );
+  await pushClientPanelMessage(key, msg, { incrementUnread: true });
 }
 
 export async function appendClientPanelBotReply(params: {
@@ -141,8 +151,6 @@ export async function appendClientPanelBotReply(params: {
   });
   if (!key) return;
 
-  const db = await getMongoDb();
-  const col = db.collection<PanelConversation>(COLLECTION);
   const now = new Date();
   const msg: PanelMessage = {
     id: new ObjectId().toHexString(),
@@ -152,13 +160,7 @@ export async function appendClientPanelBotReply(params: {
     ...(params.productCard ? { productCard: params.productCard } : {}),
   };
 
-  await col.updateOne(
-    { clientId: key.clientId, phone: key.phone },
-    {
-      $push: { messages: msg },
-      $set: { updatedAt: now },
-    }
-  );
+  await pushClientPanelMessage(key, msg);
 }
 
 export async function appendClientPanelConversationTurn(params: {

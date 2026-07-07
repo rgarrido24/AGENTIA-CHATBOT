@@ -28,6 +28,13 @@ const PICKUP_INTENT_RE =
 
 const CANCEL_RE = /\b(cancelar|cancela|ya no|olv[íi]dalo|detener)\b/i;
 
+const SESSION_STALE_MS = 10 * 60 * 1000;
+const SESSION_EXPIRE_MS = 15 * 60 * 1000;
+
+/** Saludos y consultas generales que no deben iniciar el flujo de cita. */
+const GENERAL_CHAT_RE =
+  /\b(hola|buenos\s*d[ií]as|buenas\s*tardes|buenas\s*noches|productos?|precios?|informaci[oó]n|cat[aá]logo|aromas?)\b/i;
+
 const MONTH_MAP: Record<string, number> = {
   enero: 0,
   febrero: 1,
@@ -99,6 +106,60 @@ function nextWeekday(targetDow: number, from = new Date()): Date {
 
 export function detectBiovelaPickupIntent(message: string): boolean {
   return PICKUP_INTENT_RE.test(message);
+}
+
+function isGeneralChatOnly(message: string): boolean {
+  if (detectBiovelaPickupIntent(message)) return false;
+  return GENERAL_CHAT_RE.test(message);
+}
+
+function isPickupRelatedMessage(message: string): boolean {
+  if (detectBiovelaPickupIntent(message)) return true;
+  if (CANCEL_RE.test(message)) return true;
+  if (extractName(message)) return true;
+  if (parsePreferredDate(message)) return true;
+  if (parseTimeFromMessage(message)) return true;
+  if (/(?:productos?|recoger|llevar(?:me|se)?|necesito|quiero)\b/i.test(message)) return true;
+  return false;
+}
+
+function sessionAgeMs(session: PickupSession): { total: number; idle: number } {
+  const now = Date.now();
+  const createdAt = new Date(session.createdAt).getTime();
+  const updatedAt = new Date(session.updatedAt).getTime();
+  return {
+    total: now - createdAt,
+    idle: now - updatedAt,
+  };
+}
+
+async function expireSessionIfNeeded(
+  session: PickupSession | null,
+  sessionId: string,
+  message: string,
+): Promise<{ session: PickupSession | null; expired: boolean }> {
+  if (!session) return { session: null, expired: false };
+
+  const { total, idle } = sessionAgeMs(session);
+
+  if (session.step === 'done' && total > SESSION_EXPIRE_MS) {
+    await clearSession(sessionId);
+    return { session: null, expired: false };
+  }
+
+  if (session.step !== 'collecting') return { session, expired: false };
+
+  if (total > SESSION_EXPIRE_MS) {
+    await clearSession(sessionId);
+    return { session: null, expired: true };
+  }
+
+  if (idle > SESSION_STALE_MS && !isPickupRelatedMessage(message)) {
+    await clearSession(sessionId);
+    return { session: null, expired: false };
+  }
+
+  return { session, expired: false };
 }
 
 function extractName(text: string): string | null {
@@ -286,6 +347,16 @@ export async function handleBiovelaPickupMessage(params: {
   const sessionId = makeSessionId(params.senderId, params.pageId);
   let session = await getSession(sessionId);
   const intent = detectBiovelaPickupIntent(message);
+
+  const expiry = await expireSessionIfNeeded(session, sessionId, message);
+  session = expiry.session;
+  if (expiry.expired) {
+    return { handled: false };
+  }
+
+  if (!session && isGeneralChatOnly(message)) {
+    return { handled: false };
+  }
 
   if (CANCEL_RE.test(message) && session?.step === 'collecting') {
     await clearSession(sessionId);
