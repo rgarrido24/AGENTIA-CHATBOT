@@ -891,12 +891,12 @@ async function startClient(clientId, baileys) {
       state.qrTimer = setTimeout(() => {
         state.qrTimer = null;
         if (state.state === 'qr') {
-          console.log(`[Baileys] (${id}) QR expiró (60s) — reiniciando para nuevo QR`);
+          console.log(`[Baileys] (${id}) QR expiró (120s) — reiniciando para nuevo QR`);
           startClient(id, baileys).catch((e) => {
             console.error(`[Baileys] (${id}) Error reiniciando por QR timeout:`, e?.message || e);
           });
         }
-      }, 60_000);
+      }, 120_000);
       console.log(`[Baileys] (${id}) QR — escanear en ${getApiBase()}/api/whatsapp/qr?clientId=${encodeURIComponent(id)}`);
       await saveQrToMongo(id, qr);
       await postQrToApi(id, { qr });

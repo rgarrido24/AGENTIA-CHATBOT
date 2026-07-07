@@ -96,7 +96,11 @@ export async function GET(request: NextRequest) {
     img{width:256px;height:256px;border-radius:0.75rem;background:#fff;padding:0.5rem;margin:1rem 0}
     .steps{text-align:left;margin:1rem 0;padding:0 1rem;font-size:0.9rem;color:#94a3b8;line-height:1.9}
     .steps strong{color:#e2e8f0}
+    .hint{font-size:0.8rem;color:#64748b;margin-top:0.75rem}
   </style>
+  <script>
+    setTimeout(function(){ location.reload(); }, 15000);
+  </script>
 </head>
 <body>
   <div class="card">
@@ -111,6 +115,7 @@ export async function GET(request: NextRequest) {
       <strong>3.</strong> Toca <strong>Vincular dispositivo</strong><br>
       <strong>4.</strong> Escanea este QR con el escáner de WhatsApp
     </p>
+    <p class="hint">Esta página se actualiza sola cada 15 s con el QR más reciente.</p>
   </div>
 </body>
 </html>`,
