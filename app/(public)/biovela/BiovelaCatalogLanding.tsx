@@ -29,6 +29,7 @@ const FILTERS = [
   { id: 'Ceras', label: 'Ceras' },
   { id: 'Colores', label: 'Colores' },
   { id: 'Parafinas', label: 'Parafinas' },
+  { id: 'Curso', label: 'Curso' },
 ] as const;
 
 type FilterId = (typeof FILTERS)[number]['id'];
@@ -61,6 +62,27 @@ const REVEAL_STYLES = `
     opacity: 1;
     transform: none;
   }
+  .bv-course-highlight,
+  .bv-curso-badge-blink {
+    animation: none;
+  }
+}
+@keyframes bv-course-glow {
+  0% { box-shadow: inset 0 0 0 0 rgba(193, 122, 43, 0); outline-color: rgba(193, 122, 43, 0); }
+  40% { box-shadow: inset 0 0 0 3px rgba(193, 122, 43, 0.9), 0 0 28px rgba(193, 122, 43, 0.35); outline-color: #C17A2B; }
+  100% { box-shadow: inset 0 0 0 0 rgba(193, 122, 43, 0); outline-color: rgba(193, 122, 43, 0); }
+}
+.bv-course-highlight {
+  animation: bv-course-glow 1s ease-in-out;
+  outline: 2px solid #C17A2B;
+  outline-offset: -2px;
+}
+@keyframes bv-badge-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.bv-curso-badge-blink {
+  animation: bv-badge-blink 1.4s ease-in-out infinite;
 }
 `;
 
@@ -283,7 +305,9 @@ function CourseImage() {
 export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }) {
   const [activeFilter, setActiveFilter] = useState<FilterId>('Todos');
   const [search, setSearch] = useState('');
+  const [courseHighlight, setCourseHighlight] = useState(false);
   const gridRef = useRef<HTMLElement>(null);
+  const courseRef = useRef<HTMLElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const tabButtonRefs = useRef<Partial<Record<FilterId, HTMLButtonElement>>>({});
   const [underline, setUnderline] = useState({ left: 0, width: 0 });
@@ -291,14 +315,17 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { Todos: catalog.length };
     for (const { id } of FILTERS) {
-      if (id === 'Todos') continue;
+      if (id === 'Todos' || id === 'Curso') continue;
       counts[id] = catalog.filter((p) => p.category === id).length;
     }
     return counts;
   }, [catalog]);
 
   const filtered = useMemo(() => {
-    let items = activeFilter === 'Todos' ? catalog : catalog.filter((p) => p.category === activeFilter);
+    let items =
+      activeFilter === 'Todos' || activeFilter === 'Curso'
+        ? catalog
+        : catalog.filter((p) => p.category === activeFilter);
     const q = search.trim().toLowerCase();
     if (q) {
       items = items.filter((p) => p.name.toLowerCase().includes(q));
@@ -307,7 +334,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
   }, [catalog, activeFilter, search]);
 
   const activeFilterLabel = FILTERS.find((f) => f.id === activeFilter)?.label ?? 'Todos';
-  const activeCount = categoryCounts[activeFilter] ?? 0;
+  const activeCount = activeFilter === 'Curso' ? null : (categoryCounts[activeFilter] ?? 0);
 
   const updateUnderline = useCallback(() => {
     const btn = tabButtonRefs.current[activeFilter];
@@ -331,6 +358,21 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
     gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  const scrollToCourse = useCallback(() => {
+    setActiveFilter('Curso');
+    courseRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setCourseHighlight(true);
+    window.setTimeout(() => setCourseHighlight(false), 1000);
+  }, []);
+
+  const handleFilterClick = (id: FilterId) => {
+    if (id === 'Curso') {
+      scrollToCourse();
+      return;
+    }
+    setActiveFilter(id);
+  };
+
   return (
     <div
       className="min-h-screen"
@@ -349,6 +391,41 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
       }
     >
       <style dangerouslySetInnerHTML={{ __html: REVEAL_STYLES }} />
+
+      {/* Mobile navbar */}
+      <nav
+        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-2.5 md:hidden"
+        style={{
+          background: 'rgba(250,247,242,0.96)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: `1px solid ${BV.border}`,
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logos/biovela.png"
+          alt="La Rueda Veladoras"
+          width={32}
+          height={32}
+          className="h-8 w-8 rounded-full object-cover"
+          style={{ border: `1px solid ${BV.gold}66` }}
+        />
+        <button
+          type="button"
+          onClick={scrollToCourse}
+          className="bv-curso-badge-blink rounded-full px-3 py-1 text-xs font-semibold"
+          style={{
+            color: BV.gold,
+            background: 'rgba(193,122,43,0.12)',
+            border: `1px solid ${BV.gold}55`,
+            letterSpacing: '0.04em',
+          }}
+        >
+          Curso 🕯
+        </button>
+      </nav>
+
       {/* Hero — imagen de fondo con overlay */}
       <header className="relative flex min-h-[70vh] flex-col items-center justify-center overflow-hidden px-8 text-center md:min-h-[100vh]">
         <div
@@ -433,7 +510,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
 
       {/* Sticky search + category tabs */}
       <div
-        className="sticky top-0 z-30"
+        className="sticky top-12 z-30 md:top-0"
         style={{
           background: 'rgba(250,247,242,0.92)',
           backdropFilter: 'blur(20px)',
@@ -476,7 +553,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
                     type="button"
                     role="tab"
                     aria-selected={active}
-                    onClick={() => setActiveFilter(id)}
+                    onClick={() => handleFilterClick(id)}
                     className="shrink-0 whitespace-nowrap pb-3 text-sm transition-colors duration-200"
                     style={{
                       color: active ? BV.gold : BV.muted,
@@ -504,7 +581,8 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
               className="hidden shrink-0 text-xs sm:block"
               style={{ color: BV.muted, letterSpacing: '0.06em' }}
             >
-              {activeFilterLabel} {activeCount}
+              {activeFilterLabel}
+              {activeCount != null ? ` ${activeCount}` : ''}
             </p>
           </div>
         </div>
@@ -514,7 +592,8 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
       <main ref={gridRef} className="scroll-mt-28">
         <div className="mx-auto max-w-6xl px-8 py-14">
           <p className="mb-8 text-xs sm:hidden" style={{ color: BV.muted, letterSpacing: '0.06em' }}>
-            {activeFilterLabel} {activeCount}
+            {activeFilterLabel}
+            {activeCount != null ? ` ${activeCount}` : ''}
             {search.trim() ? ` · ${filtered.length} resultados` : ''}
           </p>
           {filtered.length === 0 ? (
@@ -532,7 +611,11 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
       </main>
 
       {/* Curso */}
-      <section style={{ background: BV.dark }}>
+      <section
+        ref={courseRef}
+        className={`scroll-mt-28 md:scroll-mt-24${courseHighlight ? ' bv-course-highlight' : ''}`}
+        style={{ background: BV.dark }}
+      >
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-8 py-16 md:grid-cols-2 md:gap-12 md:py-20">
           <Reveal animation="fade-left">
             <CourseImage />
