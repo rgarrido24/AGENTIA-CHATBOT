@@ -1,7 +1,6 @@
 import { google } from 'googleapis';
 
 const TIMEZONE = 'America/Mexico_City';
-const BIOVELA_ATTENDEE = 'laruedaveladoras@gmail.com';
 
 function getServiceAccountCredentials(): { clientEmail: string; privateKey: string; calendarId: string } {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL?.trim();
@@ -34,7 +33,6 @@ export type CreateCalendarEventParams = {
   description?: string;
   start: Date;
   end: Date;
-  attendeeEmail?: string;
   location?: string;
 };
 
@@ -50,18 +48,16 @@ export async function createCalendarEvent(
   });
 
   const calendar = google.calendar({ version: 'v3', auth });
-  const attendee = (params.attendeeEmail || BIOVELA_ATTENDEE).trim();
 
   const res = await calendar.events.insert({
     calendarId,
-    sendUpdates: 'all',
+    sendUpdates: 'none',
     requestBody: {
       summary: params.title,
       description: params.description,
       location: params.location,
       start: { dateTime: params.start.toISOString(), timeZone: TIMEZONE },
       end: { dateTime: params.end.toISOString(), timeZone: TIMEZONE },
-      attendees: [{ email: attendee }],
     },
   });
 
@@ -95,6 +91,5 @@ export async function createBiovelaPickupEvent(params: {
     start: params.start,
     end: params.end,
     location: 'Iztacalco, CDMX (almacén Biovela — cita previa)',
-    attendeeEmail: BIOVELA_ATTENDEE,
   });
 }
