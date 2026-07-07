@@ -327,7 +327,7 @@ function normalizePhoneForWa(tel: string): string {
 }
 
 function formatPhone(tel: string) {
-  const d = normalizePhoneForWa(tel);
+  const d = normalizePhoneForWa(String(tel ?? ''));
   if (!d) return tel || '—';
   // AR móvil: 549 + cód área 2-4 dígitos + número
   if (d.startsWith('549') && d.length === 13) {
@@ -387,6 +387,7 @@ function LeadCard({
 }) {
   const ui = useContext(LeadUiContext);
   const cfg = ui.statusSeg[lead.status_seguimiento];
+  const telefono = String(lead.telefono ?? '').trim();
   return (
     <button
       type="button"
@@ -428,7 +429,7 @@ function LeadCard({
           )}
         </div>
         <p className="text-xs mt-0.5 truncate" style={{ color: ui.leadMuted }}>
-          {lead.telefono ? formatPhone(lead.telefono) : lead.email || '—'}
+          {telefono ? formatPhone(telefono) : lead.email || '—'}
         </p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           {lead.campana && (
@@ -555,9 +556,11 @@ function LeadDetail({
     return rows;
   }, [ff]);
 
+  const telefono = String(lead.telefono ?? '').trim();
+
   const detailRows: [string, string][] = [
     ['NOMBRE',   lead.nombre || '—'],
-    ['WHATSAPP', lead.telefono ? formatPhone(lead.telefono) : '—'],
+    ['WHATSAPP', telefono ? formatPhone(telefono) : '—'],
     ['EMAIL',    lead.email || '—'],
     ['FECHA',    fmtDate(lead.createdAt)],
     ...extraRows,
@@ -785,17 +788,17 @@ function LeadDetail({
       </div>
 
       {/* WhatsApp CTA — sticky bottom (MongoDB: campo `telefono`) */}
-      {lead.telefono.trim() && (
+      {telefono && (
         <div className="border-t p-4" style={{ borderColor: ui.waBarBorder }}>
           <a
-            href={`https://wa.me/${lead.telefono.replace(/\D/g, '')}`}
+            href={`https://wa.me/${telefono}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold"
             style={{ background: '#16a34a', color: '#fff' }}
           >
             <MessageCircle className="w-4 h-4" />
-            Abrir WhatsApp — {formatPhone(lead.telefono)}
+            Abrir WhatsApp — {formatPhone(telefono)}
           </a>
         </div>
       )}
