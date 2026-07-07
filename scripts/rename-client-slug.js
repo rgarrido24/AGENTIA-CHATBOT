@@ -26,8 +26,8 @@ const fs = require('fs');
 const path = require('path');
 
 const RESELLER_ID = 'luciano';
-const OLD_SLUG = 'aylen-besel';
-const NEW_SLUG = 'nahuel-dellolio';
+const OLD_SLUG = 'pablo-barrionuevo';
+const NEW_SLUG = 'melina-arista';
 
 function stripBom(t) {
   return t.charCodeAt(0) === 0xfeff ? t.slice(1) : t;
