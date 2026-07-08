@@ -1,18 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { CatalogProduct } from '@/lib/biovela-catalog';
-
-const BV = {
-  cream: '#FAF7F2',
-  warm: '#F0EAE0',
-  gold: '#C17A2B',
-  goldLight: '#E8A44A',
-  dark: '#1C1612',
-  muted: '#8A7968',
-  border: '#E5DDD0',
-  wa: '#25D366',
-} as const;
 
 const WA_PHONE = '525534489552';
 const WA_CATALOG =
@@ -20,7 +9,6 @@ const WA_CATALOG =
 const STORE_URL = 'https://biovela2.mitiendanube.com';
 const COURSE_WA_URL =
   'https://wa.me/525534489552?text=Hola!%20Quiero%20informes%20sobre%20el%20curso%20de%20Jab%C3%B3n%20Artesanal%20y%20Velas%20de%20Soya';
-const SAGE = '#4A5E4A';
 
 const FILTERS = [
   { id: 'Todos', label: 'Todos' },
@@ -34,55 +22,50 @@ const FILTERS = [
 
 type FilterId = (typeof FILTERS)[number]['id'];
 
-const SERIF = 'Georgia, "Times New Roman", Times, serif';
-
-const REVEAL_STYLES = `
+const BV_STYLES = `
+:root {
+  --bv-black: #0E0B07;
+  --bv-surface: #1A1410;
+  --bv-surface2: #241E18;
+  --bv-amber: #E8962A;
+  --bv-amber-dim: #A0621A;
+  --bv-text: #F2EDE4;
+  --bv-muted: #8A7660;
+  --bv-border: #2E2520;
+  --bv-green: #4CAF7D;
+  --bv-footer: #080604;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+}
+@keyframes bv-flicker {
+  0%, 100% { transform: scaleY(0.97) rotate(-2deg); filter: drop-shadow(0 0 16px #E8962A66); }
+  50% { transform: scaleY(1.05) rotate(2deg); filter: drop-shadow(0 0 24px #E8962ACC); }
+}
+@keyframes bv-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 @keyframes bv-fade-in-up {
-  from { opacity: 0; transform: translateY(28px); }
+  from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes bv-fade-in-left {
-  from { opacity: 0; transform: translateX(-32px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes bv-scroll-line {
+  0%, 100% { transform: scaleY(0.35); opacity: 0.35; }
+  50% { transform: scaleY(1); opacity: 1; }
 }
+.bv-flame { animation: bv-flicker 1.5s ease-in-out infinite; transform-origin: center bottom; }
+.bv-hero-title { animation: bv-fade-in 0.8s ease 0.3s both; }
+.bv-hero-sub { animation: bv-fade-in 0.8s ease 0.6s both; }
+.bv-hero-actions { animation: bv-fade-in 0.8s ease 0.9s both; }
+.bv-scroll-indicator span { animation: bv-scroll-line 2s ease-in-out infinite; transform-origin: top center; }
 .bv-reveal { opacity: 0; }
-.bv-reveal--fade-up.bv-reveal--visible {
-  animation: bv-fade-in-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: var(--bv-delay, 0ms);
-}
-.bv-reveal--fade-left.bv-reveal--visible {
-  animation: bv-fade-in-left 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: var(--bv-delay, 0ms);
-}
+.bv-reveal--visible { animation: bv-fade-in-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards; animation-delay: var(--bv-delay, 0ms); }
 @media (prefers-reduced-motion: reduce) {
+  .bv-flame { animation: none; }
+  .bv-hero-title, .bv-hero-sub, .bv-hero-actions { animation: none; opacity: 1; }
+  .bv-scroll-indicator span { animation: none; }
   .bv-reveal { opacity: 1; }
-  .bv-reveal--fade-up.bv-reveal--visible,
-  .bv-reveal--fade-left.bv-reveal--visible {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-  .bv-course-highlight,
-  .bv-curso-badge-blink {
-    animation: none;
-  }
-}
-@keyframes bv-course-glow {
-  0% { box-shadow: inset 0 0 0 0 rgba(193, 122, 43, 0); outline-color: rgba(193, 122, 43, 0); }
-  40% { box-shadow: inset 0 0 0 3px rgba(193, 122, 43, 0.9), 0 0 28px rgba(193, 122, 43, 0.35); outline-color: #C17A2B; }
-  100% { box-shadow: inset 0 0 0 0 rgba(193, 122, 43, 0); outline-color: rgba(193, 122, 43, 0); }
-}
-.bv-course-highlight {
-  animation: bv-course-glow 1s ease-in-out;
-  outline: 2px solid #C17A2B;
-  outline-offset: -2px;
-}
-@keyframes bv-badge-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-.bv-curso-badge-blink {
-  animation: bv-badge-blink 1.4s ease-in-out infinite;
+  .bv-reveal--visible { animation: none; opacity: 1; transform: none; }
 }
 `;
 
@@ -105,7 +88,7 @@ function useInView(options?: IntersectionObserverInit) {
             observer.unobserve(node);
           }
         },
-        { threshold: 0.1, rootMargin: '0px 0px -32px 0px', ...options }
+        { threshold: 0.08, rootMargin: '0px 0px -24px 0px', ...options }
       );
 
       observer.observe(node);
@@ -121,13 +104,11 @@ function useInView(options?: IntersectionObserverInit) {
 
 function Reveal({
   children,
-  animation,
   delay = 0,
   className = '',
   as: Tag = 'div',
 }: {
   children: React.ReactNode;
-  animation: 'fade-up' | 'fade-left';
   delay?: number;
   className?: string;
   as?: 'div' | 'article';
@@ -137,7 +118,7 @@ function Reveal({
   return (
     <Tag
       ref={ref}
-      className={`bv-reveal bv-reveal--${animation}${visible ? ' bv-reveal--visible' : ''}${className ? ` ${className}` : ''}`}
+      className={`bv-reveal${visible ? ' bv-reveal--visible' : ''}${className ? ` ${className}` : ''}`}
       style={{ '--bv-delay': `${delay}ms` } as React.CSSProperties}
     >
       {children}
@@ -158,40 +139,53 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-function LogoMark({ variant = 'light' }: { variant?: 'light' | 'dark' | 'hero' }) {
-  const [failed, setFailed] = useState(false);
-  const borderColor =
-    variant === 'hero'
-      ? 'rgba(255,255,255,0.5)'
-      : variant === 'dark'
-        ? `${BV.gold}99`
-        : `${BV.gold}40`;
+function FlameIcon({ className, height = 80 }: { className?: string; height?: number }) {
+  const gradId = useId().replace(/:/g, '');
+  const width = Math.round(height * 0.55);
+  return (
+    <svg
+      className={className}
+      width={width}
+      height={height}
+      viewBox="0 0 44 80"
+      fill="none"
+      aria-hidden
+    >
+      <defs>
+        <radialGradient id={gradId} cx="50%" cy="85%" r="75%">
+          <stop offset="0%" stopColor="#FF6B00" />
+          <stop offset="100%" stopColor="#E8962A" />
+        </radialGradient>
+      </defs>
+      <path
+        fill={`url(#${gradId})`}
+        d="M22 4c0 0-14 22-14 42 0 11 6 20 14 30 8-10 14-19 14-30C36 26 22 4 22 4zm0 68c-5-4-9-11-9-18 0-7 4-16 9-25 5 9 9 18 9 25 0 7-4 14-9 18z"
+      />
+    </svg>
+  );
+}
 
+function NavLogo() {
+  const [failed, setFailed] = useState(false);
   if (failed) {
     return (
       <span
-        className="flex h-20 w-20 items-center justify-center rounded-full text-2xl"
-        style={{
-          border: `1px solid ${borderColor}`,
-          background: variant === 'dark' ? BV.dark : variant === 'hero' ? 'rgba(0,0,0,0.25)' : BV.cream,
-          color: variant === 'hero' ? '#fff' : BV.gold,
-        }}
+        className="flex h-8 w-8 items-center justify-center text-[10px] tracking-widest"
+        style={{ border: '1px solid var(--bv-amber-dim)', color: 'var(--bv-amber)' }}
         aria-hidden
       >
         RV
       </span>
     );
   }
-
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src="/logos/biovela.png"
-      alt="La Rueda Veladoras"
-      width={80}
-      height={80}
-      className="h-20 w-20 rounded-full object-cover"
-      style={{ border: `1px solid ${borderColor}` }}
+      alt=""
+      width={32}
+      height={32}
+      className="h-8 w-8 object-cover"
       onError={() => setFailed(true)}
     />
   );
@@ -202,73 +196,72 @@ function ProductCard({ product, index }: { product: CatalogProduct; index: numbe
   const hasImage = Boolean(product.imageUrl) && !imgFailed;
 
   return (
-    <Reveal animation="fade-up" delay={index * 60} as="article" className="group flex flex-col bg-white">
-      <div
-        className="relative aspect-square w-full overflow-hidden transition-shadow duration-300 group-hover:shadow-[0_8px_32px_rgba(193,122,43,0.15)]"
-        style={{ borderRadius: 4 }}
-      >
+    <Reveal delay={Math.min(index * 45, 400)} as="article" className="group flex flex-col bg-[var(--bv-surface)]">
+      <div className="relative aspect-square w-full overflow-hidden">
         {hasImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={product.imageUrl!}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="h-full w-full object-cover"
             onError={() => setImgFailed(true)}
           />
         ) : (
           <div
-            className="flex h-full w-full items-center justify-center text-sm tracking-widest"
-            style={{ background: BV.warm, color: BV.muted }}
+            className="flex h-full w-full items-center justify-center"
+            style={{ background: 'var(--bv-surface2)' }}
           >
-            Sin imagen
+            <FlameIcon height={36} className="bv-flame opacity-80" />
           </div>
         )}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          style={{ background: '#E8962A15' }}
+        />
         <a
           href={productWhatsAppUrl(product)}
           target="_blank"
           rel="noopener noreferrer"
-          className="absolute bottom-3 left-3 right-3 translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100"
-          style={{
-            background: BV.gold,
-            color: BV.dark,
-            borderRadius: 2,
-            padding: '10px 14px',
-            fontSize: 12,
-            fontWeight: 500,
-            letterSpacing: '0.06em',
-            textAlign: 'center',
-            textTransform: 'uppercase',
-          }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 text-xs font-medium opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          style={{ background: 'var(--bv-amber)', color: 'var(--bv-black)' }}
         >
-          Pedir ahora →
+          Pedir →
         </a>
       </div>
-      <div className="flex flex-col gap-1 pt-4">
+      <div className="flex flex-col gap-1 px-3 py-3">
         <p
           className="line-clamp-2"
           style={{
-            fontSize: 13,
-            fontWeight: 500,
+            fontFamily: 'var(--font-body)',
+            fontSize: 12,
+            fontWeight: 400,
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
-            color: BV.dark,
-            lineHeight: 1.5,
+            color: 'var(--bv-muted)',
+            lineHeight: 1.45,
           }}
         >
           {product.name}
         </p>
-        <p style={{ fontSize: 18, fontWeight: 400, color: BV.gold }}>
+        <p
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 20,
+            fontWeight: 400,
+            color: 'var(--bv-amber)',
+          }}
+        >
           ${product.price} MXN
         </p>
         <a
           href={STORE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-2 inline-block text-xs font-medium transition hover:opacity-80"
-          style={{ color: BV.muted, letterSpacing: '0.04em' }}
+          className="mt-1 text-[10px] transition hover:opacity-80"
+          style={{ fontFamily: 'var(--font-body)', color: 'var(--bv-muted)', letterSpacing: '0.06em' }}
         >
-          Comprar en tienda
+          Tienda online →
         </a>
       </div>
     </Reveal>
@@ -281,11 +274,10 @@ function CourseImage() {
   if (failed) {
     return (
       <div
-        className="flex aspect-[4/3] w-full items-center justify-center text-5xl md:aspect-auto md:min-h-[320px]"
-        style={{ background: SAGE, borderRadius: 12 }}
-        aria-hidden
+        className="flex aspect-[4/3] w-full items-center justify-center md:aspect-auto md:min-h-[300px]"
+        style={{ background: 'var(--bv-surface2)' }}
       >
-        🕯
+        <FlameIcon height={48} className="bv-flame" />
       </div>
     );
   }
@@ -295,8 +287,7 @@ function CourseImage() {
     <img
       src="/logos/biovela-curso.jpeg"
       alt="Curso de Jabón Artesanal y Velas de Soya para Masaje"
-      className="aspect-[4/3] w-full object-cover md:aspect-auto md:min-h-[320px]"
-      style={{ borderRadius: 12 }}
+      className="aspect-[4/3] w-full object-cover md:aspect-auto md:min-h-[300px]"
       onError={() => setFailed(true)}
     />
   );
@@ -305,12 +296,9 @@ function CourseImage() {
 export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }) {
   const [activeFilter, setActiveFilter] = useState<FilterId>('Todos');
   const [search, setSearch] = useState('');
-  const [courseHighlight, setCourseHighlight] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const gridRef = useRef<HTMLElement>(null);
   const courseRef = useRef<HTMLElement>(null);
-  const tabsRef = useRef<HTMLDivElement>(null);
-  const tabButtonRefs = useRef<Partial<Record<FilterId, HTMLButtonElement>>>({});
-  const [underline, setUnderline] = useState({ left: 0, width: 0 });
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { Todos: catalog.length };
@@ -336,24 +324,6 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
   const activeFilterLabel = FILTERS.find((f) => f.id === activeFilter)?.label ?? 'Todos';
   const activeCount = activeFilter === 'Curso' ? null : (categoryCounts[activeFilter] ?? 0);
 
-  const updateUnderline = useCallback(() => {
-    const btn = tabButtonRefs.current[activeFilter];
-    const container = tabsRef.current;
-    if (!btn || !container) return;
-    const containerRect = container.getBoundingClientRect();
-    const btnRect = btn.getBoundingClientRect();
-    setUnderline({
-      left: btnRect.left - containerRect.left + container.scrollLeft,
-      width: btnRect.width,
-    });
-  }, [activeFilter]);
-
-  useEffect(() => {
-    updateUnderline();
-    window.addEventListener('resize', updateUnderline);
-    return () => window.removeEventListener('resize', updateUnderline);
-  }, [updateUnderline]);
-
   const scrollToCatalog = () => {
     gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -361,8 +331,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
   const scrollToCourse = useCallback(() => {
     setActiveFilter('Curso');
     courseRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setCourseHighlight(true);
-    window.setTimeout(() => setCourseHighlight(false), 1000);
+    setDrawerOpen(false);
   }, []);
 
   const handleFilterClick = (id: FilterId) => {
@@ -371,334 +340,292 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
       return;
     }
     setActiveFilter(id);
+    setDrawerOpen(false);
   };
+
+  const filterLinkStyle = (active: boolean): React.CSSProperties => ({
+    fontFamily: 'var(--font-body)',
+    fontSize: 13,
+    fontWeight: active ? 500 : 400,
+    color: active ? 'var(--bv-amber)' : 'var(--bv-muted)',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 0,
+    letterSpacing: '0.04em',
+    whiteSpace: 'nowrap',
+  });
 
   return (
     <div
       className="min-h-screen"
-      style={
-        {
-          '--bv-cream': BV.cream,
-          '--bv-warm': BV.warm,
-          '--bv-gold': BV.gold,
-          '--bv-gold-light': BV.goldLight,
-          '--bv-dark': BV.dark,
-          '--bv-muted': BV.muted,
-          '--bv-border': BV.border,
-          background: BV.cream,
-          color: BV.dark,
-        } as React.CSSProperties
-      }
+      style={{
+        background: 'var(--bv-black)',
+        color: 'var(--bv-text)',
+        fontFamily: 'var(--font-body)',
+      }}
     >
-      <style dangerouslySetInnerHTML={{ __html: REVEAL_STYLES }} />
+      <style dangerouslySetInnerHTML={{ __html: BV_STYLES }} />
 
-      {/* Mobile navbar */}
+      {/* Sticky navigation */}
       <nav
-        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-2.5 md:hidden"
+        className="sticky top-0 z-50"
         style={{
-          background: 'rgba(250,247,242,0.96)',
+          background: 'rgba(14,11,7,0.92)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
-          borderBottom: `1px solid ${BV.border}`,
+          borderBottom: '1px solid var(--bv-border)',
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logos/biovela.png"
-          alt="La Rueda Veladoras"
-          width={32}
-          height={32}
-          className="h-8 w-8 rounded-full object-cover"
-          style={{ border: `1px solid ${BV.gold}66` }}
-        />
-        <button
-          type="button"
-          onClick={scrollToCourse}
-          className="bv-curso-badge-blink rounded-full px-3 py-1 text-xs font-semibold"
-          style={{
-            color: BV.gold,
-            background: 'rgba(193,122,43,0.12)',
-            border: `1px solid ${BV.gold}55`,
-            letterSpacing: '0.04em',
-          }}
-        >
-          Curso 🕯
-        </button>
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-6">
+          <div className="flex min-w-0 shrink-0 items-center gap-2.5">
+            <NavLogo />
+            <span
+              className="hidden truncate sm:inline"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1rem',
+                fontWeight: 400,
+                letterSpacing: '0.08em',
+                color: 'var(--bv-text)',
+              }}
+            >
+              La Rueda Veladoras
+            </span>
+          </div>
+
+          {/* Desktop filters */}
+          <div className="hidden flex-1 items-center justify-center gap-0 md:flex">
+            {FILTERS.map(({ id, label }, i) => (
+              <span key={id} className="flex items-center">
+                {i > 0 && (
+                  <span className="mx-3 select-none" style={{ color: 'var(--bv-border)' }} aria-hidden>
+                    |
+                  </span>
+                )}
+                <button type="button" onClick={() => handleFilterClick(id)} style={filterLinkStyle(activeFilter === id)}>
+                  {label}
+                </button>
+              </span>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            className="ml-auto flex flex-col gap-1.5 p-2 md:hidden"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Abrir menú de categorías"
+            style={{ color: 'var(--bv-text)' }}
+          >
+            <span className="block h-px w-5" style={{ background: 'currentColor' }} />
+            <span className="block h-px w-5" style={{ background: 'currentColor' }} />
+            <span className="block h-px w-5" style={{ background: 'currentColor' }} />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="border-t px-4 py-3 md:px-6" style={{ borderColor: 'var(--bv-border)' }}>
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar producto…"
+              aria-label="Buscar producto"
+              className="w-full max-w-md bg-transparent py-1 outline-none placeholder:opacity-60"
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 14,
+                fontWeight: 300,
+                color: 'var(--bv-text)',
+                borderBottom: '1px solid var(--bv-border)',
+              }}
+            />
+            <p
+              className="hidden shrink-0 text-xs md:block"
+              style={{ color: 'var(--bv-muted)', letterSpacing: '0.08em' }}
+            >
+              {activeFilterLabel}
+              {activeCount != null ? ` · ${activeCount}` : ''}
+            </p>
+          </div>
+        </div>
       </nav>
 
-      {/* Hero — imagen de fondo con overlay */}
-      <header className="relative flex min-h-[70vh] flex-col items-center justify-center overflow-hidden px-8 text-center md:min-h-[100vh]">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, rgba(0,0,0,0.7) 40%, rgba(0,0,0,0.2) 100%), url('/logos/biovela-hero.jpeg')",
-          }}
-          aria-hidden
-        />
-        <div className="relative z-10 mx-auto flex max-w-xl flex-col items-center gap-6 text-white">
-          <LogoMark variant="hero" />
-          <h1
-            style={{
-              fontFamily: SERIF,
-              fontSize: 'clamp(2rem, 5vw, 4rem)',
-              fontWeight: 400,
-              letterSpacing: '-0.02em',
-              lineHeight: 1.15,
-              color: '#fff',
-            }}
-          >
-            La Rueda Veladoras
-          </h1>
-          <p
-            style={{
-              maxWidth: 400,
-              fontSize: '1.1rem',
-              lineHeight: 1.8,
-              color: 'rgba(255,255,255,0.85)',
-            }}
-          >
-            Insumos artesanales para hacer velas · Iztacalco, CDMX
-          </p>
-          <div className="mt-2 flex flex-col items-center gap-3">
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={scrollToCatalog}
-                className="px-8 py-3 text-sm font-medium text-white transition hover:bg-white/10"
-                style={{
-                  border: '1px solid #fff',
-                  background: 'transparent',
-                  borderRadius: 50,
-                  letterSpacing: '0.04em',
-                }}
-              >
-                Ver catálogo
-              </button>
-              <a
-                href={WA_CATALOG}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-3 text-sm font-medium text-white transition hover:opacity-90"
-                style={{ background: BV.wa, borderRadius: 50 }}
-              >
-                <WhatsAppIcon className="h-4 w-4" />
-                Escribir por WhatsApp
-              </a>
-            </div>
-            <a
-              href={STORE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium transition hover:opacity-80"
-              style={{ color: BV.gold, background: 'transparent', letterSpacing: '0.04em' }}
-            >
-              Ver tienda completa →
-            </a>
-          </div>
+      {/* Mobile filter drawer */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="absolute inset-0"
+            style={{ background: 'rgba(0,0,0,0.6)' }}
+            aria-label="Cerrar menú"
+            onClick={() => setDrawerOpen(false)}
+          />
           <div
-            className="mt-4 flex items-center gap-2"
-            style={{ color: 'rgba(255,255,255,0.7)', fontSize: 18, letterSpacing: '0.5em' }}
-            aria-hidden
+            className="absolute right-0 top-0 flex h-full w-[min(100%,280px)] flex-col gap-1 p-6"
+            style={{ background: 'var(--bv-surface)', borderLeft: '1px solid var(--bv-border)' }}
           >
-            <span>·</span>
-            <span>·</span>
-            <span>·</span>
+            <button
+              type="button"
+              className="mb-4 self-end text-sm"
+              style={{ color: 'var(--bv-muted)' }}
+              onClick={() => setDrawerOpen(false)}
+            >
+              Cerrar
+            </button>
+            {FILTERS.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => handleFilterClick(id)}
+                className="py-3 text-left"
+                style={filterLinkStyle(activeFilter === id)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
+        </div>
+      )}
+
+      {/* Hero */}
+      <header
+        className="relative flex min-h-[85vh] flex-col items-center justify-center px-6 text-center md:min-h-screen"
+        style={{ background: 'var(--bv-black)' }}
+      >
+        <FlameIcon height={50} className="bv-flame mb-8 md:hidden" />
+        <FlameIcon height={80} className="bv-flame mb-8 hidden md:mb-10 md:block" />
+
+        <h1
+          className="bv-hero-title max-w-4xl"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(2.8rem, 6vw, 5rem)',
+            fontWeight: 300,
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            color: 'var(--bv-text)',
+            lineHeight: 1.1,
+          }}
+        >
+          La Rueda Veladoras
+        </h1>
+
+        <p
+          className="bv-hero-sub mt-4 max-w-md"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontStyle: 'italic',
+            fontWeight: 300,
+            fontSize: '1.1rem',
+            color: 'var(--bv-muted)',
+            lineHeight: 1.6,
+          }}
+        >
+          Iluminamos tu fe, acompañamos tu camino
+        </p>
+
+        <div className="bv-hero-actions mt-10 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={scrollToCatalog}
+            className="px-6 py-3 text-sm font-medium transition-colors duration-200"
+            style={{
+              border: '1px solid var(--bv-amber)',
+              color: 'var(--bv-amber)',
+              background: 'transparent',
+              borderRadius: 2,
+              fontFamily: 'var(--font-body)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bv-amber)';
+              e.currentTarget.style.color = 'var(--bv-black)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--bv-amber)';
+            }}
+          >
+            Explorar catálogo
+          </button>
+          <a
+            href={WA_CATALOG}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90"
+            style={{
+              background: 'var(--bv-amber)',
+              color: 'var(--bv-black)',
+              borderRadius: 2,
+              fontFamily: 'var(--font-body)',
+              fontWeight: 500,
+            }}
+          >
+            Escribir al WhatsApp
+          </a>
+        </div>
+
+        <div className="bv-scroll-indicator absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
+          <span className="block h-10 w-px" style={{ background: 'var(--bv-muted)' }} />
         </div>
       </header>
 
-      {/* Sticky search + category tabs */}
-      <div
-        className="sticky top-12 z-30 md:top-0"
-        style={{
-          background: 'rgba(250,247,242,0.92)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: `1px solid ${BV.border}`,
-        }}
-      >
-        <div className="mx-auto max-w-6xl px-8 py-5">
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar producto…"
-            aria-label="Buscar producto"
-            className="w-full bg-transparent py-3 outline-none placeholder:opacity-60"
-            style={{
-              border: 'none',
-              borderBottom: `1px solid ${BV.gold}`,
-              borderRadius: 0,
-              fontSize: 15,
-              color: BV.dark,
-            }}
-          />
-
-          <div className="mt-5 flex items-baseline justify-between gap-4">
-            <div
-              ref={tabsRef}
-              className="relative flex flex-1 gap-6 overflow-x-auto scrollbar-none"
-              role="tablist"
-              aria-label="Categorías"
-            >
-              {FILTERS.map(({ id, label }) => {
-                const active = activeFilter === id;
-                return (
-                  <button
-                    key={id}
-                    ref={(el) => {
-                      if (el) tabButtonRefs.current[id] = el;
-                    }}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => handleFilterClick(id)}
-                    className="shrink-0 whitespace-nowrap pb-3 text-sm transition-colors duration-200"
-                    style={{
-                      color: active ? BV.gold : BV.muted,
-                      fontWeight: active ? 500 : 400,
-                      background: 'none',
-                      border: 'none',
-                      letterSpacing: '0.02em',
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-              <span
-                className="pointer-events-none absolute bottom-0 h-0.5 transition-all duration-300 ease-out"
-                style={{
-                  left: underline.left,
-                  width: underline.width,
-                  background: BV.gold,
-                }}
-                aria-hidden
-              />
-            </div>
-            <p
-              className="hidden shrink-0 text-xs sm:block"
-              style={{ color: BV.muted, letterSpacing: '0.06em' }}
-            >
-              {activeFilterLabel}
-              {activeCount != null ? ` ${activeCount}` : ''}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Product grid */}
-      <main ref={gridRef} className="scroll-mt-28">
-        <div className="mx-auto max-w-6xl px-8 py-14">
-          <p className="mb-8 text-xs sm:hidden" style={{ color: BV.muted, letterSpacing: '0.06em' }}>
+      {/* Product grid — mosaic */}
+      <main ref={gridRef} className="scroll-mt-36">
+        <div className="px-4 py-2 sm:hidden">
+          <p className="text-xs" style={{ color: 'var(--bv-muted)', letterSpacing: '0.08em' }}>
             {activeFilterLabel}
-            {activeCount != null ? ` ${activeCount}` : ''}
+            {activeCount != null ? ` · ${activeCount}` : ''}
             {search.trim() ? ` · ${filtered.length} resultados` : ''}
           </p>
-          {filtered.length === 0 ? (
-            <p className="py-20 text-center" style={{ color: BV.muted }}>
-              No hay productos que coincidan con tu búsqueda.
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
-              {filtered.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
-              ))}
-            </div>
-          )}
         </div>
+        {filtered.length === 0 ? (
+          <p className="py-24 text-center" style={{ color: 'var(--bv-muted)', fontWeight: 300 }}>
+            No hay productos que coincidan con tu búsqueda.
+          </p>
+        ) : (
+          <div
+            className="grid grid-cols-2 gap-px md:grid-cols-3 lg:grid-cols-4"
+            style={{ background: 'var(--bv-black)' }}
+          >
+            {filtered.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))}
+          </div>
+        )}
       </main>
 
-      {/* Curso */}
-      <section
-        ref={courseRef}
-        className={`scroll-mt-28 md:scroll-mt-24${courseHighlight ? ' bv-course-highlight' : ''}`}
-        style={{ background: BV.dark }}
-      >
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-8 py-16 md:grid-cols-2 md:gap-12 md:py-20">
-          <Reveal animation="fade-left">
-            <CourseImage />
-          </Reveal>
-          <Reveal animation="fade-up" delay={80} className="flex flex-col gap-5 text-white">
-            <span
-              className="self-start uppercase"
-              style={{ color: BV.gold, fontSize: 11, letterSpacing: '0.1em', fontWeight: 600 }}
-            >
-              Próximamente
-            </span>
-            <h2
-              style={{
-                fontFamily: SERIF,
-                fontSize: 'clamp(1.4rem, 3vw, 2rem)',
-                fontWeight: 400,
-                color: '#fff',
-                lineHeight: 1.3,
-              }}
-            >
-              Curso de Jabón Artesanal y Velas de Soya para Masaje
-            </h2>
-            <p style={{ color: 'rgba(255,255,255,0.65)', fontSize: '1.05rem', lineHeight: 1.7 }}>
-              Aprende, crea y transforma tu pasión en bienestar
-            </p>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {[
-                { icon: '💰', text: 'Inversión: $950 por alumno' },
-                { icon: '👥', text: 'Cupo mínimo: 5 alumnos' },
-                { icon: '📦', text: 'Incluye todo el material' },
-              ].map(({ icon, text }) => (
-                <div key={text} className="flex flex-col gap-2">
-                  <span className="text-xl" aria-hidden>
-                    {icon}
-                  </span>
-                  <p className="text-sm leading-snug" style={{ color: 'rgba(255,255,255,0.85)' }}>
-                    {text}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <a
-              href={COURSE_WA_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex w-fit items-center justify-center px-8 py-3 text-sm font-medium text-white transition hover:opacity-90"
-              style={{ background: BV.gold, borderRadius: 50 }}
-            >
-              Apartar mi lugar por WhatsApp
-            </a>
-          </Reveal>
-        </div>
-      </section>
-
       {/* Values */}
-      <section style={{ background: BV.warm }}>
-        <div className="mx-auto grid max-w-6xl gap-12 px-8 py-20 md:grid-cols-3">
+      <section style={{ background: 'var(--bv-black)' }}>
+        <div className="mx-auto grid max-w-6xl gap-10 px-6 py-20 md:grid-cols-3 md:gap-8">
           {[
-            { n: '01', title: 'Aromas naturales' },
-            { n: '02', title: 'Envíos a toda la República' },
-            { n: '03', title: 'Atención por WhatsApp' },
+            { n: '01', title: 'Aromas naturales de alta calidad' },
+            { n: '02', title: 'Envíos a toda la República Mexicana' },
+            { n: '03', title: 'Atención personalizada por WhatsApp' },
           ].map(({ n, title }, index) => (
-            <Reveal key={n} animation="fade-left" delay={index * 100} className="flex flex-col gap-4">
+            <Reveal key={n} delay={index * 80} className="relative">
               <span
+                className="pointer-events-none absolute -left-1 -top-4 select-none"
                 style={{
-                  fontFamily: SERIF,
-                  fontSize: 'clamp(2rem, 4vw, 2.75rem)',
-                  fontWeight: 400,
-                  color: BV.gold,
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(3.5rem, 8vw, 5rem)',
+                  fontWeight: 300,
                   lineHeight: 1,
+                  color: '#E8962A20',
                 }}
+                aria-hidden
               >
                 {n}
               </span>
-              <div style={{ width: 32, height: 1, background: BV.gold }} aria-hidden />
               <p
+                className="relative pt-6"
                 style={{
-                  fontFamily: SERIF,
-                  fontSize: 'clamp(1.1rem, 2vw, 1.35rem)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '0.95rem',
                   fontWeight: 400,
-                  color: BV.dark,
-                  lineHeight: 1.5,
-                  letterSpacing: '-0.01em',
+                  color: 'var(--bv-text)',
+                  lineHeight: 1.6,
                 }}
               >
                 {title}
@@ -708,30 +635,81 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
         </div>
       </section>
 
+      {/* Course */}
+      <section
+        ref={courseRef}
+        className="scroll-mt-36"
+        style={{ background: 'var(--bv-surface)', borderTop: '1px solid var(--bv-amber)' }}
+      >
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 py-16 md:grid-cols-2 md:gap-12 md:py-20">
+          <Reveal>
+            <CourseImage />
+          </Reveal>
+          <Reveal delay={100} className="flex flex-col gap-5">
+            <span
+              className="self-start uppercase"
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 10,
+                letterSpacing: '0.2em',
+                fontWeight: 500,
+                color: 'var(--bv-amber)',
+              }}
+            >
+              Próximamente
+            </span>
+            <h2
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontStyle: 'italic',
+                fontWeight: 300,
+                fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
+                color: 'var(--bv-text)',
+                lineHeight: 1.25,
+              }}
+            >
+              Curso de Jabón Artesanal y Velas de Soya para Masaje
+            </h2>
+            <p style={{ color: 'var(--bv-muted)', fontSize: '1rem', fontWeight: 300, lineHeight: 1.7 }}>
+              Aprende, crea y transforma tu pasión en bienestar. Inversión $950 por alumno · cupo mínimo 5 alumnos ·
+              incluye todo el material.
+            </p>
+            <a
+              href={COURSE_WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex w-fit px-6 py-3 text-sm font-medium transition-opacity hover:opacity-90"
+              style={{
+                background: 'var(--bv-amber)',
+                color: 'var(--bv-black)',
+                borderRadius: 2,
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+              }}
+            >
+              Apartar mi lugar por WhatsApp
+            </a>
+          </Reveal>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer style={{ background: BV.dark, color: '#fff' }}>
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 px-8 py-16 text-center">
-          <LogoMark variant="dark" />
+      <footer style={{ background: 'var(--bv-footer)', borderTop: '1px solid var(--bv-border)' }}>
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-14 text-center">
           <p
             style={{
-              fontFamily: SERIF,
-              fontSize: '1.15rem',
-              fontWeight: 400,
-              color: BV.gold,
-              maxWidth: 360,
-              lineHeight: 1.6,
+              fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
+              fontWeight: 300,
+              fontSize: '1.1rem',
+              color: 'var(--bv-muted)',
             }}
           >
             Iluminamos tu fe, acompañamos tu camino
           </p>
-          <ul className="space-y-2 text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          <ul className="space-y-2 text-sm" style={{ fontWeight: 300, color: 'var(--bv-muted)' }}>
             <li>
-              <a
-                href={`https://wa.me/${WA_PHONE}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition hover:text-white"
-              >
+              <a href={`https://wa.me/${WA_PHONE}`} target="_blank" rel="noopener noreferrer" className="transition hover:text-[var(--bv-text)]">
                 WhatsApp · +52 55 3448 9552
               </a>
             </li>
@@ -740,14 +718,14 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
                 href="https://instagram.com/laruedabiov"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="transition hover:text-white"
+                className="transition hover:text-[var(--bv-text)]"
               >
                 Instagram · @laruedabiov
               </a>
             </li>
             <li>Iztacalco, CDMX</li>
           </ul>
-          <p className="pt-6 text-[10px] tracking-widest" style={{ color: 'rgba(255,255,255,0.25)' }}>
+          <p style={{ fontSize: 10, fontWeight: 300, color: 'var(--bv-muted)', opacity: 0.45, letterSpacing: '0.12em' }}>
             Powered by Agentia
           </p>
         </div>
@@ -758,15 +736,17 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
         href={WA_CATALOG}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center text-white transition hover:scale-105 md:hidden"
+        className="fixed bottom-5 right-5 z-40 flex items-center justify-center text-white transition hover:scale-105 md:hidden"
         style={{
-          background: BV.wa,
+          width: 52,
+          height: 52,
+          background: '#25D366',
           borderRadius: '50%',
-          boxShadow: '0 4px 20px rgba(37,211,102,0.45)',
+          boxShadow: '0 4px 16px rgba(37,211,102,0.4)',
         }}
         aria-label="Escribir por WhatsApp"
       >
-        <WhatsAppIcon className="h-7 w-7" />
+        <WhatsAppIcon className="h-6 w-6" />
       </a>
     </div>
   );

@@ -1,11 +1,4 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-inter',
-});
 
 const TITLE = 'La Rueda Veladoras | Aromas, ceras y velas artesanales - CDMX';
 const DESCRIPTION =
@@ -43,5 +36,13 @@ export const metadata: Metadata = {
 };
 
 export default function BiovelaLayout({ children }: { children: React.ReactNode }) {
-  return <div className={inter.className}>{children}</div>;
+  return (
+    <>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet"
+      />
+      {children}
+    </>
+  );
 }
