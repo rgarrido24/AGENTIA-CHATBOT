@@ -4,6 +4,7 @@ import { getMongoDb } from '@/lib/mongodb';
 const PAYMENT_LINKS: Record<string, string | undefined> = {
   luciano:   process.env.STRIPE_PAYMENT_LINK_LUCIANO,
   decohouse: process.env.STRIPE_PAYMENT_LINK_DECOHOUSE,
+  biovela:   process.env.STRIPE_PAYMENT_LINK_BIOVELA,
 };
 
 const ALLOWED_DOMAINS = ['agentia.software', 'localhost:3000', 'localhost:3010'];
