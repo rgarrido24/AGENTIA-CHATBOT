@@ -10,6 +10,40 @@ const STORE_URL = 'https://biovela2.mitiendanube.com';
 const COURSE_WA_URL =
   'https://wa.me/525534489552?text=Hola!%20Quiero%20informes%20sobre%20el%20curso%20de%20Jab%C3%B3n%20Artesanal%20y%20Velas%20de%20Soya';
 
+const COURSE_DEADLINE = new Date('2026-07-31T23:59:59');
+
+const FEATURED_PRODUCTS = [
+  {
+    name: 'LAVANDA 250ml',
+    price: 183,
+    imageUrl: 'https://assets-catalog-cdn.payclip.com/117573c9-2740-11ef-af88-93b482b27b50.jpg',
+  },
+  {
+    name: 'VAINILLA 50ml',
+    price: 39,
+    imageUrl: 'https://assets-catalog-cdn.payclip.com/b4637037-29a8-11ef-bf37-13590552b219.jpg',
+  },
+  {
+    name: 'FRESA 250ml',
+    price: 150,
+    imageUrl: 'https://assets-catalog-cdn.payclip.com/3741b133-250d-11ef-b449-915e3c319e28.jpg',
+  },
+  {
+    name: 'CANELA ESPECIAL 250ml',
+    price: 340,
+    imageUrl: 'https://assets-catalog-cdn.payclip.com/f894da2f-29a8-11ef-8763-13590552b219.jpg',
+  },
+] as const;
+
+const CHAT_BUBBLES = [
+  { side: 'bot' as const, text: '¡Hola! 🕯 ¿Buscas algún aroma en especial?' },
+  { side: 'client' as const, text: 'Sí, quiero lavanda...' },
+  {
+    side: 'bot' as const,
+    text: '¡Tenemos Lavanda 50ml a $58 y 250ml a $183! ¿Te mando los detalles?',
+  },
+];
+
 const FILTERS = [
   { id: 'Todos', label: 'Todos' },
   { id: 'Aromas', label: 'Aromas' },
@@ -53,6 +87,26 @@ const BV_STYLES = `
   0%, 100% { transform: scaleY(0.35); opacity: 0.35; }
   50% { transform: scaleY(1); opacity: 1; }
 }
+@keyframes bv-slide-down {
+  from { opacity: 0; transform: translateY(-100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bv-slide-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bv-bubble-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes bv-tooltip-pop {
+  from { opacity: 0; transform: translateX(8px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+.bv-sticky-bar { animation: bv-slide-down 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.bv-sticky-bar--bottom { animation: bv-slide-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.bv-chat-bubble--visible { animation: bv-bubble-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.bv-wa-tooltip { animation: bv-tooltip-pop 0.3s ease forwards; }
 .bv-flame { animation: bv-flicker 1.5s ease-in-out infinite; transform-origin: center bottom; }
 .bv-hero-title { animation: bv-fade-in 0.8s ease 0.3s both; }
 .bv-hero-sub { animation: bv-fade-in 0.8s ease 0.6s both; }
@@ -66,8 +120,340 @@ const BV_STYLES = `
   .bv-scroll-indicator span { animation: none; }
   .bv-reveal { opacity: 1; }
   .bv-reveal--visible { animation: none; opacity: 1; transform: none; }
+  .bv-sticky-bar, .bv-sticky-bar--bottom, .bv-chat-bubble--visible, .bv-wa-tooltip { animation: none; opacity: 1; transform: none; }
 }
 `;
+
+function featuredWhatsAppUrl(name: string, price: number): string {
+  const text = `Hola! Me interesa ${name} ($${price} MXN), ¿tienen disponibilidad?`;
+  return `https://wa.me/${WA_PHONE}?text=${encodeURIComponent(text)}`;
+}
+
+function daysUntilCourse(): number {
+  const diff = COURSE_DEADLINE.getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+function AnimatedChatBubbles() {
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [cycle, setCycle] = useState(0);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let i = 0; i < CHAT_BUBBLES.length; i++) {
+      timers.push(setTimeout(() => setVisibleCount(i + 1), (i + 1) * 1000));
+    }
+    timers.push(
+      setTimeout(() => {
+        setVisibleCount(0);
+        setCycle((c) => c + 1);
+      }, 8000)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [cycle]);
+
+  return (
+    <div className="bv-hero-chat mt-8 w-full max-w-md px-2" key={cycle}>
+      <div className="flex flex-col gap-2.5">
+        {CHAT_BUBBLES.map((bubble, i) => {
+          const isVisible = visibleCount > i;
+          const isBot = bubble.side === 'bot';
+          return (
+            <a
+              key={`${cycle}-${i}`}
+              href={WA_CATALOG}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`max-w-[88%] cursor-pointer px-3.5 py-2.5 text-left text-sm leading-snug transition-opacity ${
+                isBot ? 'self-start' : 'self-end'
+              } ${isVisible ? 'bv-chat-bubble--visible' : 'pointer-events-none opacity-0'}`}
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontWeight: 400,
+                borderRadius: isBot ? '0 12px 12px 12px' : '12px 0 12px 12px',
+                background: isBot ? '#005C4B' : '#2A3942',
+                color: '#E9EDEF',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.25)',
+              }}
+            >
+              {bubble.text}
+            </a>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-center text-[11px]" style={{ color: 'var(--bv-muted)', letterSpacing: '0.06em' }}>
+        Toca para escribirnos por WhatsApp
+      </p>
+    </div>
+  );
+}
+
+function StickyActionBar({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+
+  return (
+    <>
+      <div
+        className="bv-sticky-bar fixed left-0 right-0 top-0 z-[45] hidden border-b md:block"
+        style={{
+          background: 'rgba(14,11,7,0.95)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderColor: 'var(--bv-border)',
+        }}
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2.5 md:px-6">
+          <p className="text-sm" style={{ color: 'var(--bv-muted)', fontFamily: 'var(--font-body)' }}>
+            🕯 128 aromas disponibles · Envíos a todo México
+          </p>
+          <a
+            href={WA_CATALOG}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+            style={{
+              background: 'var(--bv-amber)',
+              color: 'var(--bv-black)',
+              borderRadius: 2,
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Escribir ahora →
+          </a>
+        </div>
+      </div>
+      <div
+        className="bv-sticky-bar--bottom fixed bottom-0 left-0 right-0 z-[45] border-t md:hidden"
+        style={{
+          background: 'rgba(14,11,7,0.95)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderColor: 'var(--bv-border)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <p className="text-xs leading-snug" style={{ color: 'var(--bv-muted)', fontFamily: 'var(--font-body)' }}>
+            🕯 128 aromas · Envíos MX
+          </p>
+          <a
+            href={WA_CATALOG}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 px-3 py-2 text-xs font-medium"
+            style={{
+              background: 'var(--bv-amber)',
+              color: 'var(--bv-black)',
+              borderRadius: 2,
+              fontFamily: 'var(--font-body)',
+            }}
+          >
+            Escribir ahora →
+          </a>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function FeaturedProductCard({
+  name,
+  price,
+  imageUrl,
+}: {
+  name: string;
+  price: number;
+  imageUrl: string;
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  return (
+    <article
+      className="flex shrink-0 snap-center flex-col"
+      style={{
+        width: 'min(72vw, 220px)',
+        background: 'var(--bv-surface)',
+        border: '1px solid var(--bv-border)',
+      }}
+    >
+      <div className="relative aspect-square w-full overflow-hidden">
+        {!imgFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt={name}
+            loading="lazy"
+            className="h-full w-full object-cover"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center" style={{ background: 'var(--bv-surface2)' }}>
+            <FlameIcon height={32} className="bv-flame opacity-70" />
+          </div>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        <p
+          className="line-clamp-2"
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 11,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--bv-muted)',
+          }}
+        >
+          {name}
+        </p>
+        <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--bv-amber)' }}>
+          ${price} MXN
+        </p>
+        <a
+          href={featuredWhatsAppUrl(name, price)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-auto py-2 text-center text-xs font-medium transition-opacity hover:opacity-90"
+          style={{
+            background: 'var(--bv-amber)',
+            color: 'var(--bv-black)',
+            borderRadius: 2,
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          Pedir por WhatsApp
+        </a>
+      </div>
+    </article>
+  );
+}
+
+function FeaturedProductsSection() {
+  return (
+    <section style={{ background: 'var(--bv-black)', borderTop: '1px solid var(--bv-border)' }}>
+      <div className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-16">
+        <Reveal>
+          <h2
+            className="mb-6"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(1.5rem, 3vw, 2rem)',
+              fontWeight: 300,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: 'var(--bv-text)',
+            }}
+          >
+            Los más pedidos
+          </h2>
+        </Reveal>
+        <div
+          className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--bv-border) transparent' }}
+        >
+          {FEATURED_PRODUCTS.map((product) => (
+            <FeaturedProductCard key={product.name} {...product} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CourseCountdown() {
+  const [daysLeft, setDaysLeft] = useState(daysUntilCourse);
+
+  useEffect(() => {
+    const iv = setInterval(() => setDaysLeft(daysUntilCourse()), 60_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  return (
+    <div
+      className="inline-flex items-center gap-2 self-start px-4 py-2"
+      style={{
+        background: 'rgba(232,150,42,0.12)',
+        border: '1px solid var(--bv-amber-dim)',
+        borderRadius: 2,
+      }}
+    >
+      <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--bv-amber)', fontWeight: 500 }}>
+        {daysLeft > 0
+          ? `Faltan ${daysLeft} día${daysLeft === 1 ? '' : 's'} para el próximo grupo`
+          : 'Últimos lugares — inscripciones abiertas'}
+      </span>
+    </div>
+  );
+}
+
+function WhatsAppFab({ stickyVisible }: { stickyVisible?: boolean }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    if (dismissed) return;
+    const show = () => setShowTooltip(true);
+    const hide = () => setShowTooltip(false);
+    const initial = setTimeout(show, 3000);
+    const iv = setInterval(() => {
+      hide();
+      setTimeout(show, 400);
+    }, 15000);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(iv);
+    };
+  }, [dismissed]);
+
+  const handleClick = () => {
+    setShowTooltip(false);
+    setDismissed(true);
+  };
+
+  return (
+    <div
+      className={`fixed right-5 z-40 flex items-end gap-2 transition-[bottom] duration-300 md:right-6 ${
+        stickyVisible ? 'bottom-[4.5rem] md:bottom-6' : 'bottom-5 md:bottom-6'
+      }`}
+    >
+      {showTooltip && !dismissed && (
+        <div
+          className="bv-wa-tooltip relative max-w-[200px] px-3 py-2 text-sm shadow-lg"
+          style={{
+            background: 'var(--bv-surface2)',
+            color: 'var(--bv-text)',
+            borderRadius: 8,
+            border: '1px solid var(--bv-border)',
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          ¿Tienes dudas? ¡Escríbenos! 💬
+          <span
+            className="absolute -right-1 bottom-3 h-2 w-2 rotate-45"
+            style={{ background: 'var(--bv-surface2)', borderRight: '1px solid var(--bv-border)', borderBottom: '1px solid var(--bv-border)' }}
+            aria-hidden
+          />
+        </div>
+      )}
+      <a
+        href={WA_CATALOG}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={handleClick}
+        className="flex items-center justify-center text-white shadow-lg transition hover:scale-105"
+        style={{
+          width: 56,
+          height: 56,
+          background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+          borderRadius: '50%',
+          boxShadow: '0 4px 20px rgba(37,211,102,0.45)',
+        }}
+        aria-label="Escribir por WhatsApp"
+      >
+        <WhatsAppIcon className="h-7 w-7" />
+      </a>
+    </div>
+  );
+}
 
 function useInView(options?: IntersectionObserverInit) {
   const [visible, setVisible] = useState(false);
@@ -297,8 +683,16 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
   const [activeFilter, setActiveFilter] = useState<FilterId>('Todos');
   const [search, setSearch] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [stickyVisible, setStickyVisible] = useState(false);
   const gridRef = useRef<HTMLElement>(null);
   const courseRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const onScroll = () => setStickyVisible(window.scrollY > 300);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { Todos: catalog.length };
@@ -358,7 +752,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
 
   return (
     <div
-      className="min-h-screen"
+      className={`min-h-screen${stickyVisible ? ' pb-[4.5rem] md:pb-0' : ''}`}
       style={{
         background: 'var(--bv-black)',
         color: 'var(--bv-text)',
@@ -366,6 +760,8 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
       }}
     >
       <style dangerouslySetInnerHTML={{ __html: BV_STYLES }} />
+
+      <StickyActionBar visible={stickyVisible} />
 
       {/* Sticky navigation */}
       <nav
@@ -566,10 +962,14 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
           </a>
         </div>
 
+        <AnimatedChatBubbles />
+
         <div className="bv-scroll-indicator absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
           <span className="block h-10 w-px" style={{ background: 'var(--bv-muted)' }} />
         </div>
       </header>
+
+      <FeaturedProductsSection />
 
       {/* Product grid — mosaic */}
       <main ref={gridRef} className="scroll-mt-36">
@@ -646,6 +1046,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
             <CourseImage />
           </Reveal>
           <Reveal delay={100} className="flex flex-col gap-5">
+            <CourseCountdown />
             <span
               className="self-start uppercase"
               style={{
@@ -687,7 +1088,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
                 fontWeight: 500,
               }}
             >
-              Apartar mi lugar por WhatsApp
+              Apartar mi lugar
             </a>
           </Reveal>
         </div>
@@ -731,23 +1132,7 @@ export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }
         </div>
       </footer>
 
-      {/* Mobile FAB */}
-      <a
-        href={WA_CATALOG}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-5 right-5 z-40 flex items-center justify-center text-white transition hover:scale-105 md:hidden"
-        style={{
-          width: 52,
-          height: 52,
-          background: '#25D366',
-          borderRadius: '50%',
-          boxShadow: '0 4px 16px rgba(37,211,102,0.4)',
-        }}
-        aria-label="Escribir por WhatsApp"
-      >
-        <WhatsAppIcon className="h-6 w-6" />
-      </a>
+      <WhatsAppFab stickyVisible={stickyVisible} />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import type { CatalogProduct } from '@/lib/biovela-catalog';
 import { MetricsRow } from '@/components/client-panel/MetricsRow';
 import { ConversationList, type ConversationItem } from '@/components/client-panel/ConversationList';
 import { ChatColumn, type ChatMessage } from '@/components/client-panel/ChatColumn';
-import { SidebarColumn, ProfileDrawer } from '@/components/client-panel/SidebarColumn';
+import { SidebarColumn, SidebarMobileTabs } from '@/components/client-panel/SidebarColumn';
 import { QrModal } from '@/components/client-panel/QrModal';
 import { getPanelTokenFromUrl, panelFetch } from '@/lib/client-panel-hooks';
 import { getClientPanelBrand } from '@/lib/client-panel-config';
@@ -84,7 +84,6 @@ export function ClientPanelApp({ clientId }: { clientId: string }) {
   const [waConnected, setWaConnected] = useState(false);
   const [waPhone, setWaPhone] = useState<string | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const notesTimerRef = useMemo(() => ({ id: null as ReturnType<typeof setTimeout> | null }), []);
@@ -173,7 +172,6 @@ export function ClientPanelApp({ clientId }: { clientId: string }) {
 
   useEffect(() => {
     if (selectedId) loadMessages(selectedId).catch((e) => setError(e.message));
-    else setProfileOpen(false);
   }, [selectedId, loadMessages]);
 
   const updateLead = useCallback(
@@ -212,55 +210,81 @@ export function ClientPanelApp({ clientId }: { clientId: string }) {
         </div>
       )}
 
-      <div className="flex flex-1 min-h-0 flex-col lg:flex-row border-t" style={{ borderColor: brand.border }}>
-        <ConversationList
-          brand={brand}
-          items={conversations}
-          selectedId={selectedId}
-          filter={filter}
-          query={query}
-          onFilter={setFilter}
-          onQuery={setQuery}
-          onSelect={setSelectedId}
-          waConnected={waConnected}
-          waPhone={waPhone}
-          onConnectClick={() => setQrOpen(true)}
-        />
+      <div className="flex flex-1 min-h-0 flex-col md:flex-row border-t" style={{ borderColor: brand.border }}>
+        <div className={selectedId ? 'hidden md:flex md:shrink-0' : 'flex shrink-0'}>
+          <ConversationList
+            brand={brand}
+            items={conversations}
+            selectedId={selectedId}
+            filter={filter}
+            query={query}
+            onFilter={setFilter}
+            onQuery={setQuery}
+            onSelect={setSelectedId}
+            waConnected={waConnected}
+            waPhone={waPhone}
+            onConnectClick={() => setQrOpen(true)}
+          />
+        </div>
 
-        <ChatColumn
-          brand={brand}
-          contactName={lead.contactName}
-          humanMode={lead.humanMode}
-          messages={messages}
-          catalog={catalog}
-          onTakeover={async () => {
-            if (!selectedId) return;
-            await panelFetch(clientId, '/whatsapp/takeover', {
-              method: 'POST',
-              body: JSON.stringify({ convId: selectedId }),
-            });
-            setLead((p) => ({ ...p, humanMode: true }));
-            await loadMessages(selectedId);
-          }}
-          onRelease={async () => {
-            if (!selectedId) return;
-            await panelFetch(clientId, '/whatsapp/release', {
-              method: 'POST',
-              body: JSON.stringify({ convId: selectedId }),
-            });
-            setLead((p) => ({ ...p, humanMode: false }));
-            await loadMessages(selectedId);
-          }}
-          onSend={async (text) => {
-            if (!selectedId) return;
-            await panelFetch(clientId, `/messages/${encodeURIComponent(selectedId)}`, {
-              method: 'POST',
-              body: JSON.stringify({ message: text }),
-            });
-            await loadMessages(selectedId);
-            await loadConversations();
-          }}
-        />
+        <div
+          className={`flex min-h-0 min-w-0 flex-col ${selectedId ? 'flex flex-1' : 'hidden md:flex md:flex-1'}`}
+        >
+          <ChatColumn
+            brand={brand}
+            contactName={lead.contactName}
+            humanMode={lead.humanMode}
+            messages={messages}
+            catalog={catalog}
+            onBack={selectedId ? () => setSelectedId(null) : undefined}
+            onTakeover={async () => {
+              if (!selectedId) return;
+              await panelFetch(clientId, '/whatsapp/takeover', {
+                method: 'POST',
+                body: JSON.stringify({ convId: selectedId }),
+              });
+              setLead((p) => ({ ...p, humanMode: true }));
+              await loadMessages(selectedId);
+            }}
+            onRelease={async () => {
+              if (!selectedId) return;
+              await panelFetch(clientId, '/whatsapp/release', {
+                method: 'POST',
+                body: JSON.stringify({ convId: selectedId }),
+              });
+              setLead((p) => ({ ...p, humanMode: false }));
+              await loadMessages(selectedId);
+            }}
+            onSend={async (text) => {
+              if (!selectedId) return;
+              await panelFetch(clientId, `/messages/${encodeURIComponent(selectedId)}`, {
+                method: 'POST',
+                body: JSON.stringify({ message: text }),
+              });
+              await loadMessages(selectedId);
+              await loadConversations();
+            }}
+          />
+
+          {selectedId && (
+            <SidebarMobileTabs
+              brand={brand}
+              contactName={lead.contactName}
+              phone={lead.phone}
+              stage={lead.stage}
+              tags={lead.tags}
+              notes={lead.notes}
+              purchaseIntent={lead.purchaseIntent}
+              onStage={(stage) => updateLead({ stage })}
+              onTags={(tags) => updateLead({ tags })}
+              onNotes={(notes) => {
+                setLead((p) => ({ ...p, notes }));
+                if (notesTimerRef.id) clearTimeout(notesTimerRef.id);
+                notesTimerRef.id = setTimeout(() => updateLead({ notes }), 600);
+              }}
+            />
+          )}
+        </div>
 
         {selectedId && (
           <SidebarColumn
@@ -281,37 +305,6 @@ export function ClientPanelApp({ clientId }: { clientId: string }) {
           />
         )}
       </div>
-
-      {selectedId && (
-        <>
-          <button
-            type="button"
-            className="fixed bottom-5 right-5 z-40 md:hidden px-4 py-3 font-semibold text-white shadow-lg"
-            style={{ background: brand.primary, borderRadius: brand.radius }}
-            onClick={() => setProfileOpen(true)}
-          >
-            Ver perfil
-          </button>
-          <ProfileDrawer
-            open={profileOpen}
-            onClose={() => setProfileOpen(false)}
-            brand={brand}
-            contactName={lead.contactName}
-            phone={lead.phone}
-            stage={lead.stage}
-            tags={lead.tags}
-            notes={lead.notes}
-            purchaseIntent={lead.purchaseIntent}
-            onStage={(stage) => updateLead({ stage })}
-            onTags={(tags) => updateLead({ tags })}
-            onNotes={(notes) => {
-              setLead((p) => ({ ...p, notes }));
-              if (notesTimerRef.id) clearTimeout(notesTimerRef.id);
-              notesTimerRef.id = setTimeout(() => updateLead({ notes }), 600);
-            }}
-          />
-        </>
-      )}
 
       <QrModal
         brand={brand}

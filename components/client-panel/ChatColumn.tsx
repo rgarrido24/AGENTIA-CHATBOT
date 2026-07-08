@@ -4,7 +4,7 @@ import type { ClientPanelBrand } from '@/lib/client-panel-config';
 import type { CatalogProduct } from '@/lib/biovela-catalog';
 import { catalogImageUrl, formatProductMessage } from '@/lib/biovela-catalog';
 import { relativeTime } from '@/lib/client-panel-hooks';
-import { Send, Hand } from 'lucide-react';
+import { Send, Hand, ArrowLeft } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 export type ChatMessage = {
@@ -21,6 +21,7 @@ type Props = {
   humanMode: boolean;
   messages: ChatMessage[];
   catalog: CatalogProduct[];
+  onBack?: () => void;
   onTakeover: () => void;
   onRelease: () => void;
   onSend: (text: string) => Promise<void>;
@@ -32,6 +33,7 @@ export function ChatColumn({
   humanMode,
   messages,
   catalog,
+  onBack,
   onTakeover,
   onRelease,
   onSend,
@@ -68,6 +70,17 @@ export function ChatColumn({
         className="flex flex-wrap items-center gap-3 p-4 border-b bg-white"
         style={{ borderColor: brand.border }}
       >
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="shrink-0 rounded-lg p-2 md:hidden"
+            style={{ color: brand.text }}
+            aria-label="Volver a conversaciones"
+          >
+            <ArrowLeft size={22} />
+          </button>
+        )}
         <div className="flex-1 min-w-0">
           <h2 className="text-lg font-semibold truncate">{contactName || 'Selecciona una conversación'}</h2>
           <p className="text-[14px] opacity-70">
