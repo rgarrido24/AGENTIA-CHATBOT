@@ -496,13 +496,18 @@ async function processZapierLead(data: Record<string, unknown>) {
   await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
 
   if (resellerMatch?.resellerId && resellerMatch?.clientSlug) {
-    void notifyPortalNewLead({
-      resellerId: resellerMatch.resellerId,
-      clientSlug: resellerMatch.clientSlug,
-      nombre: full_name,
-      telefono: phone,
-      leadId,
-    });
+    try {
+      console.log('[PWA PUSH] Disparando tras insert Zapier:', resellerMatch.clientSlug);
+      await notifyPortalNewLead({
+        resellerId: resellerMatch.resellerId,
+        clientSlug: resellerMatch.clientSlug,
+        nombre: full_name,
+        telefono: phone,
+        leadId,
+      });
+    } catch (pushErr) {
+      console.error('[PWA PUSH] Error notifyPortalNewLead (zapier):', pushErr instanceof Error ? pushErr.message : pushErr);
+    }
   }
 }
 
@@ -625,13 +630,18 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
       await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
 
       if (result.upsertedCount > 0 && resellerMatch?.resellerId && resellerMatch?.clientSlug) {
-        void notifyPortalNewLead({
-          resellerId: resellerMatch.resellerId,
-          clientSlug: resellerMatch.clientSlug,
-          nombre: full_name,
-          telefono: phone,
-          leadId,
-        });
+        try {
+          console.log('[PWA PUSH] Disparando tras insert Meta:', resellerMatch.clientSlug);
+          await notifyPortalNewLead({
+            resellerId: resellerMatch.resellerId,
+            clientSlug: resellerMatch.clientSlug,
+            nombre: full_name,
+            telefono: phone,
+            leadId,
+          });
+        } catch (pushErr) {
+          console.error('[PWA PUSH] Error notifyPortalNewLead (meta):', pushErr instanceof Error ? pushErr.message : pushErr);
+        }
       }
 
       console.log(`[fb-leads/meta] Lead guardado: ${leadId} | campaña: ${campaign_name}`);

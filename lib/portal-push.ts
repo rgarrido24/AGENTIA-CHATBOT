@@ -32,6 +32,22 @@ type PortalPushPayload = {
   tag?: string;
 };
 
+function maskKey(key: string): string {
+  if (key.length <= 12) return '(corta)';
+  return `${key.slice(0, 8)}…${key.slice(-4)}`;
+}
+
+function normalizePortalIds(resellerId: string, clientSlug: string): { resellerId: string; clientSlug: string } {
+  return {
+    resellerId: resellerId.trim().toLowerCase(),
+    clientSlug: clientSlug.trim().toLowerCase(),
+  };
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function getVapidKeys(): { publicKey: string; privateKey: string; subject: string } | null {
   const publicKey = (
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
@@ -40,14 +56,31 @@ function getVapidKeys(): { publicKey: string; privateKey: string; subject: strin
   ).trim();
   const privateKey = (process.env.VAPID_PRIVATE_KEY || '').trim();
   const subject = (process.env.VAPID_SUBJECT || 'mailto:admin@agentia.software').trim();
+
+  console.log('[PWA PUSH] VAPID env', {
+    publicKey: publicKey ? maskKey(publicKey) : '(vacío)',
+    publicKeySource: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      ? 'NEXT_PUBLIC_VAPID_PUBLIC_KEY'
+      : process.env.VAPID_PUBLIC_KEY
+        ? 'VAPID_PUBLIC_KEY'
+        : 'ninguna',
+    privateKey: privateKey ? `SET (${privateKey.length} chars)` : '(vacío)',
+    subject,
+    ok: Boolean(publicKey && privateKey),
+  });
+
   if (!publicKey || !privateKey) return null;
   return { publicKey, privateKey, subject };
 }
 
 function configureWebPush(): boolean {
   const keys = getVapidKeys();
-  if (!keys) return false;
+  if (!keys) {
+    console.log('[PWA PUSH] configureWebPush: claves VAPID incompletas — push deshabilitado');
+    return false;
+  }
   webpush.setVapidDetails(keys.subject, keys.publicKey, keys.privateKey);
+  console.log('[PWA PUSH] configureWebPush: VAPID configurado correctamente');
   return true;
 }
 
@@ -59,9 +92,10 @@ function portalOrigin(): string {
 }
 
 export async function isPortalPwaEnabled(resellerId: string, clientSlug: string): Promise<boolean> {
+  const ids = normalizePortalIds(resellerId, clientSlug);
   const db = await getMongoDb();
   const doc = await db.collection('leads').findOne(
-    { _collection_type: 'reseller_client', resellerId, clientSlug },
+    { _collection_type: 'reseller_client', resellerId: ids.resellerId, clientSlug: ids.clientSlug },
     { projection: { pwa_enabled: 1 } },
   );
   return doc?.pwa_enabled === true;
@@ -77,14 +111,15 @@ export async function savePortalPushSubscription(
   },
   userAgent?: string,
 ): Promise<void> {
+  const ids = normalizePortalIds(resellerId, clientSlug);
   const db = await getMongoDb();
   const now = new Date();
   await db.collection('portal_push_subscriptions').updateOne(
     { endpoint: subscription.endpoint },
     {
       $set: {
-        resellerId,
-        clientSlug,
+        resellerId: ids.resellerId,
+        clientSlug: ids.clientSlug,
         endpoint: subscription.endpoint,
         keys: subscription.keys,
         expirationTime: subscription.expirationTime ?? null,
@@ -106,10 +141,14 @@ async function listPortalPushSubscriptions(
   resellerId: string,
   clientSlug: string,
 ): Promise<PortalPushSubscriptionDoc[]> {
+  const ids = normalizePortalIds(resellerId, clientSlug);
   const db = await getMongoDb();
   const docs = await db
     .collection('portal_push_subscriptions')
-    .find({ resellerId, clientSlug })
+    .find({
+      resellerId: { $regex: `^${escapeRegex(ids.resellerId)}$`, $options: 'i' },
+      clientSlug: { $regex: `^${escapeRegex(ids.clientSlug)}$`, $options: 'i' },
+    })
     .toArray();
   return docs.map((d) => ({
     resellerId: String(d.resellerId),
@@ -124,9 +163,10 @@ async function listPortalPushSubscriptions(
 }
 
 async function incrementPortalBadgeCount(resellerId: string, clientSlug: string): Promise<number> {
+  const ids = normalizePortalIds(resellerId, clientSlug);
   const db = await getMongoDb();
   const result = await db.collection('leads').findOneAndUpdate(
-    { _collection_type: 'reseller_client', resellerId, clientSlug, pwa_enabled: true },
+    { _collection_type: 'reseller_client', resellerId: ids.resellerId, clientSlug: ids.clientSlug, pwa_enabled: true },
     { $inc: { pwaBadgeCount: 1 } },
     { returnDocument: 'after', projection: { pwaBadgeCount: 1 } },
   );
@@ -142,11 +182,22 @@ export async function notifyPortalNewLead(params: {
   telefono?: string;
   leadId: string;
 }): Promise<void> {
-  const { resellerId, clientSlug, leadId } = params;
-  if (!resellerId || !clientSlug || resellerId === 'unknown') return;
+  const ids = normalizePortalIds(params.resellerId, params.clientSlug);
+  const { resellerId, clientSlug } = ids;
+  const { leadId } = params;
+
+  console.log('[PWA PUSH] notifyPortalNewLead:', { resellerId, clientSlug, leadId });
+
+  if (!resellerId || !clientSlug || resellerId === 'unknown') {
+    console.log('[PWA PUSH] omitido: resellerId/clientSlug inválido');
+    return;
+  }
 
   const enabled = await isPortalPwaEnabled(resellerId, clientSlug);
-  if (!enabled) return;
+  if (!enabled) {
+    console.log('[PWA PUSH] omitido: pwa_enabled=false para', clientSlug);
+    return;
+  }
   if (!configureWebPush()) return;
 
   const nombre = params.nombre?.trim() || 'Sin nombre';
@@ -165,21 +216,26 @@ export async function notifyPortalNewLead(params: {
   };
 
   const subs = await listPortalPushSubscriptions(resellerId, clientSlug);
+  console.log('[PWA PUSH] Enviando a clientSlug:', clientSlug, 'suscripciones:', subs.length);
   if (!subs.length) return;
 
   const json = JSON.stringify(payload);
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     subs.map(async (sub) => {
       try {
         await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, json);
       } catch (err: unknown) {
         const status = (err as { statusCode?: number })?.statusCode;
+        console.log('[PWA PUSH] fallo envío:', status ?? (err instanceof Error ? err.message : err));
         if (status === 404 || status === 410) {
           await removePortalPushSubscription(sub.endpoint);
         }
+        throw err;
       }
     }),
   );
+  const sent = results.filter((r) => r.status === 'fulfilled').length;
+  console.log('[PWA PUSH] enviados:', sent, '/', subs.length);
 }
 
 export function getPortalVapidPublicKey(): string | null {
