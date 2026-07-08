@@ -6,7 +6,7 @@ import type { CatalogProduct } from '@/lib/biovela-catalog';
 import { MetricsRow } from '@/components/client-panel/MetricsRow';
 import { ConversationList, type ConversationItem } from '@/components/client-panel/ConversationList';
 import { ChatColumn, type ChatMessage } from '@/components/client-panel/ChatColumn';
-import { SidebarColumn } from '@/components/client-panel/SidebarColumn';
+import { SidebarColumn, ProfileDrawer } from '@/components/client-panel/SidebarColumn';
 import { QrModal } from '@/components/client-panel/QrModal';
 import { getPanelTokenFromUrl, panelFetch } from '@/lib/client-panel-hooks';
 import { getClientPanelBrand } from '@/lib/client-panel-config';
@@ -84,6 +84,7 @@ export function ClientPanelApp({ clientId }: { clientId: string }) {
   const [waConnected, setWaConnected] = useState(false);
   const [waPhone, setWaPhone] = useState<string | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const notesTimerRef = useMemo(() => ({ id: null as ReturnType<typeof setTimeout> | null }), []);
@@ -172,6 +173,7 @@ export function ClientPanelApp({ clientId }: { clientId: string }) {
 
   useEffect(() => {
     if (selectedId) loadMessages(selectedId).catch((e) => setError(e.message));
+    else setProfileOpen(false);
   }, [selectedId, loadMessages]);
 
   const updateLead = useCallback(
@@ -279,6 +281,37 @@ export function ClientPanelApp({ clientId }: { clientId: string }) {
           />
         )}
       </div>
+
+      {selectedId && (
+        <>
+          <button
+            type="button"
+            className="fixed bottom-5 right-5 z-40 md:hidden px-4 py-3 font-semibold text-white shadow-lg"
+            style={{ background: brand.primary, borderRadius: brand.radius }}
+            onClick={() => setProfileOpen(true)}
+          >
+            Ver perfil
+          </button>
+          <ProfileDrawer
+            open={profileOpen}
+            onClose={() => setProfileOpen(false)}
+            brand={brand}
+            contactName={lead.contactName}
+            phone={lead.phone}
+            stage={lead.stage}
+            tags={lead.tags}
+            notes={lead.notes}
+            purchaseIntent={lead.purchaseIntent}
+            onStage={(stage) => updateLead({ stage })}
+            onTags={(tags) => updateLead({ tags })}
+            onNotes={(notes) => {
+              setLead((p) => ({ ...p, notes }));
+              if (notesTimerRef.id) clearTimeout(notesTimerRef.id);
+              notesTimerRef.id = setTimeout(() => updateLead({ notes }), 600);
+            }}
+          />
+        </>
+      )}
 
       <QrModal
         brand={brand}

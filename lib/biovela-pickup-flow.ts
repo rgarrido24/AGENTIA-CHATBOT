@@ -94,14 +94,41 @@ function weekdayInMexico(date: Date): number {
   return map[label] ?? date.getDay();
 }
 
+function getMexicoDateParts(from = new Date()): { year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(from);
+  const year = Number(parts.find((p) => p.type === 'year')?.value);
+  const month = Number(parts.find((p) => p.type === 'month')?.value);
+  const day = Number(parts.find((p) => p.type === 'day')?.value);
+  return { year, month, day };
+}
+
+function mexicoDateAnchor(from = new Date()): Date {
+  const { year, month, day } = getMexicoDateParts(from);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+}
+
+function formatMexicoContextDate(from = new Date()): string {
+  return new Intl.DateTimeFormat('es-MX', {
+    timeZone: TIMEZONE,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(from);
+}
+
 function nextWeekday(targetDow: number, from = new Date()): Date {
-  const base = new Date(from);
-  base.setHours(12, 0, 0, 0);
-  const current = weekdayInMexico(base);
+  const anchor = mexicoDateAnchor(from);
+  const current = weekdayInMexico(from);
   let delta = targetDow - current;
   if (delta <= 0) delta += 7;
-  base.setDate(base.getDate() + delta);
-  return base;
+  anchor.setUTCDate(anchor.getUTCDate() + delta);
+  return anchor;
 }
 
 export function detectBiovelaPickupIntent(message: string): boolean {
@@ -176,17 +203,23 @@ function extractName(text: string): string | null {
 
 function parsePreferredDate(text: string, now = new Date()): Date | null {
   const t = text.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+  const anchor = mexicoDateAnchor(now);
+  const { year: currentYear } = getMexicoDateParts(now);
 
-  if (/pasado manana|pasado mañana/.test(t)) {
-    const d = new Date(now);
-    d.setDate(d.getDate() + 2);
-    d.setHours(12, 0, 0, 0);
+  if (/proxima\s+semana|pr[oó]xima\s+semana|la\s+proxima\s+semana|la\s+pr[oó]xima\s+semana/.test(t)) {
+    const d = new Date(anchor);
+    d.setUTCDate(d.getUTCDate() + 7);
     return d;
   }
-  if (/manana|mañana/.test(t)) {
-    const d = new Date(now);
-    d.setDate(d.getDate() + 1);
-    d.setHours(12, 0, 0, 0);
+
+  if (/pasado manana|pasado mañana/.test(t)) {
+    const d = new Date(anchor);
+    d.setUTCDate(d.getUTCDate() + 2);
+    return d;
+  }
+  if (/\bmanana\b|\bmañana\b/.test(t)) {
+    const d = new Date(anchor);
+    d.setUTCDate(d.getUTCDate() + 1);
     return d;
   }
 
@@ -194,9 +227,9 @@ function parsePreferredDate(text: string, now = new Date()): Date | null {
   if (numeric) {
     const day = Number(numeric[1]);
     const month = Number(numeric[2]) - 1;
-    let year = numeric[3] ? Number(numeric[3]) : now.getFullYear();
+    let year = numeric[3] ? Number(numeric[3]) : currentYear;
     if (year < 100) year += 2000;
-    const d = new Date(year, month, day, 12, 0, 0, 0);
+    const d = new Date(Date.UTC(year, month, day, 12, 0, 0, 0));
     if (!Number.isNaN(d.getTime())) return d;
   }
 
@@ -204,13 +237,13 @@ function parsePreferredDate(text: string, now = new Date()): Date | null {
   if (namedMonth) {
     const day = Number(namedMonth[1]);
     const month = MONTH_MAP[namedMonth[2]];
-    const year = namedMonth[3] ? Number(namedMonth[3]) : now.getFullYear();
-    const d = new Date(year, month, day, 12, 0, 0, 0);
+    const year = namedMonth[3] ? Number(namedMonth[3]) : currentYear;
+    const d = new Date(Date.UTC(year, month, day, 12, 0, 0, 0));
     if (!Number.isNaN(d.getTime())) return d;
   }
 
   for (const [name, dow] of Object.entries(WEEKDAY_MAP)) {
-    if (new RegExp(`\\b${name}\\b`, 'i').test(t)) {
+    if (new RegExp(`\\b(?:el|este|la|proximo|pr[oó]ximo)?\\s*${name}\\b`, 'i').test(t)) {
       return nextWeekday(dow, now);
     }
   }
@@ -218,11 +251,25 @@ function parsePreferredDate(text: string, now = new Date()): Date | null {
   return null;
 }
 
+function toDateIsoInMexico(date: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const year = parts.find((p) => p.type === 'year')?.value ?? '1970';
+  const month = parts.find((p) => p.type === 'month')?.value ?? '01';
+  const day = parts.find((p) => p.type === 'day')?.value ?? '01';
+  return `${year}-${month}-${day}`;
+}
+
 function buildDateTime(date: Date, timeStr: string): Date {
+  const dateIso = toDateIsoInMexico(date);
+  const [y, mo, d] = dateIso.split('-').map(Number);
   const [h, m] = timeStr.split(':').map((v) => Number(v));
-  const result = new Date(date);
-  result.setHours(h, m || 0, 0, 0);
-  return result;
+  // CDMX permanece UTC-6 (sin horario de verano desde 2022)
+  return new Date(Date.UTC(y, mo - 1, d, h + 6, m || 0, 0));
 }
 
 function formatPickupDay(date: Date, timeStr: string): string {
@@ -232,6 +279,7 @@ function formatPickupDay(date: Date, timeStr: string): string {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
+    year: 'numeric',
   }).format(start);
 }
 
@@ -322,7 +370,7 @@ async function clearSession(sessionId: string): Promise<void> {
   await db.collection(COLLECTION).deleteOne({ sessionId });
 }
 
-function mergeFieldsFromMessage(session: PickupSession, message: string): PickupSession {
+function mergeFieldsFromMessage(session: PickupSession, message: string, now = new Date()): PickupSession {
   const next = { ...session };
   const text = message.trim();
 
@@ -332,8 +380,15 @@ function mergeFieldsFromMessage(session: PickupSession, message: string): Pickup
   }
 
   if (!next.preferredDate) {
-    const date = parsePreferredDate(text);
-    if (date) next.preferredDate = date.toISOString().slice(0, 10);
+    const date = parsePreferredDate(text, now);
+    if (date) {
+      next.preferredDate = toDateIsoInMexico(date);
+      console.log('[biovela-pickup] fecha calculada:', {
+        hoy: formatMexicoContextDate(now),
+        mensaje: text.slice(0, 80),
+        resuelta: next.preferredDate,
+      });
+    }
   }
 
   if (!next.preferredTime) {
@@ -449,7 +504,8 @@ export async function handleBiovelaPickupMessage(params: {
     return { handled: true, reply: askForMissingFields(session) };
   }
 
-  const date = new Date(`${session.preferredDate}T12:00:00`);
+  const [y, mo, d] = session.preferredDate.split('-').map(Number);
+  const date = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
   const dow = weekdayInMexico(date);
   if (!ALLOWED_WEEKDAYS.has(dow)) {
     session.preferredDate = undefined;

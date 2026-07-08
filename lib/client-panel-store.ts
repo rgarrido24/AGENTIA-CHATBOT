@@ -365,19 +365,32 @@ export function computePurchaseIntent(conv: PanelConversation): number {
 export async function getPanelMetrics(clientId: string) {
   const db = await getMongoDb();
   const col = db.collection<PanelConversation>(COLLECTION);
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  const startOfDay = startOfDayMexico();
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
-  const [todayCount, closedCount, unanswered, allForAvg] = await Promise.all([
+  const [todayCount, closedCount, candidateUnanswered, allForAvg] = await Promise.all([
     col.countDocuments({ clientId, updatedAt: { $gte: startOfDay } }),
-    col.countDocuments({ clientId, stage: { $in: ['venta_cerrada', 'entregado'] } }),
-    col.countDocuments({ clientId, unreadCount: { $gt: 0 } }),
+    col.countDocuments({ clientId, stage: 'venta_cerrada', updatedAt: { $gte: startOfDay } }),
+    col
+      .find({
+        clientId,
+        humanMode: { $ne: true },
+        updatedAt: { $lte: oneHourAgo },
+      })
+      .project({ messages: 1 })
+      .toArray(),
     col
       .find({ clientId })
       .project({ messages: 1 })
       .limit(200)
       .toArray(),
   ]);
+
+  const unanswered = candidateUnanswered.filter((conv) => {
+    const msgs = conv.messages || [];
+    const last = msgs[msgs.length - 1];
+    return last?.role === 'user';
+  }).length;
 
   let totalResponseMs = 0;
   let responsePairs = 0;
@@ -407,6 +420,19 @@ export async function getPanelMetrics(clientId: string) {
     unanswered,
     avgBotResponseSec,
   };
+}
+
+function startOfDayMexico(): Date {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Mexico_City',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const year = Number(parts.find((p) => p.type === 'year')?.value);
+  const month = Number(parts.find((p) => p.type === 'month')?.value);
+  const day = Number(parts.find((p) => p.type === 'day')?.value);
+  return new Date(Date.UTC(year, month - 1, day, 6, 0, 0));
 }
 
 export function serializeConversation(doc: PanelConversation) {
