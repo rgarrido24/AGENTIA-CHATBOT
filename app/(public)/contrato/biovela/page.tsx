@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { BiovelaContratoForm } from './BiovelaContratoForm';
+import { BIOVELA_MONTHLY_MXN, formatMxMoney } from '@/lib/biovela-contract-billing';
 
 export const metadata: Metadata = {
   title: 'Contrato de servicio — Biovela × Agentia',
@@ -26,12 +27,16 @@ const FEATURES = [
   'Panel CRM de conversaciones y leads',
   'Flujo de citas para recolección en tienda',
   'Integración con Google Calendar',
+  'Configuración Tiendanube, imágenes y Envia.com',
   'Soporte técnico incluido',
 ];
 
 export default function BiovelaContratoPage() {
-  const renewal = new Date();
-  renewal.setMonth(renewal.getMonth() + 1);
+  const stripeLinks = {
+    setup: process.env.STRIPE_PAYMENT_LINK_BIOVELA_SETUP ?? '',
+    prorate: process.env.STRIPE_PAYMENT_LINK_BIOVELA_PRORATE ?? '',
+    recurring: process.env.STRIPE_PAYMENT_LINK_BIOVELA_RECURRING ?? '',
+  };
 
   return (
     <main
@@ -148,10 +153,10 @@ export default function BiovelaContratoPage() {
             </p>
             <p className="text-lg font-medium">Plan Biovela</p>
             <p className="mt-1 text-2xl font-semibold" style={{ color: '#E8962A' }}>
-              $999 MXN / mes
+              {formatMxMoney(BIOVELA_MONTHLY_MXN)} / mes
             </p>
             <p className="mt-1 text-xs" style={{ color: '#8A7660' }}>
-              Suscripción recurrente mensual vía Stripe
+              + implementación única de $5,000 MXN · primer mes prorateado hasta el 31 de julio 2026
             </p>
           </div>
           <ul className="space-y-1.5">
@@ -163,30 +168,7 @@ export default function BiovelaContratoPage() {
           </ul>
         </div>
 
-        <div
-          className="rounded-2xl border p-5"
-          style={{ background: '#1A1410', borderColor: '#2E2520' }}
-        >
-          <p className="text-xs font-semibold tracking-widest" style={{ color: '#8A7660' }}>
-            COBRO
-          </p>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-sm">Primer cobro (hoy)</span>
-            <span className="text-lg font-semibold" style={{ color: '#E8962A' }}>
-              $999 MXN
-            </span>
-          </div>
-          <div className="mt-3 flex items-center justify-between border-t pt-3" style={{ borderColor: '#2E2520' }}>
-            <span className="text-sm" style={{ color: '#8A7660' }}>
-              Renovación automática
-            </span>
-            <span className="text-sm">
-              {renewal.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </span>
-          </div>
-        </div>
-
-        <BiovelaContratoForm />
+        <BiovelaContratoForm stripeLinks={stripeLinks} />
       </div>
     </main>
   );

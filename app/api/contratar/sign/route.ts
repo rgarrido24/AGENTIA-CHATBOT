@@ -4,7 +4,12 @@ import { getMongoDb } from '@/lib/mongodb';
 const PAYMENT_LINKS: Record<string, string | undefined> = {
   luciano:   process.env.STRIPE_PAYMENT_LINK_LUCIANO,
   decohouse: process.env.STRIPE_PAYMENT_LINK_DECOHOUSE,
-  biovela:   process.env.STRIPE_PAYMENT_LINK_BIOVELA,
+};
+
+const BIOVELA_PAYMENT_LINKS: Record<string, string | undefined> = {
+  setup:     process.env.STRIPE_PAYMENT_LINK_BIOVELA_SETUP,
+  prorate:   process.env.STRIPE_PAYMENT_LINK_BIOVELA_PRORATE,
+  recurring: process.env.STRIPE_PAYMENT_LINK_BIOVELA_RECURRING,
 };
 
 const ALLOWED_DOMAINS = ['agentia.software', 'localhost:3000', 'localhost:3010'];
@@ -50,6 +55,10 @@ export async function POST(req: NextRequest) {
     const price = typeof body.price === 'string' ? body.price.trim() : '';
     const setupFee   = typeof body.setupFee   === 'number' ? body.setupFee   : undefined;
     const totalToday = typeof body.totalToday === 'number' ? body.totalToday : undefined;
+    const prorateMx  = typeof body.prorateMx  === 'number' ? body.prorateMx  : undefined;
+    const signOnly   = body.signOnly === true;
+    const paymentKind =
+      typeof body.paymentKind === 'string' ? body.paymentKind.trim() : '';
     const renewalDate =
       typeof body.renewalIso === 'string' ? new Date(body.renewalIso) : undefined;
 
@@ -57,12 +66,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
     }
 
-    const paymentLink = PAYMENT_LINKS[clientId];
-    if (!paymentLink) {
-      return NextResponse.json(
-        { error: 'Plan no encontrado o link de pago no configurado' },
-        { status: 404 },
-      );
+    let paymentLink: string | undefined;
+
+    if (clientId === 'biovela') {
+      if (signOnly) {
+        paymentLink = undefined;
+      } else if (paymentKind && BIOVELA_PAYMENT_LINKS[paymentKind]) {
+        paymentLink = BIOVELA_PAYMENT_LINKS[paymentKind];
+      } else {
+        return NextResponse.json(
+          { error: 'Tipo de pago Biovela no válido o link no configurado' },
+          { status: 404 },
+        );
+      }
+    } else {
+      paymentLink = PAYMENT_LINKS[clientId];
+      if (!paymentLink) {
+        return NextResponse.json(
+          { error: 'Plan no encontrado o link de pago no configurado' },
+          { status: 404 },
+        );
+      }
     }
 
     const ip =
@@ -81,6 +105,7 @@ export async function POST(req: NextRequest) {
       signedAt:             new Date(),
       ...(setupFee   !== undefined && { setupFee }),
       ...(totalToday !== undefined && { totalToday }),
+      ...(prorateMx  !== undefined && { prorateMx }),
       ...(renewalDate !== undefined && { renewalDate }),
     });
 
@@ -92,9 +117,9 @@ export async function POST(req: NextRequest) {
     const montoLine =
       price ||
       (totalToday !== undefined
-        ? `$${totalToday} USD`
+        ? `$${totalToday} MXN`
         : setupFee !== undefined
-          ? `$${setupFee} USD`
+          ? `$${setupFee} MXN`
           : '—');
     const planLine = planName || clientId;
     const waMsg = [
@@ -102,9 +127,14 @@ export async function POST(req: NextRequest) {
       `Cliente: ${signedName}`,
       `Plan: ${planLine}`,
       `Monto: ${montoLine}`,
+      ...(prorateMx !== undefined ? [`Prorateo julio: $${prorateMx} MXN`] : []),
       `Fecha: ${hoy}`,
     ].join('\n');
     void trySendContractSignedWhatsApp(waMsg);
+
+    if (signOnly) {
+      return NextResponse.json({ ok: true });
+    }
 
     return NextResponse.json({ paymentLink });
   } catch (e) {
