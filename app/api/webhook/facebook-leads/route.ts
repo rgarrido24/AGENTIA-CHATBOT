@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
 
 // ─── POST — Recibe leads de Meta Webhook O de Zapier (JSON plano) ─────────────
 export async function POST(req: NextRequest) {
+  console.log('[FB-LEADS] Handler ejecutado:', new Date().toISOString());
   const rawBody = await req.text();
   try {
     console.log('WEBHOOK RECIBIDO:', JSON.stringify(JSON.parse(rawBody)));
@@ -497,7 +498,7 @@ async function processZapierLead(data: Record<string, unknown>) {
 
   if (resellerMatch?.resellerId && resellerMatch?.clientSlug) {
     try {
-      console.log('[PWA PUSH] Disparando tras insert Zapier:', resellerMatch.clientSlug);
+      console.log('[FB-LEADS] Lead insertado, llamando PWA push para:', resellerMatch.clientSlug);
       await notifyPortalNewLead({
         resellerId: resellerMatch.resellerId,
         clientSlug: resellerMatch.clientSlug,
@@ -631,7 +632,7 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
 
       if (result.upsertedCount > 0 && resellerMatch?.resellerId && resellerMatch?.clientSlug) {
         try {
-          console.log('[PWA PUSH] Disparando tras insert Meta:', resellerMatch.clientSlug);
+          console.log('[FB-LEADS] Lead insertado, llamando PWA push para:', resellerMatch.clientSlug);
           await notifyPortalNewLead({
             resellerId: resellerMatch.resellerId,
             clientSlug: resellerMatch.clientSlug,
