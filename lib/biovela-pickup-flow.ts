@@ -225,6 +225,35 @@ function buildDateTime(date: Date, timeStr: string): Date {
   return result;
 }
 
+function formatPickupDay(date: Date, timeStr: string): string {
+  const start = buildDateTime(date, timeStr);
+  return new Intl.DateTimeFormat('es-MX', {
+    timeZone: TIMEZONE,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  }).format(start);
+}
+
+function formatPickupTime(date: Date, timeStr: string): string {
+  const start = buildDateTime(date, timeStr);
+  return new Intl.DateTimeFormat('es-MX', {
+    timeZone: TIMEZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(start);
+}
+
+function buildPickupConfirmationReply(customerName: string, date: Date, timeStr: string): string {
+  const day = formatPickupDay(date, timeStr);
+  const time = formatPickupTime(date, timeStr);
+  return (
+    `¡Listo ${customerName}! 🕯 Tu cita está agendada para el ${day} a las ${time} en nuestro almacén en ` +
+    'Iztacalco, CDMX. Poco antes de tu visita te mandamos la dirección exacta por aquí mismo. ¡Te esperamos!'
+  );
+}
+
 function formatDateLabel(date: Date, timeStr: string): string {
   const start = buildDateTime(date, timeStr);
   const datePart = new Intl.DateTimeFormat('es-MX', {
@@ -476,18 +505,11 @@ export async function handleBiovelaPickupMessage(params: {
       console.warn('[biovela-pickup] cita en MongoDB:', apptErr instanceof Error ? apptErr.message : apptErr);
     }
 
-    session.step = 'done';
-    await saveSession(session);
+    await clearSession(sessionId);
 
-    const when = formatDateLabel(date, session.preferredTime);
     return {
       handled: true,
-      reply:
-        `✅ ¡Listo, ${customerName}! Tu cita de recolección quedó agendada:\n\n` +
-        `📅 ${when}\n` +
-        `📍 ${LOCATION}\n` +
-        `📦 Productos: ${products}\n\n` +
-        'Te esperamos con gusto. Si necesitas cambiarla, escribe *cancelar* y volvemos a agendar.',
+      reply: buildPickupConfirmationReply(customerName, date, session.preferredTime),
     };
   } catch (err) {
     console.error('[biovela-pickup] error al crear evento:', err instanceof Error ? err.message : err);
