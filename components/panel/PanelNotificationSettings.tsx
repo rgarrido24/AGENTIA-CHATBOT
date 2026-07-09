@@ -12,7 +12,8 @@ import {
 } from '@/lib/panel-notification-prefs';
 
 type PanelNotificationSettingsProps = {
-  panel: 'cwf' | 'agentia';
+  panel: 'cwf' | 'agentia' | 'portal';
+  portalScope?: string;
 };
 
 const BRAND = {
@@ -30,29 +31,36 @@ const BRAND = {
     text: '#e2e8f0',
     muted: '#94a3b8',
   },
+  portal: {
+    accent: '#CCFF00',
+    bg: 'rgba(10, 15, 26, 0.97)',
+    border: 'rgba(204, 255, 0, 0.35)',
+    text: '#e2e8f0',
+    muted: '#94a3b8',
+  },
 } as const;
 
-export function PanelNotificationSettings({ panel }: PanelNotificationSettingsProps) {
+export function PanelNotificationSettings({ panel, portalScope }: PanelNotificationSettingsProps) {
   const theme = BRAND[panel];
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<PanelNotificationPrefs>(DEFAULT_PANEL_NOTIFICATION_PREFS);
 
   useEffect(() => {
-    setPrefs(loadPanelNotificationPrefs(panel));
-  }, [panel]);
+    setPrefs(loadPanelNotificationPrefs(panel, portalScope));
+  }, [panel, portalScope]);
 
   const applyPrefs = useCallback(
     (next: PanelNotificationPrefs) => {
       setPrefs(next);
-      savePanelNotificationPrefs(panel, next);
+      savePanelNotificationPrefs(panel, next, portalScope);
       void syncNotificationPrefsToServiceWorker(next);
     },
-    [panel],
+    [panel, portalScope],
   );
 
   useEffect(() => {
-    void syncNotificationPrefsToServiceWorker(loadPanelNotificationPrefs(panel));
-  }, [panel]);
+    void syncNotificationPrefsToServiceWorker(loadPanelNotificationPrefs(panel, portalScope));
+  }, [panel, portalScope]);
 
   const previewTone = (toneId: PanelNotificationPrefs['tone']) => {
     const url = NOTIFICATION_TONES.find((t) => t.id === toneId)?.url;

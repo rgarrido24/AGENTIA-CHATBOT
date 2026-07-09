@@ -1,8 +1,9 @@
 import webpush from 'web-push';
 import { getMongoDb } from '@/lib/mongodb';
+import { PORTAL_PWA_ICON_192 } from '@/lib/portal-pwa-config';
 
-export const PORTAL_PWA_ICON =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1782579834/WhatsApp_Image_2026-06-27_at_11.03.20_AM_tzq2rn.jpg';
+/** @deprecated use PORTAL_PWA_ICON_192 */
+export const PORTAL_PWA_ICON = PORTAL_PWA_ICON_192;
 
 const DEFAULT_PUBLIC_ORIGIN = 'https://agentia.software';
 
@@ -209,8 +210,8 @@ export async function notifyPortalNewLead(params: {
     title: '🔔 Nuevo lead!',
     body: `Nuevo lead: ${nombre} - ${telefono}`,
     url,
-    icon: PORTAL_PWA_ICON,
-    badge: PORTAL_PWA_ICON,
+    icon: PORTAL_PWA_ICON_192,
+    badge: PORTAL_PWA_ICON_192,
     badgeCount,
     tag: `portal-lead-${leadId}`,
   };

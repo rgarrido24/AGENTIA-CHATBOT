@@ -9,6 +9,8 @@ export type PanelNotificationPrefs = {
   tone: NotificationToneId;
 };
 
+export type PanelKind = 'cwf' | 'agentia' | 'portal';
+
 export const NOTIFICATION_TONES: { id: NotificationToneId; label: string; url: string }[] = [
   { id: 'classic', label: 'Clásico', url: '/notification.mp3' },
   { id: 'soft', label: 'Suave', url: '/notification-soft.mp3' },
@@ -22,14 +24,18 @@ export const DEFAULT_PANEL_NOTIFICATION_PREFS: PanelNotificationPrefs = {
   tone: 'classic',
 };
 
-export function storageKeyForPanel(panel: 'cwf' | 'agentia'): string {
+export function storageKeyForPanel(panel: PanelKind, portalScope?: string): string {
+  if (panel === 'portal') return `portal-notification-prefs-${portalScope ?? 'default'}`;
   return `${panel}-panel-notification-prefs`;
 }
 
-export function loadPanelNotificationPrefs(panel: 'cwf' | 'agentia'): PanelNotificationPrefs {
+export function loadPanelNotificationPrefs(
+  panel: PanelKind,
+  portalScope?: string,
+): PanelNotificationPrefs {
   if (typeof window === 'undefined') return DEFAULT_PANEL_NOTIFICATION_PREFS;
   try {
-    const raw = window.localStorage.getItem(storageKeyForPanel(panel));
+    const raw = window.localStorage.getItem(storageKeyForPanel(panel, portalScope));
     if (!raw) return DEFAULT_PANEL_NOTIFICATION_PREFS;
     const parsed = JSON.parse(raw) as Partial<PanelNotificationPrefs>;
     const tone = NOTIFICATION_TONES.some((t) => t.id === parsed.tone)
@@ -47,10 +53,11 @@ export function loadPanelNotificationPrefs(panel: 'cwf' | 'agentia'): PanelNotif
 }
 
 export function savePanelNotificationPrefs(
-  panel: 'cwf' | 'agentia',
+  panel: PanelKind,
   prefs: PanelNotificationPrefs,
+  portalScope?: string,
 ): void {
-  window.localStorage.setItem(storageKeyForPanel(panel), JSON.stringify(prefs));
+  window.localStorage.setItem(storageKeyForPanel(panel, portalScope), JSON.stringify(prefs));
 }
 
 export function soundUrlForPrefs(prefs: PanelNotificationPrefs): string {

@@ -1,6 +1,13 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { PanelNotificationSettings } from '@/components/panel/PanelNotificationSettings';
+import {
+  clearPanelAppBadge,
+  loadPanelNotificationPrefs,
+  syncNotificationPrefsToServiceWorker,
+} from '@/lib/panel-notification-prefs';
+import { getPortalPwaConfig } from '@/lib/portal-pwa-config';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -11,15 +18,36 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return output;
 }
 
-type PwaProviderProps = {
+type PortalPwaShellProps = {
   resellerId: string;
   clientSlug: string;
   vapidPublicKey?: string | null;
 };
 
-export function PwaProvider({ resellerId, clientSlug, vapidPublicKey }: PwaProviderProps) {
+export function PortalPwaShell({ resellerId, clientSlug, vapidPublicKey }: PortalPwaShellProps) {
   const subscribedRef = useRef(false);
-  const scope = `/portal/${resellerId}/cliente/${clientSlug}/`;
+  const config = getPortalPwaConfig(resellerId, clientSlug);
+
+  useEffect(() => {
+    const sync = () => {
+      void syncNotificationPrefsToServiceWorker(
+        loadPanelNotificationPrefs('portal', config.portalScope),
+      );
+    };
+    sync();
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void clearPanelAppBadge();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, [config.portalScope]);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
@@ -28,7 +56,7 @@ export function PwaProvider({ resellerId, clientSlug, vapidPublicKey }: PwaProvi
 
     (async () => {
       try {
-        await navigator.serviceWorker.register('/portal-sw.js', { scope });
+        await navigator.serviceWorker.register(config.swPath, { scope: config.scope });
         const reg = await navigator.serviceWorker.ready;
         if (cancelled) return;
 
@@ -54,7 +82,7 @@ export function PwaProvider({ resellerId, clientSlug, vapidPublicKey }: PwaProvi
         const json = sub.toJSON();
         if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return;
 
-        const res = await fetch('/api/portal/push/subscribe', {
+        const res = await fetch(config.subscribeApi, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -74,7 +102,7 @@ export function PwaProvider({ resellerId, clientSlug, vapidPublicKey }: PwaProvi
     return () => {
       cancelled = true;
     };
-  }, [resellerId, clientSlug, scope, vapidPublicKey]);
+  }, [config, resellerId, clientSlug, vapidPublicKey]);
 
-  return null;
+  return <PanelNotificationSettings panel="portal" portalScope={config.portalScope} />;
 }

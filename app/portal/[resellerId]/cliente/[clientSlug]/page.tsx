@@ -11,7 +11,8 @@ import {
 } from '@/lib/portal-luciano-ui';
 import { LeadsPanel } from './LeadsPanel';
 import ClientLogin from './ClientLogin';
-import { PwaProvider } from './PwaProvider';
+import { PortalPwaShell } from './PortalPwaShell';
+import { PORTAL_PWA_ICON_192 } from '@/lib/portal-pwa-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,11 +78,14 @@ export async function generateMetadata({
       title,
       description: desc,
       manifest: `/portal/${params.resellerId}/cliente/${params.clientSlug}/manifest.webmanifest`,
-      themeColor: '#0a0f1a',
       appleWebApp: {
         capable: true,
         title: 'Mis Leads',
         statusBarStyle: 'black-translucent',
+      },
+      icons: {
+        icon: [{ url: PORTAL_PWA_ICON_192, sizes: '192x192', type: 'image/png' }],
+        apple: [{ url: PORTAL_PWA_ICON_192, sizes: '192x192', type: 'image/png' }],
       },
       openGraph: {
         title: ogTitle,
@@ -126,7 +130,7 @@ export default async function ClientPage({
       return (
         <>
           <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} allowLeadDelete />
-          <PwaProvider
+          <PortalPwaShell
             resellerId={resellerId}
             clientSlug={clientSlug}
             vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
@@ -137,7 +141,7 @@ export default async function ClientPage({
     return (
       <>
         <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} />
-        <PwaProvider
+        <PortalPwaShell
           resellerId={resellerId}
           clientSlug={clientSlug}
           vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
