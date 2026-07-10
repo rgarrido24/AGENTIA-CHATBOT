@@ -22,7 +22,11 @@ import {
 
 const CYAN = '#00D4FF';
 
-type LucideIcon = ComponentType<{ className?: string; style?: React.CSSProperties }>;
+type LucideIcon = ComponentType<{
+  className?: string;
+  style?: React.CSSProperties;
+  strokeWidth?: number;
+}>;
 
 const INDUSTRY_ICONS: Record<IndustryId, LucideIcon> = {
   restaurant: UtensilsCrossed,
