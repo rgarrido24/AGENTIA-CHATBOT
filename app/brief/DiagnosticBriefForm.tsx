@@ -26,23 +26,10 @@ function btnPrimary(disabled?: boolean) {
   }`;
 }
 
-function normalizeWhatsappDigits(raw: string): string {
-  const digits = raw.replace(/\D/g, '');
-  if (digits.length === 10) return `52${digits}`; // MX default
-  return digits;
-}
-
-function buildWhatsappUrl(toDigits: string, businessName: string): string {
-  const to = normalizeWhatsappDigits(toDigits);
-  const text = `Hola Rodolfo, acabo de terminar mi Diagnóstico de Automatización para ${businessName || '(Nombre del Negocio)'}. Me interesa la recomendación de la IA. ¿Podemos hablar?`;
-  return `https://wa.me/${encodeURIComponent(to)}?text=${encodeURIComponent(text)}`;
-}
-
-export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string | null }) {
+export function DiagnosticBriefForm({ salesWhatsapp: _salesWhatsapp }: { salesWhatsapp?: string | null }) {
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState<'form' | 'loading' | 'done'>('form');
   const [error, setError] = useState('');
-  const [impact, setImpact] = useState<{ potentialPct: number; hoursWeekly: number } | null>(null);
 
   const [businessName, setBusinessName] = useState('');
   const [industry, setIndustry] = useState('');
@@ -53,6 +40,7 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
   const [webOrSocial, setWebOrSocial] = useState('');
 
   const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
   const [contactWhatsapp, setContactWhatsapp] = useState('');
 
   const progress = useMemo(() => ((step + 1) / 4) * 100, [step]);
@@ -63,7 +51,14 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
     }
     if (step === 1) return Boolean(lostSales);
     if (step === 2) return Boolean(messageHandling);
-    if (step === 3) return Boolean(contactName.trim() && contactWhatsapp.trim());
+    if (step === 3) {
+      return Boolean(
+        contactName.trim() &&
+          contactEmail.trim() &&
+          contactWhatsapp.trim() &&
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim()),
+      );
+    }
     return false;
   }
 
@@ -72,21 +67,25 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
     setPhase('loading');
     try {
       const startedAt = Date.now();
-      const res = await fetch('/api/brief/diagnostic', {
+      const descripcion = [
+        `Negocio: ${businessName.trim()}`,
+        `Fugas estimadas/mes: ${lostSales}`,
+        `Manejo de mensajes: ${messageHandling}`,
+        webOrSocial.trim() ? `Web o redes: ${webOrSocial.trim()}` : null,
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      const res = await fetch('/api/diagnostico', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           website: '',
-          step1: { businessName, industry },
-          step2: { lostSales },
-          step4: {
-            contactName,
-            contactWhatsapp,
-          },
-          step3: {
-            messageHandling,
-            webOrSocial: webOrSocial.trim() ? webOrSocial.trim() : undefined,
-          },
+          nombre: contactName.trim(),
+          email: contactEmail.trim().toLowerCase(),
+          whatsapp: contactWhatsapp.trim(),
+          tipo_negocio: industry.trim(),
+          descripcion,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -95,27 +94,11 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
         setError((data as { error?: string }).error || 'No se pudo guardar');
         return;
       }
-      const nextImpact = (data as { impact?: { potentialPct?: number; hoursWeekly?: number } }).impact;
-      const potentialPct = Number(nextImpact?.potentialPct ?? 0);
-      const hoursWeekly = Number(nextImpact?.hoursWeekly ?? 0);
-      setImpact({
-        potentialPct: Number.isFinite(potentialPct) ? potentialPct : 0,
-        hoursWeekly: Number.isFinite(hoursWeekly) ? hoursWeekly : 0,
-      });
 
-      // Fuerza 3s de "análisis" (impacto visual)
       const elapsed = Date.now() - startedAt;
-      const remaining = Math.max(0, 3000 - elapsed);
+      const remaining = Math.max(0, 1200 - elapsed);
       if (remaining) await new Promise((r) => setTimeout(r, remaining));
       setPhase('done');
-
-      // Auto-abrir WhatsApp (desde el gesto del click) con el mensaje prellenado.
-      // Nota: algunos navegadores bloquean popups; en ese caso el botón sigue disponible.
-      if (salesWhatsapp) {
-        const url = buildWhatsappUrl(salesWhatsapp, businessName);
-        // Usar location (más confiable que window.open en algunos bloqueadores)
-        window.location.href = url;
-      }
     } catch {
       setPhase('form');
       setError('Error de conexión');
@@ -407,6 +390,17 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                       />
                     </div>
                     <div>
+                      <label className="text-xs text-slate-400 block mb-1.5">Email</label>
+                      <input
+                        type="email"
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
+                        className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#50C878]/50"
+                        placeholder="tu@email.com"
+                        autoComplete="email"
+                      />
+                    </div>
+                    <div>
                       <label className="text-xs text-slate-400 block mb-1.5">WhatsApp</label>
                       <input
                         value={contactWhatsapp}
@@ -449,7 +443,7 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
                     className={btnPrimary(!canNext())}
                     style={{ background: EMERALD, color: '#042f2e' }}
                   >
-                    Ver mi resultado
+                    Ver mi diagnóstico
                   </button>
                 )}
               </div>
@@ -468,9 +462,7 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
               transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
               className="mx-auto mb-6 h-12 w-12 rounded-full border-2 border-white/15 border-t-[#50C878]"
             />
-            <p className="text-lg font-semibold text-white">
-              IA de Agentia analizando tu perfil operativo...
-            </p>
+            <p className="text-lg font-semibold text-white">Guardando tu diagnóstico...</p>
             <p className="mt-2 text-sm text-slate-400">Un momento por favor.</p>
           </motion.div>
         )}
@@ -481,37 +473,29 @@ export function DiagnosticBriefForm({ salesWhatsapp }: { salesWhatsapp: string |
             animate={{ opacity: 1, scale: 1 }}
             className={`${glassCard('p-8 text-center')}`}
           >
-            <div className="text-4xl mb-4">✓</div>
-            <h2 className="text-xl font-bold text-white mb-3">Resultado</h2>
+            <h2 className="text-xl font-bold text-white mb-3">
+              ¡Listo! Te contactamos en menos de 24hrs 🚀
+            </h2>
             <p className="text-sm text-slate-300 leading-relaxed">
-              <span className="font-semibold" style={{ color: EMERALD }}>
-                Tu negocio tiene un potencial de automatización del {impact?.potentialPct ?? 0}%.
-              </span>
-              {' '}Podrías recuperar hasta <span className="font-semibold text-white">{impact?.hoursWeekly ?? 0}</span> horas semanales.
+              Recibimos tu diagnóstico. Un consultor de Agentia revisará tu caso y te escribirá pronto.
             </p>
-            {salesWhatsapp ? (
-              <a
-                href={buildWhatsappUrl(salesWhatsapp, businessName)}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-6 inline-flex w-full sm:w-auto justify-center px-7 py-3.5 rounded-xl text-sm font-extrabold transition hover:brightness-110 active:scale-[0.98]"
-                style={{ background: EMERALD, color: '#042f2e' }}
-              >
-                Hablar con un Consultor de Soluciones
-              </a>
-            ) : (
-              <p className="mt-6 text-xs text-white/40">WhatsApp de ventas no configurado.</p>
-            )}
             <button
               type="button"
               onClick={() => {
                 setPhase('form');
                 setStep(0);
-                setImpact(null);
+                setBusinessName('');
+                setIndustry('');
+                setLostSales('');
+                setMessageHandling('');
+                setWebOrSocial('');
+                setContactName('');
+                setContactEmail('');
+                setContactWhatsapp('');
               }}
               className="mt-8 px-6 py-3 rounded-xl text-sm font-semibold border border-white/15 bg-white/5 text-slate-200 hover:bg-white/10 transition"
             >
-              Nuevo diagnóstico
+              Enviar otro diagnóstico
             </button>
           </motion.div>
         )}

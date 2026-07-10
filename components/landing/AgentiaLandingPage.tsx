@@ -224,12 +224,6 @@ export function AgentiaLandingPage() {
               Demos
             </a>
           </nav>
-          <Link
-            href="/login?from=/dashboard"
-            className="rounded-lg border border-[#00D4FF]/30 bg-[#00D4FF]/10 px-4 py-2 text-sm font-semibold text-[#00D4FF] transition hover:bg-[#00D4FF]/20"
-          >
-            Acceso clientes
-          </Link>
         </header>
 
         <section className="grid min-h-[calc(100dvh-7rem)] items-center gap-12 pb-16 lg:grid-cols-2 lg:gap-16">
