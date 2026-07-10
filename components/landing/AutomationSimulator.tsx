@@ -2,6 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import {
+  BarChart3,
+  Radio,
+  ShoppingCart,
+  Truck,
+  UserRound,
+  UtensilsCrossed,
+  type LucideIcon,
+} from 'lucide-react';
 import { AGENTIA_BOOK_URL } from '@/lib/agentia-book';
 import {
   computeResults,
@@ -13,6 +22,15 @@ import {
 } from '@/lib/simulator-engine';
 
 const CYAN = '#00D4FF';
+
+const INDUSTRY_ICONS: Record<IndustryId, LucideIcon> = {
+  restaurant: UtensilsCrossed,
+  ecommerce: ShoppingCart,
+  services: UserRound,
+  distribution: Truck,
+  agency: BarChart3,
+  other: Radio,
+};
 
 type Phase = 'industry' | 'sliders' | 'results' | 'lead' | 'confirmed';
 
@@ -180,17 +198,22 @@ export function AutomationSimulator({ id = 'simulador' }: { id?: string }) {
               <p className="text-sm font-semibold text-[#00D4FF]">Paso 1 de 4</p>
               <h3 className="mt-2 text-xl font-bold text-white">¿En qué industria operas?</h3>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {INDUSTRIES.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => selectIndustry(opt.id)}
-                    className="rounded-xl border border-white/10 bg-black/30 px-4 py-4 text-left transition hover:border-[#00D4FF]/50 hover:bg-[#00D4FF]/5"
-                  >
-                    <span className="text-2xl">{opt.emoji}</span>
-                    <p className="mt-2 text-sm font-semibold text-white">{opt.label}</p>
-                  </button>
-                ))}
+                {INDUSTRIES.map((opt) => {
+                  const Icon = INDUSTRY_ICONS[opt.id];
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => selectIndustry(opt.id)}
+                      className="rounded-xl border border-white/10 bg-black/30 px-4 py-4 text-left transition hover:border-[#00D4FF]/50 hover:bg-[#00D4FF]/5"
+                    >
+                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#00D4FF]/10">
+                        <Icon className="h-5 w-5 text-[#00D4FF]" strokeWidth={2} />
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-white">{opt.label}</p>
+                    </button>
+                  );
+                })}
               </div>
             </motion.div>
           )}

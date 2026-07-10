@@ -9,16 +9,15 @@ export type IndustryId =
 export type IndustryOption = {
   id: IndustryId;
   label: string;
-  emoji: string;
 };
 
 export const INDUSTRIES: IndustryOption[] = [
-  { id: 'restaurant', label: 'Restaurante / Café', emoji: '🍽️' },
-  { id: 'ecommerce', label: 'Tienda / E-commerce', emoji: '🛒' },
-  { id: 'services', label: 'Servicios (salud, belleza, consultoría)', emoji: '🏥' },
-  { id: 'distribution', label: 'Distribución / Industria', emoji: '🏗️' },
-  { id: 'agency', label: 'Agencia / Marketing', emoji: '📱' },
-  { id: 'other', label: 'Otro', emoji: '✨' },
+  { id: 'restaurant', label: 'Restaurante / Café' },
+  { id: 'ecommerce', label: 'Tienda / E-commerce' },
+  { id: 'services', label: 'Servicios (salud, belleza, consultoría)' },
+  { id: 'distribution', label: 'Distribución / Industria' },
+  { id: 'agency', label: 'Agencia / Marketing' },
+  { id: 'other', label: 'Otro' },
 ];
 
 export type SliderDef = {

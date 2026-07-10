@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { IzziLogo } from '@/components/IzziLogo';
 
 const STORAGE_KEY = 'izzi_merida_cupos_v2';
 const CUPOS_START = 7;
@@ -187,12 +188,9 @@ export default function IzziMeridaPage() {
           />
 
           <div style={{ padding: '28px 22px 24px' }}>
-            <img
-              src="/izzi-logo.png"
-              height={44}
-              alt="izzi"
-              style={{ display: 'block', margin: '0 auto 28px', filter: 'brightness(0) invert(1)' }}
-            />
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+              <IzziLogo className="h-11" />
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
