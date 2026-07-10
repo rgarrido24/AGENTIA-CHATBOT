@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   BarChart3,
@@ -9,7 +9,6 @@ import {
   Truck,
   UserRound,
   UtensilsCrossed,
-  type LucideIcon,
 } from 'lucide-react';
 import { AGENTIA_BOOK_URL } from '@/lib/agentia-book';
 import {
@@ -22,6 +21,8 @@ import {
 } from '@/lib/simulator-engine';
 
 const CYAN = '#00D4FF';
+
+type LucideIcon = ComponentType<{ className?: string; style?: React.CSSProperties }>;
 
 const INDUSTRY_ICONS: Record<IndustryId, LucideIcon> = {
   restaurant: UtensilsCrossed,
