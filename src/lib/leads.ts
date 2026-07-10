@@ -168,24 +168,9 @@ export async function upsertLead(params: {
     console.log('[leads] Lead guardado correctamente:', leadId, 'clientId:', params.clientId);
 
     if (result.upsertedCount > 0) {
-      const saved = await coll.findOne(
-        { leadId },
-        { projection: { resellerId: 1, clientSlug: 1, leadId: 1, nombre: 1, senderName: 1, telefono: 1 } },
-      );
-      if (saved?.resellerId && saved?.clientSlug) {
-        void import('../../lib/portal-push')
-          .then(({ notifyPortalNewLeadIfResellerClient }) =>
-            notifyPortalNewLeadIfResellerClient({
-              resellerId: String(saved.resellerId),
-              clientSlug: String(saved.clientSlug),
-              leadId: String(saved.leadId),
-              nombre: saved.nombre ? String(saved.nombre) : undefined,
-              senderName: saved.senderName ? String(saved.senderName) : undefined,
-              telefono: saved.telefono ? String(saved.telefono) : undefined,
-            }),
-          )
-          .catch((e) => console.error('[leads] notifyPortalNewLeadIfResellerClient:', e));
-      }
+      void import('../../lib/portal-push')
+        .then(({ notifyPortalNewLeadAfterInsert }) => notifyPortalNewLeadAfterInsert(leadId))
+        .catch((e) => console.error('[leads] notifyPortalNewLeadAfterInsert:', e));
     }
 
     if (params.clientId === 'izzi' && prevMessageCount === 0) {

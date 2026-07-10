@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getMongoDb } from '@/lib/mongodb';
-import { notifyPortalNewLeadIfResellerClient } from '@/lib/portal-push';
+import { notifyPortalNewLeadAfterInsert } from '@/lib/portal-push';
 
 const DEFAULT_PUBLIC_ORIGIN = 'https://agentia.software';
 
@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
   // y notifyPortalNewLead nunca llegaba a ejecutarse en leads reales.
   try {
     await processLead(payload);
+    console.error('[PWA PUSH] processLead finalizado OK');
   } catch (err) {
     console.error('[fb-leads] Error al procesar:', err);
   }
@@ -501,18 +502,8 @@ async function processZapierLead(data: Record<string, unknown>) {
   ].join('|');
   await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
 
-  console.log('[FB-LEADS] Lead insertado (zapier), disparando PWA push:', {
-    leadId,
-    resellerId: resellerMatch?.resellerId ?? leadDoc.resellerId,
-    clientSlug: resellerMatch?.clientSlug ?? leadDoc.clientSlug,
-  });
-  await notifyPortalNewLeadIfResellerClient({
-    resellerId: resellerMatch?.resellerId ?? leadDoc.resellerId,
-    clientSlug: resellerMatch?.clientSlug ?? leadDoc.clientSlug,
-    leadId,
-    nombre: full_name,
-    telefono: phone,
-  });
+  console.log('[FB-LEADS] Lead insertado (zapier), disparando PWA push:', { leadId });
+  await notifyPortalNewLeadAfterInsert(leadId);
 }
 
 // ─── Formato Meta nativo (entry.changes[].field === 'leadgen') ────────────────
@@ -634,18 +625,8 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
       await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
 
       if (result.upsertedCount > 0) {
-        console.log('[FB-LEADS] Lead insertado (meta), disparando PWA push:', {
-          leadId,
-          resellerId: resellerMatch?.resellerId ?? 'unknown',
-          clientSlug: resellerMatch?.clientSlug ?? '(sin match)',
-        });
-        await notifyPortalNewLeadIfResellerClient({
-          resellerId: resellerMatch?.resellerId,
-          clientSlug: resellerMatch?.clientSlug,
-          leadId,
-          nombre: full_name,
-          telefono: phone,
-        });
+        console.log('[FB-LEADS] Lead insertado (meta), disparando PWA push:', { leadId, form_id });
+        await notifyPortalNewLeadAfterInsert(leadId);
       } else {
         console.error('[PWA PUSH] omitido en fb-leads/meta: lead ya existía (upsertedCount=0)', {
           leadId,

@@ -186,6 +186,13 @@ export async function notifyPortalNewLeadIfResellerClient(lead: {
 }): Promise<void> {
   const resellerId = String(lead.resellerId ?? '').trim();
   const clientSlug = String(lead.clientSlug ?? '').trim();
+
+  console.error('[PWA PUSH] notifyPortalNewLeadIfResellerClient:', {
+    leadId: lead.leadId,
+    resellerId: resellerId || '(vacío)',
+    clientSlug: clientSlug || '(vacío)',
+  });
+
   if (!resellerId || !clientSlug || resellerId === 'unknown') {
     console.error('[PWA PUSH] omitido post-insert: resellerId/clientSlug inválido', {
       leadId: lead.leadId,
@@ -204,6 +211,41 @@ export async function notifyPortalNewLeadIfResellerClient(lead: {
     });
   } catch (err) {
     console.error('[PWA PUSH] Error notifyPortalNewLead:', err instanceof Error ? err.message : err);
+  }
+}
+
+/** Tras insert/upsert en `leads`: lee el documento y dispara push si aplica. */
+export async function notifyPortalNewLeadAfterInsert(leadId: string): Promise<void> {
+  console.error('[PWA PUSH] notifyPortalNewLeadAfterInsert:', { leadId });
+  try {
+    const db = await getMongoDb();
+    const saved = await db.collection('leads').findOne(
+      { leadId },
+      {
+        projection: {
+          leadId: 1,
+          resellerId: 1,
+          clientSlug: 1,
+          nombre: 1,
+          senderName: 1,
+          telefono: 1,
+        },
+      },
+    );
+    if (!saved) {
+      console.error('[PWA PUSH] afterInsert: lead no encontrado en MongoDB', { leadId });
+      return;
+    }
+    await notifyPortalNewLeadIfResellerClient({
+      leadId: String(saved.leadId ?? leadId),
+      resellerId: saved.resellerId != null ? String(saved.resellerId) : undefined,
+      clientSlug: saved.clientSlug != null ? String(saved.clientSlug) : undefined,
+      nombre: saved.nombre != null ? String(saved.nombre) : undefined,
+      senderName: saved.senderName != null ? String(saved.senderName) : undefined,
+      telefono: saved.telefono != null ? String(saved.telefono) : undefined,
+    });
+  } catch (err) {
+    console.error('[PWA PUSH] notifyPortalNewLeadAfterInsert error:', err instanceof Error ? err.message : err);
   }
 }
 
