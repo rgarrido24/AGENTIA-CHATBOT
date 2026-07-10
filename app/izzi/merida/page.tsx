@@ -191,7 +191,7 @@ export default function IzziMeridaPage() {
               src="/izzi-logo.png"
               height={44}
               alt="izzi"
-              style={{ display: 'block', margin: '0 auto 28px' }}
+              style={{ display: 'block', margin: '0 auto 28px', filter: 'brightness(0) invert(1)' }}
             />
 
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
