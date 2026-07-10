@@ -11,13 +11,13 @@ const dmSans = DM_Sans({
 export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
-  title: '100 Mbps $120/mes × 6 meses | Izzi Mérida',
+  title: '120 Mbps — 1er mes $100 | Izzi Mérida',
   description:
-    'Internet Residencial 100 Mbps en Mérida. Promo $120/mes por 6 meses. Instalación sin costo. Contrata por WhatsApp.',
+    'Internet Residencial 120 Mbps en Mérida. 1er mes $100, mes 2-3 $429, después $480. Instalación sin costo. Contrata por WhatsApp.',
   alternates: { canonical: 'https://agentia.software/izzi/merida' },
   openGraph: {
-    title: '100 Mbps — Promo Izzi Mérida',
-    description: '$120/mes por 6 meses. Velocímetro a 100 Mbps. Contrata ahora.',
+    title: '120 Mbps — Promo Izzi Mérida',
+    description: '1er mes $100 · instalación sin costo. Velocímetro a 120 Mbps.',
     url: 'https://agentia.software/izzi/merida',
     locale: 'es_MX',
     type: 'website',

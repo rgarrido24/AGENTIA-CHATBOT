@@ -1,18 +1,14 @@
 'use client';
 
 import { motion, useReducedMotion } from 'framer-motion';
-import { Gamepad2, Laptop, MessageCircle, Tv, Users, Zap } from 'lucide-react';
+import { MessageCircle, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { IzziLogo } from '@/components/IzziLogo';
 import { OfferCountdown } from '@/components/izzi/OfferCountdown';
 import { SpeedometerGauge } from '@/components/izzi/SpeedometerGauge';
+import { WhatsAppPromoPopup } from '@/components/izzi/WhatsAppPromoPopup';
 import { WifiSignalField } from '@/components/izzi/WifiSignalField';
-import {
-  IZZI_MERIDA_WA,
-  IZZI_MONTHLY_SAVINGS,
-  IZZI_PLAN,
-  IZZI_TOTAL_SAVINGS,
-} from '@/lib/izzi-brand';
+import { IZZI_MERIDA_WA, IZZI_PLAN } from '@/lib/izzi-brand';
 
 const STORAGE_KEY = 'izzi_merida_cupos_v3';
 const CUPOS_START = 7;
@@ -20,28 +16,36 @@ const CUPOS_MIN = 2;
 
 const BENEFITS = [
   {
-    icon: Tv,
+    image:
+      'https://upload.wikimedia.org/wikipedia/commons/7/7a/Logonetflix.png',
+    imageAlt: 'Netflix',
+    isLogo: true,
     title: 'Netflix sin buffering',
     desc: '4K en varios dispositivos a la vez',
-    color: '#f472b6',
   },
   {
-    icon: Laptop,
+    image:
+      'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?w=240&h=240&fit=crop&q=80',
+    imageAlt: 'Trabajo remoto',
+    isLogo: false,
     title: 'Trabajo remoto fluido',
     desc: 'Videollamadas y nube sin cortes',
-    color: '#22d3ee',
   },
   {
-    icon: Gamepad2,
+    image:
+      'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=240&h=240&fit=crop&q=80',
+    imageAlt: 'Gaming',
+    isLogo: false,
     title: 'Gaming competitivo',
     desc: 'Ping bajo para jugar en línea',
-    color: '#facc15',
   },
   {
-    icon: Users,
+    image:
+      'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=240&h=240&fit=crop&q=80',
+    imageAlt: 'Familia conectada',
+    isLogo: false,
     title: 'Toda la familia conectada',
     desc: 'Celulares, tablets y smart TV',
-    color: '#00B140',
   },
 ] as const;
 
@@ -104,6 +108,7 @@ export function IzziMeridaLanding() {
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden bg-[#030303] text-white antialiased">
       <WifiSignalField />
+      <WhatsAppPromoPopup />
 
       <div
         className="pointer-events-none fixed inset-0 z-0"
@@ -133,7 +138,17 @@ export function IzziMeridaLanding() {
           <IzziLogo className="h-12 sm:h-14" />
           <motion.span
             className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#00B140]/35 bg-[#00B140]/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-[#00B140]"
-            animate={reduceMotion ? undefined : { boxShadow: ['0 0 0 rgba(0,177,64,0)', '0 0 24px rgba(0,177,64,0.35)', '0 0 0 rgba(0,177,64,0)'] }}
+            animate={
+              reduceMotion
+                ? undefined
+                : {
+                    boxShadow: [
+                      '0 0 0 rgba(0,177,64,0)',
+                      '0 0 24px rgba(0,177,64,0.35)',
+                      '0 0 0 rgba(0,177,64,0)',
+                    ],
+                  }
+            }
             transition={{ duration: 2.5, repeat: Infinity }}
           >
             <Zap className="h-3.5 w-3.5" />
@@ -154,32 +169,40 @@ export function IzziMeridaLanding() {
         </motion.section>
 
         <motion.section
-          className="mt-8 rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl"
+          className="mt-8 rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-1 backdrop-blur-xl"
           {...fadeUp}
         >
-          <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-[#f472b6]">
-            Precio especial
-          </p>
-          <div className="mt-3 flex items-baseline justify-center gap-1">
-            <span className="text-3xl font-bold text-[#f472b6]">$</span>
-            <span className="text-6xl font-black tabular-nums tracking-tighter sm:text-7xl">
-              {IZZI_PLAN.promoPrice}
-            </span>
-            <span className="text-lg font-semibold text-white/70">/mes</span>
-          </div>
-          <p className="mt-2 text-center text-sm font-medium text-white/60">
-            por {IZZI_PLAN.promoMonths} meses · instalación sin costo
-          </p>
-
-          <div className="mt-5 rounded-xl border border-white/8 bg-black/30 px-4 py-3 text-center text-sm">
-            <span className="text-white/45 line-through">${IZZI_PLAN.normalPrice}/mes</span>
-            <span className="mx-2 text-white/30">→</span>
-            <span className="font-bold text-[#00B140]">
-              Ahorras ${IZZI_MONTHLY_SAVINGS}/mes
-            </span>
-            <p className="mt-1 text-xs text-white/45">
-              ${IZZI_TOTAL_SAVINGS.toLocaleString('es-MX')} en total durante la promo
+          <div className="rounded-[calc(1.75rem-0.25rem)] bg-black/40 p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+            <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-[#f472b6]">
+              Precio especial · instalación sin costo
             </p>
+
+            <div className="mt-5 text-center">
+              <p className="text-sm font-medium text-white/50">1er mes</p>
+              <div className="mt-1 flex items-baseline justify-center gap-1">
+                <span className="text-2xl font-bold text-[#f472b6]">$</span>
+                <span className="text-6xl font-black tabular-nums tracking-tighter text-white sm:text-7xl">
+                  {IZZI_PLAN.firstMonthPrice}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-3 border-t border-white/10 pt-5">
+              <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                <span className="text-sm text-white/55">Mes 2 y 3</span>
+                <span className="text-lg font-bold tabular-nums text-white">
+                  ${IZZI_PLAN.months2and3Price}
+                  <span className="text-sm font-medium text-white/45">/mes</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                <span className="text-sm text-white/55">Del 4.º en adelante</span>
+                <span className="text-lg font-bold tabular-nums text-white/70">
+                  ${IZZI_PLAN.normalPrice}
+                  <span className="text-sm font-medium text-white/45">/mes</span>
+                </span>
+              </div>
+            </div>
           </div>
         </motion.section>
 
@@ -199,21 +222,39 @@ export function IzziMeridaLanding() {
           {BENEFITS.map((b, i) => (
             <motion.div
               key={b.title}
-              className="group rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition duration-500 hover:border-white/20 hover:bg-white/[0.06]"
+              className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition duration-500 hover:border-white/20 hover:bg-white/[0.06]"
               initial={reduceMotion ? false : { opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08, duration: 0.5 }}
               whileHover={reduceMotion ? undefined : { y: -4, scale: 1.02 }}
             >
-              <div
-                className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-500 group-hover:scale-110"
-                style={{ background: `${b.color}22`, color: b.color }}
-              >
-                <b.icon className="h-5 w-5" strokeWidth={2} />
+              <div className="relative h-24 w-full overflow-hidden bg-black/40">
+                {b.isLogo ? (
+                  <div className="flex h-full items-center justify-center bg-[#141414] px-6">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={b.image}
+                      alt={b.imageAlt}
+                      className="h-10 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={b.image}
+                      alt={b.imageAlt}
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-[#030303]/40 to-transparent" />
+                  </>
+                )}
               </div>
-              <p className="font-bold text-white">{b.title}</p>
-              <p className="mt-1 text-xs leading-relaxed text-white/50">{b.desc}</p>
+              <div className="p-4">
+                <p className="font-bold text-white">{b.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-white/50">{b.desc}</p>
+              </div>
             </motion.div>
           ))}
         </motion.section>
@@ -250,7 +291,9 @@ export function IzziMeridaLanding() {
           className="flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-extrabold text-white transition active:scale-[0.98]"
           style={{
             background: '#25D366',
-            boxShadow: pulseCta ? '0 0 32px rgba(37,211,102,0.55)' : '0 0 16px rgba(37,211,102,0.25)',
+            boxShadow: pulseCta
+              ? '0 0 32px rgba(37,211,102,0.55)'
+              : '0 0 16px rgba(37,211,102,0.25)',
           }}
         >
           <MessageCircle className="h-5 w-5" />
