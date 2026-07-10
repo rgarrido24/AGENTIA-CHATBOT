@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { PORTAL_PWA_ICON_192, PORTAL_PWA_ICON_512 } from '@/lib/portal-pwa-config';
+
+const PORTAL_PWA_ICON_URL =
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1782579834/WhatsApp_Image_2026-06-27_at_11.03.20_AM_tzq2rn.jpg';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,22 +26,16 @@ export async function GET(
     categories: ['business', 'productivity'],
     icons: [
       {
-        src: PORTAL_PWA_ICON_192,
+        src: PORTAL_PWA_ICON_URL,
+        sizes: '512x512',
+        type: 'image/jpeg',
+        purpose: 'any maskable',
+      },
+      {
+        src: PORTAL_PWA_ICON_URL,
         sizes: '192x192',
-        type: 'image/png',
-        purpose: 'any',
-      },
-      {
-        src: PORTAL_PWA_ICON_512,
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'any',
-      },
-      {
-        src: PORTAL_PWA_ICON_512,
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'maskable',
+        type: 'image/jpeg',
+        purpose: 'any maskable',
       },
     ],
   };
