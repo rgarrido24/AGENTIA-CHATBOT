@@ -50,6 +50,9 @@ export type Lead = {
   canal_origen?: string;
   nombre?: string;
   telefono?: string;
+  /** Portal reseller (leads FB / asesoras) */
+  resellerId?: string;
+  clientSlug?: string;
   // Facebook Lead Ads
   campana?: string;
   adset?: string;
