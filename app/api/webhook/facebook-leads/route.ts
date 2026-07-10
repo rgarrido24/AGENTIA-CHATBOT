@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getMongoDb } from '@/lib/mongodb';
-import { notifyPortalNewLead } from '@/lib/portal-push';
+import { notifyPortalNewLeadIfResellerClient } from '@/lib/portal-push';
 
 const DEFAULT_PUBLIC_ORIGIN = 'https://agentia.software';
 
@@ -70,8 +70,13 @@ export async function POST(req: NextRequest) {
   console.log('[fb-leads] keys:', Object.keys(payload).join(', '));
   console.log('[fb-leads] Payload:', JSON.stringify(payload).slice(0, 500));
 
-  // Responder 200 inmediatamente y procesar en background
-  processLead(payload).catch((err) => console.error('[fb-leads] Error al procesar:', err));
+  // Procesar antes de responder: en serverless el handler se corta al devolver 200
+  // y notifyPortalNewLead nunca llegaba a ejecutarse en leads reales.
+  try {
+    await processLead(payload);
+  } catch (err) {
+    console.error('[fb-leads] Error al procesar:', err);
+  }
   return NextResponse.json({ ok: true });
 }
 
@@ -496,20 +501,18 @@ async function processZapierLead(data: Record<string, unknown>) {
   ].join('|');
   await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
 
-  if (resellerMatch?.resellerId && resellerMatch?.clientSlug) {
-    try {
-      console.log('[FB-LEADS] Lead insertado, llamando PWA push para:', resellerMatch.clientSlug);
-      await notifyPortalNewLead({
-        resellerId: resellerMatch.resellerId,
-        clientSlug: resellerMatch.clientSlug,
-        nombre: full_name,
-        telefono: phone,
-        leadId,
-      });
-    } catch (pushErr) {
-      console.error('[PWA PUSH] Error notifyPortalNewLead (zapier):', pushErr instanceof Error ? pushErr.message : pushErr);
-    }
-  }
+  console.log('[FB-LEADS] Lead insertado (zapier), disparando PWA push:', {
+    leadId,
+    resellerId: resellerMatch?.resellerId ?? leadDoc.resellerId,
+    clientSlug: resellerMatch?.clientSlug ?? leadDoc.clientSlug,
+  });
+  await notifyPortalNewLeadIfResellerClient({
+    resellerId: resellerMatch?.resellerId ?? leadDoc.resellerId,
+    clientSlug: resellerMatch?.clientSlug ?? leadDoc.clientSlug,
+    leadId,
+    nombre: full_name,
+    telefono: phone,
+  });
 }
 
 // ─── Formato Meta nativo (entry.changes[].field === 'leadgen') ────────────────
@@ -630,19 +633,24 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
       ].join('|');
       await enqueueAdminAlert(db, { leadId, clientId, resellerMatch, dedupKey });
 
-      if (result.upsertedCount > 0 && resellerMatch?.resellerId && resellerMatch?.clientSlug) {
-        try {
-          console.log('[FB-LEADS] Lead insertado, llamando PWA push para:', resellerMatch.clientSlug);
-          await notifyPortalNewLead({
-            resellerId: resellerMatch.resellerId,
-            clientSlug: resellerMatch.clientSlug,
-            nombre: full_name,
-            telefono: phone,
-            leadId,
-          });
-        } catch (pushErr) {
-          console.error('[PWA PUSH] Error notifyPortalNewLead (meta):', pushErr instanceof Error ? pushErr.message : pushErr);
-        }
+      if (result.upsertedCount > 0) {
+        console.log('[FB-LEADS] Lead insertado (meta), disparando PWA push:', {
+          leadId,
+          resellerId: resellerMatch?.resellerId ?? 'unknown',
+          clientSlug: resellerMatch?.clientSlug ?? '(sin match)',
+        });
+        await notifyPortalNewLeadIfResellerClient({
+          resellerId: resellerMatch?.resellerId,
+          clientSlug: resellerMatch?.clientSlug,
+          leadId,
+          nombre: full_name,
+          telefono: phone,
+        });
+      } else {
+        console.error('[PWA PUSH] omitido en fb-leads/meta: lead ya existía (upsertedCount=0)', {
+          leadId,
+          form_id,
+        });
       }
 
       console.log(`[fb-leads/meta] Lead guardado: ${leadId} | campaña: ${campaign_name}`);

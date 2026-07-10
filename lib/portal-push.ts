@@ -175,6 +175,38 @@ async function incrementPortalBadgeCount(resellerId: string, clientSlug: string)
   return typeof count === 'number' && count > 0 ? count : 1;
 }
 
+/** Invocar tras insertar un lead con resellerId/clientSlug (webhook, API u otra fuente). */
+export async function notifyPortalNewLeadIfResellerClient(lead: {
+  resellerId?: string | null;
+  clientSlug?: string | null;
+  leadId: string;
+  nombre?: string;
+  telefono?: string;
+  senderName?: string;
+}): Promise<void> {
+  const resellerId = String(lead.resellerId ?? '').trim();
+  const clientSlug = String(lead.clientSlug ?? '').trim();
+  if (!resellerId || !clientSlug || resellerId === 'unknown') {
+    console.error('[PWA PUSH] omitido post-insert: resellerId/clientSlug inválido', {
+      leadId: lead.leadId,
+      resellerId: resellerId || '(vacío)',
+      clientSlug: clientSlug || '(vacío)',
+    });
+    return;
+  }
+  try {
+    await notifyPortalNewLead({
+      resellerId,
+      clientSlug,
+      leadId: lead.leadId,
+      nombre: lead.nombre || lead.senderName,
+      telefono: lead.telefono,
+    });
+  } catch (err) {
+    console.error('[PWA PUSH] Error notifyPortalNewLead:', err instanceof Error ? err.message : err);
+  }
+}
+
 /** Envía push a asesoras suscritas cuando llega un lead nuevo al portal. */
 export async function notifyPortalNewLead(params: {
   resellerId: string;
@@ -187,10 +219,10 @@ export async function notifyPortalNewLead(params: {
   const { resellerId, clientSlug } = ids;
   const { leadId } = params;
 
-  console.log('[PWA PUSH] notifyPortalNewLead:', { resellerId, clientSlug, leadId });
+  console.error('[PWA PUSH] notifyPortalNewLead llamado:', { resellerId, clientSlug });
 
   if (!resellerId || !clientSlug || resellerId === 'unknown') {
-    console.log('[PWA PUSH] omitido: resellerId/clientSlug inválido');
+    console.error('[PWA PUSH] omitido: resellerId/clientSlug inválido', { leadId });
     return;
   }
 
