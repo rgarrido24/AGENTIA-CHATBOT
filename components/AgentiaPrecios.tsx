@@ -46,11 +46,12 @@ const PLANES = [
   },
 ] as const;
 
+import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
+
 function waLink(plan: string, giro: string): string {
-  const texto = encodeURIComponent(
-    `Hola, me interesa el plan ${plan} de Agentia para ${giro}. ¿Me pueden dar más información?`
+  return agentiaWhatsAppUrl(
+    `Hola, me interesa el plan ${plan} de Agentia para ${giro}. ¿Me pueden dar más información?`,
   );
-  return `https://wa.me/529998080265?text=${texto}`;
 }
 
 export default function AgentiaPrecios({ giro, accentColor, features }: AgentiaPreciosProps) {
@@ -174,7 +175,7 @@ export default function AgentiaPrecios({ giro, accentColor, features }: AgentiaP
           Sin permanencia · Cancela cuando quieras · Soporte por WhatsApp incluido en todos los planes
         </p>
         <a
-          href="https://wa.me/529998080265?text=Hola%2C+quiero+m%C3%A1s+informaci%C3%B3n+sobre+Agentia"
+          href={agentiaWhatsAppUrl('Hola, quiero más información sobre Agentia')}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-xs font-semibold mt-2"

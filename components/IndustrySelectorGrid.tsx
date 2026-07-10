@@ -59,8 +59,8 @@ function GiroCard({
         onMouseLeave={() => setHovered(false)}
         className="group relative flex h-32 sm:h-36 flex-col items-center justify-end overflow-hidden rounded-xl p-4 text-center transition-all duration-200"
         style={{
-          border: `1px solid ${hovered ? 'rgba(34,197,94,0.55)' : 'rgba(255,255,255,0.08)'}`,
-          boxShadow: hovered ? '0 0 0 1px rgba(34,197,94,0.18), 0 8px 32px rgba(0,0,0,0.5)' : 'none',
+          border: `1px solid ${hovered ? 'rgba(0,212,255,0.55)' : 'rgba(255,255,255,0.08)'}`,
+          boxShadow: hovered ? '0 0 0 1px rgba(0,212,255,0.18), 0 8px 32px rgba(0,0,0,0.5)' : 'none',
         }}
       >
         {/* Background image — scales on hover via group-hover */}
@@ -75,9 +75,9 @@ function GiroCard({
         <div className="relative z-10 flex flex-col items-center gap-2">
           <div
             className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-200"
-            style={{ background: hovered ? 'rgba(34,197,94,0.18)' : 'rgba(0,0,0,0.45)' }}
+            style={{ background: hovered ? 'rgba(0,212,255,0.18)' : 'rgba(0,0,0,0.45)' }}
           >
-            <Icon className="h-5 w-5" style={{ color: '#22c55e' }} />
+            <Icon className="h-5 w-5" style={{ color: '#00D4FF' }} />
           </div>
           <span className="text-[13px] font-bold leading-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
             {label}
@@ -92,8 +92,10 @@ export function IndustrySelectorGrid() {
   return (
     <section className="mb-20">
       <div className="mb-8 text-center">
-        <h2 className="mb-2 text-2xl font-bold text-white">Elige tu industria</h2>
-        <p className="text-sm text-slate-400">Cada demo es funcional — pruébala ahora</p>
+        <h2 className="mb-2 font-[family-name:var(--font-space)] text-3xl font-bold text-white">
+          Demos en vivo por industria
+        </h2>
+        <p className="text-sm text-white/50">Cada demo es funcional. Pruébala ahora.</p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {GIROS.map(({ Icon, label, href, imageUrl }, i) => (

@@ -39,7 +39,7 @@ En el dashboard de Render → **New → Background Worker**:
 | `WHATSAPP_QR_SECRET` | (mismo valor que el web service) |
 | `MONGODB_URI` | (mismo valor que el web service) |
 | `CRON_SECRET` | (mismo valor que el web service) |
-| `ALERT_WHATSAPP_NUMBER` | `529998080265` |
+| `ALERT_WHATSAPP_NUMBER` | `529844927769` |
 
 > Los `CLIENT_ID` los maneja el script internamente — no se necesitan variables separadas.
 

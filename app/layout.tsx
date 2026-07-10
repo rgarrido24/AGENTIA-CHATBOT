@@ -1,7 +1,19 @@
 import type { Metadata } from 'next';
-import { Montserrat, Roboto, Plus_Jakarta_Sans } from 'next/font/google';
+import { Inter, Montserrat, Plus_Jakarta_Sans, Roboto, Space_Grotesk } from 'next/font/google';
 import './globals.css';
 import { GlobalWhatsAppAndExit } from '@/components/GlobalWhatsAppAndExit';
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
+});
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -23,9 +35,9 @@ const roboto = Roboto({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://agentia.software'),
-  title: 'Agentia | Chatbots con IA para Negocios — WhatsApp 24/7',
+  title: 'Agentia | Chatbots IA, CRM y Automatización para Ventas',
   description:
-    'Automatiza tu negocio con IA. Chatbots para barberías, restaurantes, spas, dentistas y más. Agenda citas, cobra y fideliza clientes desde WhatsApp sin esfuerzo.',
+    'Partner Meta y Tiendanube. Chatbots WhatsApp 24/7, CRM de ventas, captura de leads FB/IG, Zapier y notificaciones push PWA.',
   keywords:
     'chatbot IA, automatización WhatsApp, chatbot para barbería, chatbot para restaurante, agente IA negocio, chatbot México, automatización negocios México, WhatsApp bot, CRM con IA',
   authors: [{ name: 'Agentia' }],
@@ -35,9 +47,9 @@ export const metadata: Metadata = {
     canonical: 'https://agentia.software',
   },
   openGraph: {
-    title: 'Agentia | Tu negocio automatizado en WhatsApp',
+    title: 'Agentia | Tecnología que vende por ti',
     description:
-      'Chatbots con IA que agendan, cobran y fidelizan clientes 24/7. Para barberías, restaurantes, spas, dentistas y más.',
+      'CRM, chatbots IA, integraciones Meta, Zapier y Tiendanube. Infraestructura digital para equipos comerciales.',
     url: 'https://agentia.software',
     siteName: 'Agentia',
     images: [
@@ -98,7 +110,7 @@ const schemaOrg = {
   logo: 'https://agentia.software/logo-agentia-2026.png',
   contactPoint: {
     '@type': 'ContactPoint',
-    telephone: '+52-999-808-0265',
+    telephone: '+52-984-492-7769',
     contactType: 'sales',
     areaServed: 'MX',
     availableLanguage: 'Spanish',
@@ -121,7 +133,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${jakarta.variable} ${montserrat.variable} ${roboto.variable}`}>
+    <html
+      lang="es"
+      className={`${spaceGrotesk.variable} ${inter.variable} ${jakarta.variable} ${montserrat.variable} ${roboto.variable}`}
+    >
       <head>
         <script
           type="application/ld+json"

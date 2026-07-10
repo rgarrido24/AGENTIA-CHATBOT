@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
+import { AGENTIA_WHATSAPP_URL } from '@/lib/agentia-contact';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
         `⚠️ *Agentia* — Tu suscripción ha sido suspendida por falta de pago.\n\n` +
         `Para reactivar tu servicio, contáctanos:\n` +
         `📩 hola@agentia.software\n` +
-        `💬 https://wa.me/529998080265`;
+        `💬 ${AGENTIA_WHATSAPP_URL}`;
 
       await db.collection('outbound_messages').insertOne({
         senderId: `${phone}@c.us`,

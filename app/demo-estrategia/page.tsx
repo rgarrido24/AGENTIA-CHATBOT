@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import DemoEstrategiaClient from './ui/DemoEstrategiaClient';
+import { resolveAgentiaWhatsAppDigits } from '@/lib/agentia-contact';
 
 export const metadata: Metadata = {
   title: 'Agentia x María Sol Gómez — Brief de Estrategia',
@@ -21,7 +22,7 @@ function resolveWhatsAppDigits(): string {
     process.env.NEXT_PUBLIC_READY_WHATSAPP_NUMBER ||
     process.env.NEXT_PUBLIC_WIDGET_WHATSAPP_DIGITS ||
     '';
-  return String(raw).replace(/\D/g, '');
+  return resolveAgentiaWhatsAppDigits(raw);
 }
 
 export default function DemoEstrategiaPage() {

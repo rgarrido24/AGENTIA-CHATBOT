@@ -14,7 +14,9 @@ const BIOVELA_PAYMENT_LINKS: Record<string, string | undefined> = {
 
 const ALLOWED_DOMAINS = ['agentia.software', 'localhost:3000', 'localhost:3010'];
 
-const CONTRACT_ALERT_WHATSAPP = '529998080265';
+import { AGENTIA_WHATSAPP_DIGITS_E164 } from '@/lib/agentia-contact';
+
+const CONTRACT_ALERT_WHATSAPP = AGENTIA_WHATSAPP_DIGITS_E164;
 
 async function trySendContractSignedWhatsApp(message: string): Promise<void> {
   const url = (process.env.WHATSAPP_SEND_URL ?? '').trim();

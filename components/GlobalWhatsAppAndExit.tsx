@@ -5,7 +5,9 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 
-const WHATSAPP_URL = 'https://wa.me/529998080265';
+import { AGENTIA_WHATSAPP_URL } from '@/lib/agentia-contact';
+
+const WHATSAPP_URL = AGENTIA_WHATSAPP_URL;
 const SESSION_KEY = 'agentia_exit_intent_seen_v1';
 
 function isDesktopFinePointer(): boolean {

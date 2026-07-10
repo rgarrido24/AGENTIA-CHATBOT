@@ -4,7 +4,9 @@ import { stripe, PLAN_DATA, type PlanKey } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
 
-const SUPPORT_WA = 'https://wa.me/529998080265';
+import { AGENTIA_WHATSAPP_URL } from '@/lib/agentia-contact';
+
+const SUPPORT_WA = AGENTIA_WHATSAPP_URL;
 
 function formatMoney(cents: number, currency: string) {
   return new Intl.NumberFormat('es-MX', {

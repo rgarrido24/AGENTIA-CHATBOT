@@ -9,8 +9,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-jakarta)', 'var(--font-roboto)', 'system-ui', 'sans-serif'],
-        heading: ['var(--font-jakarta)', 'var(--font-montserrat)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'var(--font-jakarta)', 'var(--font-roboto)', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-space)', 'var(--font-jakarta)', 'var(--font-montserrat)', 'system-ui', 'sans-serif'],
       },
       colors: {
         /* Futuristic Dark — palette principal */
@@ -21,7 +21,9 @@ module.exports = {
         'dark-mid':  '#0f172a',
         'dark-high': '#1e293b',
         'glass-border': 'rgba(255,255,255,0.08)',
-        'teal-glow':    'rgba(13,148,136,0.35)',
+        'agentia-cyan': '#00D4FF',
+        'agentia-gold': '#FFD700',
+        'agentia-bg': '#0a0a0a',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

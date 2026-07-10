@@ -10,6 +10,9 @@ import {
   type FotoOrden,
   type StatusOrden,
 } from '@/lib/mock-data-taller';
+import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
+
+const WA_TALLER = agentiaWhatsAppUrl('Hola, quiero saber el estado de mi vehículo.');
 
 const STATUS_STEPS: { status: StatusOrden; label: string }[] = [
   { status: 'recibido',     label: 'Recibido' },
@@ -32,8 +35,6 @@ const TIPO_FOTO_LABEL: Record<FotoOrden['tipo'], string> = {
   avance: 'Avance',
   entrega: 'Entrega',
 };
-
-const WA_TALLER = 'https://wa.me/529998080265?text=' + encodeURIComponent('Hola, quiero saber el estado de mi vehículo.');
 
 // Tomamos la primera orden con checklist como demo representativa
 const ORDEN_DEMO = MOCK_ORDENES.find((o) => o.checklist) ?? MOCK_ORDENES[0]!;

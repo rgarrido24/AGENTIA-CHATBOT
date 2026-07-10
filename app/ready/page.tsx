@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AgentiaChatWidget } from '@/components/AgentiaChatWidget';
+import { resolveAgentiaWhatsAppDigits } from '@/lib/agentia-contact';
 import { ReadyLanding } from './ReadyLanding';
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ function resolveWhatsAppDigits(): string {
     process.env.NEXT_PUBLIC_READY_WHATSAPP_NUMBER ||
     process.env.RODOLFO_WHATSAPP ||
     '';
-  return String(raw).replace(/\D/g, '');
+  return resolveAgentiaWhatsAppDigits(raw);
 }
 
 export default function ReadyPage() {

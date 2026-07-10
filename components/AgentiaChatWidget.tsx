@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Calendar, MessageCircle, Send, X } from 'lucide-react';
+import { resolveAgentiaWhatsAppDigits } from '@/lib/agentia-contact';
 
 const EMERALD = '#50C878';
 
@@ -94,10 +95,11 @@ export function AgentiaChatWidget() {
   const listRef = useRef<HTMLDivElement>(null);
 
   const bookUrl = process.env.NEXT_PUBLIC_AGENTIA_BOOK_URL?.trim() || '';
-  const waDigits =
+  const waDigits = resolveAgentiaWhatsAppDigits(
     process.env.NEXT_PUBLIC_WIDGET_WHATSAPP_DIGITS?.trim() ||
-    process.env.NEXT_PUBLIC_READY_WHATSAPP_NUMBER?.trim() ||
-    '';
+      process.env.NEXT_PUBLIC_READY_WHATSAPP_NUMBER?.trim() ||
+      '',
+  );
 
   const waPrefill =
     'Hola Rodolfo, vengo del chat de agentia.software. Quiero una demo personalizada / hablar de precios.';
