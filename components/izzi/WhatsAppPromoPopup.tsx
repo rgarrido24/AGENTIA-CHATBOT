@@ -3,17 +3,20 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { MessageCircle, X, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { IZZI_MERIDA_WA } from '@/lib/izzi-brand';
 
-const DISMISS_KEY = 'izzi_merida_popup_dismissed';
+type Props = {
+  whatsappUrl: string;
+  dismissKey: string;
+  description: string;
+};
 
-export function WhatsAppPromoPopup() {
+export function WhatsAppPromoPopup({ whatsappUrl, dismissKey, description }: Props) {
   const reduceMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     try {
-      if (sessionStorage.getItem(DISMISS_KEY) === '1') return;
+      if (sessionStorage.getItem(dismissKey) === '1') return;
     } catch {
       /* ignore */
     }
@@ -21,12 +24,12 @@ export function WhatsAppPromoPopup() {
     const delay = reduceMotion ? 1500 : 4000;
     const id = window.setTimeout(() => setOpen(true), delay);
     return () => window.clearTimeout(id);
-  }, [reduceMotion]);
+  }, [reduceMotion, dismissKey]);
 
   const dismiss = () => {
     setOpen(false);
     try {
-      sessionStorage.setItem(DISMISS_KEY, '1');
+      sessionStorage.setItem(dismissKey, '1');
     } catch {
       /* ignore */
     }
@@ -71,14 +74,11 @@ export function WhatsAppPromoPopup() {
                 <h2 id="izzi-promo-title" className="mt-4 text-xl font-extrabold leading-tight text-white">
                   ¡Aprovecha la promo antes de que termine!
                 </h2>
-                <p className="mt-2 text-sm leading-relaxed text-white/60">
-                  1er mes a <span className="font-bold text-[#f472b6]">$100</span> · instalación{' '}
-                  <span className="font-bold text-[#00B140]">sin costo</span> · 120 Mbps en Mérida
-                </p>
+                <p className="mt-2 text-sm leading-relaxed text-white/60">{description}</p>
               </div>
               <div className="px-6 pb-6">
                 <a
-                  href={IZZI_MERIDA_WA}
+                  href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] py-4 text-base font-extrabold text-white shadow-[0_0_32px_rgba(37,211,102,0.4)] transition hover:scale-[1.02] active:scale-[0.98]"

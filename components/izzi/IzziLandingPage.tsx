@@ -8,40 +8,39 @@ import { OfferCountdown } from '@/components/izzi/OfferCountdown';
 import { SpeedometerGauge } from '@/components/izzi/SpeedometerGauge';
 import { WhatsAppPromoPopup } from '@/components/izzi/WhatsAppPromoPopup';
 import { WifiSignalField } from '@/components/izzi/WifiSignalField';
-import { IZZI_MERIDA_WA, IZZI_PLAN } from '@/lib/izzi-brand';
+import {
+  IZZI_PLAN_120,
+  IZZI_PLAN_150,
+  type IzziPlanConfig,
+} from '@/lib/izzi-brand';
 
-const STORAGE_KEY = 'izzi_merida_cupos_v3';
 const CUPOS_START = 7;
 const CUPOS_MIN = 2;
 
 const BENEFITS = [
   {
-    image:
-      'https://upload.wikimedia.org/wikipedia/commons/7/7a/Logonetflix.png',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/Logonetflix.png',
     imageAlt: 'Netflix',
     isLogo: true,
     title: 'Netflix sin buffering',
     desc: '4K en varios dispositivos a la vez',
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?w=240&h=240&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?w=240&h=240&fit=crop&q=80',
     imageAlt: 'Trabajo remoto',
     isLogo: false,
     title: 'Trabajo remoto fluido',
     desc: 'Videollamadas y nube sin cortes',
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=240&h=240&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=240&h=240&fit=crop&q=80',
     imageAlt: 'Gaming',
     isLogo: false,
     title: 'Gaming competitivo',
     desc: 'Ping bajo para jugar en línea',
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=240&h=240&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=240&h=240&fit=crop&q=80',
     imageAlt: 'Familia conectada',
     isLogo: false,
     title: 'Toda la familia conectada',
@@ -53,12 +52,12 @@ function randomIntervalMs() {
   return (8 + Math.floor(Math.random() * 5)) * 60 * 1000;
 }
 
-function reconcileCupos(): number {
+function reconcileCupos(storageKey: string): number {
   const now = Date.now();
   let n = CUPOS_START;
   let nextAt = now + randomIntervalMs();
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     if (raw) {
       const p = JSON.parse(raw) as { n?: number; nextAt?: number };
       if (typeof p.n === 'number' && typeof p.nextAt === 'number') {
@@ -74,27 +73,113 @@ function reconcileCupos(): number {
     /* ignore */
   }
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ n, nextAt }));
+    window.localStorage.setItem(storageKey, JSON.stringify({ n, nextAt }));
   } catch {
     /* ignore */
   }
   return n;
 }
 
-export function IzziMeridaLanding() {
+function PricingCard({ plan }: { plan: IzziPlanConfig }) {
+  return (
+    <div className="rounded-[calc(1.75rem-0.25rem)] bg-black/40 p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
+      <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-[#f472b6]">
+        Precio especial · instalación sin costo
+      </p>
+
+      <div className="mt-5 text-center">
+        <p className="text-sm font-medium text-white/50">1er mes</p>
+        <div className="mt-1 flex items-baseline justify-center gap-1">
+          <span className="text-2xl font-bold text-[#f472b6]">$</span>
+          <span className="text-6xl font-black tabular-nums tracking-tighter text-white sm:text-7xl">
+            {plan.firstMonthPrice}
+          </span>
+        </div>
+      </div>
+
+      {plan.id === '120' ? (
+        <div className="mt-6 space-y-3 border-t border-white/10 pt-5">
+          <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
+            <span className="text-sm text-white/55">Mes 2 y 3</span>
+            <span className="text-lg font-bold tabular-nums text-white">
+              ${plan.months2and3Price}
+              <span className="text-sm font-medium text-white/45">/mes</span>
+            </span>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
+            <span className="text-sm text-white/55">Del 4.º en adelante</span>
+            <span className="text-lg font-bold tabular-nums text-white/70">
+              ${plan.normalPrice}
+              <span className="text-sm font-medium text-white/45">/mes</span>
+            </span>
+          </div>
+        </div>
+      ) : plan.id === '150' ? (
+        <div className="mt-6 space-y-4 border-t border-white/10 pt-5">
+          <div className="text-center">
+            <p className="text-sm font-medium text-white/50">Precio especial</p>
+            <div className="mt-1 flex items-baseline justify-center gap-1">
+              <span className="text-2xl font-bold text-[#00B140]">$</span>
+              <span className="text-5xl font-black tabular-nums tracking-tighter text-[#00B140] sm:text-6xl">
+                {plan.lifetimePrice}
+              </span>
+            </div>
+            <p className="mt-1 text-sm font-bold uppercase tracking-[0.12em] text-[#00B140]">
+              de por vida
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 rounded-xl border border-[#f472b6]/25 bg-[#f472b6]/10 px-4 py-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={plan.streaming.vix.logo}
+                alt="ViX Premium"
+                className="h-7 w-auto object-contain"
+              />
+              <p className="text-sm font-semibold text-white">
+                Incluye ViX Premium por {plan.streaming.vix.months} meses
+              </p>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl border border-[#22d3ee]/25 bg-[#22d3ee]/10 px-4 py-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={plan.streaming.max.logo}
+                alt="Max"
+                className="h-7 w-auto object-contain"
+              />
+              <p className="text-sm font-semibold text-white">
+                Incluye Max por {plan.streaming.max.months} meses
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+type Props = {
+  plan?: IzziPlanConfig;
+};
+
+export function IzziLandingPage({ plan = IZZI_PLAN_120 }: Props) {
   const reduceMotion = useReducedMotion();
   const [cupos, setCupos] = useState(CUPOS_START);
   const [pulseCta, setPulseCta] = useState(true);
 
   useEffect(() => {
-    setCupos(reconcileCupos());
-    const id = window.setInterval(() => setCupos(reconcileCupos()), 30_000);
+    setCupos(reconcileCupos(plan.cuposStorageKey));
+    const id = window.setInterval(
+      () => setCupos(reconcileCupos(plan.cuposStorageKey)),
+      30_000,
+    );
     const pulse = window.setInterval(() => setPulseCta((p) => !p), 2000);
     return () => {
       window.clearInterval(id);
       window.clearInterval(pulse);
     };
-  }, []);
+  }, [plan.cuposStorageKey]);
 
   const fadeUp = reduceMotion
     ? {}
@@ -105,10 +190,19 @@ export function IzziMeridaLanding() {
         transition: { duration: 0.7, ease: [0.32, 0.72, 0, 1] },
       };
 
+  const popupDescription =
+    plan.id === '120'
+      ? '1er mes a $100 · instalación sin costo · 120 Mbps en Mérida'
+      : '1er mes a $100 · $459 de por vida · ViX Premium y Max incluidos · 150 Mbps';
+
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden bg-[#030303] text-white antialiased">
       <WifiSignalField />
-      <WhatsAppPromoPopup />
+      <WhatsAppPromoPopup
+        whatsappUrl={plan.whatsappUrl}
+        dismissKey={plan.popupDismissKey}
+        description={popupDescription}
+      />
 
       <div
         className="pointer-events-none fixed inset-0 z-0"
@@ -158,13 +252,11 @@ export function IzziMeridaLanding() {
 
         <motion.section className="mt-10" {...fadeUp}>
           <h1 className="text-center text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
-            {IZZI_PLAN.name}
+            {plan.name}
           </h1>
-          <p className="mt-2 text-center text-sm text-white/55">
-            Velocidad simétrica para tu hogar en Mérida
-          </p>
+          <p className="mt-2 text-center text-sm text-white/55">{plan.subtitle}</p>
           <div className="mt-6">
-            <SpeedometerGauge target={IZZI_PLAN.speedMbps} />
+            <SpeedometerGauge target={plan.speedMbps} />
           </div>
         </motion.section>
 
@@ -172,45 +264,14 @@ export function IzziMeridaLanding() {
           className="mt-8 rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-1 backdrop-blur-xl"
           {...fadeUp}
         >
-          <div className="rounded-[calc(1.75rem-0.25rem)] bg-black/40 p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)]">
-            <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-[#f472b6]">
-              Precio especial · instalación sin costo
-            </p>
-
-            <div className="mt-5 text-center">
-              <p className="text-sm font-medium text-white/50">1er mes</p>
-              <div className="mt-1 flex items-baseline justify-center gap-1">
-                <span className="text-2xl font-bold text-[#f472b6]">$</span>
-                <span className="text-6xl font-black tabular-nums tracking-tighter text-white sm:text-7xl">
-                  {IZZI_PLAN.firstMonthPrice}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-3 border-t border-white/10 pt-5">
-              <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                <span className="text-sm text-white/55">Mes 2 y 3</span>
-                <span className="text-lg font-bold tabular-nums text-white">
-                  ${IZZI_PLAN.months2and3Price}
-                  <span className="text-sm font-medium text-white/45">/mes</span>
-                </span>
-              </div>
-              <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                <span className="text-sm text-white/55">Del 4.º en adelante</span>
-                <span className="text-lg font-bold tabular-nums text-white/70">
-                  ${IZZI_PLAN.normalPrice}
-                  <span className="text-sm font-medium text-white/45">/mes</span>
-                </span>
-              </div>
-            </div>
-          </div>
+          <PricingCard plan={plan} />
         </motion.section>
 
         <motion.section className="mt-8" {...fadeUp}>
           <p className="mb-3 text-center text-xs font-bold uppercase tracking-[0.2em] text-white/45">
             La oferta termina en
           </p>
-          <OfferCountdown />
+          <OfferCountdown storageKey={plan.offerStorageKey} />
           <p className="mt-3 text-center text-xs text-white/40">
             Quedan{' '}
             <span className="font-bold text-[#f472b6] tabular-nums">{cupos}</span> cupos con
@@ -261,7 +322,7 @@ export function IzziMeridaLanding() {
 
         <motion.div className="mt-10 hidden sm:block" {...fadeUp}>
           <a
-            href={IZZI_MERIDA_WA}
+            href={plan.whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex w-full items-center justify-center gap-3 rounded-full bg-[#25D366] px-8 py-4 text-lg font-extrabold text-white shadow-[0_0_40px_rgba(37,211,102,0.35)] transition duration-500 hover:scale-[1.02] hover:shadow-[0_0_56px_rgba(37,211,102,0.5)] active:scale-[0.98]"
@@ -285,7 +346,7 @@ export function IzziMeridaLanding() {
         transition={{ delay: 0.8, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
       >
         <a
-          href={IZZI_MERIDA_WA}
+          href={plan.whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-extrabold text-white transition active:scale-[0.98]"
@@ -302,4 +363,13 @@ export function IzziMeridaLanding() {
       </motion.div>
     </div>
   );
+}
+
+/** @deprecated Usar IzziLandingPage */
+export function IzziMeridaLanding() {
+  return <IzziLandingPage plan={IZZI_PLAN_120} />;
+}
+
+export function IzziMerida150Landing() {
+  return <IzziLandingPage plan={IZZI_PLAN_150} />;
 }

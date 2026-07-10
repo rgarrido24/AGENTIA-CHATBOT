@@ -4,17 +4,15 @@ import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { IZZI_OFFER_MAX_HOURS } from '@/lib/izzi-brand';
 
-const STORAGE_KEY = 'izzi_merida_offer_end_v1';
-
 function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
-function resolveOfferEnd(): number {
+function resolveOfferEnd(storageKey: string): number {
   const now = Date.now();
   const maxMs = IZZI_OFFER_MAX_HOURS * 3600000;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     if (raw) {
       const end = Number(raw);
       if (Number.isFinite(end) && end > now) return end;
@@ -24,19 +22,19 @@ function resolveOfferEnd(): number {
   }
   const end = now + maxMs;
   try {
-    window.localStorage.setItem(STORAGE_KEY, String(end));
+    window.localStorage.setItem(storageKey, String(end));
   } catch {
     /* ignore */
   }
   return end;
 }
 
-export function OfferCountdown() {
+export function OfferCountdown({ storageKey }: { storageKey: string }) {
   const [left, setLeft] = useState({ h: 0, m: 0, s: 0 });
   const [offerEnd, setOfferEnd] = useState<number | null>(null);
 
   useEffect(() => {
-    const end = resolveOfferEnd();
+    const end = resolveOfferEnd(storageKey);
     setOfferEnd(end);
 
     const tick = () => {
@@ -50,7 +48,7 @@ export function OfferCountdown() {
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [storageKey]);
 
   if (offerEnd === null) {
     return (
