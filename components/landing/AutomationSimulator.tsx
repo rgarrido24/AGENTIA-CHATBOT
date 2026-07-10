@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AGENTIA_BOOK_URL } from '@/lib/agentia-book';
 import {
   computeResults,
   formatMxn,
@@ -153,8 +154,7 @@ export function AutomationSimulator({ id = 'simulador' }: { id?: string }) {
     }
   }
 
-  const calendlyUrl =
-    (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_AGENTIA_BOOK_URL?.trim()) || '';
+  const calendlyUrl = AGENTIA_BOOK_URL;
 
   return (
     <section id={id} className="scroll-mt-24 py-20">

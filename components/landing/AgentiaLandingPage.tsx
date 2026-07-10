@@ -5,7 +5,14 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Check, Shield } from 'lucide-react';
 import { AutomationSimulator } from '@/components/landing/AutomationSimulator';
+import { DecoHouseCrmMock } from '@/components/landing/case-mocks/DecoHouseCrmMock';
+import { LucianoCrmMock } from '@/components/landing/case-mocks/LucianoCrmMock';
+import { VolanteoMapMock } from '@/components/landing/case-mocks/VolanteoMapMock';
 import { GlowButton } from '@/components/landing/GlowButton';
+import { IzziWhiteLogo } from '@/components/landing/IzziWhiteLogo';
+import { LiveDemosSection } from '@/components/landing/LiveDemosSection';
+import { MetaEcosystemSection } from '@/components/landing/MetaEcosystemSection';
+import { ModernChatPreview, type ChatLine } from '@/components/landing/ModernChatPreview';
 import { ParticleField } from '@/components/landing/ParticleField';
 import { TypewriterHeadline } from '@/components/landing/TypewriterHeadline';
 import {
@@ -26,9 +33,9 @@ const PAIN_POINTS = [
 
 const CASE_STUDIES = [
   {
+    id: 'cwf',
     name: 'CWF México',
-    url: 'https://cwf.com.mx',
-    href: '/cwf-panel/login',
+    externalHref: 'https://cwf.com.mx',
     accent: '#8B4513',
     sector: 'Distribución / Tratamiento de Madera',
     antes:
@@ -39,9 +46,9 @@ const CASE_STUDIES = [
     construido: 'E-commerce + Chatbot IA experto en madera + WeShip + Panel CRM',
   },
   {
+    id: 'deco',
     name: 'Deco House',
     url: 'Chile',
-    href: '/demo/deco-house',
     accent: '#00B4D8',
     sector: 'Vidrio y Aluminio',
     antes: 'Cotizaciones manuales lentas, pérdida de leads por tiempo de respuesta.',
@@ -50,18 +57,18 @@ const CASE_STUDIES = [
     construido: 'Chatbot + CRM + Generador PDF + Toma de control humana',
   },
   {
+    id: 'izzi',
     name: 'izzi',
     url: 'Mérida',
-    href: '/izzi/merida',
     accent: '#FF6B35',
     sector: 'Telecomunicaciones',
-    whiteLogo: true,
     antes: 'Agentes respondiendo disponibilidad y tarifas repetitivas manualmente.',
     despues: 'OCR lee INE y comprobante automático, cierra venta y notifica al asesor.',
     impacto: '-60% costo operativo atención inicial',
     construido: 'Landing + Chatbot OCR + Notificaciones inteligentes',
   },
   {
+    id: 'biovela',
     name: 'Biovela — La Rueda Veladoras',
     href: '/biovela',
     accent: '#FF85A1',
@@ -72,19 +79,19 @@ const CASE_STUDIES = [
     construido: 'Tiendanube 128+ productos + Clip + MercadoPago + WeShip + Chatbot + Landing',
   },
   {
+    id: 'luciano',
     name: 'Luciano Ads',
     url: 'Argentina',
-    href: '/portal/luciano/cliente/luciano',
     accent: '#7B2FBE',
     sector: 'Agencia / Marketing Digital',
     antes: '26 asesoras sin sistema centralizado, leads perdidos sin seguimiento.',
     despues: 'CRM individual por asesora, notificación en tiempo real vía app PWA.',
-    impacto: '1,963 leads procesados en un mes',
+    impacto: '1,963 leads procesados en un mes (simulación de volumen)',
     construido: 'CRM + Zapier + App PWA (sin descargar) + Meta API oficial',
   },
   {
+    id: 'volanteo',
     name: 'Volanteo Tracker',
-    href: '/tracking-panel',
     accent: '#00FF88',
     sector: 'Telecomunicaciones / Empresas de Campo',
     antes: 'Supervisores sin visibilidad del equipo en campo, sin forma de validar rutas.',
@@ -98,6 +105,7 @@ const CASE_STUDIES = [
     ],
   },
   {
+    id: 'restaurante',
     name: 'Industria Restaurantera',
     accent: '#FF9F1C',
     sector: 'Gastronomía',
@@ -107,13 +115,24 @@ const CASE_STUDIES = [
     construido: 'Menús tipo red social + tarjetas de lealtad + reservas WhatsApp + contenido para redes',
     isTeaser: true,
   },
-];
+] as const;
 
-const TECH_INTEGRATIONS = [
+type IntegrationItem = {
+  name: string;
+  slug?: string;
+  color?: string;
+  imageUrl?: string;
+};
+
+const TECH_INTEGRATIONS: IntegrationItem[] = [
   { name: 'Meta', slug: 'meta', color: '00D4FF' },
   { name: 'WhatsApp', slug: 'whatsapp', color: '25D366' },
   { name: 'Zapier', slug: 'zapier', color: 'FF4F00' },
-  { name: 'Tiendanube', slug: 'nuvemshop', color: '2E3192' },
+  {
+    name: 'Tiendanube',
+    imageUrl:
+      'https://d26lpennugtm8s.cloudfront.net/stores/001/418/layout/tiendanube-logo.png',
+  },
   { name: 'Stripe', slug: 'stripe', color: '635BFF' },
   { name: 'Mercado Pago', slug: 'mercadopago', color: '00B1EA' },
   { name: 'Cloudinary', slug: 'cloudinary', color: '3448C5' },
@@ -161,6 +180,26 @@ function Glass({
   );
 }
 
+const HERO_CHAT: ChatLine[] = [
+  { from: 'user', text: '¿Atienden leads de WhatsApp fuera de horario?' },
+  { from: 'bot', text: 'Sí, 24/7. ¿Cuántos leads recibes al mes aproximadamente?' },
+  { from: 'user', text: 'Unos 80, pero muchos se enfrían' },
+  { from: 'bot', text: 'Con automatización podrías recuperar ~$47k MXN/mes. Te muestro el simulador ↓' },
+];
+
+function CaseStudyMock({ id }: { id: string }) {
+  switch (id) {
+    case 'deco':
+      return <DecoHouseCrmMock />;
+    case 'luciano':
+      return <LucianoCrmMock />;
+    case 'volanteo':
+      return <VolanteoMapMock />;
+    default:
+      return null;
+  }
+}
+
 function scrollToSimulator() {
   document.getElementById('simulador')?.scrollIntoView({ behavior: 'smooth' });
 }
@@ -192,9 +231,11 @@ export function AgentiaLandingPage() {
             <Image src="/logo-agentia-2026.png" alt="Agentia" width={44} height={44} className="rounded-lg" priority />
             <span className="hidden font-[family-name:var(--font-space)] text-lg font-bold sm:block">Agentia</span>
           </Link>
-          <nav className="hidden items-center gap-8 text-sm text-white/60 md:flex">
+          <nav className="hidden items-center gap-6 text-sm text-white/60 md:flex">
             <a href="#dolor" className="hover:text-[#00D4FF]">Diagnóstico</a>
             <a href="#simulador" className="hover:text-[#00D4FF]">Simulador</a>
+            <a href="#demos" className="hover:text-[#00D4FF]">Demos</a>
+            <a href="#meta" className="hover:text-[#00D4FF]">Meta</a>
             <a href="#casos" className="hover:text-[#00D4FF]">Casos</a>
             <a href="#integraciones" className="hover:text-[#00D4FF]">Stack</a>
           </nav>
@@ -256,29 +297,21 @@ export function AgentiaLandingPage() {
             transition={{ duration: 0.6 }}
             className="relative"
           >
-            <Glass className="p-6 sm:p-8">
-              <p className="text-xs uppercase tracking-widest text-white/40">Vista previa del simulador</p>
-              <p className="mt-3 font-[family-name:var(--font-space)] text-2xl font-bold">
-                Fuga estimada: <span className="text-[#FF3B3B]">$47,200 MXN/mes</span>
+            <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-[#00D4FF]/15 via-transparent to-[#FFD700]/10 blur-2xl" aria-hidden />
+            <Glass className="relative p-4 sm:p-5">
+              <p className="mb-3 text-center text-xs uppercase tracking-widest text-white/40">
+                Conversación simulada · WhatsApp
               </p>
-              <p className="mt-2 text-sm text-white/50">
-                Basado en operaciones similares en tu industria. Ajusta tus números en el simulador.
-              </p>
-              <div className="mt-6 space-y-3">
-                <div className="h-2 rounded-full bg-white/10">
-                  <div className="h-full w-[34%] rounded-full bg-[#FF3B3B]" />
-                </div>
-                <div className="h-2 rounded-full bg-white/10">
-                  <div className="h-full w-[72%] rounded-full bg-[#00D4FF]" />
-                </div>
-                <div className="h-2 rounded-full bg-white/10">
-                  <div className="h-full w-[58%] rounded-full bg-[#FFD700]" />
-                </div>
-              </div>
+              <ModernChatPreview
+                businessName="Agentia"
+                accent={CYAN}
+                messages={HERO_CHAT}
+                animate
+              />
               <button
                 type="button"
                 onClick={scrollToSimulator}
-                className="mt-6 w-full rounded-xl border border-[#00D4FF]/30 py-3 text-sm font-semibold text-[#00D4FF] hover:bg-[#00D4FF]/10"
+                className="mt-4 w-full rounded-xl border border-[#00D4FF]/30 py-3 text-sm font-semibold text-[#00D4FF] transition hover:bg-[#00D4FF]/10"
               >
                 Calcular mi fuga real
               </button>
@@ -313,6 +346,10 @@ export function AgentiaLandingPage() {
 
         <AutomationSimulator />
 
+        <LiveDemosSection />
+
+        <MetaEcosystemSection />
+
         {/* Case studies */}
         <section id="casos" className="scroll-mt-24 py-16">
           <h2 className="mb-10 font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
@@ -321,19 +358,14 @@ export function AgentiaLandingPage() {
           <div className="space-y-6">
             {CASE_STUDIES.map((c) => (
               <Glass
-                key={c.name}
+                key={c.id}
                 className="overflow-hidden p-6 sm:p-8"
                 style={{ borderLeftWidth: 4, borderLeftColor: c.accent }}
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    {'whiteLogo' in c && c.whiteLogo ? (
-                      <p
-                        className="font-[family-name:var(--font-space)] text-2xl font-extrabold tracking-tight text-white"
-                        style={{ textShadow: '0 0 24px rgba(255,107,53,0.4)' }}
-                      >
-                        izzi
-                      </p>
+                    {c.id === 'izzi' ? (
+                      <IzziWhiteLogo className="h-9" />
                     ) : (
                       <h3 className="font-[family-name:var(--font-space)] text-xl font-bold" style={{ color: c.accent }}>
                         {c.name}
@@ -341,7 +373,17 @@ export function AgentiaLandingPage() {
                     )}
                     <p className="mt-1 text-xs uppercase tracking-wider text-white/45">{c.sector}</p>
                   </div>
-                  {c.href ? (
+                  {'externalHref' in c && c.externalHref ? (
+                    <a
+                      href={c.externalHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-semibold hover:underline"
+                      style={{ color: c.accent }}
+                    >
+                      Ver proyecto →
+                    </a>
+                  ) : 'href' in c && c.href ? (
                     <Link href={c.href} className="text-xs font-semibold hover:underline" style={{ color: c.accent }}>
                       Ver proyecto →
                     </Link>
@@ -366,6 +408,8 @@ export function AgentiaLandingPage() {
                 <p className="mt-4 text-xs text-white/40">
                   <span className="text-white/55">Construido:</span> {c.construido}
                 </p>
+
+                <CaseStudyMock id={c.id} />
 
                 {'extra' in c && c.extra ? (
                   <ul className="mt-4 space-y-1 text-sm text-white/50">
@@ -408,14 +452,25 @@ export function AgentiaLandingPage() {
                 key={item.name}
                 className="flex flex-col items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] px-3 py-5 opacity-70 transition hover:opacity-100"
               >
-                <img
-                  src={`https://cdn.simpleicons.org/${item.slug}/${item.color}`}
-                  alt={item.name}
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 object-contain"
-                  loading="lazy"
-                />
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl}
+                    alt={item.name}
+                    width={64}
+                    height={32}
+                    className="h-8 w-auto max-w-[72px] object-contain"
+                    loading="lazy"
+                  />
+                ) : item.slug ? (
+                  <img
+                    src={`https://cdn.simpleicons.org/${item.slug}/${item.color}`}
+                    alt={item.name}
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 object-contain"
+                    loading="lazy"
+                  />
+                ) : null}
                 <span className="mt-2 text-center text-[10px] text-white/50">{item.name}</span>
               </div>
             ))}
