@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
 const PHRASES = [
-  'WhatsApp con IA 24/7',
-  'CRM para tu equipo',
-  'leads de Meta automáticos',
-  'automatizaciones Zapier',
+  'procesos manuales',
+  'WhatsApp sin responder',
+  'Excel duplicado',
+  'leads que se enfrían',
+  'tareas repetitivas',
 ];
 
 export function TypewriterHeadline() {

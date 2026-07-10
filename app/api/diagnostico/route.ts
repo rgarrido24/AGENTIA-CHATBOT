@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const tipo_negocio = String(body.tipo_negocio ?? '').trim();
   const descripcion = String(body.descripcion ?? '').trim();
 
-  if (!nombre || !email || !whatsapp || !tipo_negocio || !descripcion) {
+  if (!nombre || !email || !tipo_negocio || !descripcion) {
     return NextResponse.json({ error: 'Faltan campos obligatorios' }, { status: 400 });
   }
 
@@ -37,7 +37,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
   }
 
-  if (whatsapp.length < 10) {
+  const whatsappDigits = whatsapp.replace(/\D/g, '');
+  if (whatsappDigits && whatsappDigits.length < 10) {
     return NextResponse.json({ error: 'WhatsApp inválido' }, { status: 400 });
   }
 
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
   await db.collection('diagnostico_leads').insertOne({
     nombre,
     email,
-    whatsapp,
+    whatsapp: whatsappDigits || undefined,
     tipo_negocio,
     descripcion,
     createdAt,
@@ -61,9 +62,9 @@ export async function POST(req: NextRequest) {
   try {
     await sendPushNotification({
       clientId: 'agentia-ventas',
-      senderId: whatsapp,
+      senderId: whatsappDigits || email,
       senderName: nombre,
-      message: `Nuevo diagnóstico: ${nombre} · ${tipo_negocio} · ${whatsapp}`,
+      message: `Nuevo diagnóstico: ${nombre} · ${tipo_negocio}${whatsappDigits ? ` · ${whatsappDigits}` : ''}`,
     });
   } catch (err) {
     console.error(

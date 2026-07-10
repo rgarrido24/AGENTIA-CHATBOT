@@ -66,7 +66,7 @@ export function GlobalWhatsAppAndExit() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Abrir WhatsApp"
-        className="fixed left-4 bottom-4 z-[60] rounded-full shadow-xl"
+        className="fixed right-4 bottom-4 z-[60] rounded-full shadow-xl"
         style={{
           width: 56,
           height: 56,
