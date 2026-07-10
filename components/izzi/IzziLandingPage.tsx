@@ -135,7 +135,7 @@ function PricingCard({ plan }: { plan: IzziPlanConfig }) {
               <img
                 src={plan.streaming.vix.logo}
                 alt="ViX Premium"
-                className="h-7 w-auto object-contain"
+                className="h-8 w-20 shrink-0 object-contain object-left"
               />
               <p className="text-sm font-semibold text-white">
                 Incluye ViX Premium por {plan.streaming.vix.months} meses
@@ -146,7 +146,7 @@ function PricingCard({ plan }: { plan: IzziPlanConfig }) {
               <img
                 src={plan.streaming.max.logo}
                 alt="Max"
-                className="h-7 w-auto object-contain"
+                className="h-8 w-16 shrink-0 object-contain object-left"
               />
               <p className="text-sm font-semibold text-white">
                 Incluye Max por {plan.streaming.max.months} meses
