@@ -3,18 +3,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, Check, Shield } from 'lucide-react';
+import { ArrowRight, Check, Shield, X } from 'lucide-react';
 import { AutomationSimulator } from '@/components/landing/AutomationSimulator';
-import { DecoHouseCrmMock } from '@/components/landing/case-mocks/DecoHouseCrmMock';
-import { LucianoCrmMock } from '@/components/landing/case-mocks/LucianoCrmMock';
-import { VolanteoMapMock } from '@/components/landing/case-mocks/VolanteoMapMock';
+import { CaseStudyMock } from '@/components/landing/CaseStudyMock';
 import { GlowButton } from '@/components/landing/GlowButton';
 import { IzziWhiteLogo } from '@/components/landing/IzziWhiteLogo';
 import { LiveDemosSection } from '@/components/landing/LiveDemosSection';
 import { MetaEcosystemSection } from '@/components/landing/MetaEcosystemSection';
 import { ModernChatPreview, type ChatLine } from '@/components/landing/ModernChatPreview';
 import { ParticleField } from '@/components/landing/ParticleField';
-import { TypewriterHeadline } from '@/components/landing/TypewriterHeadline';
 import {
   AGENTIA_WHATSAPP_DISPLAY,
   agentiaWhatsAppUrl,
@@ -48,7 +45,7 @@ const CASE_STUDIES = [
   {
     id: 'deco',
     name: 'Deco House',
-    href: '/demo/deco-house',
+    href: '/proyectos/deco-house',
     url: 'Chile',
     accent: '#00B4D8',
     sector: 'Vidrio y Aluminio',
@@ -83,7 +80,7 @@ const CASE_STUDIES = [
   {
     id: 'luciano',
     name: 'Luciano Ads',
-    projectAnchor: '#caso-luciano',
+    href: '/proyectos/luciano-ads',
     url: 'Argentina',
     accent: '#7B2FBE',
     sector: 'Agencia / Marketing Digital',
@@ -143,6 +140,46 @@ const TECH_INTEGRATIONS: IntegrationItem[] = [
   { name: 'Vercel', slug: 'vercel', color: 'ffffff' },
 ];
 
+const BEFORE_AGENTIA = [
+  'Excel manual',
+  'WhatsApp sin respuesta',
+  'Copiar y pegar',
+  'Leads sin seguimiento',
+];
+
+const AFTER_AGENTIA = [
+  'Todo conectado',
+  'IA respondiendo 24/7',
+  'Dashboard en tiempo real',
+  'Seguimiento automático',
+];
+
+const TECH_STACK = [
+  'WhatsApp Business API',
+  'Claude AI',
+  'Gemini',
+  'OpenAI',
+  'n8n',
+  'MongoDB',
+  'Supabase',
+  'Stripe',
+  'MercadoPago',
+  'Shopify',
+  'Tiendanube',
+  'Zapier',
+];
+
+const FREE_DELIVERABLES = [
+  'Diagnóstico personalizado',
+  'ROI estimado',
+  'Automatizaciones recomendadas',
+  'Arquitectura propuesta',
+  'Integraciones sugeridas',
+  'Roadmap de implementación',
+  'Prioridades claras',
+];
+
+const PREVIEW_CASE_IDS = new Set(['deco', 'luciano']);
 const PAYMENTS = ['Stripe', 'MercadoPago', 'Clip', 'PayPal'];
 const SHIPPING = ['WeShip', 'FedEx', 'DHL', 'Estafeta'];
 
@@ -193,19 +230,6 @@ const HERO_CHAT: ChatLine[] = [
   { from: 'bot', text: 'Con automatización podrías recuperar ~$47k MXN/mes. Te muestro el simulador ↓' },
 ];
 
-function CaseStudyMock({ id }: { id: string }) {
-  switch (id) {
-    case 'deco':
-      return <DecoHouseCrmMock />;
-    case 'luciano':
-      return <LucianoCrmMock />;
-    case 'volanteo':
-      return <VolanteoMapMock />;
-    default:
-      return null;
-  }
-}
-
 function scrollToSimulator() {
   document.getElementById('simulador')?.scrollIntoView({ behavior: 'smooth' });
 }
@@ -238,7 +262,9 @@ export function AgentiaLandingPage() {
             <span className="hidden font-[family-name:var(--font-space)] text-lg font-bold sm:block">Agentia</span>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-white/60 md:flex">
-            <a href="#dolor" className="hover:text-[#00D4FF]">Diagnóstico</a>
+            <a href="#transformacion" className="hover:text-[#00D4FF]">Transformación</a>
+            <a href="#tecnologias" className="hover:text-[#00D4FF]">Tech</a>
+            <a href="#gratis" className="hover:text-[#00D4FF]">Gratis</a>
             <a href="#simulador" className="hover:text-[#00D4FF]">Simulador</a>
             <a href="#demos" className="hover:text-[#00D4FF]">Demos</a>
             <a href="#meta" className="hover:text-[#00D4FF]">Meta</a>
@@ -257,13 +283,12 @@ export function AgentiaLandingPage() {
             <p className="mb-4 text-sm font-medium text-[#FFD700]">
               Arquitectura de Automatización
             </p>
-            <h1 className="font-[family-name:var(--font-space)] text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[2.75rem]">
-              ¿Sabes cuánto dinero pierde tu empresa cada mes por{' '}
-              <TypewriterHeadline />
+            <h1 className="font-[family-name:var(--font-space)] text-3xl font-extrabold leading-[1.12] tracking-tight sm:text-4xl lg:text-[2.65rem]">
+              Encontramos los cuellos de botella invisibles de tu empresa y diseñamos la solución
+              tecnológica con mayor retorno.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60 sm:text-lg">
-              Calculamos tu fuga de ingresos y diseñamos tu arquitectura de automatización antes de escribir
-              una sola línea de código. En 3 minutos, sin llamadas de ventas.
+              En 5 minutos te mostramos qué automatizar primero y cuánto dinero podrías recuperar.
             </p>
 
             <div className="mt-8">
@@ -273,7 +298,7 @@ export function AgentiaLandingPage() {
                 className="group inline-flex items-center gap-2 rounded-xl px-7 py-4 text-sm font-bold text-[#0a0a0a] shadow-[0_0_40px_rgba(0,212,255,0.35)] transition hover:shadow-[0_0_56px_rgba(0,212,255,0.5)]"
                 style={{ background: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
               >
-                Auditar mi Negocio Gratis
+                Descubrir cuánto dinero estoy perdiendo
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
               </button>
             </div>
@@ -323,6 +348,88 @@ export function AgentiaLandingPage() {
               </button>
             </Glass>
           </motion.div>
+        </section>
+
+        {/* Antes / Después */}
+        <section id="transformacion" className="scroll-mt-24 py-16">
+          <h2 className="mb-8 font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
+            Antes y después de Agentia
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Glass className="p-6 sm:p-8">
+              <p className="text-sm font-bold uppercase tracking-wider text-red-400/90">
+                Antes de Agentia
+              </p>
+              <ul className="mt-5 space-y-3">
+                {BEFORE_AGENTIA.map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-sm text-white/70 sm:text-base">
+                    <X className="h-5 w-5 shrink-0 text-red-400" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </Glass>
+            <Glass className="p-6 sm:p-8">
+              <p className="text-sm font-bold uppercase tracking-wider text-[#00D4FF]">
+                Después de Agentia
+              </p>
+              <ul className="mt-5 space-y-3">
+                {AFTER_AGENTIA.map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-sm text-white/80 sm:text-base">
+                    <Check className="h-5 w-5 shrink-0 text-[#00D4FF]" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </Glass>
+          </div>
+        </section>
+
+        {/* Qué recibes gratis */}
+        <section id="gratis" className="scroll-mt-24 py-16">
+          <Glass className="p-8 sm:p-10">
+            <h2 className="font-[family-name:var(--font-space)] text-2xl font-bold sm:text-3xl">
+              Qué recibes gratis
+            </h2>
+            <p className="mt-3 max-w-2xl text-white/55">
+              Sin compromiso de compra. Solo claridad sobre dónde está tu mayor retorno.
+            </p>
+            <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+              {FREE_DELIVERABLES.map((item) => (
+                <li key={item} className="flex items-start gap-3 text-sm text-white/75 sm:text-base">
+                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#FFD700]" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={scrollToSimulator}
+              className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-[#00D4FF] hover:underline"
+            >
+              Empezar diagnóstico gratuito <ArrowRight className="h-4 w-4" />
+            </button>
+          </Glass>
+        </section>
+
+        {/* Tecnologías */}
+        <section id="tecnologias" className="scroll-mt-24 py-16">
+          <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
+            Tecnologías
+          </h2>
+          <p className="mt-3 max-w-2xl text-white/55">
+            Integramos el stack que tu operación ya usa — o el que necesita para escalar.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-2">
+            {TECH_STACK.map((tech) => (
+              <span
+                key={tech}
+                className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/75 transition hover:border-[#00D4FF]/35 hover:text-white"
+              >
+                {tech}
+              </span>
+            ))}
+          </div>
         </section>
 
         {/* Pain mirror */}
@@ -390,7 +497,7 @@ export function AgentiaLandingPage() {
                     >
                       Ver proyecto →
                     </a>
-                  ) : 'href' in c && c.href ? (
+                  ) : 'href' in c && c.href && !PREVIEW_CASE_IDS.has(c.id) ? (
                     <Link href={c.href} className="text-xs font-semibold hover:underline" style={{ color: c.accent }}>
                       Ver proyecto →
                     </Link>
@@ -424,7 +531,17 @@ export function AgentiaLandingPage() {
                   <span className="text-white/55">Construido:</span> {c.construido}
                 </p>
 
-                <CaseStudyMock id={c.id} />
+                <CaseStudyMock id={c.id} preview={PREVIEW_CASE_IDS.has(c.id)} />
+
+                {PREVIEW_CASE_IDS.has(c.id) && 'href' in c && c.href ? (
+                  <Link
+                    href={c.href}
+                    className="mt-4 inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-white/5"
+                    style={{ borderColor: `${c.accent}55`, color: c.accent }}
+                  >
+                    Ver proyecto →
+                  </Link>
+                ) : null}
 
                 {'extra' in c && c.extra ? (
                   <ul className="mt-4 space-y-1 text-sm text-white/50">

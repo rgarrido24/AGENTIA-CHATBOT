@@ -1,22 +1,10 @@
-export function IzziWhiteLogo({ className = 'h-8' }: { className?: string }) {
+export function IzziWhiteLogo({ className = 'h-9 w-auto' }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 88 32"
+    <img
+      src="/izzi-logo.png"
+      alt="izzi"
       className={className}
-      aria-label="izzi"
-      role="img"
-    >
-      <text
-        x="0"
-        y="26"
-        fill="#FFFFFF"
-        fontFamily="Arial Black, Helvetica, sans-serif"
-        fontSize="28"
-        fontWeight="900"
-        letterSpacing="-1"
-      >
-        izzi
-      </text>
-    </svg>
+      style={{ filter: 'brightness(0) invert(1)' }}
+    />
   );
 }
