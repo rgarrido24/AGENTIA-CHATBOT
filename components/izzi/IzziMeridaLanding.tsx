@@ -1,0 +1,262 @@
+'use client';
+
+import { motion, useReducedMotion } from 'framer-motion';
+import { Gamepad2, Laptop, MessageCircle, Tv, Users, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { IzziLogo } from '@/components/IzziLogo';
+import { OfferCountdown } from '@/components/izzi/OfferCountdown';
+import { SpeedometerGauge } from '@/components/izzi/SpeedometerGauge';
+import { WifiSignalField } from '@/components/izzi/WifiSignalField';
+import {
+  IZZI_MERIDA_WA,
+  IZZI_MONTHLY_SAVINGS,
+  IZZI_PLAN,
+  IZZI_TOTAL_SAVINGS,
+} from '@/lib/izzi-brand';
+
+const STORAGE_KEY = 'izzi_merida_cupos_v3';
+const CUPOS_START = 7;
+const CUPOS_MIN = 2;
+
+const BENEFITS = [
+  {
+    icon: Tv,
+    title: 'Netflix sin buffering',
+    desc: '4K en varios dispositivos a la vez',
+    color: '#f472b6',
+  },
+  {
+    icon: Laptop,
+    title: 'Trabajo remoto fluido',
+    desc: 'Videollamadas y nube sin cortes',
+    color: '#22d3ee',
+  },
+  {
+    icon: Gamepad2,
+    title: 'Gaming competitivo',
+    desc: 'Ping bajo para jugar en línea',
+    color: '#facc15',
+  },
+  {
+    icon: Users,
+    title: 'Toda la familia conectada',
+    desc: 'Celulares, tablets y smart TV',
+    color: '#00B140',
+  },
+] as const;
+
+function randomIntervalMs() {
+  return (8 + Math.floor(Math.random() * 5)) * 60 * 1000;
+}
+
+function reconcileCupos(): number {
+  const now = Date.now();
+  let n = CUPOS_START;
+  let nextAt = now + randomIntervalMs();
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const p = JSON.parse(raw) as { n?: number; nextAt?: number };
+      if (typeof p.n === 'number' && typeof p.nextAt === 'number') {
+        n = Math.min(CUPOS_START, Math.max(CUPOS_MIN, Math.round(p.n)));
+        nextAt = p.nextAt;
+        while (now >= nextAt && n > CUPOS_MIN) {
+          n -= 1;
+          nextAt += randomIntervalMs();
+        }
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ n, nextAt }));
+  } catch {
+    /* ignore */
+  }
+  return n;
+}
+
+export function IzziMeridaLanding() {
+  const reduceMotion = useReducedMotion();
+  const [cupos, setCupos] = useState(CUPOS_START);
+  const [pulseCta, setPulseCta] = useState(true);
+
+  useEffect(() => {
+    setCupos(reconcileCupos());
+    const id = window.setInterval(() => setCupos(reconcileCupos()), 30_000);
+    const pulse = window.setInterval(() => setPulseCta((p) => !p), 2000);
+    return () => {
+      window.clearInterval(id);
+      window.clearInterval(pulse);
+    };
+  }, []);
+
+  const fadeUp = reduceMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: 28 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true, amount: 0.2 },
+        transition: { duration: 0.7, ease: [0.32, 0.72, 0, 1] },
+      };
+
+  return (
+    <div className="relative min-h-[100dvh] overflow-x-hidden bg-[#030303] text-white antialiased">
+      <WifiSignalField />
+
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,177,64,0.18), transparent 55%), radial-gradient(ellipse 40% 30% at 90% 80%, rgba(244,114,182,0.12), transparent 50%)',
+        }}
+        aria-hidden
+      />
+
+      <div
+        className="pointer-events-none fixed inset-0 z-[1] opacity-[0.035] mix-blend-overlay"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        }}
+        aria-hidden
+      />
+
+      <div className="relative z-10 mx-auto max-w-lg px-4 pb-28 pt-8 sm:max-w-xl sm:px-6 sm:pt-12">
+        <motion.header
+          className="flex flex-col items-center text-center"
+          initial={reduceMotion ? false : { opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <IzziLogo className="h-12 sm:h-14" />
+          <motion.span
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#00B140]/35 bg-[#00B140]/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-[#00B140]"
+            animate={reduceMotion ? undefined : { boxShadow: ['0 0 0 rgba(0,177,64,0)', '0 0 24px rgba(0,177,64,0.35)', '0 0 0 rgba(0,177,64,0)'] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+          >
+            <Zap className="h-3.5 w-3.5" />
+            Solo Mérida · Oferta limitada
+          </motion.span>
+        </motion.header>
+
+        <motion.section className="mt-10" {...fadeUp}>
+          <h1 className="text-center text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
+            {IZZI_PLAN.name}
+          </h1>
+          <p className="mt-2 text-center text-sm text-white/55">
+            Velocidad simétrica para tu hogar en Mérida
+          </p>
+          <div className="mt-6">
+            <SpeedometerGauge target={IZZI_PLAN.speedMbps} />
+          </div>
+        </motion.section>
+
+        <motion.section
+          className="mt-8 rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl"
+          {...fadeUp}
+        >
+          <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-[#f472b6]">
+            Precio especial
+          </p>
+          <div className="mt-3 flex items-baseline justify-center gap-1">
+            <span className="text-3xl font-bold text-[#f472b6]">$</span>
+            <span className="text-6xl font-black tabular-nums tracking-tighter sm:text-7xl">
+              {IZZI_PLAN.promoPrice}
+            </span>
+            <span className="text-lg font-semibold text-white/70">/mes</span>
+          </div>
+          <p className="mt-2 text-center text-sm font-medium text-white/60">
+            por {IZZI_PLAN.promoMonths} meses · instalación sin costo
+          </p>
+
+          <div className="mt-5 rounded-xl border border-white/8 bg-black/30 px-4 py-3 text-center text-sm">
+            <span className="text-white/45 line-through">${IZZI_PLAN.normalPrice}/mes</span>
+            <span className="mx-2 text-white/30">→</span>
+            <span className="font-bold text-[#00B140]">
+              Ahorras ${IZZI_MONTHLY_SAVINGS}/mes
+            </span>
+            <p className="mt-1 text-xs text-white/45">
+              ${IZZI_TOTAL_SAVINGS.toLocaleString('es-MX')} en total durante la promo
+            </p>
+          </div>
+        </motion.section>
+
+        <motion.section className="mt-8" {...fadeUp}>
+          <p className="mb-3 text-center text-xs font-bold uppercase tracking-[0.2em] text-white/45">
+            La oferta termina en
+          </p>
+          <OfferCountdown />
+          <p className="mt-3 text-center text-xs text-white/40">
+            Quedan{' '}
+            <span className="font-bold text-[#f472b6] tabular-nums">{cupos}</span> cupos con
+            instalación 24h
+          </p>
+        </motion.section>
+
+        <motion.section className="mt-10 grid gap-3 sm:grid-cols-2" {...fadeUp}>
+          {BENEFITS.map((b, i) => (
+            <motion.div
+              key={b.title}
+              className="group rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition duration-500 hover:border-white/20 hover:bg-white/[0.06]"
+              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08, duration: 0.5 }}
+              whileHover={reduceMotion ? undefined : { y: -4, scale: 1.02 }}
+            >
+              <div
+                className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-500 group-hover:scale-110"
+                style={{ background: `${b.color}22`, color: b.color }}
+              >
+                <b.icon className="h-5 w-5" strokeWidth={2} />
+              </div>
+              <p className="font-bold text-white">{b.title}</p>
+              <p className="mt-1 text-xs leading-relaxed text-white/50">{b.desc}</p>
+            </motion.div>
+          ))}
+        </motion.section>
+
+        <motion.div className="mt-10 hidden sm:block" {...fadeUp}>
+          <a
+            href={IZZI_MERIDA_WA}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex w-full items-center justify-center gap-3 rounded-full bg-[#25D366] px-8 py-4 text-lg font-extrabold text-white shadow-[0_0_40px_rgba(37,211,102,0.35)] transition duration-500 hover:scale-[1.02] hover:shadow-[0_0_56px_rgba(37,211,102,0.5)] active:scale-[0.98]"
+          >
+            <MessageCircle className="h-6 w-6" />
+            Contratar ahora por WhatsApp
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition group-hover:translate-x-0.5">
+              →
+            </span>
+          </a>
+          <p className="mt-3 text-center text-xs text-white/40">
+            Respuesta en minutos · Sin llamadas de venta
+          </p>
+        </motion.div>
+      </div>
+
+      <motion.div
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#030303]/90 p-4 backdrop-blur-xl sm:hidden"
+        initial={reduceMotion ? false : { y: 80 }}
+        animate={{ y: 0 }}
+        transition={{ delay: 0.8, duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+      >
+        <a
+          href={IZZI_MERIDA_WA}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-extrabold text-white transition active:scale-[0.98]"
+          style={{
+            background: '#25D366',
+            boxShadow: pulseCta ? '0 0 32px rgba(37,211,102,0.55)' : '0 0 16px rgba(37,211,102,0.25)',
+          }}
+        >
+          <MessageCircle className="h-5 w-5" />
+          Contratar ahora
+        </a>
+      </motion.div>
+    </div>
+  );
+}
