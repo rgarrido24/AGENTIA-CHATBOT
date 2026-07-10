@@ -48,6 +48,7 @@ const CASE_STUDIES = [
   {
     id: 'deco',
     name: 'Deco House',
+    href: '/demo/deco-house',
     url: 'Chile',
     accent: '#00B4D8',
     sector: 'Vidrio y Aluminio',
@@ -59,6 +60,7 @@ const CASE_STUDIES = [
   {
     id: 'izzi',
     name: 'izzi',
+    href: '/izzi/merida',
     url: 'Mérida',
     accent: '#FF6B35',
     sector: 'Telecomunicaciones',
@@ -81,6 +83,7 @@ const CASE_STUDIES = [
   {
     id: 'luciano',
     name: 'Luciano Ads',
+    projectAnchor: '#caso-luciano',
     url: 'Argentina',
     accent: '#7B2FBE',
     sector: 'Agencia / Marketing Digital',
@@ -92,6 +95,7 @@ const CASE_STUDIES = [
   {
     id: 'volanteo',
     name: 'Volanteo Tracker',
+    projectAnchor: '#caso-volanteo',
     accent: '#00FF88',
     sector: 'Telecomunicaciones / Empresas de Campo',
     antes: 'Supervisores sin visibilidad del equipo en campo, sin forma de validar rutas.',
@@ -130,8 +134,7 @@ const TECH_INTEGRATIONS: IntegrationItem[] = [
   { name: 'Zapier', slug: 'zapier', color: 'FF4F00' },
   {
     name: 'Tiendanube',
-    imageUrl:
-      'https://d26lpennugtm8s.cloudfront.net/stores/001/418/layout/tiendanube-logo.png',
+    imageUrl: '/logos/tiendanube.svg',
   },
   { name: 'Stripe', slug: 'stripe', color: '635BFF' },
   { name: 'Mercado Pago', slug: 'mercadopago', color: '00B1EA' },
@@ -165,13 +168,16 @@ function Glass({
   children,
   className = '',
   style,
+  id,
 }: {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  id?: string;
 }) {
   return (
     <div
+      id={id}
       className={`rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] ${className}`}
       style={style}
     >
@@ -295,10 +301,10 @@ export function AgentiaLandingPage() {
             initial={reduceMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="relative"
+            className="relative w-full lg:max-w-xl"
           >
             <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-[#00D4FF]/15 via-transparent to-[#FFD700]/10 blur-2xl" aria-hidden />
-            <Glass className="relative p-4 sm:p-5">
+            <Glass className="relative p-5 sm:p-6">
               <p className="mb-3 text-center text-xs uppercase tracking-widest text-white/40">
                 Conversación simulada · WhatsApp
               </p>
@@ -359,7 +365,8 @@ export function AgentiaLandingPage() {
             {CASE_STUDIES.map((c) => (
               <Glass
                 key={c.id}
-                className="overflow-hidden p-6 sm:p-8"
+                id={`caso-${c.id}`}
+                className="scroll-mt-28 overflow-hidden p-6 sm:p-8"
                 style={{ borderLeftWidth: 4, borderLeftColor: c.accent }}
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
@@ -387,6 +394,14 @@ export function AgentiaLandingPage() {
                     <Link href={c.href} className="text-xs font-semibold hover:underline" style={{ color: c.accent }}>
                       Ver proyecto →
                     </Link>
+                  ) : 'projectAnchor' in c && c.projectAnchor ? (
+                    <a
+                      href={c.projectAnchor}
+                      className="text-xs font-semibold hover:underline"
+                      style={{ color: c.accent }}
+                    >
+                      Ver proyecto →
+                    </a>
                   ) : null}
                 </div>
 
@@ -453,14 +468,16 @@ export function AgentiaLandingPage() {
                 className="flex flex-col items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] px-3 py-5 opacity-70 transition hover:opacity-100"
               >
                 {item.imageUrl ? (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    width={64}
-                    height={32}
-                    className="h-8 w-auto max-w-[72px] object-contain"
-                    loading="lazy"
-                  />
+                  <div className="flex h-8 items-center justify-center rounded-md bg-white px-2">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      width={72}
+                      height={24}
+                      className="h-5 w-auto max-w-[68px] object-contain"
+                      loading="lazy"
+                    />
+                  </div>
                 ) : item.slug ? (
                   <img
                     src={`https://cdn.simpleicons.org/${item.slug}/${item.color}`}

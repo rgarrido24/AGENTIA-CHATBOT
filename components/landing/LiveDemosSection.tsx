@@ -1,132 +1,126 @@
 'use client';
 
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ModernChatPreview, type ChatLine } from '@/components/landing/ModernChatPreview';
+import {
+  Dog,
+  Leaf,
+  Scissors,
+  Shield,
+  Stethoscope,
+  UtensilsCrossed,
+  Wrench,
+} from 'lucide-react';
 
-const DEMOS: {
-  href: string;
-  label: string;
-  accent: string;
-  messages: ChatLine[];
-}[] = [
+type LucideIcon = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+
+const DEMOS: { Icon: LucideIcon; label: string; href: string; imageUrl: string }[] = [
   {
-    href: '/demos/chowak',
+    Icon: UtensilsCrossed,
     label: 'Restaurante / Café',
-    accent: '#FF6B35',
-    messages: [
-      { from: 'bot', text: '¡Hola! ¿Reserva o pedido a domicilio?' },
-      { from: 'user', text: 'Mesa para 4 hoy 9pm' },
-      { from: 'bot', text: 'Listo. Mesa confirmada. ¿Te mando el menú del chef?' },
-    ],
+    href: '/demos/restaurante',
+    imageUrl: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80',
   },
   {
-    href: '/demos/biovela',
+    Icon: Leaf,
     label: 'Tienda artesanal',
-    accent: '#FF85A1',
-    messages: [
-      { from: 'user', text: '¿Tienen velas de soya en stock?' },
-      { from: 'bot', text: 'Sí, 12 aromas disponibles. Te comparto catálogo y link de pago.' },
-      { from: 'user', text: 'Mándame 3 de lavanda' },
-    ],
+    href: '/demos/biovela',
+    imageUrl: 'https://images.unsplash.com/photo-1606041008023-472dfb5e530f?w=800&q=80',
   },
   {
-    href: '/demo/dentista',
+    Icon: Shield,
     label: 'Clínica dental',
-    accent: '#00B4D8',
-    messages: [
-      { from: 'bot', text: 'Buenos días. ¿Agendamos limpieza o valoración?' },
-      { from: 'user', text: 'Valoración para mi hija' },
-      { from: 'bot', text: 'Jueves 4pm disponible. Recordatorio 24h antes.' },
-    ],
+    href: '/demo/dentista',
+    imageUrl: 'https://images.unsplash.com/photo-1609840114035-3c981b782dfe?w=800&q=80',
   },
   {
-    href: '/demo/barber',
+    Icon: Scissors,
     label: 'Barbería',
-    accent: '#00D4FF',
-    messages: [
-      { from: 'bot', text: 'Hola Carlos. ¿Mismo corte con Fernando mañana 11am?' },
-      { from: 'user', text: 'Sí, confirmo' },
-      { from: 'bot', text: 'Agendado. Te aviso 1h antes.' },
-    ],
+    href: '/demo/barber',
+    imageUrl: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80',
   },
   {
-    href: '/demo/taller',
+    Icon: Wrench,
     label: 'Taller mecánico',
-    accent: '#FFD700',
-    messages: [
-      { from: 'user', text: '¿Ya está mi Jetta?' },
-      { from: 'bot', text: 'Frenos listos. Total $4,200. ¿Pasas hoy antes de las 6?' },
-      { from: 'user', text: 'Voy en 30 min' },
-    ],
+    href: '/demo/taller',
+    imageUrl: 'https://images.unsplash.com/photo-1625047509168-a7026f36de04?w=800&q=80',
   },
   {
-    href: '/demo/grooming',
+    Icon: Dog,
     label: 'Estética canina',
-    accent: '#7B2FBE',
-    messages: [
-      { from: 'bot', text: '¡Hola! Baño + corte para Luna el sábado 10am?' },
-      { from: 'user', text: 'Perfecto' },
-      { from: 'bot', text: 'Reserva confirmada. Recuerda traer su cartilla.' },
-    ],
+    href: '/demo/grooming',
+    imageUrl: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&q=80',
   },
 ];
 
-export function LiveDemosSection() {
-  const [hovered, setHovered] = useState<number | null>(null);
+function DemoGiroCard({
+  Icon,
+  label,
+  href,
+  imageUrl,
+  delay,
+}: {
+  Icon: LucideIcon;
+  label: string;
+  href: string;
+  imageUrl: string;
+  delay: number;
+}) {
+  const [hovered, setHovered] = useState(false);
 
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ delay, duration: 0.3 }}
+    >
+      <Link
+        href={href}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className="group relative flex h-32 flex-col items-center justify-end overflow-hidden rounded-xl p-4 text-center transition-all duration-200 sm:h-36"
+        style={{
+          border: `1px solid ${hovered ? 'rgba(0,212,255,0.55)' : 'rgba(255,255,255,0.08)'}`,
+          boxShadow: hovered ? '0 0 0 1px rgba(0,212,255,0.18), 0 8px 32px rgba(0,0,0,0.5)' : 'none',
+        }}
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-105"
+          style={{ backgroundImage: `url('${imageUrl}')` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/88 via-black/55 to-black/25" />
+
+        <div className="relative z-10 flex flex-col items-center gap-2">
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-200"
+            style={{ background: hovered ? 'rgba(0,212,255,0.18)' : 'rgba(0,0,0,0.45)' }}
+          >
+            <Icon className="h-5 w-5" style={{ color: '#00D4FF' }} />
+          </div>
+          <span className="text-[13px] font-bold leading-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+            {label}
+          </span>
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
+
+export function LiveDemosSection() {
   return (
     <section id="demos" className="scroll-mt-24 py-16">
       <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
         Demos en vivo
       </h2>
       <p className="mt-3 max-w-2xl text-white/55">
-        SaaS funcionales con datos ficticios. Explora conversaciones reales simuladas en cada industria.
+        Cada demo es funcional con datos ficticios. Pruébala ahora.
       </p>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3">
         {DEMOS.map((demo, i) => (
-          <motion.article
-            key={demo.href}
-            onMouseEnter={() => setHovered(i)}
-            onMouseLeave={() => setHovered(null)}
-            whileHover={{ y: -4 }}
-            className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl transition-shadow hover:shadow-[0_0_40px_rgba(0,212,255,0.12)]"
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-semibold text-white">{demo.label}</h3>
-              <span
-                className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                style={{ background: `${demo.accent}22`, color: demo.accent }}
-              >
-                Demo
-              </span>
-            </div>
-
-            <div className="relative mx-auto max-w-[240px]">
-              <div className="absolute -inset-2 rounded-[28px] bg-gradient-to-b from-white/10 to-transparent opacity-0 transition group-hover:opacity-100" />
-              <div className="relative rounded-[22px] border border-white/15 bg-[#1a1a1a] p-2 shadow-2xl">
-                <div className="mb-1 flex justify-center">
-                  <div className="h-1 w-12 rounded-full bg-white/20" />
-                </div>
-                <ModernChatPreview
-                  businessName={demo.label.split(' ')[0]}
-                  accent={demo.accent}
-                  messages={demo.messages}
-                  animate={hovered === i}
-                  compact
-                />
-              </div>
-            </div>
-
-            <Link
-              href={demo.href}
-              className="mt-4 flex w-full items-center justify-center gap-1 rounded-xl border border-[#00D4FF]/30 py-2.5 text-sm font-semibold text-[#00D4FF] transition hover:bg-[#00D4FF]/10"
-            >
-              Probar demo →
-            </Link>
-          </motion.article>
+          <DemoGiroCard key={demo.href} {...demo} delay={i * 0.04} />
         ))}
       </div>
     </section>

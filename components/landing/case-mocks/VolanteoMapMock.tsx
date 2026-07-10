@@ -1,95 +1,185 @@
 'use client';
 
-const TEAM = [
-  { nombre: 'Ana Torres', estado: 'En ruta', color: '#00FF88' },
-  { nombre: 'Luis Méndez', estado: 'Zona norte', color: '#00D4FF' },
-  { nombre: 'Paola Ruiz', estado: 'Pausa', color: '#FFD700' },
-  { nombre: 'Carlos Vega', estado: 'En ruta', color: '#FF6B35' },
+import { useState } from 'react';
+
+const JORNADAS = [
+  {
+    id: 'j1',
+    userName: 'Ana Torres',
+    startTime: '2026-07-09T08:00:00',
+    status: 'activa',
+    color: '#2563eb',
+    durationMinutes: 187,
+    distanceKm: '12.4',
+  },
+  {
+    id: 'j2',
+    userName: 'Luis Méndez',
+    startTime: '2026-07-09T08:15:00',
+    status: 'activa',
+    color: '#dc2626',
+    durationMinutes: 164,
+    distanceKm: '9.8',
+  },
+  {
+    id: 'j3',
+    userName: 'Paola Ruiz',
+    startTime: '2026-07-09T09:00:00',
+    status: 'pausa',
+    color: '#ca8a04',
+    durationMinutes: 92,
+    distanceKm: '6.1',
+  },
+  {
+    id: 'j4',
+    userName: 'Carlos Vega',
+    startTime: '2026-07-09T07:45:00',
+    status: 'activa',
+    color: '#16a34a',
+    durationMinutes: 201,
+    distanceKm: '14.2',
+  },
+] as const;
+
+const ROUTES: Record<string, string> = {
+  j1: 'M 45 195 Q 95 140 155 155 T 285 95',
+  j2: 'M 55 210 L 125 175 L 195 188 L 265 130',
+  j3: 'M 70 55 L 145 88 L 218 62 L 295 118',
+  j4: 'M 90 225 Q 165 185 235 205 T 355 145',
+};
+
+const STREETS = [
+  { streetName: 'Calle 60', entryTime: '09:12', exitTime: '09:28', durationMinutes: 16 },
+  { streetName: 'Av. Colón', entryTime: '09:35', exitTime: '09:52', durationMinutes: 17 },
+  { streetName: 'Paseo de Montejo', entryTime: '10:05', exitTime: '10:41', durationMinutes: 36 },
+  { streetName: 'Calle 21', entryTime: '11:02', exitTime: '11:18', durationMinutes: 16 },
 ];
 
+function formatJornadaLabel(j: (typeof JORNADAS)[number]) {
+  const fecha = new Date(j.startTime).toLocaleString('es-MX', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${j.userName} - ${fecha} (${j.status})`;
+}
+
 export function VolanteoMapMock() {
+  const [jornadaId, setJornadaId] = useState<string>('j1');
+  const selected = JORNADAS.find((j) => j.id === jornadaId);
+  const visibleRoutes = jornadaId === 'all' ? [...JORNADAS] : selected ? [selected] : [];
+
   return (
-    <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_200px]">
-      <div className="relative min-h-[220px] overflow-hidden rounded-xl border border-[#00FF88]/25 bg-[#050a08]">
-        <p className="absolute left-3 top-3 z-10 text-[10px] uppercase tracking-wider text-[#00FF88]/80">
-          Mérida, Yucatán · simulación
-        </p>
-        <svg viewBox="0 0 400 240" className="h-full w-full opacity-90" aria-hidden>
-          <defs>
-            <radialGradient id="heat1" cx="30%" cy="40%" r="35%">
-              <stop offset="0%" stopColor="#00FF88" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#00FF88" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="heat2" cx="70%" cy="55%" r="30%">
-              <stop offset="0%" stopColor="#00D4FF" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#00D4FF" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          <rect width="400" height="240" fill="#0a1210" />
-          <rect x="0" y="0" width="400" height="240" fill="url(#heat1)" />
-          <rect x="0" y="0" width="400" height="240" fill="url(#heat2)" />
-          {[...Array(12)].map((_, i) => (
-            <line
-              key={`g${i}`}
-              x1={i * 36}
-              y1="0"
-              x2={i * 36}
-              y2="240"
-              stroke="#ffffff"
-              strokeOpacity="0.04"
+    <div className="mt-6 overflow-hidden rounded-xl border border-gray-700 bg-[#111827] p-4 text-gray-200">
+      <p className="mb-3 text-[10px] uppercase tracking-wider text-gray-500">
+        Volanteo Tracker · Mérida, Yucatán · simulación
+      </p>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        <select
+          value={jornadaId}
+          onChange={(e) => setJornadaId(e.target.value)}
+          className="min-w-[280px] rounded border border-gray-600 bg-gray-900 p-2 text-sm text-gray-100"
+        >
+          <option value="all">Todas las rutas del equipo</option>
+          {JORNADAS.map((j) => (
+            <option key={j.id} value={j.id}>
+              {formatJornadaLabel(j)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="relative h-[280px] w-full overflow-hidden rounded border border-gray-700 bg-[#e8e4d9] sm:h-[360px]">
+        <div
+          className="absolute inset-0 opacity-90"
+          style={{
+            backgroundImage:
+              'linear-gradient(180deg, rgba(255,255,255,0.15), transparent 40%), repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(0,0,0,0.04) 31px, rgba(0,0,0,0.04) 32px), repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(0,0,0,0.04) 31px, rgba(0,0,0,0.04) 32px)',
+          }}
+        />
+        <svg viewBox="0 0 400 240" className="absolute inset-0 h-full w-full" aria-hidden>
+          {visibleRoutes.map((j) => (
+            <path
+              key={j.id}
+              d={ROUTES[j.id]}
+              fill="none"
+              stroke={j.color}
+              strokeWidth={jornadaId === 'all' ? 3 : 4}
+              strokeOpacity={jornadaId === 'all' ? 0.85 : 1}
+              strokeLinecap="round"
             />
           ))}
-          <path
-            d="M 40 180 Q 120 120 200 140 T 360 80"
-            fill="none"
-            stroke="#00FF88"
-            strokeWidth="3"
-            strokeOpacity="0.8"
-          />
-          <path
-            d="M 60 200 L 140 160 L 220 190 L 300 120"
-            fill="none"
-            stroke="#00D4FF"
-            strokeWidth="2.5"
-            strokeDasharray="6 4"
-          />
-          <path
-            d="M 80 60 L 160 100 L 240 70 L 320 130"
-            fill="none"
-            stroke="#FF6B35"
-            strokeWidth="2"
-          />
-          <path
-            d="M 100 220 Q 180 180 260 200"
-            fill="none"
-            stroke="#FFD700"
-            strokeWidth="2"
-          />
-          {[
-            [40, 180],
-            [200, 140],
-            [140, 160],
-            [300, 120],
-            [240, 70],
-          ].map(([cx, cy], i) => (
-            <circle key={i} cx={cx} cy={cy} r="5" fill="#00FF88" stroke="#0a0a0a" strokeWidth="2" />
-          ))}
+          {visibleRoutes.map((j) => {
+            const pts = ROUTES[j.id].match(/[\d.]+/g)?.map(Number) ?? [];
+            const cx = pts[0] ?? 40;
+            const cy = pts[1] ?? 180;
+            return (
+              <g key={`m-${j.id}`}>
+                <circle cx={cx} cy={cy} r="6" fill={j.color} stroke="#fff" strokeWidth="2" />
+                <circle
+                  cx={pts[pts.length - 2] ?? 300}
+                  cy={pts[pts.length - 1] ?? 100}
+                  r="5"
+                  fill="#fff"
+                  stroke={j.color}
+                  strokeWidth="2"
+                />
+              </g>
+            );
+          })}
         </svg>
+        <div className="absolute bottom-2 left-2 rounded bg-white/90 px-2 py-1 text-[10px] font-medium text-gray-700 shadow">
+          Centro: Mérida · zoom 15
+        </div>
+        {jornadaId === 'all' && (
+          <div className="absolute right-2 top-2 space-y-1 rounded bg-white/95 p-2 text-[10px] text-gray-700 shadow">
+            {JORNADAS.map((j) => (
+              <div key={j.id} className="flex items-center gap-1.5">
+                <span className="h-2 w-4 rounded-sm" style={{ background: j.color }} />
+                {j.userName}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-      <div className="rounded-xl border border-white/10 bg-black/40 p-3">
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-white/50">
-          Equipo activo
-        </p>
-        <ul className="space-y-2">
-          {TEAM.map((t) => (
-            <li key={t.nombre} className="flex items-center gap-2 text-xs">
-              <span className="h-2 w-2 rounded-full" style={{ background: t.color }} />
-              <span className="flex-1 text-white/80">{t.nombre}</span>
-              <span className="text-[10px] text-white/40">{t.estado}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+
+      {jornadaId !== 'all' && selected && (
+        <div className="mt-4 space-y-4">
+          <div className="flex flex-wrap gap-6 text-sm">
+            <p>
+              <span className="font-medium">Duración total:</span> {selected.durationMinutes} min
+            </p>
+            <p>
+              <span className="font-medium">Distancia recorrida:</span> {selected.distanceKm} km
+            </p>
+          </div>
+
+          <div className="overflow-x-auto rounded border border-gray-700">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-800 text-gray-300">
+                <tr>
+                  <th className="border-b border-gray-700 px-4 py-2">Calle</th>
+                  <th className="border-b border-gray-700 px-4 py-2">Hora entrada</th>
+                  <th className="border-b border-gray-700 px-4 py-2">Hora salida</th>
+                  <th className="border-b border-gray-700 px-4 py-2">Duración (min)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {STREETS.map((seg, idx) => (
+                  <tr key={`${seg.streetName}-${idx}`} className="border-b border-gray-800">
+                    <td className="px-4 py-2">{seg.streetName}</td>
+                    <td className="px-4 py-2">{seg.entryTime}</td>
+                    <td className="px-4 py-2">{seg.exitTime}</td>
+                    <td className="px-4 py-2">{seg.durationMinutes}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
