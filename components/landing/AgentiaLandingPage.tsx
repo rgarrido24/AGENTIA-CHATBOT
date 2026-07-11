@@ -506,14 +506,6 @@ export function AgentiaLandingPage() {
                     <Link href={c.href} className="text-xs font-semibold hover:underline" style={{ color: c.accent }}>
                       Ver proyecto →
                     </Link>
-                  ) : 'projectAnchor' in c && c.projectAnchor ? (
-                    <a
-                      href={c.projectAnchor}
-                      className="text-xs font-semibold hover:underline"
-                      style={{ color: c.accent }}
-                    >
-                      Ver proyecto →
-                    </a>
                   ) : null}
                 </div>
 
