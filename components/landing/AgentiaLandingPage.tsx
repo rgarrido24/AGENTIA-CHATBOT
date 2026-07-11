@@ -12,6 +12,9 @@ import { LiveDemosSection } from '@/components/landing/LiveDemosSection';
 import { MetaEcosystemSection } from '@/components/landing/MetaEcosystemSection';
 import { ModernChatPreview, type ChatLine } from '@/components/landing/ModernChatPreview';
 import { ParticleField } from '@/components/landing/ParticleField';
+import { CircuitField } from '@/components/landing/CircuitField';
+import { CodeRain } from '@/components/landing/CodeRain';
+import { TypewriterHeadline } from '@/components/landing/TypewriterHeadline';
 import {
   AGENTIA_WHATSAPP_DISPLAY,
   agentiaWhatsAppUrl,
@@ -90,31 +93,20 @@ const CASE_STUDIES = [
     construido: 'CRM + Zapier + App PWA (sin descargar) + Meta API oficial',
   },
   {
-    id: 'volanteo',
-    name: 'Volanteo Tracker',
-    projectAnchor: '#caso-volanteo',
-    accent: '#00FF88',
-    sector: 'Telecomunicaciones / Empresas de Campo',
-    antes: 'Supervisores sin visibilidad del equipo en campo, sin forma de validar rutas.',
-    despues: 'Dashboard en tiempo real con mapa de calor de zonas cubiertas.',
-    impacto: 'Control total del equipo de campo, reducción de fraude en distribución',
-    construido: 'Flutter Android + Panel Next.js + GPS tracking + Mapas en tiempo real',
-    extra: [
-      'Localización GPS en tiempo real de cada miembro del equipo',
-      'Mapa interactivo con rutas trazadas e historial de recorridos',
-      'Ideal para telecom, volanteo, promotores y técnicos de instalación',
-    ],
-  },
-  {
     id: 'restaurante',
-    name: 'Industria Restaurantera',
+    name: 'Casa Nola · Restaurante',
+    href: '/demos/restaurante',
     accent: '#FF9F1C',
-    sector: 'Gastronomía',
-    antes: 'Reservas y pedidos dispersos en WhatsApp sin sistema.',
-    despues: 'Menús interactivos, lealtad digital y reservas automáticas.',
-    impacto: 'Y muchos más proyectos en producción',
-    construido: 'Menús tipo red social + tarjetas de lealtad + reservas WhatsApp + contenido para redes',
-    isTeaser: true,
+    sector: 'Gastronomía / Menú digital',
+    antes: 'Reservas y pedidos dispersos en WhatsApp sin sistema ni menú visual.',
+    despues: 'Menú interactivo, pedidos por WhatsApp y programa de lealtad digital.',
+    impacto: '+28% ticket promedio con upsell automatizado',
+    construido: 'Menú tipo app + pedidos WhatsApp + reservas + contenido para redes',
+    extra: [
+      'Categorías animadas con fotos reales de platillos',
+      'Botón directo a WhatsApp por producto',
+      'Ideal para restaurantes, cafés y dark kitchens',
+    ],
   },
 ] as const;
 
@@ -215,10 +207,18 @@ function Glass({
   return (
     <div
       id={id}
-      className={`rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] ${className}`}
+      className={`group/glass relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] transition duration-500 hover:border-[#00D4FF]/35 hover:shadow-[0_0_36px_rgba(0,212,255,0.1)] ${className}`}
       style={style}
     >
-      {children}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 transition duration-500 group-hover/glass:opacity-100"
+        style={{
+          background:
+            'linear-gradient(135deg, rgba(0,212,255,0.06) 0%, transparent 45%, rgba(255,215,0,0.04) 100%)',
+        }}
+        aria-hidden
+      />
+      <div className="relative">{children}</div>
     </div>
   );
 }
@@ -240,16 +240,17 @@ export function AgentiaLandingPage() {
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden font-[family-name:var(--font-inter)] text-white"
+      className="relative min-h-screen overflow-hidden font-[family-name:var(--font-jakarta)] text-white"
       style={{ background: BG }}
     >
       <ParticleField />
+      <CircuitField />
 
       <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-40"
+        className="agentia-gradient-motion pointer-events-none fixed inset-0 z-0 opacity-50"
         style={{
           background:
-            'radial-gradient(ellipse 70% 45% at 20% -5%, rgba(0,212,255,0.12), transparent 55%), radial-gradient(ellipse 50% 35% at 90% 15%, rgba(255,215,0,0.07), transparent 50%)',
+            'radial-gradient(ellipse 70% 45% at 20% -5%, rgba(0,212,255,0.14), transparent 55%), radial-gradient(ellipse 50% 35% at 90% 15%, rgba(255,215,0,0.09), transparent 50%)',
         }}
         aria-hidden
       />
@@ -278,14 +279,18 @@ export function AgentiaLandingPage() {
         </header>
 
         {/* Hero */}
-        <section className="grid min-h-[calc(100dvh-5rem)] items-center gap-12 py-12 lg:grid-cols-2">
-          <div>
-            <p className="mb-4 text-sm font-medium text-[#FFD700]">
+        <section className="relative grid min-h-[calc(100dvh-5rem)] items-center gap-12 py-12 lg:grid-cols-2">
+          <CodeRain />
+          <div className="relative z-10">
+            <p className="mb-4 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
               Arquitectura de Automatización
             </p>
             <h1 className="font-[family-name:var(--font-space)] text-3xl font-extrabold leading-[1.12] tracking-tight sm:text-4xl lg:text-[2.65rem]">
-              Encontramos los cuellos de botella invisibles de tu empresa y diseñamos la solución
-              tecnológica con mayor retorno.
+              Tu empresa pierde dinero por{' '}
+              <TypewriterHeadline />
+              <span className="mt-2 block text-white/90">
+                — diseñamos la solución tecnológica con mayor retorno.
+              </span>
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60 sm:text-lg">
               En 5 minutos te mostramos qué automatizar primero y cuánto dinero podrías recuperar.
@@ -326,7 +331,7 @@ export function AgentiaLandingPage() {
             initial={reduceMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="relative w-full lg:max-w-xl"
+            className="relative z-10 w-full lg:max-w-xl"
           >
             <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-[#00D4FF]/15 via-transparent to-[#FFD700]/10 blur-2xl" aria-hidden />
             <Glass className="relative p-5 sm:p-6">
@@ -540,6 +545,14 @@ export function AgentiaLandingPage() {
                     style={{ borderColor: `${c.accent}55`, color: c.accent }}
                   >
                     Ver proyecto →
+                  </Link>
+                ) : c.id === 'restaurante' && 'href' in c && c.href ? (
+                  <Link
+                    href={c.href}
+                    className="mt-4 inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-white/5"
+                    style={{ borderColor: `${c.accent}55`, color: c.accent }}
+                  >
+                    Probar demo en vivo →
                   </Link>
                 ) : null}
 

@@ -2,16 +2,14 @@
 
 import { DecoHouseCrmMock } from '@/components/landing/case-mocks/DecoHouseCrmMock';
 import { LucianoCrmMock } from '@/components/landing/case-mocks/LucianoCrmMock';
-import { VolanteoMapMock } from '@/components/landing/case-mocks/VolanteoMapMock';
+import { RestaurantMenuMock } from '@/components/landing/case-mocks/RestaurantMenuMock';
 
 const PREVIEW_IDS = new Set(['deco', 'luciano']);
 
 export function CaseStudyMock({ id, preview = false }: { id: string; preview?: boolean }) {
   if (preview && PREVIEW_IDS.has(id)) {
     return (
-      <div
-      className="relative mt-4 max-h-[200px] overflow-hidden rounded-xl border border-white/10 [&>div]:!mt-0"
-    >
+      <div className="relative mt-4 max-h-[200px] overflow-hidden rounded-xl border border-white/10 [&>div]:!mt-0">
         <div className="pointer-events-none scale-[0.92] origin-top">
           {id === 'deco' ? <DecoHouseCrmMock /> : <LucianoCrmMock />}
         </div>
@@ -29,8 +27,8 @@ export function CaseStudyMock({ id, preview = false }: { id: string; preview?: b
       return <DecoHouseCrmMock />;
     case 'luciano':
       return <LucianoCrmMock />;
-    case 'volanteo':
-      return <VolanteoMapMock />;
+    case 'restaurante':
+      return <RestaurantMenuMock />;
     default:
       return null;
   }

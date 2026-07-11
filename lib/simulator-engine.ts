@@ -17,7 +17,7 @@ export const INDUSTRIES: IndustryOption[] = [
   { id: 'services', label: 'Servicios (salud, belleza, consultoría)' },
   { id: 'distribution', label: 'Distribución / Industria' },
   { id: 'agency', label: 'Agencia / Marketing' },
-  { id: 'other', label: 'Otro' },
+  { id: 'other', label: 'Telecomunicaciones' },
 ];
 
 export type SliderDef = {

@@ -1,15 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ComponentType } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import {
-  BarChart3,
-  Radio,
-  ShoppingCart,
-  Truck,
-  UserRound,
-  UtensilsCrossed,
-} from 'lucide-react';
 import { AGENTIA_BOOK_URL } from '@/lib/agentia-book';
 import {
   computeResults,
@@ -22,19 +14,19 @@ import {
 
 const CYAN = '#00D4FF';
 
-type LucideIcon = ComponentType<{
-  className?: string;
-  style?: React.CSSProperties;
-  strokeWidth?: number;
-}>;
-
-const INDUSTRY_ICONS: Record<IndustryId, LucideIcon> = {
-  restaurant: UtensilsCrossed,
-  ecommerce: ShoppingCart,
-  services: UserRound,
-  distribution: Truck,
-  agency: BarChart3,
-  other: Radio,
+const INDUSTRY_IMAGES: Record<IndustryId, string> = {
+  restaurant:
+    'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=120&h=120&fit=crop&q=80',
+  ecommerce:
+    'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=120&h=120&fit=crop&q=80',
+  services:
+    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&h=120&fit=crop&q=80',
+  distribution:
+    'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=120&h=120&fit=crop&q=80',
+  agency:
+    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=120&h=120&fit=crop&q=80',
+  other:
+    'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=120&h=120&fit=crop&q=80',
 };
 
 type Phase = 'industry' | 'sliders' | 'results' | 'lead' | 'confirmed';
@@ -203,22 +195,25 @@ export function AutomationSimulator({ id = 'simulador' }: { id?: string }) {
               <p className="text-sm font-semibold text-[#00D4FF]">Paso 1 de 4</p>
               <h3 className="mt-2 text-xl font-bold text-white">¿En qué industria operas?</h3>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {INDUSTRIES.map((opt) => {
-                  const Icon = INDUSTRY_ICONS[opt.id];
-                  return (
+                {INDUSTRIES.map((opt) => (
                     <button
                       key={opt.id}
                       type="button"
                       onClick={() => selectIndustry(opt.id)}
-                      className="rounded-xl border border-white/10 bg-black/30 px-4 py-4 text-left transition hover:border-[#00D4FF]/50 hover:bg-[#00D4FF]/5"
+                      className="group overflow-hidden rounded-xl border border-white/10 bg-black/30 text-left transition duration-500 hover:border-[#00D4FF]/50 hover:shadow-[0_0_24px_rgba(0,212,255,0.12)]"
                     >
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#00D4FF]/10">
-                        <Icon className="h-5 w-5 text-[#00D4FF]" strokeWidth={2} />
+                      <div className="relative h-20 w-full overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={INDUSTRY_IMAGES[opt.id]}
+                          alt=""
+                          className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
                       </div>
-                      <p className="mt-3 text-sm font-semibold text-white">{opt.label}</p>
+                      <p className="px-4 py-3 text-sm font-semibold text-white">{opt.label}</p>
                     </button>
-                  );
-                })}
+                  ))}
               </div>
             </motion.div>
           )}
