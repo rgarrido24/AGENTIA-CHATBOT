@@ -94,9 +94,9 @@ const CASE_STUDIES = [
   },
   {
     id: 'restaurante',
-    name: 'Casa Nola · Restaurante',
-    href: '/demos/restaurante',
-    accent: '#FF9F1C',
+    name: 'Masa Madre · Restaurante',
+    href: '/demos/masa-madre',
+    accent: '#C9A84C',
     sector: 'Gastronomía / Menú digital',
     antes: 'Reservas y pedidos dispersos en WhatsApp sin sistema ni menú visual.',
     despues: 'Menú interactivo, pedidos por WhatsApp y programa de lealtad digital.',
@@ -544,7 +544,7 @@ export function AgentiaLandingPage() {
                     className="mt-4 inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-white/5"
                     style={{ borderColor: `${c.accent}55`, color: c.accent }}
                   >
-                    Probar demo en vivo →
+                    Ver demo →
                   </Link>
                 ) : null}
 

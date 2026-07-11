@@ -18,9 +18,9 @@ type LucideIcon = React.ComponentType<{ className?: string; style?: React.CSSPro
 const DEMOS: { Icon: LucideIcon; label: string; href: string; imageUrl: string }[] = [
   {
     Icon: UtensilsCrossed,
-    label: 'Restaurante / Café',
-    href: '/demos/restaurante',
-    imageUrl: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80',
+    label: 'Masa Madre · Café',
+    href: '/demos/masa-madre',
+    imageUrl: 'https://images.unsplash.com/photo-1608198093002-47d5578147d1?w=800&q=80',
   },
   {
     Icon: Leaf,
