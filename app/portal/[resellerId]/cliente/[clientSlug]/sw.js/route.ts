@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PORTAL_PWA_ICON_192 } from '@/lib/portal-pwa-config';
+import { PORTAL_PWA_ICON_192, getPortalPwaConfig } from '@/lib/portal-pwa-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,12 +8,12 @@ export async function GET(
   { params }: { params: { resellerId: string; clientSlug: string } },
 ) {
   const { resellerId, clientSlug } = params;
-  const base = `/portal/${resellerId}/cliente/${clientSlug}`;
+  const config = getPortalPwaConfig(resellerId, clientSlug);
   const icon = PORTAL_PWA_ICON_192;
 
   const js = `/**
  * Service worker — portal asesoras (push de leads).
- * Scope: ${base}/
+ * Scope: ${config.scope}
  */
 importScripts('/panel-sw-shared.js');
 
@@ -29,7 +29,7 @@ self.addEventListener('push', (event) => {
   let payload = {
     title: '🔔 Nuevo lead!',
     body: 'Nuevo lead',
-    url: '${base}',
+    url: '${config.startUrl}',
     icon: '${icon}',
   };
   try {
@@ -41,7 +41,7 @@ self.addEventListener('push', (event) => {
     handlePanelPush(self.registration, payload, {
       title: '🔔 Nuevo lead!',
       body: 'Nuevo lead',
-      url: '${base}',
+      url: '${config.startUrl}',
       icon: '${icon}',
       badgeIcon: '${icon}',
     }),
@@ -50,8 +50,8 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const target = event.notification.data?.url || '${base}';
-  event.waitUntil(handleNotificationClick(target, '${base}/'));
+  const target = event.notification.data?.url || '${config.startUrl}';
+  event.waitUntil(handleNotificationClick(target, '${config.scope}'));
 });
 `;
 

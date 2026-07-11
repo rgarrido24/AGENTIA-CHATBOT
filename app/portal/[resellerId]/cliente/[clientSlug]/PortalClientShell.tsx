@@ -18,13 +18,21 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return output;
 }
 
-type PortalPwaShellProps = {
+type PortalClientShellProps = {
   resellerId: string;
   clientSlug: string;
   vapidPublicKey?: string | null;
 };
 
-export function PortalPwaShell({ resellerId, clientSlug, vapidPublicKey }: PortalPwaShellProps) {
+/**
+ * Shell PWA del portal — equivalente a CwfPanelShell + PanelPwaProvider en rutas autenticadas.
+ * Montado en layout.tsx para que el SW se registre en login y panel (requisito Android).
+ */
+export function PortalClientShell({
+  resellerId,
+  clientSlug,
+  vapidPublicKey,
+}: PortalClientShellProps) {
   const subscribedRef = useRef(false);
   const config = getPortalPwaConfig(resellerId, clientSlug);
 
