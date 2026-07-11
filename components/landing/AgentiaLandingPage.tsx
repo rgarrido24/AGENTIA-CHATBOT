@@ -96,6 +96,7 @@ const CASE_STUDIES = [
     id: 'restaurante',
     name: 'Masa Madre · Restaurante',
     href: '/demos/masa-madre',
+    loyaltyHref: '/demos/lealtad',
     accent: '#C9A84C',
     sector: 'Gastronomía / Menú digital',
     antes: 'Reservas y pedidos dispersos en WhatsApp sin sistema ni menú visual.',
@@ -539,13 +540,24 @@ export function AgentiaLandingPage() {
                     Ver proyecto →
                   </Link>
                 ) : c.id === 'restaurante' && 'href' in c && c.href ? (
-                  <Link
-                    href={c.href}
-                    className="mt-4 inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-white/5"
-                    style={{ borderColor: `${c.accent}55`, color: c.accent }}
-                  >
-                    Ver demo →
-                  </Link>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Link
+                      href={c.href}
+                      className="inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-white/5"
+                      style={{ borderColor: `${c.accent}55`, color: c.accent }}
+                    >
+                      Ver demo →
+                    </Link>
+                    {'loyaltyHref' in c && c.loyaltyHref ? (
+                      <Link
+                        href={c.loyaltyHref}
+                        className="inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-white/5"
+                        style={{ borderColor: `${c.accent}55`, color: c.accent }}
+                      >
+                        Demo tarjeta de lealtad →
+                      </Link>
+                    ) : null}
+                  </div>
                 ) : null}
 
                 {'extra' in c && c.extra ? (
