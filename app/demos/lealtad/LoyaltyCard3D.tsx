@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import Image from 'next/image';
 import {
   motion,
@@ -24,7 +24,7 @@ function AnimatedPoints({ value, className }: { value: number; className?: strin
   }, [value, spring]);
 
   useEffect(() => {
-    const unsub = spring.on('change', (v) => setDisplay(Math.round(v)));
+    const unsub = spring.on('change', (v: number) => setDisplay(Math.round(v)));
     return unsub;
   }, [spring]);
 
@@ -42,7 +42,7 @@ export function LoyaltyCard3D({ customer }: { customer: LoyaltyCustomer }) {
 
   const { target, percent, remaining } = progressToNextReward(customer.puntos);
 
-  function onMove(e: React.PointerEvent) {
+  function onMove(e: PointerEvent<HTMLDivElement>) {
     if (reduceMotion || !cardRef.current) return;
     const r = cardRef.current.getBoundingClientRect();
     mouseX.set((e.clientX - r.left) / r.width - 0.5);
