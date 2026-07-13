@@ -2,6 +2,7 @@
 
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+import { ScrollReveal, StaggerItem, StaggerReveal } from '@/components/landing/ScrollReveal';
 
 function scrollToSimulator() {
   document.getElementById('simulador')?.scrollIntoView({ behavior: 'smooth' });
@@ -37,7 +38,8 @@ const META_APPS = [
 export function MetaEcosystemSection() {
   return (
     <section id="meta" className="scroll-mt-24 py-16">
-      <div className="group/meta relative overflow-hidden rounded-3xl border border-[#1877F2]/30 bg-gradient-to-br from-[#1877F2]/10 via-[#0a0a0a] to-[#00D4FF]/5 p-8 sm:p-12">
+      <ScrollReveal>
+      <div className="group/meta relative overflow-hidden rounded-3xl border border-[#1877F2]/30 bg-gradient-to-br from-[#1877F2]/10 via-[#0a0a0a] to-[#00D4FF]/5 p-8 sm:p-12 transition-[border-color,box-shadow,transform] duration-[280ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:border-[#1877F2]/45 hover:shadow-[0_0_40px_rgba(24,119,242,0.12)]">
         <div
           className="pointer-events-none absolute inset-0 opacity-40"
           style={{
@@ -69,11 +71,11 @@ export function MetaEcosystemSection() {
           />
         </div>
 
-        <div className="relative mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StaggerReveal className="relative mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {META_APPS.map((item) => (
+            <StaggerItem key={item.title}>
             <div
-              key={item.title}
-              className="group rounded-xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm transition duration-500 hover:-translate-y-1 hover:border-white/25"
+              className="group rounded-xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm transition-[transform,border-color,box-shadow] duration-[240ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:border-white/25 active:scale-[0.98]"
               style={{ boxShadow: '0 0 0 transparent' }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = `0 0 28px ${item.glow}`;
@@ -86,8 +88,9 @@ export function MetaEcosystemSection() {
               <h3 className="text-sm font-bold text-white">{item.title}</h3>
               <p className="mt-2 text-xs leading-relaxed text-white/50">{item.desc}</p>
             </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerReveal>
 
         <div className="relative mt-10 rounded-2xl border border-dashed border-[#FFD700]/35 bg-[#FFD700]/5 p-6">
           <p className="text-xs font-bold uppercase tracking-wider text-[#FFD700]">Próximamente</p>
@@ -99,13 +102,14 @@ export function MetaEcosystemSection() {
           <button
             type="button"
             onClick={scrollToSimulator}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#FFD700] px-5 py-2.5 text-sm font-bold text-[#0a0a0a] transition hover:brightness-110"
+            className="group mt-4 inline-flex items-center gap-2 rounded-xl bg-[#FFD700] px-5 py-2.5 text-sm font-bold text-[#0a0a0a] transition-[transform,filter,gap] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:gap-3 hover:brightness-110 active:scale-[0.97]"
           >
             Lista de espera
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </button>
         </div>
       </div>
+      </ScrollReveal>
     </section>
   );
 }

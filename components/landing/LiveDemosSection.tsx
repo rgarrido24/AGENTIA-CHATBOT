@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { SectionHeader } from '@/components/landing/ScrollReveal';
+import { revealTransition } from '@/components/landing/motion';
 import {
   Dog,
   Leaf,
@@ -74,13 +76,13 @@ function DemoGiroCard({
       initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
-      transition={{ delay, duration: 0.3 }}
+      transition={revealTransition(delay, 0.28)}
     >
       <Link
         href={href}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className="group relative flex h-32 flex-col items-center justify-end overflow-hidden rounded-xl p-4 text-center transition-all duration-200 sm:h-36"
+        className="group relative flex h-32 flex-col items-center justify-end overflow-hidden rounded-xl p-4 text-center transition-[transform,border-color,box-shadow] duration-[220ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98] sm:h-36"
         style={{
           border: `1px solid ${hovered ? 'rgba(0,212,255,0.55)' : 'rgba(255,255,255,0.08)'}`,
           boxShadow: hovered ? '0 0 0 1px rgba(0,212,255,0.18), 0 8px 32px rgba(0,0,0,0.5)' : 'none',
@@ -111,12 +113,10 @@ function DemoGiroCard({
 export function LiveDemosSection() {
   return (
     <section id="demos" className="scroll-mt-24 py-16">
-      <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-        Demos en vivo
-      </h2>
-      <p className="mt-3 max-w-2xl text-white/55">
-        Cada demo es funcional con datos ficticios. Pruébala ahora.
-      </p>
+      <SectionHeader
+        title="Demos en vivo"
+        subtitle="Cada demo es funcional con datos ficticios. Pruébala ahora."
+      />
 
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3">
         {DEMOS.map((demo, i) => (

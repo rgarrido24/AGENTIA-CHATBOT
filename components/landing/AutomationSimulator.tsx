@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AGENTIA_BOOK_URL } from '@/lib/agentia-book';
+import { SectionHeader } from '@/components/landing/ScrollReveal';
+import { revealTransition } from '@/components/landing/motion';
 import {
   computeResults,
   formatMxn,
@@ -173,14 +175,11 @@ export function AutomationSimulator({ id = 'simulador' }: { id?: string }) {
 
   return (
     <section id={id} className="scroll-mt-24 py-20">
-      <div className="mb-10 text-center">
-        <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold text-white sm:text-4xl">
-          Simulador de fuga de ingresos
-        </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-white/55">
-          Ajusta los números de tu operación y mira cuánto podrías recuperar con automatización.
-        </p>
-      </div>
+      <SectionHeader
+        title="Simulador de fuga de ingresos"
+        subtitle="Ajusta los números de tu operación y mira cuánto podrías recuperar con automatización."
+        className="mb-10 text-center [&_h2]:text-center [&_p]:mx-auto"
+      />
 
       <div className="mx-auto max-w-3xl overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
         <AnimatePresence mode="wait">
@@ -190,6 +189,7 @@ export function AutomationSimulator({ id = 'simulador' }: { id?: string }) {
               initial={reduceMotion ? false : { opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -24 }}
+              transition={revealTransition(0, 0.26)}
               className="min-h-[420px] p-6 sm:p-10"
             >
               <p className="text-sm font-semibold text-[#00D4FF]">Paso 1 de 4</p>
@@ -224,6 +224,7 @@ export function AutomationSimulator({ id = 'simulador' }: { id?: string }) {
               initial={reduceMotion ? false : { opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -24 }}
+              transition={revealTransition(0, 0.26)}
               className="min-h-[480px] p-6 sm:p-10"
             >
               <p className="text-sm font-semibold text-[#00D4FF]">Paso 2 de 4</p>
@@ -288,6 +289,7 @@ export function AutomationSimulator({ id = 'simulador' }: { id?: string }) {
               initial={reduceMotion ? false : { opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -24 }}
+              transition={revealTransition(0, 0.26)}
               className="min-h-[520px] p-6 sm:p-10"
             >
               <p className="text-sm font-semibold text-[#00D4FF]">Paso 3 de 4</p>
@@ -353,6 +355,7 @@ export function AutomationSimulator({ id = 'simulador' }: { id?: string }) {
               initial={reduceMotion ? false : { opacity: 0, x: 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -24 }}
+              transition={revealTransition(0, 0.26)}
               className="min-h-[420px] p-6 sm:p-10"
             >
               <p className="text-sm font-semibold text-[#00D4FF]">Paso 4 de 4</p>

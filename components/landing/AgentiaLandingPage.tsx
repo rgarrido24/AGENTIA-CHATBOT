@@ -15,6 +15,8 @@ import { ParticleField } from '@/components/landing/ParticleField';
 import { CircuitField } from '@/components/landing/CircuitField';
 import { CodeRain } from '@/components/landing/CodeRain';
 import { TypewriterHeadline } from '@/components/landing/TypewriterHeadline';
+import { ScrollReveal, SectionHeader, StaggerItem, StaggerReveal } from '@/components/landing/ScrollReveal';
+import { revealTransition } from '@/components/landing/motion';
 import {
   AGENTIA_WHATSAPP_DISPLAY,
   agentiaWhatsAppUrl,
@@ -208,11 +210,11 @@ function Glass({
   return (
     <div
       id={id}
-      className={`group/glass relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] transition duration-500 hover:border-[#00D4FF]/35 hover:shadow-[0_0_36px_rgba(0,212,255,0.1)] ${className}`}
+      className={`group/glass relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] transition-[border-color,box-shadow,transform] duration-[260ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:border-[#00D4FF]/35 hover:shadow-[0_0_36px_rgba(0,212,255,0.1)] ${className}`}
       style={style}
     >
       <div
-        className="pointer-events-none absolute inset-0 opacity-0 transition duration-500 group-hover/glass:opacity-100"
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-[260ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/glass:opacity-100"
         style={{
           background:
             'linear-gradient(135deg, rgba(0,212,255,0.06) 0%, transparent 45%, rgba(255,215,0,0.04) 100%)',
@@ -264,14 +266,24 @@ export function AgentiaLandingPage() {
             <span className="hidden font-[family-name:var(--font-space)] text-lg font-bold sm:block">Agentia</span>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-white/60 md:flex">
-            <a href="#transformacion" className="hover:text-[#00D4FF]">Transformación</a>
-            <a href="#tecnologias" className="hover:text-[#00D4FF]">Tech</a>
-            <a href="#gratis" className="hover:text-[#00D4FF]">Gratis</a>
-            <a href="#simulador" className="hover:text-[#00D4FF]">Simulador</a>
-            <a href="#demos" className="hover:text-[#00D4FF]">Demos</a>
-            <a href="#meta" className="hover:text-[#00D4FF]">Meta</a>
-            <a href="#casos" className="hover:text-[#00D4FF]">Casos</a>
-            <a href="#integraciones" className="hover:text-[#00D4FF]">Stack</a>
+            {[
+              ['#transformacion', 'Transformación'],
+              ['#tecnologias', 'Tech'],
+              ['#gratis', 'Gratis'],
+              ['#simulador', 'Simulador'],
+              ['#demos', 'Demos'],
+              ['#meta', 'Meta'],
+              ['#casos', 'Casos'],
+              ['#integraciones', 'Stack'],
+            ].map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className="relative transition-colors duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-[#00D4FF] after:transition-[width] after:duration-[200ms] after:ease-[cubic-bezier(0.23,1,0.32,1)] hover:text-[#00D4FF] hover:after:w-full"
+              >
+                {label}
+              </a>
+            ))}
           </nav>
           <div className="flex items-center gap-2 rounded-full border border-[#00D4FF]/25 bg-[#00D4FF]/5 px-3 py-1.5 text-[11px] text-[#00D4FF]">
             <Shield className="h-3.5 w-3.5" />
@@ -283,33 +295,49 @@ export function AgentiaLandingPage() {
         <section className="relative grid min-h-[calc(100dvh-5rem)] items-center gap-12 py-12 lg:grid-cols-2">
           <CodeRain />
           <div className="relative z-10">
-            <p className="mb-4 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
-              Arquitectura de Automatización
-            </p>
-            <h1 className="font-[family-name:var(--font-space)] text-3xl font-extrabold leading-[1.12] tracking-tight sm:text-4xl lg:text-[2.65rem]">
-              Tu empresa pierde dinero por{' '}
-              <TypewriterHeadline />
-              <span className="mt-2 block text-white/90">
-                — diseñamos la solución tecnológica con mayor retorno.
-              </span>
-            </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60 sm:text-lg">
-              En 5 minutos te mostramos qué automatizar primero y cuánto dinero podrías recuperar.
-            </p>
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={revealTransition(0, 0.4)}
+            >
+              <p className="mb-4 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
+                Arquitectura de Automatización
+              </p>
+              <h1 className="font-[family-name:var(--font-space)] text-3xl font-extrabold leading-[1.12] tracking-tight sm:text-4xl lg:text-[2.65rem]">
+                Tu empresa pierde dinero por{' '}
+                <TypewriterHeadline />
+                <span className="mt-2 block text-white/90">
+                  — diseñamos la solución tecnológica con mayor retorno.
+                </span>
+              </h1>
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-white/60 sm:text-lg">
+                En 5 minutos te mostramos qué automatizar primero y cuánto dinero podrías recuperar.
+              </p>
+            </motion.div>
 
-            <div className="mt-8">
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={revealTransition(0.12, 0.32)}
+              className="mt-8"
+            >
               <button
                 type="button"
                 onClick={scrollToSimulator}
-                className="group inline-flex items-center gap-2 rounded-xl px-7 py-4 text-sm font-bold text-[#0a0a0a] shadow-[0_0_40px_rgba(0,212,255,0.35)] transition hover:shadow-[0_0_56px_rgba(0,212,255,0.5)]"
+                className="group inline-flex items-center gap-2 rounded-xl px-7 py-4 text-sm font-bold text-[#0a0a0a] shadow-[0_0_40px_rgba(0,212,255,0.35)] transition-[transform,box-shadow] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-[0_0_56px_rgba(0,212,255,0.5)] active:scale-[0.97]"
                 style={{ background: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
               >
                 Descubrir cuánto dinero estoy perdiendo
-                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                <ArrowRight className="h-4 w-4 transition-transform duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:translate-x-1" />
               </button>
-            </div>
+            </motion.div>
 
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs text-white/45 sm:text-sm">
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={revealTransition(0.22, 0.35)}
+              className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs text-white/45 sm:text-sm"
+            >
               <span>
                 <strong className="text-white">+140</strong> procesos automatizados
               </span>
@@ -321,17 +349,22 @@ export function AgentiaLandingPage() {
               <span>
                 <strong className="text-white">98%</strong> satisfacción
               </span>
-            </div>
+            </motion.div>
 
-            <p className="mt-6 text-xs text-white/40">
+            <motion.p
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={revealTransition(0.3, 0.3)}
+              className="mt-6 text-xs text-white/40"
+            >
               Partner oficial Meta — WhatsApp Business API
-            </p>
+            </motion.p>
           </div>
 
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
             className="relative z-10 w-full lg:max-w-xl"
           >
             <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-[#00D4FF]/15 via-transparent to-[#FFD700]/10 blur-2xl" aria-hidden />
@@ -358,11 +391,10 @@ export function AgentiaLandingPage() {
 
         {/* Antes / Después */}
         <section id="transformacion" className="scroll-mt-24 py-16">
-          <h2 className="mb-8 font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-            Antes y después de Agentia
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Glass className="p-6 sm:p-8">
+          <SectionHeader title="Antes y después de Agentia" className="mb-8" />
+          <StaggerReveal className="grid gap-4 md:grid-cols-2">
+            <StaggerItem>
+              <Glass className="p-6 sm:p-8">
               <p className="text-sm font-bold uppercase tracking-wider text-red-400/90">
                 Antes de Agentia
               </p>
@@ -374,8 +406,10 @@ export function AgentiaLandingPage() {
                   </li>
                 ))}
               </ul>
-            </Glass>
-            <Glass className="p-6 sm:p-8">
+              </Glass>
+            </StaggerItem>
+            <StaggerItem>
+              <Glass className="p-6 sm:p-8">
               <p className="text-sm font-bold uppercase tracking-wider text-[#00D4FF]">
                 Después de Agentia
               </p>
@@ -387,80 +421,86 @@ export function AgentiaLandingPage() {
                   </li>
                 ))}
               </ul>
-            </Glass>
-          </div>
+              </Glass>
+            </StaggerItem>
+          </StaggerReveal>
         </section>
 
         {/* Qué recibes gratis */}
         <section id="gratis" className="scroll-mt-24 py-16">
-          <Glass className="p-8 sm:p-10">
-            <h2 className="font-[family-name:var(--font-space)] text-2xl font-bold sm:text-3xl">
-              Qué recibes gratis
-            </h2>
-            <p className="mt-3 max-w-2xl text-white/55">
-              Sin compromiso de compra. Solo claridad sobre dónde está tu mayor retorno.
-            </p>
-            <ul className="mt-8 grid gap-3 sm:grid-cols-2">
-              {FREE_DELIVERABLES.map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm text-white/75 sm:text-base">
-                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#FFD700]" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              onClick={scrollToSimulator}
-              className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-[#00D4FF] hover:underline"
-            >
-              Empezar diagnóstico gratuito <ArrowRight className="h-4 w-4" />
-            </button>
-          </Glass>
+          <ScrollReveal>
+            <Glass className="p-8 sm:p-10">
+              <h2 className="font-[family-name:var(--font-space)] text-2xl font-bold sm:text-3xl">
+                Qué recibes gratis
+              </h2>
+              <p className="mt-3 max-w-2xl text-white/55">
+                Sin compromiso de compra. Solo claridad sobre dónde está tu mayor retorno.
+              </p>
+              <StaggerReveal className="mt-8 grid gap-3 sm:grid-cols-2">
+                {FREE_DELIVERABLES.map((item) => (
+                  <StaggerItem key={item}>
+                    <div className="flex items-start gap-3 text-sm text-white/75 sm:text-base">
+                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#FFD700]" />
+                      {item}
+                    </div>
+                  </StaggerItem>
+                ))}
+              </StaggerReveal>
+              <button
+                type="button"
+                onClick={scrollToSimulator}
+                className="group mt-8 inline-flex items-center gap-2 text-sm font-bold text-[#00D4FF] transition-[gap,color] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:gap-3"
+              >
+                Empezar diagnóstico gratuito <ArrowRight className="h-4 w-4 transition-transform duration-[180ms] group-hover:translate-x-0.5" />
+              </button>
+            </Glass>
+          </ScrollReveal>
         </section>
 
         {/* Tecnologías */}
         <section id="tecnologias" className="scroll-mt-24 py-16">
-          <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-            Tecnologías
-          </h2>
-          <p className="mt-3 max-w-2xl text-white/55">
-            Integramos el stack que tu operación ya usa — o el que necesita para escalar.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-2">
+          <SectionHeader
+            title="Tecnologías"
+            subtitle="Integramos el stack que tu operación ya usa — o el que necesita para escalar."
+          />
+          <StaggerReveal className="mt-8 flex flex-wrap gap-2">
             {TECH_STACK.map((tech) => (
-              <span
-                key={tech}
-                className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/75 transition hover:border-[#00D4FF]/35 hover:text-white"
-              >
-                {tech}
-              </span>
+              <StaggerItem key={tech}>
+                <span className="inline-block rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/75 transition-[transform,border-color,color,box-shadow] duration-[200ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:border-[#00D4FF]/35 hover:text-white hover:shadow-[0_0_20px_rgba(0,212,255,0.12)]">
+                  {tech}
+                </span>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerReveal>
         </section>
 
         {/* Pain mirror */}
         <section id="dolor" className="scroll-mt-24 py-16">
-          <Glass className="p-8 sm:p-10">
-            <h2 className="font-[family-name:var(--font-space)] text-2xl font-bold sm:text-3xl">
-              Si te pasa esto, estás dejando dinero sobre la mesa:
-            </h2>
-            <ul className="mt-8 space-y-4">
-              {PAIN_POINTS.map((p) => (
-                <li key={p} className="flex gap-3 text-sm leading-relaxed text-white/70 sm:text-base">
-                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#00D4FF]" />
-                  {p}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-8 text-lg font-semibold text-white">Calculemos exactamente cuánto.</p>
-            <button
-              type="button"
-              onClick={scrollToSimulator}
-              className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#00D4FF] hover:underline"
-            >
-              Ir al simulador <ArrowRight className="h-4 w-4" />
-            </button>
-          </Glass>
+          <ScrollReveal>
+            <Glass className="p-8 sm:p-10">
+              <h2 className="font-[family-name:var(--font-space)] text-2xl font-bold sm:text-3xl">
+                Si te pasa esto, estás dejando dinero sobre la mesa:
+              </h2>
+              <StaggerReveal className="mt-8 space-y-4">
+                {PAIN_POINTS.map((p) => (
+                  <StaggerItem key={p}>
+                    <div className="flex gap-3 text-sm leading-relaxed text-white/70 sm:text-base">
+                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#00D4FF]" />
+                      {p}
+                    </div>
+                  </StaggerItem>
+                ))}
+              </StaggerReveal>
+              <p className="mt-8 text-lg font-semibold text-white">Calculemos exactamente cuánto.</p>
+              <button
+                type="button"
+                onClick={scrollToSimulator}
+                className="group mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#00D4FF] transition-[gap] duration-[180ms] hover:gap-3"
+              >
+                Ir al simulador <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </button>
+            </Glass>
+          </ScrollReveal>
         </section>
 
         <AutomationSimulator />
@@ -471,13 +511,11 @@ export function AgentiaLandingPage() {
 
         {/* Case studies */}
         <section id="casos" className="scroll-mt-24 py-16">
-          <h2 className="mb-10 font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-            Casos de éxito
-          </h2>
-          <div className="space-y-6">
+          <SectionHeader title="Casos de éxito" className="mb-10" />
+          <StaggerReveal className="space-y-6">
             {CASE_STUDIES.map((c) => (
+              <StaggerItem key={c.id}>
               <Glass
-                key={c.id}
                 id={`caso-${c.id}`}
                 className="scroll-mt-28 overflow-hidden p-6 sm:p-8"
                 style={{ borderLeftWidth: 4, borderLeftColor: c.accent }}
@@ -534,7 +572,7 @@ export function AgentiaLandingPage() {
                 {PREVIEW_CASE_IDS.has(c.id) && 'href' in c && c.href ? (
                   <Link
                     href={c.href}
-                    className="mt-4 inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-white/5"
+                    className="inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-[transform,background-color,border-color] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-white/5 active:scale-[0.98]"
                     style={{ borderColor: `${c.accent}55`, color: c.accent }}
                   >
                     Ver proyecto →
@@ -543,7 +581,7 @@ export function AgentiaLandingPage() {
                   <div className="mt-4 flex flex-wrap gap-3">
                     <Link
                       href={c.href}
-                      className="inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-white/5"
+                      className="inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-[transform,background-color,border-color] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-white/5 active:scale-[0.98]"
                       style={{ borderColor: `${c.accent}55`, color: c.accent }}
                     >
                       Ver demo →
@@ -551,7 +589,7 @@ export function AgentiaLandingPage() {
                     {'loyaltyHref' in c && c.loyaltyHref ? (
                       <Link
                         href={c.loyaltyHref}
-                        className="inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:bg-white/5"
+                        className="inline-flex items-center gap-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-[transform,background-color,border-color] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-white/5 active:scale-[0.98]"
                         style={{ borderColor: `${c.accent}55`, color: c.accent }}
                       >
                         Demo tarjeta de lealtad →
@@ -568,38 +606,42 @@ export function AgentiaLandingPage() {
                   </ul>
                 ) : null}
               </Glass>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerReveal>
         </section>
 
         {/* How we work */}
         <section className="py-16">
-          <h2 className="mb-10 font-[family-name:var(--font-space)] text-3xl font-bold">
-            Cómo trabajamos
-          </h2>
-          <p className="mb-8 max-w-2xl text-white/55">
-            Tres fases para eliminar el miedo al software y convertir automatización en ingresos recuperados.
-          </p>
-          <div className="grid gap-4 md:grid-cols-3">
+          <SectionHeader
+            title="Cómo trabajamos"
+            subtitle="Tres fases para eliminar el miedo al software y convertir automatización en ingresos recuperados."
+            className="mb-8"
+          />
+          <StaggerReveal className="grid gap-4 md:grid-cols-3">
             {PHASES.map((p) => (
-              <Glass key={p.n} className="p-6">
+              <StaggerItem key={p.n}>
+              <Glass className="p-6">
                 <span className="font-mono text-sm text-[#FFD700]">{p.n}</span>
                 <h3 className="mt-2 font-[family-name:var(--font-space)] text-lg font-bold">{p.title}</h3>
                 <p className="mt-2 text-sm text-white/55">{p.desc}</p>
               </Glass>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerReveal>
         </section>
 
         {/* Integrations */}
         <section id="integraciones" className="scroll-mt-24 py-16">
-          <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold">Nuestras integraciones</h2>
-          <p className="mt-3 text-white/55">Hablamos el mismo idioma que tus herramientas actuales</p>
-          <div className="mt-8 grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-9">
+          <SectionHeader
+            title="Nuestras integraciones"
+            subtitle="Hablamos el mismo idioma que tus herramientas actuales"
+          />
+          <StaggerReveal className="mt-8 grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-9">
             {TECH_INTEGRATIONS.map((item) => (
+              <StaggerItem key={item.name}>
               <div
-                key={item.name}
-                className="flex flex-col items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] px-3 py-5 opacity-70 transition hover:opacity-100"
+                className="flex flex-col items-center justify-center rounded-xl border border-white/8 bg-white/[0.03] px-3 py-5 opacity-70 transition-[opacity,transform,box-shadow,border-color] duration-[220ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:border-[#00D4FF]/25 hover:opacity-100 hover:shadow-[0_0_24px_rgba(0,212,255,0.1)]"
               >
                 {item.imageUrl ? (
                   <div className="flex h-8 items-center justify-center rounded-md bg-white px-2">
@@ -624,13 +666,15 @@ export function AgentiaLandingPage() {
                 ) : null}
                 <span className="mt-2 text-center text-[10px] text-white/50">{item.name}</span>
               </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerReveal>
         </section>
 
         {/* Payments & shipping */}
         <section className="py-12">
-          <Glass className="p-8">
+          <ScrollReveal>
+            <Glass className="p-8">
             <h3 className="font-[family-name:var(--font-space)] text-xl font-bold">
               Integramos pagos y logística en tu operación
             </h3>
@@ -657,11 +701,13 @@ export function AgentiaLandingPage() {
               </div>
             </div>
           </Glass>
+          </ScrollReveal>
         </section>
 
         {/* Final CTA */}
         <section className="py-12">
-          <Glass className="px-6 py-12 text-center sm:px-10">
+          <ScrollReveal variant="scale-in">
+            <Glass className="px-6 py-12 text-center sm:px-10">
             <h2 className="font-[family-name:var(--font-space)] text-2xl font-bold sm:text-3xl">
               Recupera ingresos. Libera capacidad operativa.
             </h2>
@@ -672,7 +718,7 @@ export function AgentiaLandingPage() {
               <button
                 type="button"
                 onClick={scrollToSimulator}
-                className="rounded-xl px-7 py-3.5 text-sm font-bold text-[#0a0a0a]"
+                className="rounded-xl px-7 py-3.5 text-sm font-bold text-[#0a0a0a] transition-[transform,box-shadow] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-[0_0_32px_rgba(0,212,255,0.4)] active:scale-[0.97]"
                 style={{ background: CYAN }}
               >
                 Auditar mi Negocio Gratis
@@ -682,6 +728,7 @@ export function AgentiaLandingPage() {
               </GlowButton>
             </div>
           </Glass>
+          </ScrollReveal>
         </section>
 
         <footer className="border-t border-white/8 pt-10 text-center text-sm text-white/40">
