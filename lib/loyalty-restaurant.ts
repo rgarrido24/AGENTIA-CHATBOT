@@ -30,9 +30,10 @@ export type LoyaltyCustomer = {
 };
 
 export const COLORS = {
-  cream: '#faf7f2',
+  cream: '#FAF7F2',
   dark: '#2C1810',
   gold: '#C9A84C',
+  black: '#0A0A0A',
 };
 
 export function puntosPorMonto(monto: number): number {

@@ -16,6 +16,7 @@ import { CircuitField } from '@/components/landing/CircuitField';
 import { CodeRain } from '@/components/landing/CodeRain';
 import { TypewriterHeadline } from '@/components/landing/TypewriterHeadline';
 import { ScrollReveal, SectionHeader, StaggerItem, StaggerReveal } from '@/components/landing/ScrollReveal';
+import { SectionBridge } from '@/components/landing/SectionBridge';
 import { revealTransition } from '@/components/landing/motion';
 import {
   AGENTIA_WHATSAPP_DISPLAY,
@@ -426,6 +427,8 @@ export function AgentiaLandingPage() {
           </StaggerReveal>
         </section>
 
+        <SectionBridge />
+
         {/* Qué recibes gratis */}
         <section id="gratis" className="scroll-mt-24 py-16">
           <ScrollReveal>
@@ -456,6 +459,8 @@ export function AgentiaLandingPage() {
             </Glass>
           </ScrollReveal>
         </section>
+
+        <SectionBridge />
 
         {/* Tecnologías */}
         <section id="tecnologias" className="scroll-mt-24 py-16">
@@ -503,11 +508,17 @@ export function AgentiaLandingPage() {
           </ScrollReveal>
         </section>
 
+        <SectionBridge />
+
         <AutomationSimulator />
 
         <LiveDemosSection />
 
+        <SectionBridge />
+
         <MetaEcosystemSection />
+
+        <SectionBridge />
 
         {/* Case studies */}
         <section id="casos" className="scroll-mt-24 py-16">

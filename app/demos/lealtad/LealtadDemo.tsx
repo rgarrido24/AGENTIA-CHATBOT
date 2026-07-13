@@ -1,8 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Cormorant_Garamond, Lato } from 'next/font/google';
+import Image from 'next/image';
+import { Playfair_Display, Inter } from 'next/font/google';
 import { motion } from 'framer-motion';
+import { ScrollReveal, StaggerItem, StaggerReveal } from '@/components/landing/ScrollReveal';
+import { LoyaltyCard3D } from './LoyaltyCard3D';
+import { fireConfetti, playPointSound, PointFloaters, type PointFloater } from './lealtad-effects';
 import {
   COLORS,
   DEMO_CUSTOMERS,
@@ -11,14 +15,28 @@ import {
   computeStats,
   formatWhatsAppEarned,
   handleWhatsAppCommand,
-  progressToNextReward,
   puntosPorMonto,
   type LoyaltyCustomer,
   type RedemptionId,
 } from '@/lib/loyalty-restaurant';
 
-const display = Cormorant_Garamond({ subsets: ['latin'], weight: ['500', '600', '700'] });
-const body = Lato({ subsets: ['latin'], weight: ['400', '700'] });
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-playfair',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
+});
+
+const HEADER_IMG =
+  'https://images.unsplash.com/photo-1608198093002-47d5578147d1?w=1600&q=80';
+
+const BTN =
+  'transition-[transform,box-shadow,background-color,border-color] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 active:scale-[0.97]';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(n);
@@ -39,92 +57,52 @@ function loadCustomers(): LoyaltyCustomer[] {
   }
 }
 
-function LoyaltyCard({ customer }: { customer: LoyaltyCustomer }) {
-  const { target, percent, remaining } = progressToNextReward(customer.puntos);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-3xl p-6 shadow-xl"
-      style={{
-        background: `linear-gradient(145deg, ${COLORS.dark} 0%, #3d2418 100%)`,
-        border: `1px solid ${COLORS.gold}55`,
-      }}
-    >
-      <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-20" style={{ background: COLORS.gold }} />
-      <div className="absolute -bottom-6 -left-6 h-24 w-24 rounded-full opacity-10" style={{ background: COLORS.gold }} />
-
-      <div className="relative">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className={`${body.className} text-[10px] font-bold uppercase tracking-[0.3em] text-white/50`}>
-              Tarjeta de lealtad
-            </p>
-            <h2 className={`${display.className} mt-1 text-2xl font-bold text-white`}>MASA MADRE</h2>
-          </div>
-          <span className="text-3xl" aria-hidden>🥐</span>
-        </div>
-
-        <div className="mt-6">
-          <p className={`${body.className} text-sm text-white/60`}>{customer.nombre}</p>
-          <p className={`${display.className} mt-1 text-5xl font-bold`} style={{ color: COLORS.gold }}>
-            {customer.puntos}
-            <span className="ml-2 text-lg font-medium text-white/70">pts</span>
-          </p>
-        </div>
-
-        <div className="mt-6">
-          <div className="mb-2 flex justify-between text-xs text-white/60">
-            <span>Próximo: {target.emoji} {target.label}</span>
-            <span>{remaining} pts</span>
-          </div>
-          <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ background: `linear-gradient(90deg, ${COLORS.gold}, #e8c96a)` }}
-              initial={{ width: 0 }}
-              animate={{ width: `${percent}%` }}
-              transition={{ duration: 1, ease: 'easeOut' }}
-            />
-          </div>
-        </div>
-
-        <p className={`${body.className} mt-4 text-center text-[11px] text-white/40`}>
-          Cada $10 MXN = 1 punto · Canje en mostrador
-        </p>
-      </div>
-    </motion.div>
-  );
-}
-
 function VisitHistory({ visitas }: { visitas: LoyaltyCustomer['visitas'] }) {
   if (visitas.length === 0) {
-    return <p className={`${body.className} text-sm text-[#7a6558]`}>Sin visitas registradas.</p>;
+    return <p className={`${inter.className} text-sm text-white/45`}>Sin visitas registradas.</p>;
   }
   return (
     <ul className="space-y-3">
       {visitas.slice(0, 6).map((v, i) => (
-        <li
+        <motion.li
           key={`${v.fecha}-${i}`}
-          className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
-          style={{ borderColor: `${COLORS.gold}33`, background: 'white' }}
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: i * 0.05, duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+          className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur-sm"
         >
           <div>
-            <p className={`${body.className} text-sm font-bold`} style={{ color: COLORS.dark }}>
+            <p className={`${inter.className} text-sm font-semibold text-[#FAF7F2]`}>
               {v.tipo === 'canje' ? `Canje: ${v.nota ?? 'premio'}` : `Consumo ${fmt(v.monto)}`}
             </p>
-            <p className="text-xs text-[#8a7568]">{fmtDate(v.fecha)}</p>
+            <p className="text-xs text-white/40">{fmtDate(v.fecha)}</p>
           </div>
           <span
-            className={`${body.className} shrink-0 text-sm font-bold`}
-            style={{ color: v.tipo === 'canje' ? '#c0392b' : COLORS.gold }}
+            className={`${inter.className} shrink-0 text-sm font-bold`}
+            style={{ color: v.tipo === 'canje' ? '#e57373' : COLORS.gold }}
           >
             {v.tipo === 'canje' ? `−${v.puntos}` : `+${v.puntos}`} pts
           </span>
-        </li>
+        </motion.li>
       ))}
     </ul>
+  );
+}
+
+function RewardCard({ emoji, label, pts }: { emoji: string; label: string; pts: number }) {
+  return (
+    <motion.div
+      whileHover={{ y: -6, scale: 1.02 }}
+      transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+      className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-md"
+      style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.25)' }}
+    >
+      <span className="text-2xl">{emoji}</span>
+      <p className={`${inter.className} mt-2 text-sm font-medium text-[#FAF7F2]`}>{label}</p>
+      <p className={`${playfair.className} mt-1 text-xl font-semibold`} style={{ color: COLORS.gold }}>
+        {pts} pts
+      </p>
+    </motion.div>
   );
 }
 
@@ -138,12 +116,14 @@ export default function LealtadDemo() {
   const [canjeCustomerId, setCanjeCustomerId] = useState(DEMO_CUSTOMERS[0]!.id);
   const [canjeId, setCanjeId] = useState<RedemptionId>('descuento-50');
   const [toast, setToast] = useState<string | null>(null);
+  const [floaters, setFloaters] = useState<PointFloater[]>([]);
   const [chatPhone, setChatPhone] = useState('9991234567');
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([
-    { role: 'bot', text: '¡Hola! Soy el bot de lealtad de Masa Madre 🥐\nEscribe PUNTOS, CANJEAR o HISTORIAL.' },
+    { role: 'bot', text: '¡Hola! Soy el bot de lealtad de Masa Madre.\nEscribe PUNTOS, CANJEAR o HISTORIAL.' },
   ]);
   const [modal, setModal] = useState<'consumo' | 'canje' | null>(null);
+  const [logoOk, setLogoOk] = useState(true);
 
   useEffect(() => {
     setCustomers(loadCustomers());
@@ -161,6 +141,13 @@ export default function LealtadDemo() {
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
+  };
+
+  const addFloater = (amount: number) => {
+    const id = Date.now() + Math.random();
+    const x = 35 + Math.random() * 30;
+    setFloaters((f) => [...f, { id, amount, x }]);
+    setTimeout(() => setFloaters((f) => f.filter((item) => item.id !== id)), 900);
   };
 
   const updateCustomer = useCallback((updated: LoyaltyCustomer) => {
@@ -188,6 +175,8 @@ export default function LealtadDemo() {
     updateCustomer(updated);
     setConsumoMonto('');
     setModal(null);
+    addFloater(earned);
+    playPointSound();
     showToast(formatWhatsAppEarned(customer.nombre, earned, updated.puntos));
   };
 
@@ -210,6 +199,7 @@ export default function LealtadDemo() {
     };
     updateCustomer(updated);
     setModal(null);
+    fireConfetti();
     showToast(`Canje registrado: ${option.label}`);
   };
 
@@ -219,42 +209,56 @@ export default function LealtadDemo() {
     const customer = customers.find((c) => c.telefono === chatPhone);
     const result = handleWhatsAppCommand(text, customer, chatPhone);
 
-    let nextCustomers = customers;
     if (result.customer && result.isNew) {
-      nextCustomers = [...customers, result.customer];
-      setCustomers(nextCustomers);
+      setCustomers((prev) => [...prev, result.customer!]);
     }
 
-    setChatMessages((m) => [
-      ...m,
-      { role: 'user', text },
-      { role: 'bot', text: result.reply },
-    ]);
+    setChatMessages((m) => [...m, { role: 'user', text }, { role: 'bot', text: result.reply }]);
     setChatInput('');
   };
 
   return (
-    <div className={`${display.className} min-h-screen`} style={{ background: COLORS.cream, color: COLORS.dark }}>
-      <header className="border-b px-4 py-5 sm:px-6" style={{ borderColor: `${COLORS.gold}44` }}>
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className={`${body.className} text-xs font-bold uppercase tracking-[0.2em] text-[#8a7568]`}>
-              Programa de lealtad
-            </p>
-            <h1 className="text-3xl font-bold sm:text-4xl">MASA MADRE</h1>
+    <div
+      className={`${playfair.variable} ${inter.variable} loyalty-noise-bg min-h-screen text-[#FAF7F2]`}
+      style={{ color: COLORS.cream }}
+    >
+      <PointFloaters items={floaters} />
+
+      <header className="relative overflow-hidden border-b border-white/10">
+        <div className="relative h-44 sm:h-52">
+          <Image src={HEADER_IMG} alt="" fill unoptimized className="object-cover opacity-50" sizes="100vw" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/70 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 mx-auto flex max-w-4xl items-end justify-between gap-4 px-4 py-6 sm:px-6">
+            <div>
+              <p className={`${inter.className} text-[10px] font-bold uppercase tracking-[0.3em] text-white/45`}>
+                Programa de lealtad
+              </p>
+              {logoOk ? (
+                <Image
+                  src="/logos/masa-madre-logo.jpg"
+                  alt="Masa Madre"
+                  width={200}
+                  height={56}
+                  className="mt-2 h-12 w-auto object-contain brightness-110"
+                  onError={() => setLogoOk(false)}
+                  priority
+                />
+              ) : (
+                <h1 className={`${playfair.className} mt-2 text-4xl font-light tracking-[0.15em]`}>MASA MADRE</h1>
+              )}
+            </div>
+            <a
+              href="/demos/masa-madre"
+              className={`${inter.className} ${BTN} rounded-full border border-[#C9A84C]/50 px-4 py-2 text-sm font-semibold text-[#FAF7F2] hover:border-[#C9A84C] hover:shadow-[0_0_24px_rgba(201,168,76,0.2)]`}
+            >
+              Ver menú →
+            </a>
           </div>
-          <a
-            href="/demos/masa-madre"
-            className={`${body.className} rounded-full border px-4 py-2 text-sm font-bold transition hover:bg-white`}
-            style={{ borderColor: COLORS.gold, color: COLORS.dark }}
-          >
-            Ver menú →
-          </a>
         </div>
       </header>
 
-      <nav className="sticky top-0 z-20 border-b backdrop-blur-md" style={{ background: `${COLORS.cream}ee`, borderColor: `${COLORS.gold}33` }}>
-        <div className={`${body.className} mx-auto flex max-w-4xl gap-2 overflow-x-auto px-4 py-3`}>
+      <nav className="sticky top-0 z-20 border-b border-white/10 bg-[#0A0A0A]/85 backdrop-blur-xl">
+        <div className={`${inter.className} mx-auto flex max-w-4xl gap-2 overflow-x-auto px-4 py-3`}>
           {([
             ['cliente', 'Tarjeta cliente'],
             ['panel', 'Panel restaurante'],
@@ -264,11 +268,11 @@ export default function LealtadDemo() {
               key={id}
               type="button"
               onClick={() => setView(id)}
-              className="shrink-0 rounded-full px-4 py-2 text-sm font-bold transition"
+              className={`${BTN} shrink-0 rounded-full px-4 py-2 text-sm font-semibold`}
               style={{
-                background: view === id ? COLORS.dark : 'transparent',
-                color: view === id ? COLORS.cream : COLORS.dark,
-                border: view === id ? 'none' : `1px solid ${COLORS.gold}55`,
+                background: view === id ? COLORS.gold : 'transparent',
+                color: view === id ? COLORS.black : COLORS.cream,
+                border: view === id ? 'none' : '1px solid rgba(201,168,76,0.35)',
               }}
             >
               {label}
@@ -279,12 +283,12 @@ export default function LealtadDemo() {
 
       <main className="mx-auto max-w-4xl px-4 py-8">
         {view === 'cliente' && (
-          <div className="grid gap-8 lg:grid-cols-2">
-            <div className="space-y-6">
-              <LoyaltyCard customer={selected} />
+          <div className="grid gap-10 lg:grid-cols-2">
+            <ScrollReveal className="space-y-8">
+              <LoyaltyCard3D customer={selected} />
               <div>
-                <h3 className={`${body.className} mb-3 text-sm font-bold uppercase tracking-wider text-[#8a7568]`}>
-                  Seleccionar cliente demo
+                <h3 className={`${inter.className} mb-3 text-xs font-bold uppercase tracking-wider text-white/40`}>
+                  Cliente demo
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {customers.map((c) => (
@@ -292,11 +296,11 @@ export default function LealtadDemo() {
                       key={c.id}
                       type="button"
                       onClick={() => setSelectedId(c.id)}
-                      className={`${body.className} rounded-full px-3 py-1.5 text-xs font-bold transition`}
+                      className={`${inter.className} ${BTN} rounded-full px-3 py-1.5 text-xs font-semibold`}
                       style={{
-                        background: selectedId === c.id ? COLORS.gold : 'white',
-                        color: selectedId === c.id ? COLORS.dark : '#5c4a3d',
-                        border: `1px solid ${COLORS.gold}44`,
+                        background: selectedId === c.id ? COLORS.gold : 'rgba(255,255,255,0.06)',
+                        color: selectedId === c.id ? COLORS.black : COLORS.cream,
+                        border: `1px solid ${selectedId === c.id ? COLORS.gold : 'rgba(255,255,255,0.12)'}`,
                       }}
                     >
                       {c.nombre.split(' ')[0]} · {c.puntos} pts
@@ -304,67 +308,63 @@ export default function LealtadDemo() {
                   ))}
                 </div>
               </div>
-              <div className="rounded-2xl border p-4" style={{ borderColor: `${COLORS.gold}33`, background: 'white' }}>
-                <h3 className={`${body.className} mb-3 font-bold`}>Premios disponibles</h3>
-                <ul className="space-y-2 text-sm">
+              <div>
+                <h3 className={`${playfair.className} mb-4 text-xl font-semibold`}>Premios disponibles</h3>
+                <StaggerReveal className="grid gap-3 sm:grid-cols-3">
                   {REDEMPTION_OPTIONS.map((r) => (
-                    <li key={r.id} className="flex justify-between">
-                      <span>{r.emoji} {r.label}</span>
-                      <span className="font-bold" style={{ color: COLORS.gold }}>{r.puntos} pts</span>
-                    </li>
+                    <StaggerItem key={r.id}>
+                      <RewardCard emoji={r.emoji} label={r.label} pts={r.puntos} />
+                    </StaggerItem>
                   ))}
-                </ul>
+                </StaggerReveal>
               </div>
-            </div>
-            <div>
-              <h3 className={`${display.className} mb-4 text-2xl font-semibold`}>Historial de visitas</h3>
+            </ScrollReveal>
+            <ScrollReveal delay={0.08}>
+              <h3 className={`${playfair.className} mb-4 text-2xl font-semibold`}>Historial de visitas</h3>
               <VisitHistory visitas={selected.visitas} />
-            </div>
+            </ScrollReveal>
           </div>
         )}
 
         {view === 'panel' && (
-          <div className="space-y-8">
-            <div className="grid gap-4 sm:grid-cols-3">
+          <ScrollReveal className="space-y-8">
+            <StaggerReveal className="grid gap-4 sm:grid-cols-3">
               {[
                 { label: 'Clientes activos', value: stats.clientesActivos, sub: 'últimos 30 días' },
                 { label: 'Puntos emitidos', value: stats.puntosEmitidos, sub: 'este mes' },
                 { label: 'Canjes del mes', value: stats.canjesMes, sub: 'premios canjeados' },
               ].map((s) => (
-                <div
-                  key={s.label}
-                  className="rounded-2xl border p-5"
-                  style={{ borderColor: `${COLORS.gold}33`, background: 'white' }}
-                >
-                  <p className={`${body.className} text-xs font-bold uppercase tracking-wider text-[#8a7568]`}>{s.label}</p>
-                  <p className={`${display.className} mt-2 text-4xl font-bold`} style={{ color: COLORS.gold }}>{s.value}</p>
-                  <p className="text-xs text-[#8a7568]">{s.sub}</p>
-                </div>
+                <StaggerItem key={s.label}>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm">
+                    <p className={`${inter.className} text-xs font-bold uppercase tracking-wider text-white/40`}>{s.label}</p>
+                    <p className={`${playfair.className} mt-2 text-4xl font-semibold`} style={{ color: COLORS.gold }}>{s.value}</p>
+                    <p className="text-xs text-white/35">{s.sub}</p>
+                  </div>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerReveal>
 
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => setModal('consumo')}
-                className={`${body.className} rounded-full px-5 py-2.5 text-sm font-bold text-white`}
-                style={{ background: COLORS.dark }}
+                className={`${inter.className} ${BTN} rounded-full px-5 py-2.5 text-sm font-bold text-[#FAF7F2]`}
+                style={{ background: COLORS.gold, color: COLORS.black }}
               >
                 + Registrar consumo
               </button>
               <button
                 type="button"
                 onClick={() => setModal('canje')}
-                className={`${body.className} rounded-full border px-5 py-2.5 text-sm font-bold`}
-                style={{ borderColor: COLORS.gold, color: COLORS.dark }}
+                className={`${inter.className} ${BTN} rounded-full border border-[#C9A84C]/50 px-5 py-2.5 text-sm font-bold text-[#FAF7F2]`}
               >
                 Canjear puntos
               </button>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border" style={{ borderColor: `${COLORS.gold}33` }}>
-              <table className={`${body.className} w-full text-sm`}>
-                <thead style={{ background: COLORS.dark, color: COLORS.cream }}>
+            <div className="overflow-hidden rounded-2xl border border-white/10">
+              <table className={`${inter.className} w-full text-sm`}>
+                <thead className="bg-[#2C1810] text-[#FAF7F2]">
                   <tr>
                     <th className="px-4 py-3 text-left font-bold">Cliente</th>
                     <th className="px-4 py-3 text-left font-bold">Teléfono</th>
@@ -377,15 +377,15 @@ export default function LealtadDemo() {
                   {customers.map((c, i) => (
                     <tr
                       key={c.id}
-                      className="cursor-pointer border-t transition hover:bg-white/80"
-                      style={{ borderColor: `${COLORS.gold}22`, background: i % 2 ? 'white' : COLORS.cream }}
+                      className={`${BTN} cursor-pointer border-t border-white/5`}
+                      style={{ background: i % 2 ? 'rgba(255,255,255,0.03)' : 'transparent' }}
                       onClick={() => { setSelectedId(c.id); setView('cliente'); }}
                     >
-                      <td className="px-4 py-3 font-bold">{c.nombre}</td>
-                      <td className="px-4 py-3 text-[#7a6558]">{c.telefono}</td>
+                      <td className="px-4 py-3 font-semibold">{c.nombre}</td>
+                      <td className="px-4 py-3 text-white/45">{c.telefono}</td>
                       <td className="px-4 py-3 text-right font-bold" style={{ color: COLORS.gold }}>{c.puntos}</td>
                       <td className="px-4 py-3 text-right">{c.visitas.filter((v) => v.tipo === 'consumo').length}</td>
-                      <td className="px-4 py-3 text-right text-[#7a6558]">
+                      <td className="px-4 py-3 text-right text-white/45">
                         {c.ultimo_consumo ? fmtDate(c.ultimo_consumo) : '—'}
                       </td>
                     </tr>
@@ -393,47 +393,45 @@ export default function LealtadDemo() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </ScrollReveal>
         )}
 
         {view === 'whatsapp' && (
-          <div className="mx-auto max-w-md">
-            <div className="mb-4">
-              <label className={`${body.className} mb-1 block text-xs font-bold text-[#8a7568]`}>
-                Teléfono del cliente demo
-              </label>
-              <select
-                value={chatPhone}
-                onChange={(e) => setChatPhone(e.target.value)}
-                className={`${body.className} w-full rounded-xl border px-4 py-2.5 text-sm`}
-                style={{ borderColor: `${COLORS.gold}55` }}
-              >
-                {customers.map((c) => (
-                  <option key={c.telefono} value={c.telefono}>{c.nombre} — {c.telefono}</option>
-                ))}
-                <option value="9999999999">Número nuevo (registro)</option>
-              </select>
-            </div>
-
-            <div
-              className="flex h-[420px] flex-col overflow-hidden rounded-3xl shadow-xl"
-              style={{ background: '#e5ddd5' }}
+          <ScrollReveal className="mx-auto max-w-md">
+            <label className={`${inter.className} mb-1 block text-xs font-bold text-white/40`}>
+              Teléfono del cliente demo
+            </label>
+            <select
+              value={chatPhone}
+              onChange={(e) => setChatPhone(e.target.value)}
+              className={`${inter.className} mb-4 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-[#FAF7F2]`}
             >
-              <div className="flex items-center gap-3 px-4 py-3" style={{ background: COLORS.dark }}>
-                <span className="text-xl">🥐</span>
+              {customers.map((c) => (
+                <option key={c.telefono} value={c.telefono}>{c.nombre} — {c.telefono}</option>
+              ))}
+              <option value="9999999999">Número nuevo (registro)</option>
+            </select>
+
+            <div className="flex h-[420px] flex-col overflow-hidden rounded-3xl shadow-2xl">
+              <div className="flex items-center gap-3 border-b border-white/10 bg-[#2C1810] px-4 py-3">
+                {logoOk ? (
+                  <Image src="/logos/masa-madre-logo.jpg" alt="" width={32} height={32} className="h-8 w-8 rounded-full object-cover" onError={() => setLogoOk(false)} />
+                ) : (
+                  <span className={`${playfair.className} text-sm font-semibold text-[#C9A84C]`}>MM</span>
+                )}
                 <div>
-                  <p className={`${body.className} text-sm font-bold text-white`}>Masa Madre</p>
-                  <p className="text-[10px] text-white/50">Bot de lealtad · en línea</p>
+                  <p className={`${inter.className} text-sm font-bold`}>Masa Madre</p>
+                  <p className="text-[10px] text-white/40">Bot de lealtad · en línea</p>
                 </div>
               </div>
-              <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              <div className="flex-1 space-y-3 overflow-y-auto bg-[#111] p-4">
                 {chatMessages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`${body.className} max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm shadow-sm`}
+                      className={`${inter.className} max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm`}
                       style={{
-                        background: m.role === 'user' ? '#dcf8c6' : 'white',
-                        borderRadius: m.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                        background: m.role === 'user' ? '#1a3d2e' : 'rgba(255,255,255,0.08)',
+                        color: '#FAF7F2',
                       }}
                     >
                       {m.text}
@@ -441,60 +439,41 @@ export default function LealtadDemo() {
                   </div>
                 ))}
               </div>
-              <div className="flex gap-2 border-t bg-white p-3">
+              <div className="flex gap-2 border-t border-white/10 bg-[#0A0A0A] p-3">
                 <input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && sendWhatsApp()}
-                  placeholder="Escribe PUNTOS, CANJEAR..."
-                  className={`${body.className} flex-1 rounded-full border px-4 py-2 text-sm outline-none`}
-                  style={{ borderColor: `${COLORS.gold}44` }}
+                  placeholder="PUNTOS, CANJEAR..."
+                  className={`${inter.className} flex-1 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-[#FAF7F2] outline-none`}
                 />
-                <button
-                  type="button"
-                  onClick={sendWhatsApp}
-                  className="rounded-full px-4 py-2 text-sm font-bold text-white"
-                  style={{ background: '#25D366' }}
-                >
+                <button type="button" onClick={sendWhatsApp} className={`${BTN} rounded-full bg-[#25D366] px-4 py-2 text-sm font-bold text-white`}>
                   →
                 </button>
               </div>
             </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {['PUNTOS', 'CANJEAR', 'HISTORIAL'].map((cmd) => (
-                <button
-                  key={cmd}
-                  type="button"
-                  onClick={() => { setChatInput(cmd); }}
-                  className={`${body.className} rounded-full border px-3 py-1 text-xs font-bold`}
-                  style={{ borderColor: COLORS.gold }}
-                >
-                  {cmd}
-                </button>
-              ))}
-            </div>
-          </div>
+          </ScrollReveal>
         )}
       </main>
 
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setModal(null)}>
-          <div
-            className="w-full max-w-md rounded-3xl p-6 shadow-2xl"
-            style={{ background: COLORS.cream }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setModal(null)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+            className="w-full max-w-md rounded-3xl border border-white/10 bg-[#141414] p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {modal === 'consumo' ? (
               <>
-                <h3 className={`${display.className} text-2xl font-semibold`}>Registrar consumo</h3>
-                <p className={`${body.className} mt-1 text-sm text-[#7a6558]`}>Cada $10 MXN = 1 punto automático</p>
+                <h3 className={`${playfair.className} text-2xl font-semibold`}>Registrar consumo</h3>
+                <p className={`${inter.className} mt-1 text-sm text-white/45`}>Cada $10 MXN = 1 punto</p>
                 <div className="mt-4 space-y-3">
                   <select
                     value={consumoCustomerId}
                     onChange={(e) => setConsumoCustomerId(e.target.value)}
-                    className={`${body.className} w-full rounded-xl border px-4 py-2.5 text-sm`}
-                    style={{ borderColor: `${COLORS.gold}55` }}
+                    className={`${inter.className} w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm`}
                   >
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>{c.nombre}</option>
@@ -506,33 +485,26 @@ export default function LealtadDemo() {
                     value={consumoMonto}
                     onChange={(e) => setConsumoMonto(e.target.value)}
                     placeholder="Monto en MXN"
-                    className={`${body.className} w-full rounded-xl border px-4 py-2.5 text-sm`}
-                    style={{ borderColor: `${COLORS.gold}55` }}
+                    className={`${inter.className} w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-[#FAF7F2]`}
                   />
-                  {consumoMonto && Number(consumoMonto) > 0 && (
-                    <p className="text-sm" style={{ color: COLORS.gold }}>
-                      +{puntosPorMonto(Number(consumoMonto))} puntos
-                    </p>
-                  )}
                 </div>
                 <button
                   type="button"
                   onClick={registerConsumo}
-                  className={`${body.className} mt-5 w-full rounded-full py-3 text-sm font-bold text-white`}
-                  style={{ background: COLORS.dark }}
+                  className={`${inter.className} ${BTN} mt-5 w-full rounded-full py-3 text-sm font-bold`}
+                  style={{ background: COLORS.gold, color: COLORS.black }}
                 >
                   Confirmar y notificar WhatsApp
                 </button>
               </>
             ) : (
               <>
-                <h3 className={`${display.className} text-2xl font-semibold`}>Canjear puntos</h3>
+                <h3 className={`${playfair.className} text-2xl font-semibold`}>Canjear puntos</h3>
                 <div className="mt-4 space-y-3">
                   <select
                     value={canjeCustomerId}
                     onChange={(e) => setCanjeCustomerId(e.target.value)}
-                    className={`${body.className} w-full rounded-xl border px-4 py-2.5 text-sm`}
-                    style={{ borderColor: `${COLORS.gold}55` }}
+                    className={`${inter.className} w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm`}
                   >
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>{c.nombre} — {c.puntos} pts</option>
@@ -541,8 +513,7 @@ export default function LealtadDemo() {
                   <select
                     value={canjeId}
                     onChange={(e) => setCanjeId(e.target.value as RedemptionId)}
-                    className={`${body.className} w-full rounded-xl border px-4 py-2.5 text-sm`}
-                    style={{ borderColor: `${COLORS.gold}55` }}
+                    className={`${inter.className} w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm`}
                   >
                     {REDEMPTION_OPTIONS.map((r) => (
                       <option key={r.id} value={r.id}>{r.emoji} {r.label} — {r.puntos} pts</option>
@@ -552,33 +523,32 @@ export default function LealtadDemo() {
                 <button
                   type="button"
                   onClick={redeemCanje}
-                  className={`${body.className} mt-5 w-full rounded-full py-3 text-sm font-bold text-white`}
-                  style={{ background: COLORS.gold, color: COLORS.dark }}
+                  className={`${inter.className} ${BTN} mt-5 w-full rounded-full py-3 text-sm font-bold`}
+                  style={{ background: COLORS.gold, color: COLORS.black }}
                 >
                   Confirmar canje
                 </button>
               </>
             )}
-          </div>
+          </motion.div>
         </div>
       )}
 
       {toast && (
-        <div
-          className={`${body.className} fixed bottom-6 left-1/2 z-50 max-w-sm -translate-x-1/2 whitespace-pre-wrap rounded-2xl px-5 py-3 text-center text-sm font-bold text-white shadow-xl`}
-          style={{ background: COLORS.dark }}
+        <motion.div
+          initial={{ opacity: 0, y: 16, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className={`${inter.className} fixed bottom-6 left-1/2 z-50 max-w-sm -translate-x-1/2 whitespace-pre-wrap rounded-2xl border border-[#C9A84C]/30 bg-[#2C1810] px-5 py-3 text-center text-sm font-semibold text-[#FAF7F2] shadow-xl`}
         >
           {toast}
-        </div>
+        </motion.div>
       )}
 
-      <footer className={`${body.className} border-t px-4 py-6 text-center text-xs text-[#8a7568]`} style={{ borderColor: `${COLORS.gold}33` }}>
+      <footer className={`${inter.className} border-t border-white/10 px-4 py-6 text-center text-xs text-white/35`}>
         Demo por{' '}
-        <a href="https://agentia.software" className="font-bold hover:underline" style={{ color: COLORS.gold }}>
+        <a href="https://agentia.software" className="font-semibold hover:text-[#C9A84C]" style={{ color: COLORS.gold }}>
           Agentia
         </a>
-        {' · '}
-        Colección MongoDB: <code>loyalty_customers</code>
       </footer>
     </div>
   );
