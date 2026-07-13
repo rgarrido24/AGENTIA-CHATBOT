@@ -1,6 +1,7 @@
 'use client';
 
-import { motion, useReducedMotion, type HTMLMotionProps } from 'framer-motion';
+import type { ComponentProps, ReactNode } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   fadeUpHidden,
   fadeUpVisible,
@@ -21,7 +22,7 @@ const VARIANTS: Record<RevealVariant, { hidden: object; visible: object }> = {
   'scale-in': { hidden: scaleInHidden, visible: scaleInVisible },
 };
 
-type ScrollRevealProps = HTMLMotionProps<'div'> & {
+type ScrollRevealProps = Omit<ComponentProps<typeof motion.div>, 'initial' | 'whileInView' | 'viewport' | 'transition'> & {
   delay?: number;
   variant?: RevealVariant;
   amount?: number;
@@ -57,7 +58,7 @@ export function StaggerReveal({
   className,
   amount = 0.1,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   amount?: number;
 }) {
@@ -84,7 +85,7 @@ export function StaggerItem({
   children,
   className,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
@@ -99,8 +100,8 @@ export function SectionHeader({
   subtitle,
   className = '',
 }: {
-  title: React.ReactNode;
-  subtitle?: React.ReactNode;
+  title: ReactNode;
+  subtitle?: ReactNode;
   className?: string;
 }) {
   return (
