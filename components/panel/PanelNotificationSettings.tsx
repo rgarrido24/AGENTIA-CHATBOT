@@ -10,10 +10,15 @@ import {
   syncNotificationPrefsToServiceWorker,
   type PanelNotificationPrefs,
 } from '@/lib/panel-notification-prefs';
+import type { PortalPushSubscribeResult } from '@/lib/portal-pwa-subscribe';
 
 type PanelNotificationSettingsProps = {
   panel: 'cwf' | 'agentia' | 'portal';
   portalScope?: string;
+  resellerId?: string;
+  clientSlug?: string;
+  pushStatus?: PortalPushSubscribeResult | null;
+  onRetryPush?: () => void;
 };
 
 const BRAND = {
@@ -40,10 +45,19 @@ const BRAND = {
   },
 } as const;
 
-export function PanelNotificationSettings({ panel, portalScope }: PanelNotificationSettingsProps) {
+export function PanelNotificationSettings({
+  panel,
+  portalScope,
+  resellerId,
+  clientSlug,
+  pushStatus,
+  onRetryPush,
+}: PanelNotificationSettingsProps) {
   const theme = BRAND[panel];
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<PanelNotificationPrefs>(DEFAULT_PANEL_NOTIFICATION_PREFS);
+  const [testingPush, setTestingPush] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
 
   useEffect(() => {
     setPrefs(loadPanelNotificationPrefs(panel, portalScope));
@@ -69,6 +83,46 @@ export function PanelNotificationSettings({ panel, portalScope }: PanelNotificat
     audio.volume = 0.7;
     void audio.play().catch(() => {});
   };
+
+  const pushStatusLabel = (() => {
+    if (!pushStatus) return null;
+    if (pushStatus.ok) return { text: 'Push activo en este dispositivo', tone: theme.accent };
+    switch (pushStatus.reason) {
+      case 'unauthorized':
+        return { text: 'Inicia sesión para activar alertas push', tone: '#fbbf24' };
+      case 'denied':
+        return { text: 'Permiso de notificaciones bloqueado en el navegador', tone: '#f87171' };
+      case 'no_vapid':
+        return { text: 'Servidor sin claves VAPID configuradas', tone: '#f87171' };
+      case 'pwa_disabled':
+        return { text: 'PWA deshabilitada para este cliente', tone: '#f87171' };
+      default:
+        return { text: `Push pendiente: ${pushStatus.detail || pushStatus.reason}`, tone: '#fbbf24' };
+    }
+  })();
+
+  async function sendTestPush() {
+    if (!resellerId || !clientSlug) return;
+    setTestingPush(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/portal/push/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resellerId, clientSlug }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTestResult(data.error || 'Error al enviar prueba');
+        return;
+      }
+      setTestResult(`Prueba enviada (${data.sent ?? 0} dispositivo(s))`);
+    } catch {
+      setTestResult('Error de conexión');
+    } finally {
+      setTestingPush(false);
+    }
+  }
 
   return (
     <>
@@ -161,8 +215,48 @@ export function PanelNotificationSettings({ panel, portalScope }: PanelNotificat
             </label>
           </div>
 
+          {panel === 'portal' && pushStatusLabel ? (
+            <div
+              className="mt-3 rounded-xl border px-3 py-2 text-[11px] leading-relaxed"
+              style={{ borderColor: `${pushStatusLabel.tone}44`, color: pushStatusLabel.tone }}
+            >
+              {pushStatusLabel.text}
+              {!pushStatus?.ok && onRetryPush ? (
+                <button
+                  type="button"
+                  onClick={onRetryPush}
+                  className="mt-2 block w-full rounded-lg py-1.5 text-xs font-semibold"
+                  style={{ background: `${theme.accent}22`, color: theme.accent }}
+                >
+                  Reintentar activación
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {panel === 'portal' && resellerId && clientSlug ? (
+            <div className="mt-3 space-y-2">
+              <button
+                type="button"
+                disabled={testingPush}
+                onClick={() => void sendTestPush()}
+                className="w-full rounded-lg py-2 text-xs font-semibold disabled:opacity-50"
+                style={{ background: `${theme.accent}22`, color: theme.accent }}
+              >
+                {testingPush ? 'Enviando…' : 'Probar alerta push'}
+              </button>
+              {testResult ? (
+                <p className="text-[10px]" style={{ color: theme.muted }}>
+                  {testResult}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           <p className="mt-3 text-[10px] leading-relaxed" style={{ color: theme.muted }}>
-            Las preferencias se guardan en este dispositivo. Instala la app desde Chrome para recibir push.
+            {panel === 'portal'
+              ? 'En Android Chrome: menú ⋮ → Instalar app. Acepta notificaciones al iniciar sesión.'
+              : 'Las preferencias se guardan en este dispositivo. Instala la app desde Chrome para recibir push.'}
           </p>
         </div>
       ) : null}

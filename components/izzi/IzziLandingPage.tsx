@@ -13,6 +13,7 @@ import {
   IZZI_PLAN_150,
   type IzziPlanConfig,
 } from '@/lib/izzi-brand';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const CUPOS_START = 7;
 const CUPOS_MIN = 2;
@@ -164,6 +165,7 @@ type Props = {
 };
 
 export function IzziLandingPage({ plan = IZZI_PLAN_120 }: Props) {
+  useAnalytics('izzi');
   const reduceMotion = useReducedMotion();
   const [cupos, setCupos] = useState(CUPOS_START);
   const [pulseCta, setPulseCta] = useState(true);

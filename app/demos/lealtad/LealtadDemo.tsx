@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import Image from 'next/image';
 import { Playfair_Display, Inter } from 'next/font/google';
 import { motion } from 'framer-motion';
@@ -19,6 +19,7 @@ import {
   type LoyaltyCustomer,
   type RedemptionId,
 } from '@/lib/loyalty-restaurant';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -107,6 +108,7 @@ function RewardCard({ emoji, label, pts }: { emoji: string; label: string; pts: 
 }
 
 export default function LealtadDemo() {
+  useAnalytics('lealtad');
   const [customers, setCustomers] = useState<LoyaltyCustomer[]>(DEMO_CUSTOMERS);
   const [hydrated, setHydrated] = useState(false);
   const [view, setView] = useState<View>('cliente');
@@ -463,7 +465,7 @@ export default function LealtadDemo() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
             className="w-full max-w-md rounded-3xl border border-white/10 bg-[#141414] p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: MouseEvent<HTMLDivElement>) => e.stopPropagation()}
           >
             {modal === 'consumo' ? (
               <>

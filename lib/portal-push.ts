@@ -99,7 +99,7 @@ export async function isPortalPwaEnabled(resellerId: string, clientSlug: string)
     { _collection_type: 'reseller_client', resellerId: ids.resellerId, clientSlug: ids.clientSlug },
     { projection: { pwa_enabled: 1 } },
   );
-  return doc?.pwa_enabled === true;
+  return doc?.pwa_enabled !== false;
 }
 
 export async function savePortalPushSubscription(
@@ -167,7 +167,7 @@ async function incrementPortalBadgeCount(resellerId: string, clientSlug: string)
   const ids = normalizePortalIds(resellerId, clientSlug);
   const db = await getMongoDb();
   const result = await db.collection('leads').findOneAndUpdate(
-    { _collection_type: 'reseller_client', resellerId: ids.resellerId, clientSlug: ids.clientSlug, pwa_enabled: true },
+    { _collection_type: 'reseller_client', resellerId: ids.resellerId, clientSlug: ids.clientSlug, pwa_enabled: { $ne: false } },
     { $inc: { pwaBadgeCount: 1 } },
     { returnDocument: 'after', projection: { pwaBadgeCount: 1 } },
   );
@@ -256,7 +256,7 @@ export async function notifyPortalNewLead(params: {
   nombre?: string;
   telefono?: string;
   leadId: string;
-}): Promise<void> {
+}): Promise<{ sent: number; total: number }> {
   const ids = normalizePortalIds(params.resellerId, params.clientSlug);
   const { resellerId, clientSlug } = ids;
   const { leadId } = params;
@@ -265,15 +265,15 @@ export async function notifyPortalNewLead(params: {
 
   if (!resellerId || !clientSlug || resellerId === 'unknown') {
     console.error('[PWA PUSH] omitido: resellerId/clientSlug inválido', { leadId });
-    return;
+    return { sent: 0, total: 0 };
   }
 
   const enabled = await isPortalPwaEnabled(resellerId, clientSlug);
   if (!enabled) {
     console.log('[PWA PUSH] omitido: pwa_enabled=false para', clientSlug);
-    return;
+    return { sent: 0, total: 0 };
   }
-  if (!configureWebPush()) return;
+  if (!configureWebPush()) return { sent: 0, total: 0 };
 
   const nombre = params.nombre?.trim() || 'Sin nombre';
   const telefono = params.telefono?.trim() || 'Sin teléfono';
@@ -292,7 +292,7 @@ export async function notifyPortalNewLead(params: {
 
   const subs = await listPortalPushSubscriptions(resellerId, clientSlug);
   console.log('[PWA PUSH] Enviando a clientSlug:', clientSlug, 'suscripciones:', subs.length);
-  if (!subs.length) return;
+  if (!subs.length) return { sent: 0, total: 0 };
 
   const json = JSON.stringify(payload);
   const results = await Promise.allSettled(
@@ -311,6 +311,7 @@ export async function notifyPortalNewLead(params: {
   );
   const sent = results.filter((r) => r.status === 'fulfilled').length;
   console.log('[PWA PUSH] enviados:', sent, '/', subs.length);
+  return { sent, total: subs.length };
 }
 
 export function getPortalVapidPublicKey(): string | null {

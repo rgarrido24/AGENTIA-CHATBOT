@@ -45,6 +45,7 @@ const CLIENT = {
     },
   ],
   status: 'activo',
+  pwa_enabled: true,
   // Legacy query: includes existing leads before the reseller system
   legacyQuery: { clientId: 'agentia-ventas', canal_origen: 'fb-ads' },
 };

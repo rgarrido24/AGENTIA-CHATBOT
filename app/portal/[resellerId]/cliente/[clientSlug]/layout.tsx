@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import {
   PORTAL_PWA_ICON_192,
   PORTAL_PWA_THEME_COLOR,
+  getPortalPwaConfig,
 } from '@/lib/portal-pwa-config';
 import { PortalClientShell } from './PortalClientShell';
 
@@ -26,10 +27,12 @@ export async function generateMetadata({
 }: {
   params: { resellerId: string; clientSlug: string };
 }): Promise<Metadata> {
+  const config = getPortalPwaConfig(params.resellerId, params.clientSlug);
   return {
     ...portalPwaMetadata,
     title: 'Mis Leads — Panel de asesoras',
     description: 'Gestión de leads en tiempo real',
+    manifest: config.manifestPath,
   };
 }
 
@@ -42,9 +45,6 @@ export default function PortalClientLayout({
 }) {
   return (
     <>
-      <head>
-        <link rel="manifest" href="manifest.webmanifest" />
-      </head>
       <PortalClientShell
         resellerId={params.resellerId}
         clientSlug={params.clientSlug}

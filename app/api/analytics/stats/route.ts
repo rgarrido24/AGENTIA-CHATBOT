@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
+import { LANDING_PAGES, landingPageFilter } from '@/lib/landing-pages';
 
 function startOf(range: string): Date {
   const now = new Date();
@@ -148,9 +149,35 @@ export async function GET(req: NextRequest) {
     ]).toArray();
     const topPais = topPaisAgg[0]?._id ?? null;
 
+    // ── Landings (por página / slug de marketing) ───────────────────────────
+    const landings = await Promise.all(
+      LANDING_PAGES.map(async (landing) => {
+        const base = { event: 'pageview', ...landingPageFilter(landing) };
+        const [total, enPeriodo, hoy, visitantesUnicos] = await Promise.all([
+          col.countDocuments(base),
+          col.countDocuments({ ...base, createdAt: { $gte: fromRange } }),
+          col.countDocuments({ ...base, createdAt: { $gte: fromToday } }),
+          col.distinct('visitorId', { ...base, visitorId: { $ne: null } }).then((ids) => ids.length),
+        ]);
+        const ultima = await col
+          .findOne(base, { sort: { createdAt: -1 }, projection: { createdAt: 1 } });
+        return {
+          slug: landing.slug,
+          label: landing.label,
+          path: landing.path,
+          total,
+          enPeriodo,
+          hoy,
+          visitantesUnicos,
+          ultimaVisita: ultima?.createdAt ?? null,
+        };
+      }),
+    );
+
     return NextResponse.json({
       hoy: { visitas: todayCount, topDemo, topPais },
       ayer: { visitas: yesterdayCount },
+      landings,
       demos,
       paises,
       fuentes,

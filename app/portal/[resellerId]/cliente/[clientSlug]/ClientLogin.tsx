@@ -10,6 +10,7 @@ import {
   writeLucianoTheme,
   type LucianoThemeMode,
 } from '@/lib/portal-luciano-ui';
+import { notifyPortalAuthed } from '@/lib/portal-pwa-subscribe';
 
 const EMERALD = '#50C878';
 const ACCENT = '#CCFF00';
@@ -74,6 +75,7 @@ export default function ClientLogin({
         setError(data.error || 'Error');
         return;
       }
+      notifyPortalAuthed();
       router.refresh();
     } catch {
       setError('Error de conexión');

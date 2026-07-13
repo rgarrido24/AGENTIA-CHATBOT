@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { MessageCircle } from 'lucide-react';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 type StatusSeg = 'nuevo' | 'contactado' | 'interesado' | 'cerrado';
 
@@ -68,6 +69,7 @@ function initials(name: string) {
 }
 
 export function LucianoCrmMock() {
+  useAnalytics('luciano-ads');
   const [selectedId, setSelectedId] = useState('l2');
   const selected = LEADS.find((l) => l.id === selectedId) ?? LEADS[0];
   const totalHoy = 12;

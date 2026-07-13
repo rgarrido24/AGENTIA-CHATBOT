@@ -1,22 +1,19 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { PanelNotificationSettings } from '@/components/panel/PanelNotificationSettings';
+import { PortalPwaInstallBanner } from '@/components/panel/PortalPwaInstallBanner';
 import {
   clearPanelAppBadge,
   loadPanelNotificationPrefs,
   syncNotificationPrefsToServiceWorker,
 } from '@/lib/panel-notification-prefs';
 import { getPortalPwaConfig } from '@/lib/portal-pwa-config';
-
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const raw = window.atob(base64);
-  const output = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i += 1) output[i] = raw.charCodeAt(i);
-  return output;
-}
+import {
+  PORTAL_AUTH_EVENT,
+  subscribePortalPush,
+  type PortalPushSubscribeResult,
+} from '@/lib/portal-pwa-subscribe';
 
 type PortalClientShellProps = {
   resellerId: string;
@@ -25,8 +22,7 @@ type PortalClientShellProps = {
 };
 
 /**
- * Shell PWA del portal — equivalente a CwfPanelShell + PanelPwaProvider en rutas autenticadas.
- * Montado en layout.tsx para que el SW se registre en login y panel (requisito Android).
+ * Shell PWA del portal — SW, push subscribe (con reintento tras login) e instalación.
  */
 export function PortalClientShell({
   resellerId,
@@ -34,7 +30,24 @@ export function PortalClientShell({
   vapidPublicKey,
 }: PortalClientShellProps) {
   const subscribedRef = useRef(false);
+  const [pushStatus, setPushStatus] = useState<PortalPushSubscribeResult | null>(null);
   const config = getPortalPwaConfig(resellerId, clientSlug);
+
+  const attemptSubscribe = useCallback(async () => {
+    if (subscribedRef.current) return;
+
+    const result = await subscribePortalPush({
+      swPath: config.swPath,
+      scope: config.scope,
+      subscribeApi: config.subscribeApi,
+      resellerId,
+      clientSlug,
+      vapidPublicKey,
+    });
+
+    setPushStatus(result);
+    if (result.ok) subscribedRef.current = true;
+  }, [config, resellerId, clientSlug, vapidPublicKey]);
 
   useEffect(() => {
     const sync = () => {
@@ -47,70 +60,41 @@ export function PortalClientShell({
     const onVisible = () => {
       if (document.visibilityState === 'visible') {
         void clearPanelAppBadge();
+        if (!subscribedRef.current) void attemptSubscribe();
       }
     };
+
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('focus', onVisible);
+    window.addEventListener(PORTAL_AUTH_EVENT, attemptSubscribe);
+
+    void attemptSubscribe();
+    const retry = window.setInterval(() => {
+      if (!subscribedRef.current) void attemptSubscribe();
+    }, 15000);
+
     return () => {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('focus', onVisible);
+      window.removeEventListener(PORTAL_AUTH_EVENT, attemptSubscribe);
+      window.clearInterval(retry);
     };
-  }, [config.portalScope]);
+  }, [config.portalScope, attemptSubscribe]);
 
-  useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        await navigator.serviceWorker.register(config.swPath, { scope: config.scope });
-        const reg = await navigator.serviceWorker.ready;
-        if (cancelled) return;
-
-        const vapidKey = vapidPublicKey?.trim();
-        if (!vapidKey || !('PushManager' in window) || subscribedRef.current) return;
-
-        let permission: NotificationPermission = Notification.permission;
-        if (permission === 'denied') return;
-        if (permission === 'default') {
-          permission = await Notification.requestPermission();
-        }
-        if (permission !== 'granted' || cancelled) return;
-
-        const existing = await reg.pushManager.getSubscription();
-        const applicationServerKey = urlBase64ToUint8Array(vapidKey) as BufferSource;
-        const sub =
-          existing ||
-          (await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey,
-          }));
-
-        const json = sub.toJSON();
-        if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return;
-
-        const res = await fetch(config.subscribeApi, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            resellerId,
-            clientSlug,
-            endpoint: json.endpoint,
-            keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-            expirationTime: json.expirationTime ?? null,
-          }),
-        });
-        if (res.ok) subscribedRef.current = true;
-      } catch (err) {
-        console.warn('[PWA:portal]', err);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [config, resellerId, clientSlug, vapidPublicKey]);
-
-  return <PanelNotificationSettings panel="portal" portalScope={config.portalScope} />;
+  return (
+    <>
+      <PortalPwaInstallBanner />
+      <PanelNotificationSettings
+        panel="portal"
+        portalScope={config.portalScope}
+        resellerId={resellerId}
+        clientSlug={clientSlug}
+        pushStatus={pushStatus}
+        onRetryPush={() => {
+          subscribedRef.current = false;
+          void attemptSubscribe();
+        }}
+      />
+    </>
+  );
 }

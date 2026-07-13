@@ -15,6 +15,16 @@ type Range = 'today' | '7d' | 'month';
 interface StatsData {
   hoy:          { visitas: number; topDemo: string | null; topPais: string | null };
   ayer:         { visitas: number };
+  landings:     {
+    slug: string;
+    label: string;
+    path: string;
+    total: number;
+    enPeriodo: number;
+    hoy: number;
+    visitantesUnicos: number;
+    ultimaVisita: string | null;
+  }[];
   demos:        { demo: string; visitas: number; avgSegundos: number }[];
   paises:       { pais: string; visitas: number; pct: number }[];
   fuentes:      { fuente: string; visitas: number }[];
@@ -139,6 +149,44 @@ export default function AnalyticsDashboardPage() {
 
       {data && (
         <div className="space-y-8">
+          {/* Landings de marketing */}
+          <section>
+            <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">Landings</h2>
+            <p className="text-xs text-slate-500 mb-4">
+              Contador por página de marketing · histórico total + período seleccionado ({rangeLabels[range]})
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {data.landings?.map((l) => (
+                <div
+                  key={l.slug}
+                  className={`rounded-2xl border p-4 flex flex-col gap-1 ${
+                    l.slug === 'biovela'
+                      ? 'border-[#FF85A1]/40 bg-[#FF85A1]/10'
+                      : 'border-white/10 bg-white/5'
+                  }`}
+                >
+                  <div className="text-xs text-slate-400 truncate">{l.label}</div>
+                  <div className="text-2xl font-bold text-white">{l.enPeriodo}</div>
+                  <div className="text-[11px] text-slate-500">
+                    en período · <span className="text-slate-400">{l.total} total histórico</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-500">
+                    <span>Hoy: <strong className="text-slate-300">{l.hoy}</strong></span>
+                    <span>Únicos: <strong className="text-slate-300">{l.visitantesUnicos}</strong></span>
+                  </div>
+                  <div className="text-[10px] text-slate-600 font-mono truncate">{l.path}</div>
+                  {l.ultimaVisita ? (
+                    <div className="text-[10px] text-slate-500">
+                      Última: {new Date(l.ultimaVisita).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-amber-500/80">Sin visitas registradas aún</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* Section 1: Hoy vs Ayer */}
           <section>
             <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Hoy vs Ayer</h2>

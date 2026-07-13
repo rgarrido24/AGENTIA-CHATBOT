@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { CatalogProduct } from '@/lib/biovela-catalog';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const WA_PHONE = '525534489552';
 const WA_CATALOG =
@@ -680,6 +681,7 @@ function CourseImage() {
 }
 
 export function BiovelaCatalogLanding({ catalog }: { catalog: CatalogProduct[] }) {
+  useAnalytics('biovela');
   const [activeFilter, setActiveFilter] = useState<FilterId>('Todos');
   const [search, setSearch] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);

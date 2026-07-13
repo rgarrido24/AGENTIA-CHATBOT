@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Download } from 'lucide-react';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const BRAND = {
   bg: '#071414',
@@ -100,6 +101,7 @@ const FAKE_BY_STAGE: Record<(typeof STAGES)[number], FakeLead[]> = {
 };
 
 export function DecoHouseCrmMock() {
+  useAnalytics('deco-house');
   const [selectedId, setSelectedId] = useState('dh-4');
   const allLeads = STAGES.flatMap((s) => FAKE_BY_STAGE[s]);
   const selected = allLeads.find((l) => l.id === selectedId) ?? allLeads[0];

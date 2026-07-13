@@ -10,6 +10,7 @@ import {
   RESTAURANT,
   type MenuItem,
 } from '@/lib/masa-madre-menu';
+import { useAnalytics } from '@/src/lib/analytics-client';
 
 const display = Cormorant_Garamond({
   subsets: ['latin'],
@@ -143,6 +144,7 @@ function DishCard({
 }
 
 export default function MasaMadreMenu() {
+  useAnalytics('masa-madre');
   const [activeCategory, setActiveCategory] = useState(MENU_CATEGORIES[0]!.id);
   const [cart, setCart] = useState<Cart>({});
   const [hydrated, setHydrated] = useState(false);
