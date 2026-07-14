@@ -58,7 +58,7 @@ self.addEventListener('notificationclick', (event) => {
   return new NextResponse(js, {
     headers: {
       'Content-Type': 'application/javascript; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600',
+      'Cache-Control': 'no-cache, max-age=0, must-revalidate',
     },
   });
 }

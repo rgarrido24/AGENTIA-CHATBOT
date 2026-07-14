@@ -14,13 +14,10 @@ type PortalClientShellProps = {
   vapidPublicKey?: string | null;
 };
 
-const SW_CLEARED_FLAG = 'agentia_portal_sw_cleared_v2';
+/** Limpieza one-shot de SW rotos (pantalla negra iOS). No debe repetirse siempre. */
+const SW_CLEARED_FLAG = 'agentia_portal_sw_cleared_v3';
 
-/**
- * Limpia service workers del portal que dejan iPhone con pantalla negra.
- * No re-registra nada automáticamente.
- */
-async function unregisterPortalServiceWorkers(): Promise<boolean> {
+async function unregisterBrokenPortalServiceWorkers(): Promise<boolean> {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return false;
 
   let removed = false;
@@ -28,15 +25,13 @@ async function unregisterPortalServiceWorkers(): Promise<boolean> {
     const regs = await navigator.serviceWorker.getRegistrations();
     for (const reg of regs) {
       const scope = reg.scope || '';
-      if (scope.includes('/portal/') && scope.includes('/cliente/')) {
-        const ok = await reg.unregister();
-        if (ok) removed = true;
-      }
-      // SW legado global del portal
-      if (scope.endsWith('/') && reg.active?.scriptURL?.includes('portal-sw')) {
-        const ok = await reg.unregister();
-        if (ok) removed = true;
-      }
+      const script = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
+      const isPortalScope = scope.includes('/portal/') && scope.includes('/cliente/');
+      const isLegacyPortalSw = script.includes('portal-sw');
+      if (!isPortalScope && !isLegacyPortalSw) continue;
+
+      const ok = await reg.unregister();
+      if (ok) removed = true;
     }
   } catch {
     // ignore
@@ -47,7 +42,7 @@ async function unregisterPortalServiceWorkers(): Promise<boolean> {
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((k) => /portal|mis.?leads|pwa/i.test(k))
+          .filter((k) => /portal|mis.?leads/i.test(k))
           .map((k) => caches.delete(k)),
       );
     }
@@ -59,10 +54,11 @@ async function unregisterPortalServiceWorkers(): Promise<boolean> {
 }
 
 /**
- * Shell seguro del portal:
- * - Desactiva SW rotos (fix iPhone pantalla negra)
- * - Sin banners / prompts / registro automático
- * - Campana 🔔 opcional: el usuario activa push a voluntad
+ * Shell del portal:
+ * - Limpieza one-shot de SW rotos (iPhone)
+ * - Sin banners / sin pedir permiso solo
+ * - Campana: activa push a voluntad
+ * - Si el permiso ya está "granted", re-suscribe en silencio (no mata el SW)
  */
 export function PortalClientShell({
   resellerId,
@@ -71,63 +67,77 @@ export function PortalClientShell({
 }: PortalClientShellProps) {
   const subscribedRef = useRef(false);
   const [pushStatus, setPushStatus] = useState<PortalPushSubscribeResult | null>(null);
-  const [ready, setReady] = useState(false);
   const config = getPortalPwaConfig(resellerId, clientSlug);
+
+  const attemptSubscribe = useCallback(
+    async (requestPermission: boolean) => {
+      if (subscribedRef.current && !requestPermission) return;
+
+      const result = await subscribePortalPush({
+        swPath: config.swPath,
+        scope: config.scope,
+        subscribeApi: config.subscribeApi,
+        resellerId,
+        clientSlug,
+        vapidPublicKey,
+        requestPermission,
+      });
+
+      setPushStatus(result);
+      if (result.ok) subscribedRef.current = true;
+    },
+    [config, resellerId, clientSlug, vapidPublicKey],
+  );
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
+      let alreadyCleared = false;
       try {
-        const already = sessionStorage.getItem(SW_CLEARED_FLAG) === '1';
-        const removed = await unregisterPortalServiceWorkers();
-        if (!already && removed && !cancelled) {
-          sessionStorage.setItem(SW_CLEARED_FLAG, '1');
+        alreadyCleared = localStorage.getItem(SW_CLEARED_FLAG) === '1';
+      } catch {
+        alreadyCleared = false;
+      }
+
+      // Solo una vez por dispositivo: limpia SW que dejaban iOS en negro.
+      if (!alreadyCleared) {
+        const removed = await unregisterBrokenPortalServiceWorkers();
+        try {
+          localStorage.setItem(SW_CLEARED_FLAG, '1');
+        } catch {
+          // ignore
+        }
+        if (removed && !cancelled) {
           window.location.reload();
           return;
         }
-        if (!already) {
-          try {
-            sessionStorage.setItem(SW_CLEARED_FLAG, '1');
-          } catch {
-            // ignore
-          }
-        }
-      } finally {
-        if (!cancelled) setReady(true);
+      }
+
+      if (cancelled) return;
+
+      // Re-suscribir en silencio solo si el usuario YA permitió notificaciones.
+      // No pide permiso ni muestra prompts.
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        await attemptSubscribe(false);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attemptSubscribe]);
 
-  const activatePush = useCallback(async () => {
-    subscribedRef.current = false;
-    const result = await subscribePortalPush({
-      swPath: config.swPath,
-      scope: config.scope,
-      subscribeApi: config.subscribeApi,
-      resellerId,
-      clientSlug,
-      vapidPublicKey,
-      requestPermission: true,
-    });
-    setPushStatus(result);
-    if (result.ok) subscribedRef.current = true;
-  }, [config, resellerId, clientSlug, vapidPublicKey]);
-
-  // Campana siempre visible (login y panel). No bloquea la UI.
   return (
     <PanelNotificationSettings
       panel="portal"
       portalScope={config.portalScope}
       resellerId={resellerId}
       clientSlug={clientSlug}
-      pushStatus={ready ? pushStatus : null}
+      pushStatus={pushStatus}
       onRetryPush={() => {
-        void activatePush();
+        subscribedRef.current = false;
+        void attemptSubscribe(true);
       }}
     />
   );

@@ -270,10 +270,13 @@ export async function notifyPortalNewLead(params: {
 
   const enabled = await isPortalPwaEnabled(resellerId, clientSlug);
   if (!enabled) {
-    console.log('[PWA PUSH] omitido: pwa_enabled=false para', clientSlug);
+    console.error('[PWA PUSH] omitido: pwa_enabled=false para', clientSlug);
     return { sent: 0, total: 0 };
   }
-  if (!configureWebPush()) return { sent: 0, total: 0 };
+  if (!configureWebPush()) {
+    console.error('[PWA PUSH] omitido: VAPID incompleto — no se puede enviar');
+    return { sent: 0, total: 0 };
+  }
 
   const nombre = params.nombre?.trim() || 'Sin nombre';
   const telefono = params.telefono?.trim() || 'Sin teléfono';
@@ -291,8 +294,14 @@ export async function notifyPortalNewLead(params: {
   };
 
   const subs = await listPortalPushSubscriptions(resellerId, clientSlug);
-  console.log('[PWA PUSH] Enviando a clientSlug:', clientSlug, 'suscripciones:', subs.length);
-  if (!subs.length) return { sent: 0, total: 0 };
+  console.error('[PWA PUSH] Enviando a clientSlug:', clientSlug, 'suscripciones:', subs.length);
+  if (!subs.length) {
+    console.error(
+      '[PWA PUSH] 0 suscripciones — la asesora debe abrir el panel, tocar la campana 🔔 y "Activar notificaciones"',
+      { resellerId, clientSlug },
+    );
+    return { sent: 0, total: 0 };
+  }
 
   const json = JSON.stringify(payload);
   const results = await Promise.allSettled(
@@ -301,7 +310,7 @@ export async function notifyPortalNewLead(params: {
         await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, json);
       } catch (err: unknown) {
         const status = (err as { statusCode?: number })?.statusCode;
-        console.log('[PWA PUSH] fallo envío:', status ?? (err instanceof Error ? err.message : err));
+        console.error('[PWA PUSH] fallo envío:', status ?? (err instanceof Error ? err.message : err));
         if (status === 404 || status === 410) {
           await removePortalPushSubscription(sub.endpoint);
         }
@@ -310,7 +319,7 @@ export async function notifyPortalNewLead(params: {
     }),
   );
   const sent = results.filter((r) => r.status === 'fulfilled').length;
-  console.log('[PWA PUSH] enviados:', sent, '/', subs.length);
+  console.error('[PWA PUSH] enviados:', sent, '/', subs.length);
   return { sent, total: subs.length };
 }
 
