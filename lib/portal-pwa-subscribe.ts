@@ -20,8 +20,18 @@ export async function subscribePortalPush(params: {
   resellerId: string;
   clientSlug: string;
   vapidPublicKey?: string | null;
+  /** Si false (default), no muestra el prompt del navegador; solo suscribe si ya está granted. */
+  requestPermission?: boolean;
 }): Promise<PortalPushSubscribeResult> {
-  const { swPath, scope, subscribeApi, resellerId, clientSlug, vapidPublicKey } = params;
+  const {
+    swPath,
+    scope,
+    subscribeApi,
+    resellerId,
+    clientSlug,
+    vapidPublicKey,
+    requestPermission = false,
+  } = params;
 
   if (!('serviceWorker' in navigator)) return { ok: false, reason: 'no_sw' };
 
@@ -32,6 +42,7 @@ export async function subscribePortalPush(params: {
   let permission: NotificationPermission = Notification.permission;
   if (permission === 'denied') return { ok: false, reason: 'denied' };
   if (permission === 'default') {
+    if (!requestPermission) return { ok: false, reason: 'denied', detail: 'permission_not_requested' };
     permission = await Notification.requestPermission();
   }
   if (permission !== 'granted') return { ok: false, reason: 'denied' };
