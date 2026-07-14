@@ -85,7 +85,22 @@ export function PortalClientShell({
       });
 
       setPushStatus(result);
-      if (result.ok) subscribedRef.current = true;
+      if (result.ok) {
+        subscribedRef.current = true;
+        // Tras activar en Android, dispara prueba automática para confirmar que llega.
+        if (requestPermission) {
+          try {
+            await fetch('/api/portal/push/test', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ resellerId, clientSlug }),
+            });
+          } catch {
+            // ignore — la campana tiene botón de prueba manual
+          }
+        }
+      }
     },
     [config, resellerId, clientSlug, vapidPublicKey],
   );

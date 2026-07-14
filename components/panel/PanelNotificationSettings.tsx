@@ -18,7 +18,7 @@ type PanelNotificationSettingsProps = {
   resellerId?: string;
   clientSlug?: string;
   pushStatus?: PortalPushSubscribeResult | null;
-  onRetryPush?: () => void;
+  onRetryPush?: () => void | Promise<void>;
 };
 
 const BRAND = {
@@ -58,10 +58,31 @@ export function PanelNotificationSettings({
   const [prefs, setPrefs] = useState<PanelNotificationPrefs>(DEFAULT_PANEL_NOTIFICATION_PREFS);
   const [testingPush, setTestingPush] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
+  const [activating, setActivating] = useState(false);
+  const [platformHint, setPlatformHint] = useState<string | null>(null);
 
   useEffect(() => {
     setPrefs(loadPanelNotificationPrefs(panel, portalScope));
   }, [panel, portalScope]);
+
+  useEffect(() => {
+    if (panel !== 'portal' || typeof navigator === 'undefined') return;
+    const ua = navigator.userAgent || '';
+    const isIos = /iphone|ipad|ipod/i.test(ua);
+    const isAndroid = /android/i.test(ua);
+    const isChrome = /chrome|crios|chromium/i.test(ua) && !/edg/i.test(ua);
+    if (isIos) {
+      setPlatformHint(
+        'iPhone detectado: el push web es limitado. Por ahora usá Android Chrome para alertas gratis. iPhone → WhatsApp (plan aparte) más adelante.',
+      );
+    } else if (isAndroid && !isChrome) {
+      setPlatformHint('En Android abrí este panel con Chrome (no otros navegadores) para que el push funcione.');
+    } else if (isAndroid) {
+      setPlatformHint('Android Chrome OK. Activá notificaciones abajo; debería llegarte una prueba al instante.');
+    } else {
+      setPlatformHint('Para asesoras: lo ideal es Android + Chrome. En PC también podés probar.');
+    }
+  }, [panel]);
 
   const applyPrefs = useCallback(
     (next: PanelNotificationPrefs) => {
@@ -134,6 +155,7 @@ export function PanelNotificationSettings({
     try {
       const res = await fetch('/api/portal/push/test', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resellerId, clientSlug }),
       });
@@ -142,7 +164,13 @@ export function PanelNotificationSettings({
         setTestResult(data.error || 'Error al enviar prueba');
         return;
       }
-      setTestResult(`Prueba enviada (${data.sent ?? 0} dispositivo(s))`);
+      if ((data.sent ?? 0) === 0) {
+        setTestResult(
+          `0 enviados / ${data.total ?? 0} en servidor. Activá notificaciones primero (debe decir "1 dispositivo").`,
+        );
+        return;
+      }
+      setTestResult(`Prueba enviada a ${data.sent} dispositivo(s). ¿Te llegó?`);
     } catch {
       setTestResult('Error de conexión');
     } finally {
@@ -176,6 +204,15 @@ export function PanelNotificationSettings({
             <Bell className="h-4 w-4" />
             Notificaciones
           </h2>
+
+          {panel === 'portal' && platformHint ? (
+            <p
+              className="mb-3 rounded-xl border px-3 py-2 text-[11px] leading-relaxed"
+              style={{ borderColor: theme.border, color: theme.muted }}
+            >
+              {platformHint}
+            </p>
+          ) : null}
 
           <div className="space-y-3 text-sm">
             <label className="flex items-center justify-between gap-3 cursor-pointer">
@@ -253,11 +290,27 @@ export function PanelNotificationSettings({
               ) : null}
               <button
                 type="button"
-                onClick={onRetryPush}
-                className="w-full rounded-lg py-2 text-xs font-semibold"
+                disabled={activating}
+                onClick={() => {
+                  void (async () => {
+                    if (!onRetryPush) return;
+                    setActivating(true);
+                    setTestResult(null);
+                    try {
+                      await onRetryPush();
+                    } finally {
+                      setActivating(false);
+                    }
+                  })();
+                }}
+                className="w-full rounded-lg py-2 text-xs font-semibold disabled:opacity-50"
                 style={{ background: `${theme.accent}22`, color: theme.accent }}
               >
-                {pushStatus?.ok ? 'Reactivar notificaciones' : 'Activar notificaciones'}
+                {activating
+                  ? 'Activando…'
+                  : pushStatus?.ok
+                    ? 'Reactivar notificaciones'
+                    : 'Activar notificaciones'}
               </button>
             </div>
           ) : null}
@@ -283,7 +336,7 @@ export function PanelNotificationSettings({
 
           <p className="mt-3 text-[10px] leading-relaxed" style={{ color: theme.muted }}>
             {panel === 'portal'
-              ? 'Opcional. El portal funciona sin activar notificaciones. En Android Chrome la campana permite suscribirte al push.'
+              ? 'Android Chrome: 1) login 2) Activar 3) debería sonar una prueba. iPhone: WhatsApp (cobro aparte) próximamente.'
               : 'Las preferencias se guardan en este dispositivo.'}
           </p>
         </div>
