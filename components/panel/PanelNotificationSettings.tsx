@@ -86,18 +86,44 @@ export function PanelNotificationSettings({
 
   const pushStatusLabel = (() => {
     if (!pushStatus) return null;
-    if (pushStatus.ok) return { text: 'Push activo en este dispositivo', tone: theme.accent };
+    if (pushStatus.ok) {
+      const n = pushStatus.count;
+      return {
+        text:
+          typeof n === 'number'
+            ? `Push activo (${n} dispositivo${n === 1 ? '' : 's'} en el servidor)`
+            : 'Push activo en este dispositivo',
+        tone: theme.accent,
+      };
+    }
     switch (pushStatus.reason) {
       case 'unauthorized':
-        return { text: 'Inicia sesión para activar alertas push', tone: '#fbbf24' };
+        return {
+          text: pushStatus.detail || 'Inicia sesión para activar alertas push',
+          tone: '#fbbf24',
+        };
       case 'denied':
-        return { text: 'Permiso de notificaciones bloqueado en el navegador', tone: '#f87171' };
+        return {
+          text: pushStatus.detail || 'Permiso de notificaciones bloqueado en el navegador',
+          tone: '#f87171',
+        };
       case 'no_vapid':
-        return { text: 'Servidor sin claves VAPID configuradas', tone: '#f87171' };
+        return {
+          text: pushStatus.detail || 'Servidor sin claves VAPID configuradas',
+          tone: '#f87171',
+        };
+      case 'no_push':
+        return {
+          text: pushStatus.detail || 'Este navegador no soporta push (usa Android Chrome)',
+          tone: '#f87171',
+        };
       case 'pwa_disabled':
         return { text: 'PWA deshabilitada para este cliente', tone: '#f87171' };
       default:
-        return { text: `Push pendiente: ${pushStatus.detail || pushStatus.reason}`, tone: '#fbbf24' };
+        return {
+          text: pushStatus.detail || `Push pendiente: ${pushStatus.reason}`,
+          tone: '#fbbf24',
+        };
     }
   })();
 

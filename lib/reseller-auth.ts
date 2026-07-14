@@ -101,7 +101,8 @@ export async function getResellerAuth(resellerId: string): Promise<Reseller | nu
   const cookieStore = await cookies();
   const value = cookieStore.get(COOKIE_NAME)?.value;
   const reseller = await verifyResellerCookie(value);
-  if (!reseller || reseller.resellerId !== resellerId) return null;
+  if (!reseller) return null;
+  if (reseller.resellerId.toLowerCase() !== resellerId.trim().toLowerCase()) return null;
   return reseller;
 }
 

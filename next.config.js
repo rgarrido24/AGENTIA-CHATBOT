@@ -255,7 +255,7 @@ const nextConfig = {
         source: '/portal/:resellerId/cliente/:clientSlug/sw.js',
         headers: [
           { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
-          { key: 'Cache-Control', value: 'public, max-age=3600' },
+          { key: 'Cache-Control', value: 'no-cache, max-age=0, must-revalidate' },
         ],
       },
       {

@@ -81,6 +81,7 @@ export function PortalClientShell({
         clientSlug,
         vapidPublicKey,
         requestPermission,
+        forceNew: requestPermission,
       });
 
       setPushStatus(result);
