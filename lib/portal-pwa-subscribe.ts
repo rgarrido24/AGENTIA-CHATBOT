@@ -13,7 +13,8 @@ export type PortalPushSubscribeResult =
         | 'unauthorized'
         | 'pwa_disabled'
         | 'network'
-        | 'unknown';
+        | 'unknown'
+        | 'timeout';
       detail?: string;
     };
 
@@ -26,6 +27,63 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return output;
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = window.setTimeout(() => {
+      reject(new Error(`timeout:${label}`));
+    }, ms);
+    promise.then(
+      (v) => {
+        window.clearTimeout(t);
+        resolve(v);
+      },
+      (err) => {
+        window.clearTimeout(t);
+        reject(err);
+      },
+    );
+  });
+}
+
+async function getActiveRegistration(
+  swPath: string,
+  scope: string,
+): Promise<ServiceWorkerRegistration> {
+  const reg = await withTimeout(
+    navigator.serviceWorker.register(swPath, { scope }),
+    8000,
+    'register',
+  );
+
+  // Preferir reg.active / ready con timeout — NUNCA esperar ready sin límite (congela iOS/Android).
+  if (reg.active) return reg;
+
+  try {
+    await withTimeout(navigator.serviceWorker.ready, 8000, 'ready');
+  } catch {
+    // Si ready cuelga, intentamos con la registration actual igual
+  }
+
+  if (reg.installing) {
+    await withTimeout(
+      new Promise<void>((resolve) => {
+        const nw = reg.installing;
+        if (!nw || nw.state === 'activated') {
+          resolve();
+          return;
+        }
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'activated' || nw.state === 'redundant') resolve();
+        });
+      }),
+      8000,
+      'activate',
+    );
+  }
+
+  return reg;
+}
+
 export async function subscribePortalPush(params: {
   swPath: string;
   scope: string;
@@ -33,9 +91,7 @@ export async function subscribePortalPush(params: {
   resellerId: string;
   clientSlug: string;
   vapidPublicKey?: string | null;
-  /** Si false (default), no muestra el prompt del navegador; solo suscribe si ya está granted. */
   requestPermission?: boolean;
-  /** Si true, cancela suscripción previa y crea una nueva (recomendado al pulsar Activar). */
   forceNew?: boolean;
 }): Promise<PortalPushSubscribeResult> {
   const {
@@ -74,43 +130,36 @@ export async function subscribePortalPush(params: {
     return {
       ok: false,
       reason: 'denied',
-      detail: 'Permiso bloqueado en el navegador — actívalo en Ajustes del sitio',
+      detail: 'Permiso bloqueado — en Chrome: candado del sitio → Notificaciones → Permitir',
     };
   }
   if (permission === 'default') {
     if (!requestPermission) {
       return { ok: false, reason: 'denied', detail: 'permission_not_requested' };
     }
-    permission = await Notification.requestPermission();
+    try {
+      permission = await withTimeout(
+        Notification.requestPermission(),
+        20000,
+        'permission',
+      );
+    } catch {
+      return {
+        ok: false,
+        reason: 'timeout',
+        detail: 'El diálogo de permiso no respondió. Revisá notificaciones del sitio en Chrome.',
+      };
+    }
   }
   if (permission !== 'granted') {
     return { ok: false, reason: 'denied', detail: 'No se concedió permiso de notificaciones' };
   }
 
   try {
-    const reg = await navigator.serviceWorker.register(swPath, { scope });
-    await navigator.serviceWorker.ready;
+    const reg = await getActiveRegistration(swPath, scope);
+    const pushManager = reg.pushManager;
 
-    // Esperar a que el SW esté activo (Safari/Android a veces tarda)
-    let active = reg.active;
-    if (!active) {
-      await new Promise<void>((resolve) => {
-        const t = window.setTimeout(() => resolve(), 3000);
-        reg.addEventListener('updatefound', () => {
-          const nw = reg.installing;
-          nw?.addEventListener('statechange', () => {
-            if (nw.state === 'activated') {
-              window.clearTimeout(t);
-              resolve();
-            }
-          });
-        });
-      });
-      active = reg.active;
-    }
-
-    const pushReg = await navigator.serviceWorker.ready;
-    let existing = await pushReg.pushManager.getSubscription();
+    let existing = await pushManager.getSubscription();
     if (existing && forceNew) {
       try {
         await existing.unsubscribe();
@@ -123,28 +172,36 @@ export async function subscribePortalPush(params: {
     const applicationServerKey = urlBase64ToUint8Array(vapidKey) as BufferSource;
     const sub =
       existing ||
-      (await pushReg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey,
-      }));
+      (await withTimeout(
+        pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey,
+        }),
+        15000,
+        'subscribe',
+      ));
 
     const json = sub.toJSON();
     if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
       return { ok: false, reason: 'invalid_sub', detail: 'El navegador no devolvió keys push' };
     }
 
-    const res = await fetch(subscribeApi, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        resellerId,
-        clientSlug,
-        endpoint: json.endpoint,
-        keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-        expirationTime: json.expirationTime ?? null,
+    const res = await withTimeout(
+      fetch(subscribeApi, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resellerId,
+          clientSlug,
+          endpoint: json.endpoint,
+          keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+          expirationTime: json.expirationTime ?? null,
+        }),
       }),
-    });
+      15000,
+      'api',
+    );
 
     const data = (await res.json().catch(() => ({}))) as { error?: string; count?: number };
 
@@ -177,10 +234,18 @@ export async function subscribePortalPush(params: {
 
     return { ok: true, count };
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.startsWith('timeout:')) {
+      return {
+        ok: false,
+        reason: 'timeout',
+        detail: `Se agotó el tiempo (${msg.replace('timeout:', '')}). Probá de nuevo en Chrome Android.`,
+      };
+    }
     return {
       ok: false,
       reason: 'unknown',
-      detail: err instanceof Error ? err.message : String(err),
+      detail: msg,
     };
   }
 }

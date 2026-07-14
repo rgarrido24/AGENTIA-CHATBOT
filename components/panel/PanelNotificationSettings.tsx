@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Bell, Settings, Volume2, Vibrate, Hash } from 'lucide-react';
+import { Bell, Settings, Volume2, Vibrate, Hash, X } from 'lucide-react';
 import {
   DEFAULT_PANEL_NOTIFICATION_PREFS,
   loadPanelNotificationPrefs,
@@ -72,15 +72,13 @@ export function PanelNotificationSettings({
     const isAndroid = /android/i.test(ua);
     const isChrome = /chrome|crios|chromium/i.test(ua) && !/edg/i.test(ua);
     if (isIos) {
-      setPlatformHint(
-        'iPhone detectado: el push web es limitado. Por ahora usá Android Chrome para alertas gratis. iPhone → WhatsApp (plan aparte) más adelante.',
-      );
+      setPlatformHint('iPhone: push limitado. Usá Android Chrome para alertas gratis.');
     } else if (isAndroid && !isChrome) {
-      setPlatformHint('En Android abrí este panel con Chrome (no otros navegadores) para que el push funcione.');
+      setPlatformHint('Abrí este panel en Chrome Android.');
     } else if (isAndroid) {
-      setPlatformHint('Android Chrome OK. Activá notificaciones abajo; debería llegarte una prueba al instante.');
+      setPlatformHint('Android Chrome listo. Tocá ACTIVAR abajo.');
     } else {
-      setPlatformHint('Para asesoras: lo ideal es Android + Chrome. En PC también podés probar.');
+      setPlatformHint('Ideal: Android + Chrome. En PC también podés probar.');
     }
   }, [panel]);
 
@@ -112,37 +110,27 @@ export function PanelNotificationSettings({
       return {
         text:
           typeof n === 'number'
-            ? `Push activo (${n} dispositivo${n === 1 ? '' : 's'} en el servidor)`
-            : 'Push activo en este dispositivo',
+            ? `Push activo (${n} dispositivo${n === 1 ? '' : 's'})`
+            : 'Push activo',
         tone: theme.accent,
       };
     }
     switch (pushStatus.reason) {
       case 'unauthorized':
-        return {
-          text: pushStatus.detail || 'Inicia sesión para activar alertas push',
-          tone: '#fbbf24',
-        };
+        return { text: pushStatus.detail || 'Inicia sesión primero', tone: '#fbbf24' };
       case 'denied':
-        return {
-          text: pushStatus.detail || 'Permiso de notificaciones bloqueado en el navegador',
-          tone: '#f87171',
-        };
+        return { text: pushStatus.detail || 'Permiso bloqueado en el navegador', tone: '#f87171' };
       case 'no_vapid':
-        return {
-          text: pushStatus.detail || 'Servidor sin claves VAPID configuradas',
-          tone: '#f87171',
-        };
+        return { text: pushStatus.detail || 'Faltan claves VAPID en el servidor', tone: '#f87171' };
       case 'no_push':
-        return {
-          text: pushStatus.detail || 'Este navegador no soporta push (usa Android Chrome)',
-          tone: '#f87171',
-        };
+        return { text: pushStatus.detail || 'Este navegador no soporta push', tone: '#f87171' };
+      case 'timeout':
+        return { text: pushStatus.detail || 'Tiempo agotado — reintentá', tone: '#fbbf24' };
       case 'pwa_disabled':
         return { text: 'PWA deshabilitada para este cliente', tone: '#f87171' };
       default:
         return {
-          text: pushStatus.detail || `Push pendiente: ${pushStatus.reason}`,
+          text: pushStatus.detail || `Error: ${pushStatus.reason}`,
           tone: '#fbbf24',
         };
     }
@@ -165,12 +153,10 @@ export function PanelNotificationSettings({
         return;
       }
       if ((data.sent ?? 0) === 0) {
-        setTestResult(
-          `0 enviados / ${data.total ?? 0} en servidor. Activá notificaciones primero (debe decir "1 dispositivo").`,
-        );
+        setTestResult('0 enviados. Primero ACTIVAR (debe decir 1 dispositivo).');
         return;
       }
-      setTestResult(`Prueba enviada a ${data.sent} dispositivo(s). ¿Te llegó?`);
+      setTestResult(`Prueba enviada a ${data.sent}. ¿Te llegó?`);
     } catch {
       setTestResult('Error de conexión');
     } finally {
@@ -178,167 +164,195 @@ export function PanelNotificationSettings({
     }
   }
 
+  async function handleActivate() {
+    if (!onRetryPush || activating) return;
+    setActivating(true);
+    setTestResult(null);
+    try {
+      await Promise.race([
+        Promise.resolve(onRetryPush()),
+        new Promise<void>((resolve) => {
+          window.setTimeout(resolve, 25000);
+        }),
+      ]);
+    } catch {
+      // ignore — status se muestra vía pushStatus
+    } finally {
+      setActivating(false);
+    }
+  }
+
+  const isPortal = panel === 'portal';
+
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-4 left-4 z-50 flex h-11 w-11 items-center justify-center rounded-full shadow-lg border transition hover:scale-105"
+        className="pointer-events-auto fixed bottom-4 left-4 z-[200] flex h-12 w-12 items-center justify-center rounded-full border shadow-lg"
         style={{
           background: theme.bg,
           borderColor: theme.border,
           color: theme.accent,
+          touchAction: 'manipulation',
         }}
-        aria-label="Configuración de notificaciones"
-        title="Notificaciones"
+        aria-label="Notificaciones"
       >
         {open ? <Settings className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
       </button>
 
       {open ? (
         <div
-          className="fixed bottom-20 left-4 z-50 w-[min(100vw-2rem,320px)] rounded-2xl border p-4 shadow-2xl"
+          className="pointer-events-auto fixed bottom-[4.5rem] left-3 right-3 z-[200] mx-auto flex max-h-[min(70vh,520px)] w-full max-w-sm flex-col overflow-hidden rounded-2xl border shadow-2xl sm:left-4 sm:right-auto"
           style={{ background: theme.bg, borderColor: theme.border, color: theme.text }}
         >
-          <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: theme.accent }}>
-            <Bell className="h-4 w-4" />
-            Notificaciones
-          </h2>
-
-          {panel === 'portal' && platformHint ? (
-            <p
-              className="mb-3 rounded-xl border px-3 py-2 text-[11px] leading-relaxed"
-              style={{ borderColor: theme.border, color: theme.muted }}
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
+            <h2 className="flex items-center gap-2 text-sm font-bold" style={{ color: theme.accent }}>
+              <Bell className="h-4 w-4" />
+              Notificaciones
+            </h2>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="flex h-9 w-9 items-center justify-center rounded-full"
+              style={{ color: theme.muted, touchAction: 'manipulation' }}
+              aria-label="Cerrar"
             >
-              {platformHint}
-            </p>
-          ) : null}
-
-          <div className="space-y-3 text-sm">
-            <label className="flex items-center justify-between gap-3 cursor-pointer">
-              <span className="flex items-center gap-2">
-                <Volume2 className="h-4 w-4 opacity-70" />
-                Sonido
-              </span>
-              <input
-                type="checkbox"
-                checked={prefs.sound}
-                onChange={(e) => applyPrefs({ ...prefs, sound: e.target.checked })}
-                className="rounded"
-              />
-            </label>
-
-            {prefs.sound ? (
-              <label className="block">
-                <span className="text-xs mb-1 block" style={{ color: theme.muted }}>
-                  Tono
-                </span>
-                <select
-                  value={prefs.tone}
-                  onChange={(e) => {
-                    const tone = e.target.value as PanelNotificationPrefs['tone'];
-                    applyPrefs({ ...prefs, tone });
-                    previewTone(tone);
-                  }}
-                  className="w-full rounded-lg px-3 py-2 text-sm bg-black/40 border border-white/10"
-                >
-                  {NOTIFICATION_TONES.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-
-            <label className="flex items-center justify-between gap-3 cursor-pointer">
-              <span className="flex items-center gap-2">
-                <Vibrate className="h-4 w-4 opacity-70" />
-                Vibración
-              </span>
-              <input
-                type="checkbox"
-                checked={prefs.vibration}
-                onChange={(e) => applyPrefs({ ...prefs, vibration: e.target.checked })}
-                className="rounded"
-              />
-            </label>
-
-            <label className="flex items-center justify-between gap-3 cursor-pointer">
-              <span className="flex items-center gap-2">
-                <Hash className="h-4 w-4 opacity-70" />
-                Badge (contador)
-              </span>
-              <input
-                type="checkbox"
-                checked={prefs.badge}
-                onChange={(e) => applyPrefs({ ...prefs, badge: e.target.checked })}
-                className="rounded"
-              />
-            </label>
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
-          {panel === 'portal' && onRetryPush ? (
-            <div className="mt-3 space-y-2">
-              {pushStatusLabel ? (
-                <div
-                  className="rounded-xl border px-3 py-2 text-[11px] leading-relaxed"
-                  style={{ borderColor: `${pushStatusLabel.tone}44`, color: pushStatusLabel.tone }}
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-3">
+            {isPortal && platformHint ? (
+              <p className="text-[11px] leading-relaxed" style={{ color: theme.muted }}>
+                {platformHint}
+              </p>
+            ) : null}
+
+            {/* Acciones primero — arriba y con área táctil grande */}
+            {isPortal && onRetryPush ? (
+              <div className="space-y-2">
+                {pushStatusLabel ? (
+                  <div
+                    className="rounded-xl border px-3 py-2 text-[11px] leading-relaxed"
+                    style={{ borderColor: `${pushStatusLabel.tone}44`, color: pushStatusLabel.tone }}
+                  >
+                    {pushStatusLabel.text}
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => void handleActivate()}
+                  className="w-full rounded-xl py-3.5 text-sm font-bold active:opacity-80"
+                  style={{
+                    background: theme.accent,
+                    color: '#0a0f1a',
+                    touchAction: 'manipulation',
+                    opacity: activating ? 0.75 : 1,
+                  }}
                 >
-                  {pushStatusLabel.text}
-                </div>
-              ) : null}
-              <button
-                type="button"
-                disabled={activating}
-                onClick={() => {
-                  void (async () => {
-                    if (!onRetryPush) return;
-                    setActivating(true);
-                    setTestResult(null);
-                    try {
-                      await onRetryPush();
-                    } finally {
-                      setActivating(false);
-                    }
-                  })();
-                }}
-                className="w-full rounded-lg py-2 text-xs font-semibold disabled:opacity-50"
-                style={{ background: `${theme.accent}22`, color: theme.accent }}
-              >
-                {activating
-                  ? 'Activando…'
-                  : pushStatus?.ok
-                    ? 'Reactivar notificaciones'
-                    : 'Activar notificaciones'}
-              </button>
-            </div>
-          ) : null}
+                  {activating
+                    ? 'Activando… tocá de nuevo si se traba'
+                    : pushStatus?.ok
+                      ? 'Reactivar notificaciones'
+                      : 'ACTIVAR NOTIFICACIONES'}
+                </button>
+              </div>
+            ) : null}
 
-          {panel === 'portal' && resellerId && clientSlug ? (
-            <div className="mt-3 space-y-2">
-              <button
-                type="button"
-                disabled={testingPush}
-                onClick={() => void sendTestPush()}
-                className="w-full rounded-lg py-2 text-xs font-semibold disabled:opacity-50"
-                style={{ background: `${theme.accent}22`, color: theme.accent }}
-              >
-                {testingPush ? 'Enviando…' : 'Probar alerta push'}
-              </button>
-              {testResult ? (
-                <p className="text-[10px]" style={{ color: theme.muted }}>
-                  {testResult}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+            {isPortal && resellerId && clientSlug ? (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  disabled={testingPush}
+                  onClick={() => void sendTestPush()}
+                  className="w-full rounded-xl border py-3 text-xs font-semibold disabled:opacity-50"
+                  style={{
+                    borderColor: theme.border,
+                    color: theme.accent,
+                    touchAction: 'manipulation',
+                  }}
+                >
+                  {testingPush ? 'Enviando…' : 'Probar alerta push'}
+                </button>
+                {testResult ? (
+                  <p className="text-[10px]" style={{ color: theme.muted }}>
+                    {testResult}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
-          <p className="mt-3 text-[10px] leading-relaxed" style={{ color: theme.muted }}>
-            {panel === 'portal'
-              ? 'Android Chrome: 1) login 2) Activar 3) debería sonar una prueba. iPhone: WhatsApp (cobro aparte) próximamente.'
-              : 'Las preferencias se guardan en este dispositivo.'}
-          </p>
+            <div className="space-y-3 border-t border-white/10 pt-3 text-sm">
+              <label className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4 opacity-70" />
+                  Sonido
+                </span>
+                <input
+                  type="checkbox"
+                  checked={prefs.sound}
+                  onChange={(e) => applyPrefs({ ...prefs, sound: e.target.checked })}
+                  className="h-5 w-5 rounded"
+                />
+              </label>
+
+              {prefs.sound ? (
+                <label className="block">
+                  <span className="mb-1 block text-xs" style={{ color: theme.muted }}>
+                    Tono
+                  </span>
+                  <select
+                    value={prefs.tone}
+                    onChange={(e) => {
+                      const tone = e.target.value as PanelNotificationPrefs['tone'];
+                      applyPrefs({ ...prefs, tone });
+                      previewTone(tone);
+                    }}
+                    className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm"
+                  >
+                    {NOTIFICATION_TONES.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+
+              <label className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2">
+                  <Vibrate className="h-4 w-4 opacity-70" />
+                  Vibración
+                </span>
+                <input
+                  type="checkbox"
+                  checked={prefs.vibration}
+                  onChange={(e) => applyPrefs({ ...prefs, vibration: e.target.checked })}
+                  className="h-5 w-5 rounded"
+                />
+              </label>
+
+              <label className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2">
+                  <Hash className="h-4 w-4 opacity-70" />
+                  Badge
+                </span>
+                <input
+                  type="checkbox"
+                  checked={prefs.badge}
+                  onChange={(e) => applyPrefs({ ...prefs, badge: e.target.checked })}
+                  className="h-5 w-5 rounded"
+                />
+              </label>
+            </div>
+
+            <p className="pb-1 text-[10px] leading-relaxed" style={{ color: theme.muted }}>
+              {isPortal
+                ? '1) Login 2) ACTIVAR 3) Permitir. Debe decir “1 dispositivo”.'
+                : 'Preferencias en este dispositivo.'}
+            </p>
+          </div>
         </div>
       ) : null}
     </>
