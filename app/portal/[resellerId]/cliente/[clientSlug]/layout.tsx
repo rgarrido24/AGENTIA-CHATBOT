@@ -1,41 +1,22 @@
 import type { Metadata, Viewport } from 'next';
-import {
-  PORTAL_PWA_ICON_192,
-  PORTAL_PWA_THEME_COLOR,
-  getPortalPwaConfig,
-} from '@/lib/portal-pwa-config';
 import { PortalClientShell } from './PortalClientShell';
 
 export const viewport: Viewport = {
-  themeColor: PORTAL_PWA_THEME_COLOR,
+  themeColor: '#0a0f1a',
 };
 
-const portalPwaMetadata: Metadata = {
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'Mis Leads',
-  },
-  icons: {
-    icon: [{ url: PORTAL_PWA_ICON_192, sizes: '192x192', type: 'image/png' }],
-    apple: [{ url: PORTAL_PWA_ICON_192, sizes: '192x192', type: 'image/png' }],
-  },
-};
-
-export async function generateMetadata({
-  params,
-}: {
-  params: { resellerId: string; clientSlug: string };
-}): Promise<Metadata> {
-  const config = getPortalPwaConfig(params.resellerId, params.clientSlug);
+export async function generateMetadata(): Promise<Metadata> {
   return {
-    ...portalPwaMetadata,
     title: 'Mis Leads — Panel de asesoras',
     description: 'Gestión de leads en tiempo real',
-    manifest: config.manifestPath,
+    // Sin manifest / apple-web-app: evita prompts de instalación en iOS/Android.
   };
 }
 
+/**
+ * Layout del portal de asesoras.
+ * Sin PWA agresiva: carga directa. La campana es opcional y voluntaria.
+ */
 export default function PortalClientLayout({
   children,
   params,

@@ -215,22 +215,24 @@ export function PanelNotificationSettings({
             </label>
           </div>
 
-          {panel === 'portal' && pushStatusLabel ? (
-            <div
-              className="mt-3 rounded-xl border px-3 py-2 text-[11px] leading-relaxed"
-              style={{ borderColor: `${pushStatusLabel.tone}44`, color: pushStatusLabel.tone }}
-            >
-              {pushStatusLabel.text}
-              {!pushStatus?.ok && onRetryPush ? (
-                <button
-                  type="button"
-                  onClick={onRetryPush}
-                  className="mt-2 block w-full rounded-lg py-1.5 text-xs font-semibold"
-                  style={{ background: `${theme.accent}22`, color: theme.accent }}
+          {panel === 'portal' && onRetryPush ? (
+            <div className="mt-3 space-y-2">
+              {pushStatusLabel ? (
+                <div
+                  className="rounded-xl border px-3 py-2 text-[11px] leading-relaxed"
+                  style={{ borderColor: `${pushStatusLabel.tone}44`, color: pushStatusLabel.tone }}
                 >
-                  Reintentar activación
-                </button>
+                  {pushStatusLabel.text}
+                </div>
               ) : null}
+              <button
+                type="button"
+                onClick={onRetryPush}
+                className="w-full rounded-lg py-2 text-xs font-semibold"
+                style={{ background: `${theme.accent}22`, color: theme.accent }}
+              >
+                {pushStatus?.ok ? 'Reactivar notificaciones' : 'Activar notificaciones'}
+              </button>
             </div>
           ) : null}
 
@@ -255,8 +257,8 @@ export function PanelNotificationSettings({
 
           <p className="mt-3 text-[10px] leading-relaxed" style={{ color: theme.muted }}>
             {panel === 'portal'
-              ? 'En Android Chrome: menú ⋮ → Instalar app. Acepta notificaciones al iniciar sesión.'
-              : 'Las preferencias se guardan en este dispositivo. Instala la app desde Chrome para recibir push.'}
+              ? 'Opcional. El portal funciona sin activar notificaciones. En Android Chrome la campana permite suscribirte al push.'
+              : 'Las preferencias se guardan en este dispositivo.'}
           </p>
         </div>
       ) : null}

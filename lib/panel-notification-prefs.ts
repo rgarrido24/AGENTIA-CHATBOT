@@ -77,19 +77,28 @@ export async function syncNotificationPrefsToServiceWorker(
   prefs: PanelNotificationPrefs,
 ): Promise<void> {
   if (!('serviceWorker' in navigator)) return;
-  const reg = await navigator.serviceWorker.ready;
-  reg.active?.postMessage({
-    type: 'SET_NOTIFICATION_PREFS',
-    prefs: prefsForServiceWorker(prefs),
-  });
+  try {
+    // No usar serviceWorker.ready: puede colgarse indefinidamente sin SW registrado (iOS Safari).
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg?.active) return;
+    reg.active.postMessage({
+      type: 'SET_NOTIFICATION_PREFS',
+      prefs: prefsForServiceWorker(prefs),
+    });
+  } catch {
+    // ignore
+  }
 }
 
 export async function clearPanelAppBadge(): Promise<void> {
   if ('clearAppBadge' in navigator) {
     await navigator.clearAppBadge().catch(() => {});
   }
-  if ('serviceWorker' in navigator) {
-    const reg = await navigator.serviceWorker.ready;
-    reg.active?.postMessage({ type: 'CLEAR_BADGE' });
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    reg?.active?.postMessage({ type: 'CLEAR_BADGE' });
+  } catch {
+    // ignore
   }
 }

@@ -2,14 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PanelNotificationSettings } from '@/components/panel/PanelNotificationSettings';
-import {
-  clearPanelAppBadge,
-  loadPanelNotificationPrefs,
-  syncNotificationPrefsToServiceWorker,
-} from '@/lib/panel-notification-prefs';
 import { getPortalPwaConfig } from '@/lib/portal-pwa-config';
 import {
-  PORTAL_AUTH_EVENT,
   subscribePortalPush,
   type PortalPushSubscribeResult,
 } from '@/lib/portal-pwa-subscribe';
@@ -20,10 +14,55 @@ type PortalClientShellProps = {
   vapidPublicKey?: string | null;
 };
 
+const SW_CLEARED_FLAG = 'agentia_portal_sw_cleared_v2';
+
 /**
- * Shell PWA del portal — SW + push en segundo plano.
- * Sin banner/modal de instalación: el portal carga libre.
- * La campana permite activar notificaciones de forma voluntaria.
+ * Limpia service workers del portal que dejan iPhone con pantalla negra.
+ * No re-registra nada automáticamente.
+ */
+async function unregisterPortalServiceWorkers(): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return false;
+
+  let removed = false;
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const reg of regs) {
+      const scope = reg.scope || '';
+      if (scope.includes('/portal/') && scope.includes('/cliente/')) {
+        const ok = await reg.unregister();
+        if (ok) removed = true;
+      }
+      // SW legado global del portal
+      if (scope.endsWith('/') && reg.active?.scriptURL?.includes('portal-sw')) {
+        const ok = await reg.unregister();
+        if (ok) removed = true;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((k) => /portal|mis.?leads|pwa/i.test(k))
+          .map((k) => caches.delete(k)),
+      );
+    }
+  } catch {
+    // ignore
+  }
+
+  return removed;
+}
+
+/**
+ * Shell seguro del portal:
+ * - Desactiva SW rotos (fix iPhone pantalla negra)
+ * - Sin banners / prompts / registro automático
+ * - Campana 🔔 opcional: el usuario activa push a voluntad
  */
 export function PortalClientShell({
   resellerId,
@@ -32,75 +71,63 @@ export function PortalClientShell({
 }: PortalClientShellProps) {
   const subscribedRef = useRef(false);
   const [pushStatus, setPushStatus] = useState<PortalPushSubscribeResult | null>(null);
+  const [ready, setReady] = useState(false);
   const config = getPortalPwaConfig(resellerId, clientSlug);
 
-  const attemptSubscribe = useCallback(
-    async (opts?: { requestPermission?: boolean }) => {
-      if (subscribedRef.current) return;
-
-      const result = await subscribePortalPush({
-        swPath: config.swPath,
-        scope: config.scope,
-        subscribeApi: config.subscribeApi,
-        resellerId,
-        clientSlug,
-        vapidPublicKey,
-        // Al cargar: solo si el permiso ya está granted. Pedir permiso solo desde la campana.
-        requestPermission: opts?.requestPermission === true,
-      });
-
-      setPushStatus(result);
-      if (result.ok) subscribedRef.current = true;
-    },
-    [config, resellerId, clientSlug, vapidPublicKey],
-  );
-
   useEffect(() => {
-    const sync = () => {
-      void syncNotificationPrefsToServiceWorker(
-        loadPanelNotificationPrefs('portal', config.portalScope),
-      );
-    };
-    sync();
+    let cancelled = false;
 
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') {
-        void clearPanelAppBadge();
-        if (!subscribedRef.current) void attemptSubscribe({ requestPermission: false });
+    (async () => {
+      try {
+        const already = sessionStorage.getItem(SW_CLEARED_FLAG) === '1';
+        const removed = await unregisterPortalServiceWorkers();
+        if (!already && removed && !cancelled) {
+          sessionStorage.setItem(SW_CLEARED_FLAG, '1');
+          window.location.reload();
+          return;
+        }
+        if (!already) {
+          try {
+            sessionStorage.setItem(SW_CLEARED_FLAG, '1');
+          } catch {
+            // ignore
+          }
+        }
+      } finally {
+        if (!cancelled) setReady(true);
       }
-    };
-
-    const onAuthed = () => {
-      void attemptSubscribe({ requestPermission: false });
-    };
-
-    document.addEventListener('visibilitychange', onVisible);
-    window.addEventListener('focus', onVisible);
-    window.addEventListener(PORTAL_AUTH_EVENT, onAuthed);
-
-    void attemptSubscribe({ requestPermission: false });
-    const retry = window.setInterval(() => {
-      if (!subscribedRef.current) void attemptSubscribe({ requestPermission: false });
-    }, 15000);
+    })();
 
     return () => {
-      document.removeEventListener('visibilitychange', onVisible);
-      window.removeEventListener('focus', onVisible);
-      window.removeEventListener(PORTAL_AUTH_EVENT, onAuthed);
-      window.clearInterval(retry);
+      cancelled = true;
     };
-  }, [config.portalScope, attemptSubscribe]);
+  }, []);
 
+  const activatePush = useCallback(async () => {
+    subscribedRef.current = false;
+    const result = await subscribePortalPush({
+      swPath: config.swPath,
+      scope: config.scope,
+      subscribeApi: config.subscribeApi,
+      resellerId,
+      clientSlug,
+      vapidPublicKey,
+      requestPermission: true,
+    });
+    setPushStatus(result);
+    if (result.ok) subscribedRef.current = true;
+  }, [config, resellerId, clientSlug, vapidPublicKey]);
+
+  // Campana siempre visible (login y panel). No bloquea la UI.
   return (
     <PanelNotificationSettings
       panel="portal"
       portalScope={config.portalScope}
       resellerId={resellerId}
       clientSlug={clientSlug}
-      pushStatus={pushStatus}
+      pushStatus={ready ? pushStatus : null}
       onRetryPush={() => {
-        subscribedRef.current = false;
-        void attemptSubscribe({ requestPermission: true });
+        void activatePush();
       }}
     />
   );
