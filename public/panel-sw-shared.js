@@ -13,6 +13,66 @@ var cachedPrefs = {
 
 var badgeCount = 0;
 
+// ── Config de re-suscripción push (persistida en Cache para sobrevivir reinicios del SW) ──
+var PUSH_CONFIG_CACHE = 'panel-push-config';
+var PUSH_CONFIG_KEY = '/__panel_push_config__';
+
+function savePushConfig(config) {
+  if (!config || !config.vapidPublicKey || !config.subscribeApi) return Promise.resolve();
+  return caches.open(PUSH_CONFIG_CACHE).then(function (cache) {
+    return cache.put(PUSH_CONFIG_KEY, new Response(JSON.stringify(config)));
+  }).catch(function () {});
+}
+
+function loadPushConfig() {
+  return caches.open(PUSH_CONFIG_CACHE).then(function (cache) {
+    return cache.match(PUSH_CONFIG_KEY).then(function (res) {
+      if (!res) return null;
+      return res.json().catch(function () { return null; });
+    });
+  }).catch(function () { return null; });
+}
+
+function urlBase64ToUint8Array(base64String) {
+  var padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  var raw = self.atob(base64);
+  var output = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i += 1) output[i] = raw.charCodeAt(i);
+  return output;
+}
+
+// Re-suscribe en segundo plano y reenvía la suscripción al servidor.
+function resubscribePush() {
+  return loadPushConfig().then(function (config) {
+    if (!config || !config.vapidPublicKey || !config.subscribeApi) return;
+    return self.registration.pushManager
+      .subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(config.vapidPublicKey),
+      })
+      .then(function (sub) {
+        var json = sub.toJSON();
+        if (!json.endpoint || !json.keys || !json.keys.p256dh || !json.keys.auth) return;
+        var body = {};
+        var extra = config.body || {};
+        for (var k in extra) {
+          if (Object.prototype.hasOwnProperty.call(extra, k)) body[k] = extra[k];
+        }
+        body.endpoint = json.endpoint;
+        body.keys = { p256dh: json.keys.p256dh, auth: json.keys.auth };
+        body.expirationTime = json.expirationTime || null;
+        return fetch(config.subscribeApi, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      })
+      .catch(function () {});
+  });
+}
+
 self.addEventListener('message', function (event) {
   var data = event.data || {};
   if (data.type === 'SET_NOTIFICATION_PREFS' && data.prefs) {
@@ -23,10 +83,18 @@ self.addEventListener('message', function (event) {
       soundUrl: data.prefs.soundUrl || '/notification.mp3',
     };
   }
+  if (data.type === 'SET_PUSH_CONFIG' && data.config) {
+    event.waitUntil(savePushConfig(data.config));
+  }
   if (data.type === 'CLEAR_BADGE') {
     badgeCount = 0;
     updateAppBadge();
   }
+});
+
+// Cuando el navegador rota/expira la suscripción, re-suscribir SIN necesidad de abrir la app.
+self.addEventListener('pushsubscriptionchange', function (event) {
+  event.waitUntil(resubscribePush());
 });
 
 function updateAppBadge() {

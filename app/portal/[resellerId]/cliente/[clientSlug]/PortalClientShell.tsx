@@ -14,43 +14,24 @@ type PortalClientShellProps = {
   vapidPublicKey?: string | null;
 };
 
-/** Limpieza one-shot de SW rotos (pantalla negra iOS). No debe repetirse siempre. */
-const SW_CLEARED_FLAG = 'agentia_portal_sw_cleared_v3';
+/** Limpieza one-shot SOLO del SW legado global roto (/portal-sw.js). No toca el SW bueno. */
+const LEGACY_SW_CLEARED_FLAG = 'agentia_portal_legacy_sw_cleared_v1';
 
-async function unregisterBrokenPortalServiceWorkers(): Promise<boolean> {
-  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return false;
-
-  let removed = false;
+async function unregisterLegacyPortalServiceWorker(): Promise<void> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
   try {
     const regs = await navigator.serviceWorker.getRegistrations();
     for (const reg of regs) {
-      const scope = reg.scope || '';
-      const script = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
-      const isPortalScope = scope.includes('/portal/') && scope.includes('/cliente/');
-      const isLegacyPortalSw = script.includes('portal-sw');
-      if (!isPortalScope && !isLegacyPortalSw) continue;
-
-      const ok = await reg.unregister();
-      if (ok) removed = true;
+      const script =
+        reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || '';
+      // Solo el legado global "/portal-sw.js" (raíz). NUNCA el SW por cliente (que da el push).
+      if (script.includes('/portal-sw.js')) {
+        await reg.unregister();
+      }
     }
   } catch {
     // ignore
   }
-
-  try {
-    if ('caches' in window) {
-      const keys = await caches.keys();
-      await Promise.all(
-        keys
-          .filter((k) => /portal|mis.?leads/i.test(k))
-          .map((k) => caches.delete(k)),
-      );
-    }
-  } catch {
-    // ignore
-  }
-
-  return removed;
 }
 
 /**
@@ -109,38 +90,39 @@ export function PortalClientShell({
     let cancelled = false;
 
     (async () => {
-      let alreadyCleared = false;
+      // Limpia SOLO el SW legado global roto (una vez). No toca el SW por cliente.
       try {
-        alreadyCleared = localStorage.getItem(SW_CLEARED_FLAG) === '1';
+        if (localStorage.getItem(LEGACY_SW_CLEARED_FLAG) !== '1') {
+          await unregisterLegacyPortalServiceWorker();
+          localStorage.setItem(LEGACY_SW_CLEARED_FLAG, '1');
+        }
       } catch {
-        alreadyCleared = false;
-      }
-
-      // Solo una vez por dispositivo: limpia SW que dejaban iOS en negro.
-      if (!alreadyCleared) {
-        const removed = await unregisterBrokenPortalServiceWorkers();
-        try {
-          localStorage.setItem(SW_CLEARED_FLAG, '1');
-        } catch {
-          // ignore
-        }
-        if (removed && !cancelled) {
-          window.location.reload();
-          return;
-        }
+        // ignore
       }
 
       if (cancelled) return;
 
-      // Re-suscribir en silencio solo si el usuario YA permitió notificaciones.
-      // No pide permiso ni muestra prompts.
+      // Re-suscribir en silencio si el usuario YA permitió notificaciones.
+      // No pide permiso ni muestra prompts; mantiene viva la suscripción.
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         await attemptSubscribe(false);
       }
     })();
 
+    const onFocus = () => {
+      if (
+        !subscribedRef.current &&
+        typeof Notification !== 'undefined' &&
+        Notification.permission === 'granted'
+      ) {
+        void attemptSubscribe(false);
+      }
+    };
+    window.addEventListener('focus', onFocus);
+
     return () => {
       cancelled = true;
+      window.removeEventListener('focus', onFocus);
     };
   }, [attemptSubscribe]);
 
@@ -153,7 +135,7 @@ export function PortalClientShell({
       pushStatus={pushStatus}
       onRetryPush={() => {
         subscribedRef.current = false;
-        void attemptSubscribe(true);
+        return attemptSubscribe(true);
       }}
     />
   );

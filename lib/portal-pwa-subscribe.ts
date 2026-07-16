@@ -157,6 +157,18 @@ export async function subscribePortalPush(params: {
 
   try {
     const reg = await getActiveRegistration(swPath, scope);
+
+    // Persistir config en el SW para re-suscribir en segundo plano (pushsubscriptionchange).
+    const swTarget = reg.active || navigator.serviceWorker.controller;
+    swTarget?.postMessage({
+      type: 'SET_PUSH_CONFIG',
+      config: {
+        vapidPublicKey: vapidKey,
+        subscribeApi,
+        body: { resellerId, clientSlug },
+      },
+    });
+
     const pushManager = reg.pushManager;
 
     let existing = await pushManager.getSubscription();
