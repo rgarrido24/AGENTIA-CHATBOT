@@ -97,6 +97,8 @@ const nextConfig = {
       { source: '/demo/fotos-escuela/anuario',            destination: '/demo-fotos-escuela/anuario.html' },
       { source: '/demo/fotos-escuela/fiesta',             destination: '/demo-fotos-escuela/fiesta.html' },
       { source: '/demo/fotos-escuela/plantilla-kinder',   destination: '/demo-fotos-escuela/plantilla-kinder.html' },
+      // Demo HTML autocontenida de lealtad
+      { source: '/lealtad',                               destination: '/lealtad.html' },
     ];
   },
 
