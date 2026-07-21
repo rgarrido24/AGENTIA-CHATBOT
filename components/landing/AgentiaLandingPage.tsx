@@ -99,7 +99,7 @@ const CASE_STUDIES = [
     id: 'restaurante',
     name: 'Masa Madre · Restaurante',
     href: '/demos/masa-madre',
-    loyaltyHref: '/demos/lealtad',
+    loyaltyHref: '/lealtad',
     accent: '#C9A84C',
     sector: 'Gastronomía / Menú digital',
     antes: 'Reservas y pedidos dispersos en WhatsApp sin sistema ni menú visual.',
