@@ -9,7 +9,9 @@ import {
   Check,
   ChevronDown,
   MessageCircle,
+  Shield,
   Sparkles,
+  Star,
   TrendingUp,
   Users,
   Wallet,
@@ -211,6 +213,66 @@ const METRICS = [
   { value: '+18%', label: 'ticket promedio', note: 'cuando el premio protege margen' },
 ];
 
+const NFC_ACTIONS = [
+  'Google Reviews',
+  'WhatsApp',
+  'Menú',
+  'Lealtad',
+  'Promociones',
+  'Instagram',
+  'Agenda',
+  'Encuesta',
+];
+
+const REVIEW_STEPS = [
+  {
+    n: '01',
+    title: 'Cliente termina su compra',
+    desc: 'Sale contento del local — el momento perfecto para pedir la reseña.',
+  },
+  {
+    n: '02',
+    title: 'Escanea o toca su tarjeta',
+    desc: 'QR de la tarjeta digital o toque NFC. Sin códigos impresos que nadie entiende.',
+  },
+  {
+    n: '03',
+    title: 'Se abre Google Reviews',
+    desc: 'Con las estrellas listas para calificar. Menos clics, más reseñas publicadas.',
+  },
+  {
+    n: '04',
+    title: 'Recibe su recompensa',
+    desc: 'Automático: sello, puntos o promo. La reseña deja de sentirse como un favor.',
+  },
+];
+
+const REVIEW_METRICS = [
+  {
+    value: 'Más confianza',
+    label: 'Las estrellas en Maps deciden si te eligen o al de enfrente.',
+  },
+  {
+    value: 'Más llamadas',
+    label: 'Negocios con mejores reseñas reciben más contactos y visitas.',
+  },
+  {
+    value: 'Mejor en Maps',
+    label: 'Más reseñas recientes ayudan a aparecer cuando buscan cerca.',
+  },
+];
+
+const ECOSYSTEM = [
+  'Chatbot IA',
+  'Captura WhatsApp',
+  'Lealtad',
+  'Automatizaciones',
+  'Recuperación',
+  'Tarjeta NFC',
+  'Reseñas',
+  'Más clientes',
+];
+
 const FAQS = [
   {
     q: '¿Mis clientes necesitan descargar una app?',
@@ -311,6 +373,92 @@ function PhoneHero() {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function NfcCardMockup() {
+  const reduceMotion = useReducedMotion();
+
+  return (
+    <div className="relative mx-auto flex h-[280px] w-full max-w-[340px] items-center justify-center [perspective:900px]">
+      <div
+        className="pointer-events-none absolute inset-8 rounded-full opacity-60 blur-3xl"
+        style={{
+          background: `radial-gradient(circle, ${CYAN}33, transparent 65%)`,
+        }}
+        aria-hidden
+      />
+      <motion.div
+        className="relative h-[168px] w-[268px]"
+        style={{ transformStyle: 'preserve-3d' }}
+        initial={reduceMotion ? false : { rotateY: -18, rotateX: 8, y: 12 }}
+        animate={reduceMotion ? undefined : { rotateY: [-16, -10, -16], rotateX: [8, 6, 8], y: [8, 0, 8] }}
+        transition={
+          reduceMotion
+            ? undefined
+            : { duration: 5.5, repeat: Infinity, ease: 'easeInOut' }
+        }
+      >
+        <div
+          className="absolute inset-0 overflow-hidden rounded-2xl border border-white/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.75)]"
+          style={{
+            background:
+              'linear-gradient(145deg, #1a1f2a 0%, #0c1018 45%, #151a24 100%)',
+            transform: 'translateZ(12px)',
+          }}
+        >
+          <div
+            className="pointer-events-none absolute inset-0 opacity-80"
+            style={{
+              background:
+                'linear-gradient(115deg, rgba(255,255,255,.14) 0%, transparent 38%), radial-gradient(circle at 85% 15%, rgba(0,212,255,.2), transparent 40%)',
+            }}
+            aria-hidden
+          />
+          <div className="relative flex h-full flex-col justify-between p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-[family-name:var(--font-space)] text-[10px] uppercase tracking-[0.16em] text-[#00D4FF]">
+                  Agentia
+                </p>
+                <p className="mt-1 font-[family-name:var(--font-space)] text-lg font-bold text-white">
+                  Tarjeta Inteligente
+                </p>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#00D4FF]/35 bg-[#00D4FF]/10">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path
+                    d="M12 4c-2.2 2.4-3.5 5-3.5 8S9.8 17.6 12 20c2.2-2.4 3.5-5 3.5-8S14.2 6.4 12 4Z"
+                    stroke={CYAN}
+                    strokeWidth="1.5"
+                  />
+                  <circle cx="12" cy="12" r="1.6" fill={CYAN} />
+                </svg>
+              </div>
+            </div>
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-white/40">NFC · un toque</p>
+                <p className="mt-0.5 text-xs text-white/65">Reviews · WhatsApp · Menú · más</p>
+              </div>
+              <div
+                className="h-8 w-11 rounded-md border border-white/15"
+                style={{
+                  background:
+                    'repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 1px, transparent 1px 3px)',
+                }}
+                aria-hidden
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          className="absolute inset-0 -z-10 rounded-2xl bg-black/50 blur-md"
+          style={{ transform: 'translateY(18px) rotateX(70deg) scale(0.92)' }}
+          aria-hidden
+        />
+      </motion.div>
+    </div>
   );
 }
 
@@ -696,6 +844,123 @@ export function LealtadLanding() {
           </div>
         </section>
 
+        {/* NFC — upsell físico */}
+        <section className="py-16 sm:py-20">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            <ScrollReveal>
+              <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
+                Upsell opcional
+              </p>
+              <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
+                Convierte clientes satisfechos en promotores de tu negocio
+              </h2>
+              <p className="mt-4 text-white/55">
+                La Tarjeta Inteligente NFC es un complemento físico: el cliente acerca el teléfono y
+                se abre exactamente lo que tú configuraste — sin apps nuevas ni explicar códigos.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {NFC_ACTIONS.map((a) => (
+                  <span
+                    key={a}
+                    className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/70"
+                  >
+                    {a}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-6 text-sm text-white/40">
+                Ideal en mostrador, mesa o paquete: un toque y el cliente ya está en Reviews,
+                WhatsApp o tu programa de lealtad.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal delay={0.08}>
+              <NfcCardMockup />
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* Reseñas Google */}
+        <section className="py-16 sm:py-20">
+          <ScrollReveal>
+            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
+              Reputación
+            </p>
+            <h2 className="max-w-3xl font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
+              Consigue más reseñas de Google sin pedir códigos QR
+            </h2>
+            <p className="mt-4 max-w-2xl text-white/55">
+              El cliente termina, acerca el teléfono o abre su pase, califica y recibe recompensa.
+              Tú no persigues a nadie con un papelito.
+            </p>
+          </ScrollReveal>
+
+          <StaggerReveal className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {REVIEW_STEPS.map((s) => (
+              <StaggerItem key={s.n}>
+                <div className="h-full rounded-3xl border border-white/10 bg-white/[0.03] p-5 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[#00D4FF]/30">
+                  <span className="font-mono text-xs text-[#00D4FF]">{s.n}</span>
+                  <h3 className="mt-3 font-[family-name:var(--font-space)] text-base font-bold leading-snug">
+                    {s.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-white/50">{s.desc}</p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerReveal>
+
+          <div className="mt-8 grid gap-4 lg:grid-cols-2">
+            <ScrollReveal>
+              <div className="h-full rounded-3xl border border-[#25D366]/30 bg-[#25D366]/[0.06] p-6">
+                <div className="flex items-center gap-2 text-[#25D366]">
+                  <Star className="h-4 w-4 fill-[#25D366]" />
+                  <span className="font-[family-name:var(--font-space)] text-sm font-semibold">
+                    4–5 estrellas
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-white/70">
+                  Lo mandamos directo a Google Reviews. Publicas lo que suma reputación y
+                  posicionamiento.
+                </p>
+              </div>
+            </ScrollReveal>
+            <ScrollReveal delay={0.06}>
+              <div className="h-full rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+                <div className="flex items-center gap-2 text-[#FFD700]">
+                  <Shield className="h-4 w-4" />
+                  <span className="font-[family-name:var(--font-space)] text-sm font-semibold">
+                    Menos de 4 estrellas
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-white/55">
+                  Se guarda en un formulario interno. Tú ves el feedback y puedes recuperarlo —
+                  sin que dañe tu reputación pública en Maps.
+                </p>
+              </div>
+            </ScrollReveal>
+          </div>
+
+          <StaggerReveal className="mt-8 grid gap-4 md:grid-cols-3">
+            {REVIEW_METRICS.map((m) => (
+              <StaggerItem key={m.value}>
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center">
+                  <p
+                    className="font-[family-name:var(--font-space)] text-lg font-bold"
+                    style={{
+                      backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
+                      WebkitBackgroundClip: 'text',
+                      backgroundClip: 'text',
+                      color: 'transparent',
+                    }}
+                  >
+                    {m.value}
+                  </p>
+                  <p className="mt-2 text-sm text-white/50">{m.label}</p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerReveal>
+        </section>
+
         {/* 8. COMPARATIVA */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
@@ -890,6 +1155,41 @@ export function LealtadLanding() {
               </GlowButton>
             </div>
           </ScrollReveal>
+        </section>
+
+        {/* Ecosistema — diagrama visual */}
+        <section className="py-16 sm:py-20">
+          <ScrollReveal>
+            <p className="mb-3 text-center font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
+              El ecosistema
+            </p>
+            <h2 className="mx-auto max-w-2xl text-center font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
+              De la primera conversación a más clientes en la puerta
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-center text-sm text-white/50">
+              Un solo sistema: captura, recompra, recuperación, NFC y reseñas trabajando juntos.
+            </p>
+          </ScrollReveal>
+          <div className="mt-10 overflow-x-auto pb-2">
+            <div className="mx-auto flex min-w-[640px] max-w-4xl flex-wrap items-center justify-center gap-2 sm:min-w-0">
+              {ECOSYSTEM.map((node, i) => (
+                <div key={node} className="flex items-center gap-2">
+                  <div
+                    className={`rounded-2xl border px-3.5 py-2.5 text-center text-xs font-semibold sm:text-sm ${
+                      i === ECOSYSTEM.length - 1
+                        ? 'border-[#00D4FF]/45 bg-[#00D4FF]/12 text-[#00D4FF]'
+                        : 'border-white/12 bg-white/[0.04] text-white/75'
+                    }`}
+                  >
+                    {node}
+                  </div>
+                  {i < ECOSYSTEM.length - 1 ? (
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/25" aria-hidden />
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <footer className="border-t border-white/10 pt-8 text-center text-sm text-white/40">
