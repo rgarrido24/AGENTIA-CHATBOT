@@ -23,11 +23,11 @@ const WA_PRO = agentiaWhatsAppUrl(
   'Hola Agentia, me interesa el plan Pro de tarjeta de lealtad ($499). Quiero activarlo con mi logo.',
 );
 const WA_GENERAL = agentiaWhatsAppUrl(
-  'Hola Agentia, vi la landing de lealtad y quiero una tarjeta digital para mi negocio. ¿Me orientan?',
+  'Hola Agentia, vi la landing de lealtad y quiero una tarjeta digital para mi negocio. Aquí les mando mi logo:',
 );
 
 const HERO_CHAT: ChatLine[] = [
-  { from: 'bot', text: 'Marisol Peña — 14 días sin visitar. Tenía 5 de 8 sellos.' },
+  { from: 'bot', text: 'Marisol Peña — 14 días sin visitar. Tenía 6 de 8 sellos.' },
   {
     from: 'bot',
     text: 'Hola Marisol 👋 te extrañamos en Café Alcalá. Tu sello #6 va por cuenta de la casa esta semana ☕',
@@ -35,83 +35,280 @@ const HERO_CHAT: ChatLine[] = [
   { from: 'user', text: '¡Qué bueno! Paso mañana en la mañana 🙌' },
 ];
 
+type CardKind = 'stamps' | 'points' | 'cashback';
+
+type ShowcaseCard = {
+  id: string;
+  brand: string;
+  initials: string;
+  typeLabel: string;
+  caption: string;
+  captionSub: string;
+  kind: CardKind;
+  gradient: string;
+  stamps?: { filled: number; total: number; label: string };
+  points?: { value: number; goal: number };
+  cashback?: { amount: string };
+  serial: string;
+};
+
+const SHOWCASE: ShowcaseCard[] = [
+  {
+    id: 'cafe',
+    brand: 'Café Alcalá',
+    initials: 'CA',
+    typeLabel: 'Tarjeta de sellos',
+    caption: 'Cafeterías',
+    captionSub: 'Sellos por visita',
+    kind: 'stamps',
+    gradient: 'linear-gradient(135deg,#6B4226,#3B2213)',
+    stamps: { filled: 6, total: 8, label: '6 de 8 sellos' },
+    serial: 'N° 4471 2839',
+  },
+  {
+    id: 'barber',
+    brand: "Diego's Barber",
+    initials: 'DC',
+    typeLabel: 'Tarjeta de puntos',
+    caption: 'Peluquerías / Barberías',
+    captionSub: 'Puntos acumulables',
+    kind: 'points',
+    gradient: 'linear-gradient(135deg,#232B36,#0E1216)',
+    points: { value: 240, goal: 300 },
+    serial: 'N° 8802 1156',
+  },
+  {
+    id: 'resto',
+    brand: 'Casa Nola',
+    initials: 'CN',
+    typeLabel: 'Tarjeta cashback',
+    caption: 'Restaurantes',
+    captionSub: '% de regreso en cada visita',
+    kind: 'cashback',
+    gradient: 'linear-gradient(135deg,#611F30,#310F19)',
+    cashback: { amount: '$184' },
+    serial: 'N° 3390 7724',
+  },
+  {
+    id: 'spa',
+    brand: 'Spa Zöe',
+    initials: 'SP',
+    typeLabel: 'Tarjeta de sellos',
+    caption: 'Spas / Estéticas',
+    captionSub: 'Sesiones acumulables',
+    kind: 'stamps',
+    gradient: 'linear-gradient(135deg,#2E4A42,#152520)',
+    stamps: { filled: 3, total: 5, label: '3 de 5 sesiones' },
+    serial: 'N° 5567 4402',
+  },
+];
+
+const REWARDS = [
+  {
+    title: 'Sellos / Visitas',
+    desc: '"Compra 9, la 10 es gratis." Perfecto para cafés, restaurantes, spas — cualquier negocio de recompra frecuente.',
+  },
+  {
+    title: 'Puntos',
+    desc: 'Acumula puntos por cada compra y canjéalos por productos o descuentos. Ideal para tickets variables — barberías, salones, boutiques.',
+  },
+  {
+    title: 'Cashback',
+    desc: 'Un % de cada compra regresa como saldo para la próxima visita. Se siente como un beneficio real, no como un descuento.',
+  },
+];
+
+const PHASES = [
+  {
+    n: '01',
+    title: 'Escanea y guarda',
+    desc: 'El cliente escanea el QR de tu negocio y su tarjeta queda en Google Wallet — sin apps, en segundos.',
+  },
+  {
+    n: '02',
+    title: 'Acumula',
+    desc: 'Cada visita suma un sello, un punto o cashback. La tarjeta se actualiza sola en su celular.',
+  },
+  {
+    n: '03',
+    title: 'Reactiva',
+    desc: 'Si deja de venir, le llega un WhatsApp automático con una promo — antes de que se vaya con la competencia.',
+  },
+];
+
 const INDUSTRIES = [
   {
     id: 'barber',
-    label: 'Barberías',
-    title: 'El ciclo de corte no se olvida solo',
-    desc: 'Cuando alguien se pasa de sus 4 semanas, el sistema manda el recordatorio antes de que pruebe otro barbero.',
+    label: 'Peluquerías / Barberías',
+    title: 'Peluquerías y barberías',
+    desc: 'El ciclo de corte (3-5 semanas) es predecible — el sistema detecta cuando alguien se pasó de su ciclo normal y manda el recordatorio antes de que se vaya con otro barbero.',
+    metric: 'Se vende mejor con: bundle + agendamiento',
+    cardId: 'barber',
     chat: [
       { from: 'bot' as const, text: 'Diego — 32 días desde su último corte (ciclo normal: 28).' },
       {
         from: 'bot' as const,
-        text: 'Hola Diego 👋 ya se cumplieron tus 4 semanas. Tu corte #10 va por la casa ✂️ ¿Agendamos sábado?',
+        text: "Hola Diego 👋 ya se cumplieron tus 4 semanas. Tu corte #10 va por la casa ✂️ ¿Agendamos sábado?",
       },
-    ],
+    ] satisfies ChatLine[],
   },
   {
     id: 'cafe',
     label: 'Cafeterías',
-    title: 'Alta frecuencia, cero fricción',
-    desc: 'Trae de vuelta al cliente de la rutina diaria antes de que se acostumbre a otro café de la esquina.',
+    title: 'Cafeterías',
+    desc: 'Alta frecuencia, ticket bajo — la meta es traerlos de vuelta antes de que se acostumbren a otro café en su rutina diaria.',
+    metric: 'Se vende mejor con: plan Básico o Pro, sin agendamiento',
+    cardId: 'cafe',
     chat: [
-      { from: 'bot' as const, text: 'Marisol — 9 días sin café. 5 sellos acumulados.' },
+      { from: 'bot' as const, text: 'Marisol — 9 días sin café. 6 sellos acumulados.' },
       {
         from: 'bot' as const,
         text: 'Hola Marisol 👋 tu café #6 va por cuenta de la casa esta semana ☕',
       },
-    ],
+    ] satisfies ChatLine[],
   },
   {
     id: 'resto',
     label: 'Restaurantes',
-    title: 'Premio que protege el ticket',
-    desc: 'Postre o platillo gratis en lugar de descuento en efectivo — recuperas visitas sin bajar margen.',
+    title: 'Restaurantes',
+    desc: 'Visitas más espaciadas — el gancho suele ser un platillo o postre gratis, no un descuento en efectivo, para proteger el ticket promedio.',
+    metric: 'Se vende mejor con: plan Pro, ideal con reseñas de Google activadas',
+    cardId: 'resto',
     chat: [
       { from: 'bot' as const, text: 'Jorge — 21 días sin visitar Casa Nola.' },
       {
         from: 'bot' as const,
         text: 'Hola Jorge 👋 vuelve por tu postre de la casa gratis en tu próxima visita 🍰',
       },
-    ],
+    ] satisfies ChatLine[],
   },
   {
     id: 'spa',
-    label: 'Spas',
-    title: 'Mayor margen, mejor justificación',
-    desc: 'Sesiones espaciadas: un mensaje a tiempo reactiva la agenda sin que el cliente “se olvide” de cuidarse.',
+    label: 'Spas / Estéticas',
+    title: 'Spas y estéticas',
+    desc: 'Ticket alto, ciclo largo entre visitas — aquí el agendamiento es casi obligatorio porque perder una cita cuesta más que en cualquier otro giro.',
+    metric: 'Se vende mejor con: bundle + agendamiento',
+    cardId: 'spa',
     chat: [
       { from: 'bot' as const, text: 'Paola — 18 días desde su último masaje.' },
       {
         from: 'bot' as const,
         text: 'Hola Paola 👋 20% en tu próximo masaje si agendas esta semana 💆',
       },
-    ],
+    ] satisfies ChatLine[],
   },
 ] as const;
 
-const PHASES = [
-  {
-    n: '01',
-    title: 'Acumula',
-    desc: 'Escanean un QR, suman sellos. Tarjeta en Google Wallet o acceso directo — sin instalar app.',
-  },
-  {
-    n: '02',
-    title: 'Detecta',
-    desc: 'Cada visita con fecha. El panel clasifica: activos, en riesgo o perdidos.',
-  },
-  {
-    n: '03',
-    title: 'Reactiva',
-    desc: 'Si se enfrían, sale un WhatsApp automático por la API oficial de Meta.',
-  },
-];
-
-function LoyaltyCardVisual() {
+function MiniLoyaltyCard({
+  card,
+  animate = true,
+}: {
+  card: ShowcaseCard;
+  animate?: boolean;
+}) {
   const reduceMotion = useReducedMotion();
-  const filled = 5;
-  const total = 8;
+  const shouldAnimate = animate && !reduceMotion;
+
+  return (
+    <motion.div
+      className="relative flex min-h-[190px] w-full max-w-[320px] flex-col justify-between overflow-hidden rounded-[20px] px-[22px] py-5 text-white shadow-[0_24px_50px_-18px_rgba(0,0,0,0.55)]"
+      style={{ background: card.gradient }}
+      whileHover={shouldAnimate ? { y: -4, scale: 1.02 } : undefined}
+      transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+    >
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: 'linear-gradient(115deg, rgba(255,255,255,.14) 0%, transparent 35%)',
+        }}
+        aria-hidden
+      />
+      <div className="relative z-[1] flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] bg-white/15 font-[family-name:var(--font-space)] text-[13px] font-bold">
+            {card.initials}
+          </div>
+          <div>
+            <div className="font-[family-name:var(--font-space)] text-[14.5px] font-semibold">
+              {card.brand}
+            </div>
+            <div className="mt-px text-[10.5px] opacity-70">{card.typeLabel}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-[1] my-1.5">
+        {card.kind === 'stamps' && card.stamps ? (
+          <>
+            <div className="mb-2 font-mono text-[9.5px] uppercase tracking-[0.08em] opacity-65">
+              {card.stamps.label}
+            </div>
+            <div className="flex flex-wrap gap-[7px]">
+              {Array.from({ length: card.stamps.total }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  className={`flex h-[22px] w-[22px] items-center justify-center rounded-full text-[11px] ${
+                    i < card.stamps!.filled
+                      ? 'border-transparent bg-white/92 text-[#222]'
+                      : 'border-[1.5px] border-white/40'
+                  }`}
+                  initial={shouldAnimate ? { scale: 0.5, opacity: 0 } : false}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.15 + i * 0.05, duration: 0.28 }}
+                >
+                  {i < card.stamps!.filled ? '✓' : ''}
+                </motion.div>
+              ))}
+            </div>
+          </>
+        ) : null}
+
+        {card.kind === 'points' && card.points ? (
+          <>
+            <div className="mb-2 font-mono text-[9.5px] uppercase tracking-[0.08em] opacity-65">
+              Tus puntos
+            </div>
+            <div className="font-[family-name:var(--font-space)] text-[30px] font-bold leading-none">
+              {card.points.value}{' '}
+              <span className="font-[family-name:var(--font-jakarta)] text-[13px] font-medium opacity-75">
+                / {card.points.goal} pts
+              </span>
+            </div>
+          </>
+        ) : null}
+
+        {card.kind === 'cashback' && card.cashback ? (
+          <>
+            <div className="mb-2 font-mono text-[9.5px] uppercase tracking-[0.08em] opacity-65">
+              Cashback disponible
+            </div>
+            <div className="font-[family-name:var(--font-space)] text-[26px] font-bold leading-none">
+              {card.cashback.amount}{' '}
+              <span className="font-[family-name:var(--font-jakarta)] text-[13px] font-medium opacity-70">
+                MXN
+              </span>
+            </div>
+          </>
+        ) : null}
+      </div>
+
+      <div className="relative z-[1]">
+        <div
+          className="mb-1.5 h-[26px] rounded opacity-90"
+          style={{
+            background:
+              'repeating-linear-gradient(90deg, rgba(255,255,255,.9) 0 2px, transparent 2px 5px)',
+          }}
+        />
+        <div className="font-mono text-[9.5px] tracking-[0.05em] opacity-60">{card.serial}</div>
+      </div>
+    </motion.div>
+  );
+}
+
+function HeroCard() {
+  const reduceMotion = useReducedMotion();
+  const cafe = SHOWCASE[0];
 
   return (
     <motion.div
@@ -128,82 +325,32 @@ function LoyaltyCardVisual() {
         }}
         aria-hidden
       />
+      <MiniLoyaltyCard card={cafe} />
       <motion.div
-        className="relative overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-[#12161d] via-[#0d1118] to-[#0a0a0a] p-6 shadow-[0_40px_80px_-40px_rgba(0,212,255,0.45)]"
-        whileHover={reduceMotion ? undefined : { y: -4, rotateY: -3, rotateX: 2 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+        className="mt-4 overflow-hidden rounded-xl border border-[#25D366]/35 bg-[#25D366]/10 px-3 py-2.5 text-[12px] leading-snug text-white/85"
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9, duration: 0.4 }}
       >
-        <div className="mb-5 flex items-start justify-between">
-          <div>
-            <p className="font-[family-name:var(--font-space)] text-[11px] uppercase tracking-[0.14em] text-[#00D4FF]">
-              Café Alcalá
-            </p>
-            <p className="mt-1 font-[family-name:var(--font-space)] text-xl font-bold text-white">
-              Marisol Peña
-            </p>
-          </div>
-          <div
-            className="flex h-11 w-11 items-center justify-center rounded-xl font-[family-name:var(--font-space)] text-sm font-bold text-[#0a0a0a]"
-            style={{ background: `linear-gradient(135deg, ${CYAN}, ${GOLD})` }}
-          >
-            CA
-          </div>
-        </div>
-
-        <p className="mb-3 text-xs text-white/45">Sellos · 8 visitas = café gratis</p>
-        <div className="mb-5 flex flex-wrap gap-2.5">
-          {Array.from({ length: total }).map((_, i) => (
-            <motion.span
-              key={i}
-              className="h-8 w-8 rounded-full border-2"
-              initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }}
-              animate={{
-                scale: 1,
-                opacity: 1,
-                borderColor: i < filled ? CYAN : 'rgba(255,255,255,0.12)',
-                background:
-                  i < filled
-                    ? `linear-gradient(135deg, ${CYAN}, ${GOLD})`
-                    : 'transparent',
-                boxShadow: i < filled ? `0 0 14px ${CYAN}55` : 'none',
-              }}
-              transition={{ delay: 0.35 + i * 0.08, duration: 0.35 }}
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
-          <span className="text-xs text-white/55">Google Wallet</span>
-          <span className="text-[10px] text-white/35">Apple · próximamente</span>
-        </div>
-
-        <motion.div
-          className="mt-4 overflow-hidden rounded-xl border border-[#25D366]/35 bg-[#25D366]/10 px-3 py-2.5 text-[12px] leading-snug text-white/85"
-          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2, duration: 0.4 }}
-        >
-          <span className="mb-1 block font-[family-name:var(--font-space)] text-[10px] uppercase tracking-wider text-[#25D366]">
-            WhatsApp automático
-          </span>
-          Tu sello #6 va por cuenta de la casa esta semana ☕
-        </motion.div>
+        <span className="mb-1 block font-[family-name:var(--font-space)] text-[10px] uppercase tracking-wider text-[#25D366]">
+          WhatsApp automático
+        </span>
+        Tu sello #6 va por cuenta de la casa esta semana ☕
       </motion.div>
+      <div className="mt-3 flex items-center justify-between px-1 text-[11px] text-white/40">
+        <span>Google Wallet</span>
+        <span className="text-[10px] text-white/30">Apple · próximamente</span>
+      </div>
     </motion.div>
   );
 }
 
 function ConvertChat() {
   const [giro, setGiro] = useState<string | null>(null);
-
   const options = ['Cafetería', 'Barbería', 'Restaurante', 'Spa / estética', 'Otro'];
 
-  function pick(label: string) {
-    setGiro(label);
-  }
-
   const wa = agentiaWhatsAppUrl(
-    `Hola Agentia, vi /lealtad. Tengo un negocio de ${giro || 'mi giro'} y quiero tarjeta de lealtad digital. ¿Me ayudan a activarla?`,
+    `Hola Agentia, vi /lealtad. Tengo un negocio de ${giro || 'mi giro'} y quiero tarjeta de lealtad digital. Aquí les mando mi logo:`,
   );
 
   return (
@@ -231,7 +378,7 @@ function ConvertChat() {
             <button
               key={o}
               type="button"
-              onClick={() => pick(o)}
+              onClick={() => setGiro(o)}
               className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-[transform,border-color,background-color] duration-150 active:scale-[0.97] ${
                 giro === o
                   ? 'border-[#00D4FF] bg-[#00D4FF]/15 text-[#00D4FF]'
@@ -259,8 +406,8 @@ function ConvertChat() {
               className="max-w-[92%] space-y-3 self-start"
             >
               <div className="rounded-2xl rounded-bl-md bg-[#1f2c34] px-3.5 py-2.5 text-sm text-white/90">
-                Perfecto para {giro.toLowerCase()}. Planes desde $299/mes. Escíbeme por WhatsApp y te
-                paso la demo con tu marca.
+                Perfecto para {giro.toLowerCase()}. Sellos, puntos o cashback — tú eliges. Planes desde
+                $299/mes. Mándame tu logo por WhatsApp.
               </div>
               <a
                 href={wa}
@@ -283,6 +430,7 @@ function ConvertChat() {
 export function LealtadLanding() {
   const reduceMotion = useReducedMotion();
   const [industry, setIndustry] = useState<(typeof INDUSTRIES)[number]>(INDUSTRIES[1]);
+  const industryCard = SHOWCASE.find((c) => c.id === industry.cardId) ?? SHOWCASE[0];
 
   return (
     <main
@@ -316,8 +464,8 @@ export function LealtadLanding() {
             </span>
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-white/60 md:flex">
-            <a href="#como" className="transition-colors hover:text-[#00D4FF]">
-              Cómo funciona
+            <a href="#acumular" className="transition-colors hover:text-[#00D4FF]">
+              Cómo acumulan
             </a>
             <a href="#giros" className="transition-colors hover:text-[#00D4FF]">
               Tu giro
@@ -331,7 +479,7 @@ export function LealtadLanding() {
           </GlowButton>
         </header>
 
-        {/* HERO — una composición */}
+        {/* HERO */}
         <section className="grid items-center gap-12 py-14 lg:min-h-[calc(100dvh-5rem)] lg:grid-cols-2 lg:py-10">
           <div>
             <motion.p
@@ -341,7 +489,7 @@ export function LealtadLanding() {
               className="mb-4 inline-flex items-center gap-2 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              Fidelización con WhatsApp real
+              Partner oficial Meta · WhatsApp Business API
             </motion.p>
             <motion.h1
               initial={reduceMotion ? false : { opacity: 0, y: 18 }}
@@ -349,14 +497,13 @@ export function LealtadLanding() {
               transition={revealTransition(0.06, 0.45)}
               className="font-[family-name:var(--font-space)] text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-[2.75rem]"
             >
-              La tarjeta que sabe{' '}
+              La tarjeta de sellos de siempre —{' '}
               <span
                 className="bg-clip-text text-transparent"
                 style={{ backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
               >
-                quién no ha vuelto
+                ahora en el celular.
               </span>
-              .
             </motion.h1>
             <motion.p
               initial={reduceMotion ? false : { opacity: 0, y: 14 }}
@@ -364,8 +511,8 @@ export function LealtadLanding() {
               transition={revealTransition(0.12, 0.4)}
               className="mt-5 max-w-xl text-base leading-relaxed text-white/60 sm:text-lg"
             >
-              Sellos digitales, panel de riesgo y WhatsApp automático cuando un cliente se enfría —
-              antes de que se vaya con la competencia.
+              Tus clientes la guardan en su Wallet en segundos, sin instalar nada. Y cuando dejan de
+              venir, les llega un WhatsApp solo.
             </motion.p>
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 12 }}
@@ -385,19 +532,64 @@ export function LealtadLanding() {
               className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs text-white/45 sm:text-sm"
             >
               <span>
-                <strong className="text-white">24h</strong> para activar con tu logo
+                <strong className="text-white">24h</strong> con tu logo
               </span>
               <span className="hidden text-white/20 sm:inline">|</span>
               <span>
                 <strong className="text-[#FFD700]">0 apps</strong> que instala tu cliente
               </span>
               <span className="hidden text-white/20 sm:inline">|</span>
-              <span>Partner oficial Meta</span>
+              <span>Sellos · puntos · cashback</span>
             </motion.div>
           </div>
-          <LoyaltyCardVisual />
+          <HeroCard />
         </section>
 
+        {/* Showcase 4 tarjetas */}
+        <section className="pb-8 pt-4">
+          <StaggerReveal className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {SHOWCASE.map((card) => (
+              <StaggerItem key={card.id}>
+                <div className="flex flex-col items-center">
+                  <MiniLoyaltyCard card={card} />
+                  <div className="mt-3 text-center">
+                    <b className="block font-[family-name:var(--font-space)] text-sm text-white">
+                      {card.caption}
+                    </b>
+                    <span className="text-[13px] text-white/45">{card.captionSub}</span>
+                  </div>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerReveal>
+        </section>
+
+        {/* Cómo acumulan */}
+        <section id="acumular" className="py-16 sm:py-20">
+          <ScrollReveal>
+            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
+              Cómo acumulan tus clientes
+            </p>
+            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
+              Tú eliges el modelo que más le quede a tu negocio
+            </h2>
+            <p className="mt-3 max-w-2xl text-white/55">
+              Mismo sistema por dentro — la experiencia se adapta al tipo de negocio, no al revés.
+            </p>
+          </ScrollReveal>
+          <StaggerReveal className="mt-10 grid gap-4 md:grid-cols-3">
+            {REWARDS.map((r) => (
+              <StaggerItem key={r.title}>
+                <div className="h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[#00D4FF]/35">
+                  <h3 className="font-[family-name:var(--font-space)] text-xl font-bold">{r.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-white/55">{r.desc}</p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerReveal>
+        </section>
+
+        {/* Fases */}
         <section id="como" className="py-16 sm:py-20">
           <ScrollReveal>
             <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
@@ -406,9 +598,6 @@ export function LealtadLanding() {
             <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
               Tres pasos. Cero trabajo manual.
             </h2>
-            <p className="mt-3 max-w-2xl text-white/55">
-              Atiendes como siempre. Agentia vigila las fechas y actúa cuando alguien se aleja.
-            </p>
           </ScrollReveal>
           <StaggerReveal className="mt-10 grid gap-4 md:grid-cols-3">
             {PHASES.map((p) => (
@@ -427,6 +616,7 @@ export function LealtadLanding() {
           </StaggerReveal>
         </section>
 
+        {/* Chat reactivación */}
         <section className="grid items-center gap-10 py-12 lg:grid-cols-2">
           <ScrollReveal>
             <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
@@ -450,17 +640,15 @@ export function LealtadLanding() {
           </ScrollReveal>
         </section>
 
+        {/* Giros */}
         <section id="giros" className="py-16 sm:py-20">
           <ScrollReveal>
             <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Tu giro
+              Casos por industria
             </p>
             <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              El mensaje correcto para tu tipo de negocio
+              El mensaje correcto para cada tipo de negocio
             </h2>
-            <p className="mt-3 max-w-2xl text-white/55">
-              Misma lógica de retención — distinto premio y timing.
-            </p>
           </ScrollReveal>
           <div className="mt-8 flex flex-wrap gap-2">
             {INDUSTRIES.map((ind) => (
@@ -478,30 +666,43 @@ export function LealtadLanding() {
               </button>
             ))}
           </div>
-          <div className="mt-8 grid items-center gap-8 lg:grid-cols-2">
-            <ScrollReveal key={industry.id}>
+          <div className="mt-8 grid items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+            <ScrollReveal key={`${industry.id}-card`}>
+              <div className="flex justify-center lg:justify-start">
+                <MiniLoyaltyCard card={industryCard} />
+              </div>
+            </ScrollReveal>
+            <ScrollReveal key={industry.id} delay={0.06}>
               <h3 className="font-[family-name:var(--font-space)] text-2xl font-bold">
                 {industry.title}
               </h3>
               <p className="mt-3 text-white/55">{industry.desc}</p>
-            </ScrollReveal>
-            <ScrollReveal delay={0.06} key={`${industry.id}-chat`}>
-              <ModernChatPreview
-                businessName={industry.label}
-                accent={CYAN}
-                messages={industry.chat}
-                compact
-              />
+              <p className="mt-3 font-mono text-xs text-[#00D4FF]">{industry.metric}</p>
+              <div className="mt-5">
+                <ModernChatPreview
+                  businessName={industry.label}
+                  accent={CYAN}
+                  messages={[...industry.chat]}
+                  compact
+                />
+              </div>
             </ScrollReveal>
           </div>
         </section>
 
+        {/* Panel */}
         <section className="py-12">
           <ScrollReveal>
+            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
+              El panel del negocio
+            </p>
+            <h2 className="mb-8 font-[family-name:var(--font-space)] text-2xl font-bold sm:text-3xl">
+              Y tú ves quién está a punto de dejar de venir
+            </h2>
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
               <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-5 py-3">
                 <span className="font-mono text-[11px] text-white/40">
-                  panel · lealtad · simulación
+                  panel.agentia.software · lealtad · simulación
                 </span>
                 <span className="text-[11px] text-[#00D4FF]">Activos · En riesgo · Perdidos</span>
               </div>
@@ -566,6 +767,7 @@ export function LealtadLanding() {
           </ScrollReveal>
         </section>
 
+        {/* Precios */}
         <section id="precios" className="py-16 sm:py-20">
           <ScrollReveal>
             <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
@@ -591,10 +793,10 @@ export function LealtadLanding() {
                 <ul className="mt-6 flex-1 space-y-3 text-sm text-white/75">
                   {[
                     'Tarjetas ilimitadas · 1 sucursal',
+                    'Sellos, puntos o cashback — tú eliges',
                     'Google Wallet + acceso PWA',
                     'WhatsApp automático por inactividad',
                     'QR de reseñas de Google',
-                    'Panel por segmento',
                   ].map((t) => (
                     <li key={t} className="flex gap-2">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00D4FF]" />
@@ -624,15 +826,14 @@ export function LealtadLanding() {
                   $499
                   <span className="ml-1 text-sm font-medium text-white/45">MXN/mes</span>
                 </p>
-                <p className="mt-1 text-sm text-white/45">Para crecer más rápido</p>
+                <p className="mt-1 text-sm text-white/45">Para negocios que quieren crecer más rápido</p>
                 <ul className="mt-6 flex-1 space-y-3 text-sm text-white/75">
                   {[
-                    'Todo lo del Básico',
+                    'Todo lo del plan Básico',
                     'Hasta 3 sucursales',
-                    'Mensajes de cumpleaños',
-                    'Promos a segmentos manuales',
-                    'Exportar base de clientes',
-                    'Soporte prioritario por WhatsApp',
+                    'Mensajes de cumpleaños automáticos',
+                    'Panel de clientes por segmento',
+                    'Exportar base de datos de clientes',
                   ].map((t) => (
                     <li key={t} className="flex gap-2">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00D4FF]" />
@@ -655,11 +856,12 @@ export function LealtadLanding() {
           </div>
           <p className="mt-6 text-center text-sm text-white/45">
             Otras plataformas empiezan en{' '}
-            <span className="font-mono text-white/70">$399–$700 MXN/mes</span> y dependen del wallet.
-            Nosotros llegamos por WhatsApp.
+            <span className="font-mono text-white/70">$399–$700 MXN/mes</span>. Nosotros llegamos por
+            WhatsApp, no solo por notificaciones del wallet.
           </p>
         </section>
 
+        {/* Convertir */}
         <section id="escribir" className="py-16 sm:py-20">
           <div className="grid items-start gap-10 lg:grid-cols-2">
             <ScrollReveal>
@@ -667,11 +869,10 @@ export function LealtadLanding() {
                 Empieza hoy
               </p>
               <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
-                Elige tu giro y escribe. En 24h tienes tu tarjeta con tu marca.
+                Mándanos tu logo por WhatsApp y en 24 horas tienes tu tarjeta activa.
               </h2>
               <p className="mt-4 text-white/55">
-                Sin contratos largos ni instalación técnica de tu parte. Mándanos el logo por WhatsApp
-                y nosotros conectamos todo.
+                Sin contratos largos, sin instalación técnica de tu parte — nosotros conectamos todo.
               </p>
               <a
                 href={WA_GENERAL}
@@ -698,7 +899,6 @@ export function LealtadLanding() {
         </footer>
       </div>
 
-      {/* FAB WhatsApp — conversión siempre visible */}
       <a
         href={WA_GENERAL}
         target="_blank"
