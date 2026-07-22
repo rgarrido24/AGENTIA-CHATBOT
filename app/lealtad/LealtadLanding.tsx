@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
@@ -302,77 +302,269 @@ const FAQS = [
 
 function PhoneHero() {
   const reduceMotion = useReducedMotion();
+  const trackRef = useRef<HTMLDivElement>(null);
+  const s1 = useRef<HTMLDivElement>(null);
+  const s2 = useRef<HTMLDivElement>(null);
+  const s3 = useRef<HTMLDivElement>(null);
+  /** 0 = tarjeta fuera · 1 = en wallet · 2 = +1 visita · 3 = notificación */
+  const [stage, setStage] = useState(reduceMotion ? 3 : 0);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      setStage(3);
+      return;
+    }
+
+    const track = trackRef.current;
+    if (!track) return;
+
+    const viewObs = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.15 },
+    );
+    viewObs.observe(track);
+
+    const stepObs = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const step = Number((entry.target as HTMLElement).dataset.step);
+          if (!Number.isFinite(step)) continue;
+          setStage((prev) => Math.max(prev, step));
+        }
+      },
+      { root: null, rootMargin: '-40% 0px -40% 0px', threshold: 0 },
+    );
+
+    for (const ref of [s1, s2, s3]) {
+      if (ref.current) stepObs.observe(ref.current);
+    }
+
+    return () => {
+      viewObs.disconnect();
+      stepObs.disconnect();
+    };
+  }, [reduceMotion]);
+
+  const visits = stage >= 2 ? 8 : 7;
+  const remaining = 10 - visits;
+  const cardIn = stage >= 1;
+  const showNotif = stage >= 3;
+  const progressPct = (visits / 10) * 100;
 
   return (
-    <motion.div
-      className="relative mx-auto w-full max-w-[320px]"
-      initial={reduceMotion ? false : { opacity: 0, y: 28 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={revealTransition(0.15, 0.55)}
-    >
+    <div ref={trackRef} className="relative mx-auto w-full max-w-[320px] lg:min-h-[118vh]">
+      {/* Marcadores de scroll — Intersection Observer */}
       <div
-        className="pointer-events-none absolute -inset-12 rounded-[3rem] opacity-70 blur-3xl"
-        style={{
-          background: `radial-gradient(circle at 30% 20%, ${CYAN}45, transparent 55%), radial-gradient(circle at 80% 70%, ${GOLD}30, transparent 50%)`,
-        }}
+        ref={s1}
+        data-step={1}
+        className="pointer-events-none absolute left-0 top-[18%] h-px w-px opacity-0"
         aria-hidden
       />
-      <div className="relative rounded-[2.2rem] border border-white/18 bg-[#111] p-[11px] shadow-[0_40px_90px_-35px_rgba(0,0,0,0.9)]">
-        <div className="overflow-hidden rounded-[1.7rem] bg-[#0a0a0a]">
-          <div className="relative flex items-center justify-between px-5 pb-1 pt-3 text-[10px] font-semibold text-white/75">
-            <span>9:41</span>
-            <div className="absolute left-1/2 top-2 h-[22px] w-[90px] -translate-x-1/2 rounded-full bg-black" />
-            <span className="opacity-70">●●●</span>
-          </div>
-          <div className="px-4 pt-3">
-            <p className="text-[11px] tracking-wide text-white/40">Google Wallet</p>
-            <p className="font-[family-name:var(--font-space)] text-lg font-bold">Pases</p>
-          </div>
-          <div className="px-3 pb-5 pt-2">
-            <motion.div
-              className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#4A2C1A] to-[#1A0E08] p-5 text-white shadow-xl"
-              initial={reduceMotion ? false : { y: 40, opacity: 0, scale: 0.96 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              transition={{ delay: 0.35, duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
-            >
-              <div className="flex items-center gap-3">
+      <div
+        ref={s2}
+        data-step={2}
+        className="pointer-events-none absolute left-0 top-[48%] h-px w-px opacity-0"
+        aria-hidden
+      />
+      <div
+        ref={s3}
+        data-step={3}
+        className="pointer-events-none absolute left-0 top-[78%] h-px w-px opacity-0"
+        aria-hidden
+      />
+
+      <div className="lg:sticky lg:top-24">
+        <div
+          className="relative mx-auto w-full max-w-[300px]"
+          style={{ transform: 'rotate(12deg)' }}
+        >
+          <div
+            className="pointer-events-none absolute -inset-10 rounded-[3rem] opacity-60 blur-3xl"
+            style={{
+              background: `radial-gradient(circle at 30% 20%, ${CYAN}40, transparent 55%), radial-gradient(circle at 80% 70%, ${GOLD}22, transparent 50%)`,
+            }}
+            aria-hidden
+          />
+
+          {/* Teléfono */}
+          <div className="relative rounded-[2.15rem] border border-white/20 bg-[#0e0e0e] p-[10px] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.06)]">
+            <div className="relative overflow-hidden rounded-[1.65rem] bg-[#050505]">
+              {/* Status */}
+              <div className="relative z-20 flex items-center justify-between px-5 pb-1 pt-3 text-[10px] font-semibold text-white/70">
+                <span>9:41</span>
+                <div className="absolute left-1/2 top-2 h-[22px] w-[88px] -translate-x-1/2 rounded-full bg-black" />
+                <span className="opacity-60">●●●</span>
+              </div>
+
+              <div className="relative z-10 px-4 pt-2">
+                <p className="text-[11px] tracking-wide text-white/40">Google Wallet</p>
+                <p className="font-[family-name:var(--font-space)] text-base font-bold text-white">
+                  Pases
+                </p>
+              </div>
+
+              {/* Notificación push */}
+              <div
+                className={`relative z-30 mx-3 mt-2 overflow-hidden transition-all duration-500 ease-out ${
+                  showNotif
+                    ? 'max-h-24 translate-y-0 opacity-100'
+                    : 'max-h-0 -translate-y-2 opacity-0'
+                }`}
+                style={{
+                  transitionProperty: reduceMotion ? 'none' : 'opacity, transform, max-height',
+                }}
+              >
+                <div className="rounded-2xl border border-white/15 bg-[#1c1c1e]/95 px-3 py-2.5 shadow-lg backdrop-blur-md">
+                  <div className="flex items-start gap-2.5">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#25D366]/20 text-sm">
+                      🎉
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold text-white/50">Bruma Coffee</p>
+                      <p className="text-[12px] font-medium leading-snug text-white">
+                        🎉 ¡Felicidades! Has desbloqueado tu recompensa
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wallet slot + tarjeta */}
+              <div className="relative z-10 mt-2 min-h-[280px] overflow-hidden px-3 pb-5">
                 <div
-                  className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-[#0a0a0a]"
-                  style={{ background: `linear-gradient(135deg, ${CYAN}, ${GOLD})` }}
+                  className="absolute inset-x-3 top-0 h-8 rounded-t-xl border border-b-0 border-white/10 bg-gradient-to-b from-white/10 to-transparent"
+                  aria-hidden
+                />
+
+                <div
+                  className="relative pt-3 transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                  style={{
+                    transitionProperty: reduceMotion ? 'none' : 'transform',
+                    transform: reduceMotion || cardIn ? 'translateY(0)' : 'translateY(62%)',
+                  }}
                 >
-                  BR
-                </div>
-                <div>
-                  <p className="font-[family-name:var(--font-space)] font-semibold">Bruma Coffee</p>
-                  <p className="text-[11px] text-white/60">Sofía · 6 de 8 cafés</p>
-                </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={`flex h-7 w-7 items-center justify-center rounded-full text-sm ${
-                      i < 6 ? 'bg-white/95' : 'border border-dashed border-white/30 opacity-40'
-                    }`}
+                  {/* Tarjeta negra mate + chrome */}
+                  <div
+                    className="relative overflow-hidden rounded-2xl p-px"
+                    style={{
+                      background:
+                        'linear-gradient(135deg, #e8e8e8 0%, #6a6a6a 28%, #f2f2f2 48%, #3a3a3a 72%, #c8c8c8 100%)',
+                      boxShadow:
+                        '0 20px 40px -18px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.35)',
+                    }}
                   >
-                    ☕
-                  </span>
-                ))}
+                    <div
+                      className="relative overflow-hidden rounded-[15px] px-4 py-4"
+                      style={{
+                        background:
+                          'linear-gradient(160deg, #2a2a2a 0%, #121212 42%, #0a0a0a 100%)',
+                      }}
+                    >
+                      {/* Glare — solo si visible y motion OK */}
+                      {!reduceMotion ? (
+                        <div
+                          className="pointer-events-none absolute inset-0 z-[2]"
+                          style={{
+                            background:
+                              'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.09) 48%, transparent 62%)',
+                            backgroundSize: '220% 100%',
+                            animation: inView
+                              ? 'lealtadHeroGlare 9s ease-in-out infinite'
+                              : 'none',
+                            animationPlayState: inView ? 'running' : 'paused',
+                          }}
+                          aria-hidden
+                        />
+                      ) : null}
+
+                      <div className="relative z-[3]">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl font-[family-name:var(--font-space)] text-sm font-bold text-[#0a0a0a]"
+                            style={{
+                              background: `linear-gradient(145deg, #f0f0f0, #a8a8a8)`,
+                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
+                            }}
+                          >
+                            BR
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-[family-name:var(--font-space)] text-lg font-bold leading-tight text-white">
+                              Bruma Coffee
+                            </p>
+                            <p className="text-[12px] text-white/55">Sofía Reyes</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4">
+                          <div className="mb-1.5 flex items-center justify-between text-[11px]">
+                            <span className="font-mono text-white/45">
+                              {visits} de 10 visitas
+                            </span>
+                            <span className="text-white/35">
+                              {remaining === 1
+                                ? 'Te falta 1 visita'
+                                : `Te faltan ${remaining} visitas`}
+                            </span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                            <div
+                              className="h-full rounded-full transition-[width] duration-700 ease-out"
+                              style={{
+                                width: `${progressPct}%`,
+                                background: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
+                                transitionProperty: reduceMotion ? 'none' : 'width',
+                                boxShadow: `0 0 12px ${CYAN}55`,
+                              }}
+                            />
+                          </div>
+                          <p className="mt-2 text-[12px] text-white/50">
+                            {stage >= 2
+                              ? 'Te falta 1 visita para tu recompensa'
+                              : 'Te faltan 2 visitas para tu recompensa'}
+                          </p>
+                        </div>
+
+                        <div
+                          className="mt-4 rounded-xl border border-white/10 px-3 py-2.5"
+                          style={{
+                            background:
+                              'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(0,212,255,0.08))',
+                          }}
+                        >
+                          <p className="font-[family-name:var(--font-space)] text-sm font-semibold text-white">
+                            🎁 Café gratis
+                          </p>
+                          <p className="mt-0.5 text-[10px] text-white/45">
+                            Recompensa al completar 10 visitas
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="mt-4 rounded-xl border border-[#25D366]/35 bg-[#25D366]/12 px-3 py-2 text-[11px] leading-snug text-white/85">
-                <span className="mb-0.5 block text-[9px] uppercase tracking-wider text-[#25D366]">
-                  Automático
-                </span>
-                Te extrañamos — tu café #7 va por la casa esta semana
-              </div>
-            </motion.div>
-            <p className="mt-3 text-center text-[10px] text-white/35">
-              Apple Wallet · <span className="text-white/25">próximamente</span>
-            </p>
+
+              <p className="relative z-10 pb-4 text-center text-[10px] text-white/30">
+                Apple Wallet · <span className="text-white/20">próximamente</span>
+              </p>
+            </div>
           </div>
         </div>
+
+        <p className="mt-8 text-center text-[12px] text-white/40 lg:mt-10">
+          Haz scroll — la tarjeta entra al Wallet, suma visita y desbloquea la recompensa.
+        </p>
       </div>
-    </motion.div>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `@keyframes lealtadHeroGlare{0%{background-position:120% 0}100%{background-position:-40% 0}}`,
+        }}
+      />
+    </div>
   );
 }
 
@@ -611,9 +803,6 @@ export function LealtadLanding() {
           </div>
           <div id="demo">
             <PhoneHero />
-            <p className="mt-5 text-center text-sm text-white/45">
-              Así lo ve tu cliente en el celular — y así regresa sin que lo persigas.
-            </p>
           </div>
         </section>
 
