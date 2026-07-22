@@ -2,578 +2,372 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, Check, MessageCircle, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  MessageCircle,
+  Sparkles,
+  TrendingUp,
+  Users,
+  Wallet,
+  Zap,
+} from 'lucide-react';
 import { GlowButton } from '@/components/landing/GlowButton';
-import { ModernChatPreview, type ChatLine } from '@/components/landing/ModernChatPreview';
 import { ParticleField } from '@/components/landing/ParticleField';
 import { ScrollReveal, StaggerItem, StaggerReveal } from '@/components/landing/ScrollReveal';
 import { revealTransition } from '@/components/landing/motion';
 import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
+import { RoiCalculator } from './RoiCalculator';
 
 const CYAN = '#00D4FF';
 const GOLD = '#FFD700';
 const BG = '#0a0a0a';
 
+const WA_GROWTH = agentiaWhatsAppUrl(
+  'Hola Agentia, quiero aumentar mis ventas con el sistema de recompra. ¿Cómo arranco?',
+);
+const WA_DEMO = agentiaWhatsAppUrl(
+  'Hola Agentia, quiero ver una demostración del sistema para mi negocio.',
+);
 const WA_BASIC = agentiaWhatsAppUrl(
-  'Hola Agentia, me interesa el plan Básico de tarjeta de lealtad ($299). Quiero saber cómo arrancar.',
+  'Hola Agentia, me interesa el plan Básico ($299) para recuperar clientes y vender más.',
 );
 const WA_PRO = agentiaWhatsAppUrl(
-  'Hola Agentia, me interesa el plan Pro de tarjeta de lealtad ($499). Quiero activarlo con mi logo.',
-);
-const WA_GENERAL = agentiaWhatsAppUrl(
-  'Hola Agentia, vi la landing de lealtad y quiero una tarjeta digital para mi negocio. Aquí les mando mi logo:',
+  'Hola Agentia, me interesa el plan Pro ($499) para crecer más rápido con automatizaciones.',
 );
 
-const HERO_CHAT: ChatLine[] = [
-  { from: 'bot', text: 'Sofía Reyes — 11 días sin visitar. Tenía 6 de 8 cafés.' },
-  {
-    from: 'bot',
-    text: 'Hola Sofía 👋 te extrañamos en Bruma Coffee. Tu café #7 va por cuenta de la casa esta semana ☕',
-  },
-  { from: 'user', text: '¡Qué bueno! Paso mañana temprano 🙌' },
+const BADGES = [
+  'Funciona en Android y iPhone',
+  'Sin descargar apps',
+  'Configuración rápida',
+  'Tus clientes lo usan en segundos',
 ];
 
-type CardKind = 'stamps' | 'points' | 'cashback';
-
-type ShowcaseCard = {
-  id: string;
-  brand: string;
-  tagline: string;
-  initials: string;
-  logoBg: string;
-  typeLabel: string;
-  caption: string;
-  captionSub: string;
-  kind: CardKind;
-  gradient: string;
-  stampIcon: string;
-  customerName: string;
-  stamps?: { filled: number; total: number; label: string };
-  points?: { value: number; goal: number };
-  cashback?: { amount: string };
-  cardCode: string;
-};
-
-const SHOWCASE: ShowcaseCard[] = [
+const PROBLEM_STATS = [
   {
-    id: 'cafe',
-    brand: 'Bruma Coffee',
-    tagline: 'Specialty · Mérida',
-    initials: 'BR',
-    logoBg: 'linear-gradient(135deg,#C4A484,#8B5E3C)',
-    typeLabel: 'Tarjeta de sellos',
-    caption: 'Cafeterías',
-    captionSub: 'Cada sello es una taza',
-    kind: 'stamps',
-    gradient: 'linear-gradient(145deg,#4A2C1A 0%,#2A160E 55%,#1A0E08 100%)',
-    stampIcon: '☕',
-    customerName: 'Sofía Reyes',
-    stamps: { filled: 6, total: 8, label: '6 de 8 cafés' },
-    cardCode: 'BRU-8842',
+    value: '5×',
+    label: 'más caro conseguir un cliente nuevo que hacer regresar uno',
   },
   {
-    id: 'barber',
-    brand: 'Navaja Norte',
-    tagline: 'Barbería · Corte & barba',
-    initials: 'NN',
-    logoBg: 'linear-gradient(135deg,#7DD3FC,#38BDF8)',
-    typeLabel: 'Tarjeta de sellos',
-    caption: 'Barberías',
-    captionSub: 'Cada sello es un corte',
-    kind: 'stamps',
-    gradient: 'linear-gradient(145deg,#1E293B 0%,#0F172A 55%,#020617 100%)',
-    stampIcon: '✂️',
-    customerName: 'Diego Cetz',
-    stamps: { filled: 7, total: 10, label: '7 de 10 cortes' },
-    cardCode: 'NAV-2201',
+    value: '60–70%',
+    label: 'de tus ventas suelen venir de clientes que ya te conocen',
   },
   {
-    id: 'tortilla',
-    brand: 'Maíz & Fuego',
-    tagline: 'Tortillería artesanal',
-    initials: 'MF',
-    logoBg: 'linear-gradient(135deg,#FBBF24,#D97706)',
-    typeLabel: 'Tarjeta de sellos',
-    caption: 'Tortillerías',
-    captionSub: 'Cada sello es un kilo',
-    kind: 'stamps',
-    gradient: 'linear-gradient(145deg,#92400E 0%,#78350F 50%,#451A03 100%)',
-    stampIcon: '🫓',
-    customerName: 'Doña Carmen',
-    stamps: { filled: 8, total: 10, label: '8 de 10 kilos' },
-    cardCode: 'MAZ-5510',
-  },
-  {
-    id: 'spa',
-    brand: 'Loto Atelier',
-    tagline: 'Spa & estética',
-    initials: 'LA',
-    logoBg: 'linear-gradient(135deg,#6EE7B7,#059669)',
-    typeLabel: 'Tarjeta de puntos',
-    caption: 'Spas / Estéticas',
-    captionSub: 'Puntos por sesión',
-    kind: 'points',
-    gradient: 'linear-gradient(145deg,#064E3B 0%,#022C22 55%,#011611 100%)',
-    stampIcon: '🌿',
-    customerName: 'Paola Herrera',
-    points: { value: 420, goal: 500 },
-    cardCode: 'LOT-7733',
+    value: '0',
+    label: 'seguimiento = dinero que se va por la puerta sin que lo notes',
   },
 ];
 
-const REWARDS = [
-  {
-    title: 'Sellos / Visitas',
-    desc: '"Compra 9, la 10 es gratis." Perfecto para cafés, tortillerías, spas — cualquier negocio de recompra frecuente.',
-  },
-  {
-    title: 'Puntos',
-    desc: 'Acumula puntos por cada compra y canjéalos por productos o descuentos. Ideal para tickets variables — barberías, salones, boutiques.',
-  },
-  {
-    title: 'Cashback',
-    desc: 'Un % de cada compra regresa como saldo para la próxima visita. Se siente como un beneficio real, no como un descuento.',
-  },
+const AFTER_STEPS = [
+  'Compra',
+  'Guarda su pase',
+  'Acumula',
+  'Recibe promo',
+  'Regresa',
+  'Compra otra vez',
+  'Trae amigos',
 ];
 
-const PHASES = [
+const BENEFITS = [
   {
-    n: '01',
-    title: 'Escanea el QR',
-    desc: 'El cliente abre su tarjeta en el celular. El negocio escanea el QR para sumar la visita — o el cliente escanea el QR del mostrador.',
+    icon: Wallet,
+    title: 'Tus clientes nunca olvidan tu negocio',
+    desc: 'Su pase vive en el celular. Cada vez que abren la cartera, te ven. Sin app nueva, sin fricción.',
   },
   {
-    n: '02',
-    title: 'Acumula',
-    desc: 'Cada visita suma un sello temático, un punto o cashback. La tarjeta se actualiza sola en su Wallet.',
+    icon: MessageCircle,
+    title: 'Promociones directo al bolsillo',
+    desc: 'Cuando alguien deja de venir, el sistema le escribe por WhatsApp. Tú no persigues a nadie.',
   },
   {
-    n: '03',
-    title: 'Reactiva',
-    desc: 'Si deja de venir, le llega un WhatsApp automático con una promo — antes de que se vaya con la competencia.',
+    icon: Users,
+    title: 'Sabes quién compra y quién se fue',
+    desc: 'Mira activos, en riesgo y perdidos. Enfoca el esfuerzo donde recuperas dinero de verdad.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Más visitas sin gastar más en anuncios',
+    desc: 'La recompra baja tu costo de adquisición. Creces con la base que ya pagaste por atraer.',
+  },
+  {
+    icon: Zap,
+    title: 'Un empleado que nunca duerme',
+    desc: 'Cumpleaños, inactivos, VIP y recordatorios corren solos. Tú atiendes. El sistema recupera.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Se siente justo — y vuelve',
+    desc: 'Sellos, puntos o cashback adaptados a tu giro. El cliente siente el premio; tú proteges el margen.',
   },
 ];
 
 const INDUSTRIES = [
   {
-    id: 'barber',
-    label: 'Barberías',
-    title: 'Barberías y peluquerías',
-    desc: 'El ciclo de corte (3-5 semanas) es predecible — el sistema detecta cuando alguien se pasó de su ciclo y manda el recordatorio antes de que pruebe otro barbero.',
-    metric: 'Sellos con tijeras · ideal con agendamiento',
-    cardId: 'barber',
-    chat: [
-      { from: 'bot' as const, text: 'Diego — 32 días desde su último corte (ciclo normal: 28).' },
-      {
-        from: 'bot' as const,
-        text: 'Hola Diego 👋 ya se cumplieron tus 4 semanas en Navaja Norte. Tu corte #10 va por la casa ✂️ ¿Agendamos sábado?',
-      },
-    ] satisfies ChatLine[],
-  },
-  {
     id: 'cafe',
     label: 'Cafeterías',
-    title: 'Cafeterías',
-    desc: 'Alta frecuencia, ticket bajo — la meta es traerlos de vuelta antes de que se acostumbren a otro café en su rutina diaria.',
-    metric: 'Sellos con tazas · plan Básico o Pro',
-    cardId: 'cafe',
-    chat: [
-      { from: 'bot' as const, text: 'Sofía — 9 días sin café. 6 tazas acumuladas.' },
-      {
-        from: 'bot' as const,
-        text: 'Hola Sofía 👋 tu café #7 va por cuenta de la casa en Bruma Coffee esta semana ☕',
-      },
-    ] satisfies ChatLine[],
+    icon: '☕',
+    example: 'Café #10 gratis → la rutina matutina se queda contigo.',
+    color: 'from-[#4A2C1A] to-[#1A0E08]',
   },
   {
-    id: 'tortilla',
-    label: 'Tortillerías',
-    title: 'Tortillerías',
-    desc: 'Compra casi diaria — cada kilo es un sello. El cliente ve su progreso y vuelve por el kilo gratis sin que tengas que recordar nada.',
-    metric: 'Sellos con kilos · recompra ultra frecuente',
-    cardId: 'tortilla',
-    chat: [
-      { from: 'bot' as const, text: 'Doña Carmen — 3 días sin comprar. 8 de 10 kilos.' },
-      {
-        from: 'bot' as const,
-        text: 'Hola Carmen 👋 te faltan 2 kilos para tu kilo gratis en Maíz & Fuego 🫓',
-      },
-    ] satisfies ChatLine[],
+    id: 'barber',
+    label: 'Barberías',
+    icon: '✂️',
+    example: 'Corte #10 por la casa + recordatorio a las 4 semanas.',
+    color: 'from-[#1E293B] to-[#020617]',
+  },
+  {
+    id: 'resto',
+    label: 'Restaurantes',
+    icon: '🍽️',
+    example: 'Postre de la casa al volver — sin bajar el ticket con descuentos.',
+    color: 'from-[#611F30] to-[#1a0a10]',
   },
   {
     id: 'spa',
-    label: 'Spas / Estéticas',
-    title: 'Spas y estéticas',
-    desc: 'Ticket alto, ciclo largo entre visitas — aquí el agendamiento es casi obligatorio porque perder una cita cuesta más que en cualquier otro giro.',
-    metric: 'Puntos por sesión · bundle + agenda',
-    cardId: 'spa',
-    chat: [
-      { from: 'bot' as const, text: 'Paola — 18 días desde su último masaje.' },
-      {
-        from: 'bot' as const,
-        text: 'Hola Paola 👋 20% en tu próximo masaje en Loto Atelier si agendas esta semana 🌿',
-      },
-    ] satisfies ChatLine[],
+    label: 'Estéticas',
+    icon: '🌿',
+    example: 'Sesión con puntos + WhatsApp cuando se pasa la cita.',
+    color: 'from-[#064E3B] to-[#011611]',
   },
-] as const;
+  {
+    id: 'vet',
+    label: 'Veterinarias',
+    icon: '🐾',
+    example: 'Vacunas y consultas que regresan a tiempo, no cuando duele.',
+    color: 'from-[#1e3a5f] to-[#0b1220]',
+  },
+  {
+    id: 'gym',
+    label: 'Gimnasios',
+    icon: '💪',
+    example: 'Check-ins que empujan constancia y renuevan membresías.',
+    color: 'from-[#3b1d4a] to-[#12081a]',
+  },
+  {
+    id: 'boutique',
+    label: 'Boutiques',
+    icon: '👗',
+    example: 'Cashback que trae la segunda compra sin liquidar margen.',
+    color: 'from-[#4c1d3d] to-[#1a0a14]',
+  },
+  {
+    id: 'farmacia',
+    label: 'Farmacias',
+    icon: '💊',
+    example: 'Recompra de tratamientos recurrentes, no solo la urgencia.',
+    color: 'from-[#134e4a] to-[#042f2e]',
+  },
+  {
+    id: 'papel',
+    label: 'Papelerías',
+    icon: '📎',
+    example: 'Sellos en temporada escolar y clientes que vuelven todo el año.',
+    color: 'from-[#1e3a8a] to-[#0f172a]',
+  },
+];
 
-function qrSrc(cardCode: string) {
-  const payload = `https://agentia.software/lealtad?checkin=${encodeURIComponent(cardCode)}&demo=1`;
-  return `https://api.qrserver.com/v1/create-qr-code/?size=120x120&margin=8&color=111111&bgcolor=ffffff&data=${encodeURIComponent(payload)}`;
-}
+const AUTOMATIONS = [
+  {
+    t: 'Cumpleaños',
+    d: 'Un mensaje el día correcto. Se siente personal — y dispara una visita.',
+  },
+  {
+    t: 'Inactivos',
+    d: 'Detecta quién no ha venido y manda la promo antes de que prueben a otro.',
+  },
+  {
+    t: 'Promociones',
+    d: 'Lanza ofertas a quien ya te conoce. Menos desperdicio que un anuncio frío.',
+  },
+  {
+    t: 'Clientes VIP',
+    d: 'Premia a los que más gastan. Ellos traen el ticket alto y a sus amigos.',
+  },
+  {
+    t: 'Referidos',
+    d: 'Quien te recomienda suma. Creces con boca a boca medible.',
+  },
+  {
+    t: 'Recordatorios',
+    d: 'Cortes, sesiones, vacunas, membresías: el timing correcto sin agenda mental.',
+  },
+];
 
-function DigitalLoyaltyPass({
-  card,
-  animate = true,
-  compact = false,
-}: {
-  card: ShowcaseCard;
-  animate?: boolean;
-  compact?: boolean;
-}) {
-  const reduceMotion = useReducedMotion();
-  const shouldAnimate = animate && !reduceMotion;
-  const stampSize = compact ? 'h-8 w-8 text-[15px]' : 'h-9 w-9 text-[16px]';
+const COMPARE = [
+  { paper: 'Se pierde o se moja', agentia: 'Vive en el celular, siempre a la mano' },
+  { paper: 'Nadie la trae la próxima vez', agentia: 'Se abre en Wallet en un toque' },
+  { paper: 'No sabes quién dejó de venir', agentia: 'Ves activos, en riesgo y perdidos' },
+  { paper: 'Cero seguimiento', agentia: 'WhatsApp automático cuando se enfrían' },
+  { paper: 'No escala con tu negocio', agentia: 'Crece con sucursales y segmentos' },
+];
 
-  return (
-    <motion.div
-      className={`relative flex w-full flex-col overflow-hidden rounded-2xl text-white shadow-[0_20px_40px_-20px_rgba(0,0,0,0.65)] ${
-        compact ? 'min-h-[210px] p-4' : 'min-h-[248px] p-5'
-      }`}
-      style={{ background: card.gradient }}
-      whileHover={shouldAnimate && !compact ? { y: -3 } : undefined}
-      transition={{ type: 'spring', stiffness: 280, damping: 22 }}
-    >
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(120deg, rgba(255,255,255,.12) 0%, transparent 40%), radial-gradient(circle at 90% 10%, rgba(255,255,255,.08), transparent 45%)',
-        }}
-        aria-hidden
-      />
+const METRICS = [
+  { value: '+28%', label: 'clientes recurrentes', note: 'negocios similares en recompra' },
+  { value: '+35%', label: 'visitas recuperadas', note: 'con seguimiento a inactivos' },
+  { value: '+18%', label: 'ticket promedio', note: 'cuando el premio protege margen' },
+];
 
-      <div className="relative z-[1] flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-[family-name:var(--font-space)] text-sm font-bold text-[#0a0a0a] shadow-sm"
-            style={{ background: card.logoBg }}
-          >
-            {card.initials}
-          </div>
-          <div>
-            <div className="font-[family-name:var(--font-space)] text-[15px] font-semibold leading-tight">
-              {card.brand}
-            </div>
-            <div className="mt-0.5 text-[10px] opacity-65">{card.tagline}</div>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-[10px] uppercase tracking-[0.08em] opacity-55">Cliente</div>
-          <div className="font-[family-name:var(--font-space)] text-[12px] font-medium">
-            {card.customerName}
-          </div>
-        </div>
-      </div>
+const FAQS = [
+  {
+    q: '¿Mis clientes necesitan descargar una app?',
+    a: 'No. Guardan el pase en Google Wallet (o lo abren en el navegador). Cero fricción — ideal si tu cliente no quiere instalar nada.',
+  },
+  {
+    q: '¿Cuánto tarda en estar listo?',
+    a: 'Con tu logo, en unas 24 horas puedes tener el pase activo. Nosotros conectamos; tú no instalas servidores ni “aprendes un software”.',
+  },
+  {
+    q: '¿Y si no sé usar tecnología?',
+    a: 'Está pensado para dueños de negocio, no para programadores. El día a día es simple: el cliente muestra el QR, sumas la visita, y el sistema hace el resto.',
+  },
+  {
+    q: '¿Puedo cancelar cuando quiera?',
+    a: 'Sí. Sin contratos eternos. Si no te está trayendo recompra, no tiene sentido obligarte a quedarte.',
+  },
+  {
+    q: '¿Esto se paga solo?',
+    a: 'Si recuperas unos cuantos clientes al mes con tu ticket promedio, el plan básico suele cubrirse solo. Usa el simulador de arriba con tus números reales.',
+  },
+  {
+    q: '¿Sirve para mi giro?',
+    a: 'Si vives de clientes que deberían volver (café, cortes, comida, estética, vet, gym, tienda local…), sí. Adaptamos sellos, puntos o cashback a cómo compra tu gente.',
+  },
+];
 
-      <div className="relative z-[1] my-3 flex-1">
-        {card.kind === 'stamps' && card.stamps ? (
-          <>
-            <div className="mb-2.5 flex items-center justify-between">
-              <span className="font-mono text-[9.5px] uppercase tracking-[0.08em] opacity-65">
-                {card.stamps.label}
-              </span>
-              <span className="text-[10px] opacity-50">{card.typeLabel}</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {Array.from({ length: card.stamps.total }).map((_, i) => {
-                const on = i < card.stamps!.filled;
-                return (
-                  <motion.div
-                    key={i}
-                    className={`flex ${stampSize} items-center justify-center rounded-full ${
-                      on
-                        ? 'bg-white/95 shadow-[0_2px_8px_rgba(0,0,0,0.25)]'
-                        : 'border border-dashed border-white/35 bg-white/5 opacity-45'
-                    }`}
-                    initial={shouldAnimate ? { scale: 0.55, opacity: 0 } : false}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.12 + i * 0.045, duration: 0.28 }}
-                    title={on ? `Visita ${i + 1}` : 'Pendiente'}
-                  >
-                    <span className={on ? '' : 'grayscale'}>{card.stampIcon}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </>
-        ) : null}
-
-        {card.kind === 'points' && card.points ? (
-          <>
-            <div className="mb-2 font-mono text-[9.5px] uppercase tracking-[0.08em] opacity-65">
-              Tus puntos
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-2xl" aria-hidden>
-                {card.stampIcon}
-              </span>
-              <div className="font-[family-name:var(--font-space)] text-[32px] font-bold leading-none">
-                {card.points.value}
-                <span className="ml-1 font-[family-name:var(--font-jakarta)] text-[13px] font-medium opacity-70">
-                  / {card.points.goal} pts
-                </span>
-              </div>
-            </div>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/15">
-              <motion.div
-                className="h-full rounded-full bg-white/90"
-                initial={shouldAnimate ? { width: 0 } : false}
-                animate={{
-                  width: `${Math.min(100, (card.points.value / card.points.goal) * 100)}%`,
-                }}
-                transition={{ delay: 0.35, duration: 0.7, ease: 'easeOut' }}
-              />
-            </div>
-          </>
-        ) : null}
-
-        {card.kind === 'cashback' && card.cashback ? (
-          <>
-            <div className="mb-2 font-mono text-[9.5px] uppercase tracking-[0.08em] opacity-65">
-              Cashback disponible
-            </div>
-            <div className="font-[family-name:var(--font-space)] text-[28px] font-bold leading-none">
-              {card.cashback.amount}{' '}
-              <span className="font-[family-name:var(--font-jakarta)] text-[13px] font-medium opacity-70">
-                MXN
-              </span>
-            </div>
-          </>
-        ) : null}
-      </div>
-
-      <div className="relative z-[1] mt-auto flex items-end justify-between gap-3 border-t border-white/10 pt-3">
-        <div className="min-w-0">
-          <div className="text-[9px] uppercase tracking-[0.1em] opacity-50">Escanea para sumar</div>
-          <div className="mt-0.5 truncate font-mono text-[10px] opacity-70">{card.cardCode}</div>
-          <div className="mt-1 text-[9px] leading-snug opacity-45">
-            Personal del negocio o cliente en mostrador
-          </div>
-        </div>
-        <div className="shrink-0 rounded-lg bg-white p-1.5 shadow-sm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={qrSrc(card.cardCode)}
-            alt={`QR de check-in ${card.brand}`}
-            width={56}
-            height={56}
-            className="h-14 w-14"
-            loading="lazy"
-          />
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function PhoneMockup({
-  card,
-  caption,
-  showWalletChrome = true,
-}: {
-  card: ShowcaseCard;
-  caption?: string;
-  showWalletChrome?: boolean;
-}) {
+function PhoneHero() {
   const reduceMotion = useReducedMotion();
 
   return (
     <motion.div
-      className="relative mx-auto w-full max-w-[300px]"
+      className="relative mx-auto w-full max-w-[320px]"
       initial={reduceMotion ? false : { opacity: 0, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={revealTransition(0.12, 0.55)}
+      transition={revealTransition(0.15, 0.55)}
     >
       <div
-        className="pointer-events-none absolute -inset-10 rounded-[3rem] opacity-70 blur-3xl"
+        className="pointer-events-none absolute -inset-12 rounded-[3rem] opacity-70 blur-3xl"
         style={{
-          background: `radial-gradient(circle at 30% 20%, ${CYAN}40, transparent 55%), radial-gradient(circle at 80% 80%, ${GOLD}28, transparent 50%)`,
+          background: `radial-gradient(circle at 30% 20%, ${CYAN}45, transparent 55%), radial-gradient(circle at 80% 70%, ${GOLD}30, transparent 50%)`,
         }}
         aria-hidden
       />
-
-      <div className="relative rounded-[2.1rem] border border-white/20 bg-[#111] p-[10px] shadow-[0_40px_80px_-30px_rgba(0,0,0,0.85)]">
-        <div className="overflow-hidden rounded-[1.65rem] bg-[#0a0a0a]">
-          <div className="relative flex items-center justify-between bg-[#0a0a0a] px-5 pb-1 pt-3 text-[10px] font-semibold text-white/80">
+      <div className="relative rounded-[2.2rem] border border-white/18 bg-[#111] p-[11px] shadow-[0_40px_90px_-35px_rgba(0,0,0,0.9)]">
+        <div className="overflow-hidden rounded-[1.7rem] bg-[#0a0a0a]">
+          <div className="relative flex items-center justify-between px-5 pb-1 pt-3 text-[10px] font-semibold text-white/75">
             <span>9:41</span>
-            <div className="absolute left-1/2 top-2 h-[22px] w-[88px] -translate-x-1/2 rounded-full bg-black" />
-            <span className="flex items-center gap-1 opacity-80">
-              <span className="inline-block h-2 w-3 rounded-[2px] border border-white/70" />
-            </span>
+            <div className="absolute left-1/2 top-2 h-[22px] w-[90px] -translate-x-1/2 rounded-full bg-black" />
+            <span className="opacity-70">●●●</span>
           </div>
-
-          {showWalletChrome ? (
-            <div className="px-4 pb-2 pt-3">
-              <p className="font-[family-name:var(--font-space)] text-[11px] font-medium tracking-wide text-white/45">
-                Google Wallet
-              </p>
-              <p className="font-[family-name:var(--font-space)] text-lg font-bold text-white">
-                Pases
-              </p>
-            </div>
-          ) : null}
-
-          <div className="px-3 pb-4">
-            <DigitalLoyaltyPass card={card} compact />
-            <p className="mt-3 text-center text-[10px] text-white/40">
-              Apple Wallet · <span className="text-white/30">próximamente</span>
+          <div className="px-4 pt-3">
+            <p className="text-[11px] tracking-wide text-white/40">Google Wallet</p>
+            <p className="font-[family-name:var(--font-space)] text-lg font-bold">Pases</p>
+          </div>
+          <div className="px-3 pb-5 pt-2">
+            <motion.div
+              className="overflow-hidden rounded-2xl bg-gradient-to-br from-[#4A2C1A] to-[#1A0E08] p-5 text-white shadow-xl"
+              initial={reduceMotion ? false : { y: 40, opacity: 0, scale: 0.96 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              transition={{ delay: 0.35, duration: 0.7, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-[#0a0a0a]"
+                  style={{ background: `linear-gradient(135deg, ${CYAN}, ${GOLD})` }}
+                >
+                  BR
+                </div>
+                <div>
+                  <p className="font-[family-name:var(--font-space)] font-semibold">Bruma Coffee</p>
+                  <p className="text-[11px] text-white/60">Sofía · 6 de 8 cafés</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-sm ${
+                      i < 6 ? 'bg-white/95' : 'border border-dashed border-white/30 opacity-40'
+                    }`}
+                  >
+                    ☕
+                  </span>
+                ))}
+              </div>
+              <div className="mt-4 rounded-xl border border-[#25D366]/35 bg-[#25D366]/12 px-3 py-2 text-[11px] leading-snug text-white/85">
+                <span className="mb-0.5 block text-[9px] uppercase tracking-wider text-[#25D366]">
+                  Automático
+                </span>
+                Te extrañamos — tu café #7 va por la casa esta semana
+              </div>
+            </motion.div>
+            <p className="mt-3 text-center text-[10px] text-white/35">
+              Apple Wallet · <span className="text-white/25">próximamente</span>
             </p>
           </div>
         </div>
       </div>
-
-      {caption ? (
-        <p className="mt-4 text-center text-[12px] text-white/50">{caption}</p>
-      ) : null}
     </motion.div>
   );
 }
 
-function ConvertChat() {
-  const [giro, setGiro] = useState<string | null>(null);
-  const options = ['Cafetería', 'Barbería', 'Tortillería', 'Spa / estética', 'Otro'];
-
-  const wa = agentiaWhatsAppUrl(
-    `Hola Agentia, vi /lealtad. Tengo un negocio de ${giro || 'mi giro'} y quiero tarjeta de lealtad digital. Aquí les mando mi logo:`,
-  );
-
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b141a]">
-      <div className="flex items-center gap-3 border-b border-white/8 bg-[#111b21] px-4 py-3.5">
-        <div
-          className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-[#0a0a0a]"
-          style={{ background: CYAN }}
-        >
-          A
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-white">Agentia · Lealtad</p>
-          <p className="text-[11px] text-[#25D366]">en línea · responde en minutos</p>
-        </div>
-      </div>
-
-      <div className="flex min-h-[280px] flex-col gap-3 p-4">
-        <div className="max-w-[90%] self-start rounded-2xl rounded-bl-md bg-[#1f2c34] px-3.5 py-2.5 text-sm text-white/90">
-          ¿Qué tipo de negocio quieres fidelizar? Te armamos la tarjeta con tu logo y sellos
-          temáticos en 24h.
-        </div>
-
-        <div className="flex flex-wrap gap-2 self-start">
-          {options.map((o) => (
-            <button
-              key={o}
-              type="button"
-              onClick={() => setGiro(o)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-[transform,border-color,background-color] duration-150 active:scale-[0.97] ${
-                giro === o
-                  ? 'border-[#00D4FF] bg-[#00D4FF]/15 text-[#00D4FF]'
-                  : 'border-white/15 bg-white/5 text-white/75 hover:border-[#00D4FF]/40 hover:text-white'
-              }`}
-            >
-              {o}
-            </button>
-          ))}
-        </div>
-
-        {giro ? (
-          <>
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="max-w-[85%] self-end rounded-2xl rounded-br-md px-3.5 py-2.5 text-sm text-[#0a0a0a]"
-              style={{ background: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
-            >
-              {giro}
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="max-w-[92%] space-y-3 self-start"
-            >
-              <div className="rounded-2xl rounded-bl-md bg-[#1f2c34] px-3.5 py-2.5 text-sm text-white/90">
-                Perfecto para {giro.toLowerCase()}. QR para sumar visitas, sellos con la identidad de
-                tu marca y WhatsApp automático. Planes desde $299/mes.
-              </div>
-              <a
-                href={wa}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-[#06130B] shadow-[0_0_28px_rgba(37,211,102,0.35)] transition-[transform,box-shadow] duration-160 hover:-translate-y-0.5 hover:shadow-[0_0_40px_rgba(37,211,102,0.5)] active:scale-[0.97]"
-              >
-                <MessageCircle className="h-4 w-4" />
-                Continuar en WhatsApp
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </motion.div>
-          </>
+    <div className="border-b border-white/10">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-4 py-5 text-left"
+      >
+        <span className="font-[family-name:var(--font-space)] text-[15px] font-semibold text-white sm:text-base">
+          {q}
+        </span>
+        <ChevronDown
+          className={`h-5 w-5 shrink-0 text-white/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            className="overflow-hidden"
+          >
+            <p className="pb-5 pr-8 text-sm leading-relaxed text-white/55">{a}</p>
+          </motion.div>
         ) : null}
-      </div>
-    </div>
-  );
-}
-
-function CheckinToast() {
-  const [code, setCode] = useState<string | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const checkin = params.get('checkin');
-    if (!checkin) return;
-    setCode(checkin);
-    const t = window.setTimeout(() => setCode(null), 5200);
-    return () => window.clearTimeout(t);
-  }, []);
-
-  if (!code) return null;
-
-  return (
-    <div className="fixed left-1/2 top-5 z-[70] w-[min(92vw,380px)] -translate-x-1/2 rounded-2xl border border-[#25D366]/40 bg-[#0b141a] px-4 py-3 shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
-      <p className="font-[family-name:var(--font-space)] text-[11px] uppercase tracking-wider text-[#25D366]">
-        Check-in demo
-      </p>
-      <p className="mt-1 text-sm text-white/90">
-        QR leído: <span className="font-mono text-[#00D4FF]">{code}</span> — así suma una visita en
-        producción.
-      </p>
+      </AnimatePresence>
     </div>
   );
 }
 
 export function LealtadLanding() {
   const reduceMotion = useReducedMotion();
-  const [industry, setIndustry] = useState<(typeof INDUSTRIES)[number]>(INDUSTRIES[1]);
-  const industryCard = SHOWCASE.find((c) => c.id === industry.cardId) ?? SHOWCASE[0];
+  const [industry, setIndustry] = useState(INDUSTRIES[0]);
 
   return (
     <main
       className="relative min-h-screen overflow-hidden font-[family-name:var(--font-jakarta)] text-white"
       style={{ background: BG }}
     >
-      <CheckinToast />
       <ParticleField />
       <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-50"
+        className="pointer-events-none fixed inset-0 z-0 opacity-45"
         style={{
           background:
-            'radial-gradient(ellipse 70% 45% at 15% -5%, rgba(0,212,255,0.14), transparent 55%), radial-gradient(ellipse 50% 35% at 90% 10%, rgba(255,215,0,0.09), transparent 50%)',
+            'radial-gradient(ellipse 70% 45% at 15% -5%, rgba(0,212,255,0.12), transparent 55%), radial-gradient(ellipse 50% 35% at 90% 10%, rgba(255,215,0,0.08), transparent 50%)',
         }}
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-8">
+        {/* Nav */}
         <header className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <Image
@@ -586,208 +380,240 @@ export function LealtadLanding() {
             />
             <span className="font-[family-name:var(--font-space)] text-lg font-bold">
               Agentia
-              <span className="ml-1.5 text-[#00D4FF]">Lealtad</span>
+              <span className="ml-1.5 text-[#00D4FF]">Crecimiento</span>
             </span>
           </Link>
-          <nav className="hidden items-center gap-6 text-sm text-white/60 md:flex">
-            <a href="#acumular" className="transition-colors hover:text-[#00D4FF]">
-              Cómo acumulan
+          <nav className="hidden items-center gap-6 text-sm text-white/55 md:flex">
+            <a href="#simulador" className="hover:text-[#00D4FF]">
+              Simulador
             </a>
-            <a href="#giros" className="transition-colors hover:text-[#00D4FF]">
+            <a href="#giros" className="hover:text-[#00D4FF]">
               Tu giro
             </a>
-            <a href="#precios" className="transition-colors hover:text-[#00D4FF]">
+            <a href="#planes" className="hover:text-[#00D4FF]">
               Planes
             </a>
           </nav>
-          <GlowButton href={WA_GENERAL} external>
-            Hablar por WhatsApp
+          <GlowButton href={WA_GROWTH} external>
+            Quiero vender más
           </GlowButton>
         </header>
 
-        <section className="grid items-center gap-10 py-12 lg:min-h-[calc(100dvh-5rem)] lg:grid-cols-2 lg:gap-8 lg:py-8">
+        {/* 1. HERO */}
+        <section className="grid items-center gap-12 py-14 lg:min-h-[calc(100dvh-5rem)] lg:grid-cols-2 lg:gap-10 lg:py-10">
           <div>
             <motion.p
-              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={revealTransition(0, 0.35)}
               className="mb-4 inline-flex items-center gap-2 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]"
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              Partner oficial Meta · WhatsApp Business API
+              <TrendingUp className="h-3.5 w-3.5" />
+              Para negocios locales que viven de clientes que vuelven
             </motion.p>
             <motion.h1
               initial={reduceMotion ? false : { opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={revealTransition(0.06, 0.45)}
-              className="font-[family-name:var(--font-space)] text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-[2.75rem]"
+              className="font-[family-name:var(--font-space)] text-[2rem] font-extrabold leading-[1.08] tracking-tight sm:text-4xl lg:text-[2.85rem]"
             >
-              La tarjeta de sellos de siempre —{' '}
+              Haz que tus clientes{' '}
               <span
                 className="bg-clip-text text-transparent"
                 style={{ backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
               >
-                ahora en el celular.
+                regresen una y otra vez.
               </span>
             </motion.h1>
             <motion.p
-              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={revealTransition(0.12, 0.4)}
               className="mt-5 max-w-xl text-base leading-relaxed text-white/60 sm:text-lg"
             >
-              Tus clientes la ven en su Wallet. Tú (o ellos) escanean el QR para sumar la visita. Y
-              cuando dejan de venir, les llega un WhatsApp solo.
+              Convierte visitas ocasionales en clientes frecuentes. El sistema acumula recompensas,
+              detecta quién se enfría y los trae de vuelta — casi solo.
             </motion.p>
             <motion.div
-              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={revealTransition(0.18, 0.35)}
               className="mt-8 flex flex-wrap gap-3"
             >
-              <GlowButton href="#precios">Ver planes desde $299</GlowButton>
-              <GlowButton href="#escribir" variant="secondary">
-                Quiero mi tarjeta
+              <GlowButton href={WA_GROWTH} external>
+                Quiero aumentar mis ventas
+              </GlowButton>
+              <GlowButton href="#demo" variant="secondary">
+                Ver demostración
               </GlowButton>
             </motion.div>
-            <motion.div
+            <motion.ul
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={revealTransition(0.28, 0.4)}
-              className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs text-white/45 sm:text-sm"
+              className="mt-8 grid gap-2 sm:grid-cols-2"
             >
-              <span>
-                <strong className="text-white">QR real</strong> para check-in
-              </span>
-              <span className="hidden text-white/20 sm:inline">|</span>
-              <span>
-                <strong className="text-[#FFD700]">Sellos</strong> con la identidad del giro
-              </span>
-              <span className="hidden text-white/20 sm:inline">|</span>
-              <span>0 apps que instalar</span>
-            </motion.div>
+              {BADGES.map((b) => (
+                <li key={b} className="flex items-center gap-2 text-sm text-white/55">
+                  <Check className="h-4 w-4 shrink-0 text-[#00D4FF]" />
+                  {b}
+                </li>
+              ))}
+            </motion.ul>
           </div>
-          <PhoneMockup
-            card={SHOWCASE[0]}
-            caption="Así la ve tu cliente en el celular — no es una tarjeta de plástico."
-          />
+          <div id="demo">
+            <PhoneHero />
+            <p className="mt-5 text-center text-sm text-white/45">
+              Así lo ve tu cliente en el celular — y así regresa sin que lo persigas.
+            </p>
+          </div>
         </section>
 
-        <section className="pb-6 pt-2">
-          <ScrollReveal>
-            <p className="mb-2 text-center font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Ejemplos por giro
-            </p>
-            <h2 className="mb-8 text-center font-[family-name:var(--font-space)] text-2xl font-bold sm:text-3xl">
-              Cada negocio con sus sellos — y un QR que sí se escanea
-            </h2>
-          </ScrollReveal>
-          <StaggerReveal className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {SHOWCASE.map((card) => (
-              <StaggerItem key={card.id}>
-                <div className="flex flex-col items-center">
-                  <div className="w-full max-w-[240px]">
-                    <div className="rounded-[1.5rem] border border-white/15 bg-[#111] p-2 shadow-[0_24px_50px_-28px_rgba(0,0,0,0.8)]">
-                      <div className="overflow-hidden rounded-[1.15rem] bg-[#0a0a0a] px-2 pb-3 pt-2">
-                        <div className="mb-2 flex justify-center">
-                          <div className="h-1.5 w-16 rounded-full bg-white/15" />
-                        </div>
-                        <DigitalLoyaltyPass card={card} compact />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 text-center">
-                    <b className="block font-[family-name:var(--font-space)] text-sm text-white">
-                      {card.caption}
-                    </b>
-                    <span className="text-[13px] text-white/45">{card.captionSub}</span>
-                  </div>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerReveal>
-        </section>
-
-        <section id="acumular" className="py-16 sm:py-20">
-          <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Cómo acumulan tus clientes
-            </p>
-            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              Tú eliges el modelo que más le quede a tu negocio
-            </h2>
-            <p className="mt-3 max-w-2xl text-white/55">
-              Mismo sistema por dentro — la experiencia se adapta al tipo de negocio, no al revés.
-            </p>
-          </ScrollReveal>
-          <StaggerReveal className="mt-10 grid gap-4 md:grid-cols-3">
-            {REWARDS.map((r) => (
-              <StaggerItem key={r.title}>
-                <div className="h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[#00D4FF]/35">
-                  <h3 className="font-[family-name:var(--font-space)] text-xl font-bold">{r.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-white/55">{r.desc}</p>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerReveal>
-        </section>
-
-        <section id="como" className="py-16 sm:py-20">
-          <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Cómo funciona
-            </p>
-            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              Tres pasos. Cero trabajo manual.
-            </h2>
-          </ScrollReveal>
-          <StaggerReveal className="mt-10 grid gap-4 md:grid-cols-3">
-            {PHASES.map((p) => (
-              <StaggerItem key={p.n}>
-                <div className="h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[#00D4FF]/35">
-                  <span className="font-[family-name:var(--font-space)] text-sm text-[#00D4FF]">
-                    {p.n}
-                  </span>
-                  <h3 className="mt-3 font-[family-name:var(--font-space)] text-xl font-bold">
-                    {p.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/55">{p.desc}</p>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerReveal>
-        </section>
-
-        <section className="grid items-center gap-10 py-12 lg:grid-cols-2">
+        {/* 2. PROBLEMA */}
+        <section className="py-20 sm:py-24">
           <ScrollReveal>
             <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
-              Así se ve la reactivación
+              El costo invisible
             </p>
-            <h2 className="font-[family-name:var(--font-space)] text-2xl font-bold sm:text-3xl">
-              El sistema detecta. WhatsApp recupera.
+            <h2 className="max-w-3xl font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
+              ¿Cuánto dinero estás perdiendo cada mes?
             </h2>
-            <p className="mt-3 max-w-md text-white/55">
-              No dependes de notificaciones del wallet que nadie abre. Llegas por el canal donde ya te
-              contestan.
+            <p className="mt-4 max-w-2xl text-white/55">
+              Traer un cliente nuevo es caro. Dejar ir a uno que ya te conoce es más caro todavía —
+              porque ya invertiste en que te encontrara.
             </p>
           </ScrollReveal>
-          <ScrollReveal delay={0.08}>
-            <ModernChatPreview
-              businessName="Bruma Coffee"
-              accent="#25D366"
-              messages={HERO_CHAT}
-              compact
-            />
-          </ScrollReveal>
+          <StaggerReveal className="mt-12 grid gap-4 md:grid-cols-3">
+            {PROBLEM_STATS.map((s) => (
+              <StaggerItem key={s.value}>
+                <div className="h-full rounded-3xl border border-white/10 bg-white/[0.03] p-7 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[#00D4FF]/30">
+                  <p
+                    className="font-[family-name:var(--font-space)] text-4xl font-extrabold"
+                    style={{
+                      backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
+                      WebkitBackgroundClip: 'text',
+                      backgroundClip: 'text',
+                      color: 'transparent',
+                    }}
+                  >
+                    {s.value}
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-white/55">{s.label}</p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerReveal>
         </section>
 
+        {/* 3. ANTES VS DESPUÉS */}
+        <section className="py-16 sm:py-20">
+          <ScrollReveal>
+            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
+              Antes vs después
+            </p>
+            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
+              Del “gracias, adiós” al cliente que vuelve solo
+            </h2>
+          </ScrollReveal>
+          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+            <ScrollReveal>
+              <div className="h-full rounded-3xl border border-white/10 bg-white/[0.02] p-7 opacity-90">
+                <p className="font-mono text-xs uppercase tracking-wider text-[#FF6B5E]">Antes</p>
+                <ul className="mt-6 space-y-4">
+                  {['Cliente compra', 'Se va', 'Nunca vuelve', 'Tú pagas otra vez por atraer a alguien nuevo'].map(
+                    (t, i) => (
+                      <li key={t} className="flex items-center gap-3 text-white/50">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 font-mono text-xs text-white/30">
+                          {i + 1}
+                        </span>
+                        {t}
+                      </li>
+                    ),
+                  )}
+                </ul>
+              </div>
+            </ScrollReveal>
+            <ScrollReveal delay={0.08}>
+              <div className="h-full rounded-3xl border border-[#00D4FF]/35 bg-[#00D4FF]/[0.04] p-7 shadow-[0_0_40px_rgba(0,212,255,0.08)]">
+                <p className="font-mono text-xs uppercase tracking-wider text-[#00D4FF]">Después</p>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {AFTER_STEPS.map((t, i) => (
+                    <motion.span
+                      key={t}
+                      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.05 }}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/85"
+                    >
+                      <span className="font-mono text-[10px] text-[#00D4FF]">{i + 1}</span>
+                      {t}
+                      {i < AFTER_STEPS.length - 1 ? (
+                        <ArrowRight className="hidden h-3 w-3 text-white/25 sm:inline" />
+                      ) : null}
+                    </motion.span>
+                  ))}
+                </div>
+                <p className="mt-6 text-sm text-white/55">
+                  Menos publicidad. Más recompra. El crecimiento viene de la gente que ya te eligió.
+                </p>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* 4. SIMULADOR */}
+        <section id="simulador" className="py-20 sm:py-24">
+          <ScrollReveal>
+            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
+              Simulador de ganancias
+            </p>
+            <h2 className="max-w-3xl font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
+              ¿Cuánto podrías ganar si solo un poco más de gente volviera?
+            </h2>
+            <p className="mt-4 max-w-2xl text-white/55">
+              Mueve los números de tu negocio. Si el ingreso extra cubre el plan, el sistema
+              prácticamente se paga solo.
+            </p>
+          </ScrollReveal>
+          <div className="mt-10">
+            <RoiCalculator />
+          </div>
+        </section>
+
+        {/* 5. BENEFICIOS */}
+        <section className="py-16 sm:py-20">
+          <ScrollReveal>
+            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
+              Lo que ganas
+            </p>
+            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
+              No es software. Es crecimiento en automático.
+            </h2>
+          </ScrollReveal>
+          <StaggerReveal className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {BENEFITS.map((b) => (
+              <StaggerItem key={b.title}>
+                <div className="h-full rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[#00D4FF]/30">
+                  <b.icon className="h-5 w-5 text-[#00D4FF]" />
+                  <h3 className="mt-4 font-[family-name:var(--font-space)] text-lg font-bold leading-snug">
+                    {b.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-white/50">{b.desc}</p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerReveal>
+        </section>
+
+        {/* 6. INDUSTRIAS */}
         <section id="giros" className="py-16 sm:py-20">
           <ScrollReveal>
             <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Casos por industria
+              Tu giro
             </p>
             <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              El mensaje correcto para cada tipo de negocio
+              Hecho para el negocio de la esquina — y el que quiere crecer
             </h2>
           </ScrollReveal>
           <div className="mt-8 flex flex-wrap gap-2">
@@ -796,143 +622,176 @@ export function LealtadLanding() {
                 key={ind.id}
                 type="button"
                 onClick={() => setIndustry(ind)}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-[transform,border-color,background-color,color] duration-150 active:scale-[0.97] ${
+                className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition-[transform,border-color,background-color,color] duration-150 active:scale-[0.97] ${
                   industry.id === ind.id
                     ? 'border-[#00D4FF] bg-[#00D4FF]/12 text-[#00D4FF]'
-                    : 'border-white/12 bg-white/[0.03] text-white/60 hover:border-white/25 hover:text-white'
+                    : 'border-white/12 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white'
                 }`}
               >
-                {ind.label}
+                {ind.icon} {ind.label}
               </button>
             ))}
           </div>
-          <div className="mt-8 grid items-center gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-            <ScrollReveal key={`${industry.id}-phone`}>
-              <PhoneMockup card={industryCard} showWalletChrome={false} />
-            </ScrollReveal>
-            <ScrollReveal key={industry.id} delay={0.06}>
-              <h3 className="font-[family-name:var(--font-space)] text-2xl font-bold">
-                {industry.title}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={industry.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25 }}
+              className={`mt-8 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br ${industry.color} p-8 sm:p-10`}
+            >
+              <p className="text-4xl">{industry.icon}</p>
+              <h3 className="mt-4 font-[family-name:var(--font-space)] text-2xl font-bold">
+                {industry.label}
               </h3>
-              <p className="mt-3 text-white/55">{industry.desc}</p>
-              <p className="mt-3 font-mono text-xs text-[#00D4FF]">{industry.metric}</p>
-              <div className="mt-5">
-                <ModernChatPreview
-                  businessName={industry.label}
-                  accent={CYAN}
-                  messages={[...industry.chat]}
-                  compact
-                />
-              </div>
-            </ScrollReveal>
+              <p className="mt-3 max-w-xl text-base text-white/75">{industry.example}</p>
+              <a
+                href={agentiaWhatsAppUrl(
+                  `Hola Agentia, tengo un negocio de ${industry.label.toLowerCase()} y quiero más clientes frecuentes.`,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#00D4FF] hover:text-[#FFD700]"
+              >
+                Quiero esto para mi {industry.label.toLowerCase()}
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </motion.div>
+          </AnimatePresence>
+        </section>
+
+        {/* 7. AUTOMATIZACIONES */}
+        <section className="py-16 sm:py-20">
+          <ScrollReveal>
+            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
+              Automatizaciones
+            </p>
+            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
+              Un empleado que recupera clientes mientras tú atiendes
+            </h2>
+            <p className="mt-3 max-w-2xl text-white/55">
+              No tienes que acordarte de quién falta. El sistema lo hace por ti.
+            </p>
+          </ScrollReveal>
+          <div className="relative mt-12">
+            <div className="absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b from-[#00D4FF]/50 via-white/15 to-transparent sm:left-[19px]" />
+            <ul className="space-y-6">
+              {AUTOMATIONS.map((a, i) => (
+                <ScrollReveal key={a.t} delay={i * 0.04}>
+                  <li className="relative flex gap-5 pl-1">
+                    <span className="relative z-[1] mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#00D4FF]/40 bg-[#0a0a0a] font-mono text-[11px] text-[#00D4FF] sm:h-10 sm:w-10">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
+                      <h3 className="font-[family-name:var(--font-space)] text-lg font-bold">
+                        {a.t}
+                      </h3>
+                      <p className="mt-1 text-sm text-white/50">{a.d}</p>
+                    </div>
+                  </li>
+                </ScrollReveal>
+              ))}
+            </ul>
           </div>
         </section>
 
-        <section className="py-12">
+        {/* 8. COMPARATIVA */}
+        <section className="py-16 sm:py-20">
           <ScrollReveal>
             <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              El panel del negocio
-            </p>
-            <h2 className="mb-8 font-[family-name:var(--font-space)] text-2xl font-bold sm:text-3xl">
-              Y tú ves quién está a punto de dejar de venir
-            </h2>
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-              <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-5 py-3">
-                <span className="font-mono text-[11px] text-white/40">
-                  panel.agentia.software · lealtad · simulación
-                </span>
-                <span className="text-[11px] text-[#00D4FF]">Activos · En riesgo · Perdidos</span>
-              </div>
-              <div className="grid gap-px bg-white/10 md:grid-cols-3">
-                {[
-                  {
-                    title: 'Activos',
-                    color: '#25D366',
-                    count: '284',
-                    rows: [
-                      ['Sofía Reyes', 'hoy · 22 visitas'],
-                      ['Diego Cetz', 'hoy · 31 visitas'],
-                    ],
-                  },
-                  {
-                    title: 'En riesgo',
-                    color: GOLD,
-                    count: '68',
-                    rows: [
-                      ['Doña Carmen', '3 días · 48 kilos'],
-                      ['Paola Herrera', '18 días · 14 visitas'],
-                    ],
-                  },
-                  {
-                    title: 'Perdidos',
-                    color: '#FF6B5E',
-                    count: '31',
-                    rows: [
-                      ['Renata Solís', '41 días · 5 visitas'],
-                      ['Iván Novelo', '53 días · 3 visitas'],
-                    ],
-                  },
-                ].map((col) => (
-                  <div key={col.title} className="bg-[#0a0a0a] p-5">
-                    <div className="mb-4 flex items-center justify-between">
-                      <span className="flex items-center gap-2 text-sm font-semibold">
-                        <i
-                          className="inline-block h-2 w-2 rounded-full"
-                          style={{ background: col.color }}
-                        />
-                        {col.title}
-                      </span>
-                      <span className="rounded-full bg-white/5 px-2 py-0.5 font-mono text-[11px] text-white/45">
-                        {col.count}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      {col.rows.map(([name, meta]) => (
-                        <div
-                          key={name}
-                          className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5"
-                        >
-                          <p className="text-sm font-semibold">{name}</p>
-                          <p className="font-mono text-[11px] text-white/40">{meta}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </ScrollReveal>
-        </section>
-
-        <section id="precios" className="py-16 sm:py-20">
-          <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Planes
+              Comparativa
             </p>
             <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              Dos planes. Sin letras chiquitas.
+              Tarjeta de papel vs Agentia
             </h2>
-            <p className="mt-3 max-w-2xl text-white/55">
-              Menos que otras tarjetas digitales — y llegas por WhatsApp, no por notificaciones que
-              nadie lee.
+          </ScrollReveal>
+          <div className="mt-10 overflow-hidden rounded-3xl border border-white/10">
+            <div className="grid grid-cols-2 bg-white/[0.04] px-4 py-3 text-xs font-semibold uppercase tracking-wider sm:px-6 sm:text-sm">
+              <span className="text-[#FF6B5E]/90">Tarjeta de papel</span>
+              <span className="text-[#00D4FF]">Agentia</span>
+            </div>
+            {COMPARE.map((row) => (
+              <div
+                key={row.paper}
+                className="grid grid-cols-1 gap-3 border-t border-white/10 px-4 py-4 sm:grid-cols-2 sm:gap-6 sm:px-6"
+              >
+                <p className="text-sm text-white/45 line-through decoration-white/20">{row.paper}</p>
+                <p className="text-sm font-medium text-white/90">{row.agentia}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* 9. MÉTRICAS */}
+        <section className="py-16 sm:py-20">
+          <ScrollReveal>
+            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
+              Resultados que importan
+            </p>
+            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
+              No vendemos “bonito”. Vendemos números.
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm text-white/45">
+              Rangos típicos en programas de recompra bien ejecutados en negocios locales. Tu
+              resultado depende de ticket, frecuencia y seguimiento.
             </p>
           </ScrollReveal>
+          <StaggerReveal className="mt-10 grid gap-4 md:grid-cols-3">
+            {METRICS.map((m) => (
+              <StaggerItem key={m.label}>
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
+                  <p
+                    className="font-[family-name:var(--font-space)] text-5xl font-extrabold"
+                    style={{
+                      backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
+                      WebkitBackgroundClip: 'text',
+                      backgroundClip: 'text',
+                      color: 'transparent',
+                    }}
+                  >
+                    {m.value}
+                  </p>
+                  <p className="mt-3 font-[family-name:var(--font-space)] text-lg font-semibold">
+                    {m.label}
+                  </p>
+                  <p className="mt-1 text-xs text-white/40">{m.note}</p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerReveal>
+        </section>
+
+        {/* 10. PLANES + ROI */}
+        <section id="planes" className="py-20 sm:py-24">
+          <ScrollReveal>
+            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
+              Inversión
+            </p>
+            <h2 className="max-w-3xl font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
+              Recuperando unos cuantos clientes al mes, el sistema puede pagarse solo.
+            </h2>
+            <p className="mt-4 max-w-2xl text-white/55">
+              No empieces por el precio. Empieza por cuánto dejas en la mesa cada vez que alguien no
+              vuelve. Después elige el plan.
+            </p>
+          </ScrollReveal>
+
           <div className="mt-10 grid gap-5 lg:grid-cols-2">
             <ScrollReveal>
-              <div className="relative flex h-full flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-7">
-                <p className="font-mono text-xs uppercase tracking-wider text-white/45">Básico</p>
+              <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-white/[0.03] p-7">
+                <p className="font-mono text-xs uppercase tracking-wider text-white/40">Básico</p>
                 <p className="mt-2 font-[family-name:var(--font-space)] text-4xl font-bold">
                   $299
-                  <span className="ml-1 text-sm font-medium text-white/45">MXN/mes</span>
+                  <span className="ml-1 text-sm font-medium text-white/40">MXN/mes</span>
                 </p>
-                <p className="mt-1 text-sm text-white/45">Ideal para un solo local</p>
-                <ul className="mt-6 flex-1 space-y-3 text-sm text-white/75">
+                <p className="mt-1 text-sm text-white/45">Un local · empezar a recuperar</p>
+                <ul className="mt-6 flex-1 space-y-3 text-sm text-white/70">
                   {[
-                    'Tarjetas ilimitadas · 1 sucursal',
-                    'QR de check-in (cliente o personal)',
-                    'Sellos temáticos, puntos o cashback',
-                    'Google Wallet + acceso PWA',
-                    'WhatsApp automático por inactividad',
+                    'Clientes que vuelven con recompensas claras',
+                    'Check-in con QR (sin apps nuevas)',
+                    'WhatsApp cuando alguien se enfría',
+                    'Panel: activos / en riesgo / perdidos',
                   ].map((t) => (
                     <li key={t} className="flex gap-2">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00D4FF]" />
@@ -945,31 +804,29 @@ export function LealtadLanding() {
                   href={WA_BASIC}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-5 inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 py-3.5 text-sm font-bold transition-[transform,border-color] duration-160 hover:-translate-y-px hover:border-[#00D4FF]/50 active:scale-[0.97]"
+                  className="mt-5 inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 py-3.5 text-sm font-bold transition hover:-translate-y-px hover:border-[#00D4FF]/50 active:scale-[0.97]"
                 >
                   Quiero el Básico
                 </a>
               </div>
             </ScrollReveal>
-
             <ScrollReveal delay={0.08}>
-              <div className="relative flex h-full flex-col rounded-2xl border border-[#00D4FF]/40 bg-white/[0.05] p-7 shadow-[0_0_40px_rgba(0,212,255,0.12)]">
+              <div className="relative flex h-full flex-col rounded-3xl border border-[#00D4FF]/40 bg-white/[0.04] p-7 shadow-[0_0_40px_rgba(0,212,255,0.1)]">
                 <span className="absolute -top-3 right-6 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#FFD700] px-3 py-1 text-[11px] font-bold text-[#0a0a0a]">
-                  Más elegido
+                  Más crecimiento
                 </span>
-                <p className="font-mono text-xs uppercase tracking-wider text-white/45">Pro</p>
+                <p className="font-mono text-xs uppercase tracking-wider text-white/40">Pro</p>
                 <p className="mt-2 font-[family-name:var(--font-space)] text-4xl font-bold">
                   $499
-                  <span className="ml-1 text-sm font-medium text-white/45">MXN/mes</span>
+                  <span className="ml-1 text-sm font-medium text-white/40">MXN/mes</span>
                 </p>
-                <p className="mt-1 text-sm text-white/45">Para negocios que quieren crecer más rápido</p>
-                <ul className="mt-6 flex-1 space-y-3 text-sm text-white/75">
+                <p className="mt-1 text-sm text-white/45">Hasta 3 sucursales · más automatización</p>
+                <ul className="mt-6 flex-1 space-y-3 text-sm text-white/70">
                   {[
-                    'Todo lo del plan Básico',
-                    'Hasta 3 sucursales',
-                    'Mensajes de cumpleaños automáticos',
-                    'Panel de clientes por segmento',
-                    'Exportar base de datos de clientes',
+                    'Todo lo del Básico',
+                    'Cumpleaños y promos a segmentos',
+                    'Más locales bajo el mismo sistema',
+                    'Exportar tu base para seguir creciendo',
                   ].map((t) => (
                     <li key={t} className="flex gap-2">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00D4FF]" />
@@ -982,7 +839,7 @@ export function LealtadLanding() {
                   href={WA_PRO}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-5 inline-flex items-center justify-center rounded-xl py-3.5 text-sm font-bold text-[#0a0a0a] shadow-[0_0_32px_rgba(0,212,255,0.35)] transition-[transform,box-shadow] duration-160 hover:-translate-y-px hover:shadow-[0_0_48px_rgba(0,212,255,0.5)] active:scale-[0.97]"
+                  className="mt-5 inline-flex items-center justify-center rounded-xl py-3.5 text-sm font-bold text-[#0a0a0a] shadow-[0_0_32px_rgba(0,212,255,0.35)] transition hover:-translate-y-px active:scale-[0.97]"
                   style={{ background: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
                 >
                   Quiero el Pro
@@ -990,56 +847,65 @@ export function LealtadLanding() {
               </div>
             </ScrollReveal>
           </div>
-          <p className="mt-6 text-center text-sm text-white/45">
-            Otras plataformas empiezan en{' '}
-            <span className="font-mono text-white/70">$399–$700 MXN/mes</span>. Nosotros llegamos por
-            WhatsApp, no solo por notificaciones del wallet.
-          </p>
         </section>
 
-        <section id="escribir" className="py-16 sm:py-20">
-          <div className="grid items-start gap-10 lg:grid-cols-2">
-            <ScrollReveal>
-              <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
-                Empieza hoy
-              </p>
-              <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
-                Mándanos tu logo por WhatsApp y en 24 horas tienes tu tarjeta activa.
-              </h2>
-              <p className="mt-4 text-white/55">
-                Sin contratos largos, sin instalación técnica de tu parte — nosotros conectamos todo.
-                Sellos con la identidad de tu giro y QR listo para sumar visitas.
-              </p>
-              <a
-                href={WA_GENERAL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-[#00D4FF] transition-colors hover:text-[#FFD700]"
-              >
-                O escríbenos directo
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </ScrollReveal>
-            <ScrollReveal delay={0.08}>
-              <ConvertChat />
-            </ScrollReveal>
+        {/* 11. FAQ */}
+        <section className="py-16 sm:py-20">
+          <ScrollReveal>
+            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
+              Preguntas
+            </p>
+            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
+              Objeciones, respondidas en claro
+            </h2>
+          </ScrollReveal>
+          <div className="mx-auto mt-10 max-w-3xl">
+            {FAQS.map((f) => (
+              <FaqItem key={f.q} q={f.q} a={f.a} />
+            ))}
           </div>
         </section>
 
+        {/* CTA final */}
+        <section className="py-16 text-center sm:py-20">
+          <ScrollReveal>
+            <h2 className="mx-auto max-w-2xl font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
+              Si contratas esto, la meta es una sola:{' '}
+              <span
+                className="bg-clip-text text-transparent"
+                style={{ backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
+              >
+                vender más.
+              </span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-lg text-white/55">
+              Mándanos tu logo. En 24h tienes el sistema listo para que tus clientes vuelvan.
+            </p>
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <GlowButton href={WA_GROWTH} external>
+                Quiero aumentar mis ventas
+              </GlowButton>
+              <GlowButton href={WA_DEMO} external variant="secondary">
+                Pedir demostración
+              </GlowButton>
+            </div>
+          </ScrollReveal>
+        </section>
+
         <footer className="border-t border-white/10 pt-8 text-center text-sm text-white/40">
-          <Link href="/" className="text-white/60 transition-colors hover:text-[#00D4FF]">
+          <Link href="/" className="text-white/60 hover:text-[#00D4FF]">
             agentia.software
           </Link>
           {' · '}
-          Lealtad · Partner oficial Meta
+          Crecimiento para negocios locales · Partner oficial Meta
         </footer>
       </div>
 
       <a
-        href={WA_GENERAL}
+        href={WA_GROWTH}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-[#06130B] shadow-[0_8px_32px_rgba(37,211,102,0.45)] transition-[transform,box-shadow] duration-160 hover:scale-105 hover:shadow-[0_12px_40px_rgba(37,211,102,0.55)] active:scale-95"
+        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-[#06130B] shadow-[0_8px_32px_rgba(37,211,102,0.45)] transition hover:scale-105 active:scale-95"
         aria-label="Escribir por WhatsApp"
       >
         <MessageCircle className="h-7 w-7" />

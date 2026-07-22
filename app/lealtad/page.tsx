@@ -2,18 +2,33 @@ import type { Metadata } from 'next';
 import { LealtadLanding } from './LealtadLanding';
 
 export const metadata: Metadata = {
-  title: 'Tarjeta de lealtad digital | Agentia',
+  title: 'Haz que tus clientes regresen | Agentia',
   description:
-    'Fideliza clientes con sellos digitales, Google Wallet y WhatsApp automático cuando alguien deja de visitar. Desde $299 MXN/mes.',
+    'Sistema para negocios locales que aumenta la recompra: clientes frecuentes, recuperación de inactivos y marketing automático. Desde $299 MXN/mes. Se paga solo si vuelven unos cuantos.',
+  keywords: [
+    'clientes frecuentes',
+    'programa de recompensas',
+    'recuperar clientes',
+    'aumentar ventas negocio local',
+    'recompra',
+    'fidelización',
+    'Agentia',
+  ],
   alternates: { canonical: 'https://agentia.software/lealtad' },
   openGraph: {
-    title: 'Tarjeta de lealtad digital — Agentia',
+    title: 'Haz que tus clientes regresen una y otra vez — Agentia',
     description:
-      'Tu cliente acumula sellos sin app. Tú recuperas a los que se enfrían por WhatsApp oficial.',
+      'Convierte visitas ocasionales en clientes frecuentes. WhatsApp automático cuando alguien se enfría. Simula cuánto podrías ganar.',
     url: 'https://agentia.software/lealtad',
     siteName: 'Agentia',
     locale: 'es_MX',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Haz que tus clientes regresen | Agentia',
+    description:
+      'Más recompra, menos gasto en publicidad. El sistema recupera inactivos por ti.',
   },
 };
 
