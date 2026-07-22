@@ -109,7 +109,17 @@ const BENEFITS = [
   },
 ];
 
-const INDUSTRIES = [
+type Industry = {
+  id: string;
+  label: string;
+  icon: string;
+  example: string;
+  color: string;
+  logoSrc?: string;
+  logoAlt?: string;
+};
+
+const INDUSTRIES: Industry[] = [
   {
     id: 'cafe',
     label: 'Cafeterías',
@@ -175,7 +185,7 @@ const INDUSTRIES = [
     example: 'Sellos en temporada escolar y clientes que vuelven todo el año.',
     color: 'from-[#1e3a8a] to-[#0f172a]',
   },
-] as const;
+];
 
 const AUTOMATIONS = [
   {
@@ -600,7 +610,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export function LealtadLanding() {
   const reduceMotion = useReducedMotion();
-  const [industry, setIndustry] = useState(INDUSTRIES[0]);
+  const [industry, setIndustry] = useState<Industry>(INDUSTRIES[0]);
 
   return (
     <main
@@ -877,7 +887,7 @@ export function LealtadLanding() {
                     : 'border-white/12 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white'
                 }`}
               >
-                {'logoSrc' in ind && ind.logoSrc ? (
+                {ind.logoSrc ? (
                   <span className="relative inline-flex h-5 w-5 shrink-0 overflow-hidden rounded-full bg-[#F5F0E8]">
                     <Image
                       src={ind.logoSrc}
@@ -903,11 +913,11 @@ export function LealtadLanding() {
               transition={{ duration: 0.25 }}
               className={`mt-8 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br ${industry.color} p-8 sm:p-10`}
             >
-              {'logoSrc' in industry && industry.logoSrc ? (
+              {industry.logoSrc ? (
                 <div className="relative flex h-16 w-16 overflow-hidden rounded-full bg-[#F5F0E8] shadow-[0_8px_24px_rgba(0,0,0,0.35)] sm:h-20 sm:w-20">
                   <Image
                     src={industry.logoSrc}
-                    alt={industry.logoAlt}
+                    alt={industry.logoAlt || industry.label}
                     width={96}
                     height={96}
                     className="h-[118%] w-[118%] max-w-none object-cover object-center"
