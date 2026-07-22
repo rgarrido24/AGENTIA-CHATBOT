@@ -23,6 +23,9 @@ import { ScrollReveal, StaggerItem, StaggerReveal } from '@/components/landing/S
 import { revealTransition } from '@/components/landing/motion';
 import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
 import { RoiCalculator } from './RoiCalculator';
+import { NfcTapSequence } from './NfcTapSequence';
+import { IndustryPhoneCarousel } from './IndustryPhoneCarousel';
+import { EcosystemFlow } from './EcosystemFlow';
 
 const CYAN = '#00D4FF';
 const GOLD = '#FFD700';
@@ -262,17 +265,6 @@ const REVIEW_METRICS = [
     value: 'Mejor en Maps',
     label: 'Más reseñas recientes ayudan a aparecer cuando buscan cerca.',
   },
-];
-
-const ECOSYSTEM = [
-  'Chatbot IA',
-  'Captura WhatsApp',
-  'Lealtad',
-  'Automatizaciones',
-  'Recuperación',
-  'Tarjeta NFC',
-  'Reseñas',
-  'Más clientes',
 ];
 
 const FAQS = [
@@ -569,92 +561,6 @@ function PhoneHero() {
           __html: `@keyframes lealtadHeroGlare{0%{background-position:120% 0}100%{background-position:-40% 0}}`,
         }}
       />
-    </div>
-  );
-}
-
-function NfcCardMockup() {
-  const reduceMotion = useReducedMotion();
-
-  return (
-    <div className="relative mx-auto flex h-[280px] w-full max-w-[340px] items-center justify-center [perspective:900px]">
-      <div
-        className="pointer-events-none absolute inset-8 rounded-full opacity-60 blur-3xl"
-        style={{
-          background: `radial-gradient(circle, ${CYAN}33, transparent 65%)`,
-        }}
-        aria-hidden
-      />
-      <motion.div
-        className="relative h-[168px] w-[268px]"
-        style={{ transformStyle: 'preserve-3d' }}
-        initial={reduceMotion ? false : { rotateY: -18, rotateX: 8, y: 12 }}
-        animate={reduceMotion ? undefined : { rotateY: [-16, -10, -16], rotateX: [8, 6, 8], y: [8, 0, 8] }}
-        transition={
-          reduceMotion
-            ? undefined
-            : { duration: 5.5, repeat: Infinity, ease: 'easeInOut' }
-        }
-      >
-        <div
-          className="absolute inset-0 overflow-hidden rounded-2xl border border-white/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.75)]"
-          style={{
-            background:
-              'linear-gradient(145deg, #1a1f2a 0%, #0c1018 45%, #151a24 100%)',
-            transform: 'translateZ(12px)',
-          }}
-        >
-          <div
-            className="pointer-events-none absolute inset-0 opacity-80"
-            style={{
-              background:
-                'linear-gradient(115deg, rgba(255,255,255,.14) 0%, transparent 38%), radial-gradient(circle at 85% 15%, rgba(0,212,255,.2), transparent 40%)',
-            }}
-            aria-hidden
-          />
-          <div className="relative flex h-full flex-col justify-between p-5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-[family-name:var(--font-space)] text-[10px] uppercase tracking-[0.16em] text-[#00D4FF]">
-                  Agentia
-                </p>
-                <p className="mt-1 font-[family-name:var(--font-space)] text-lg font-bold text-white">
-                  Tarjeta Inteligente
-                </p>
-              </div>
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#00D4FF]/35 bg-[#00D4FF]/10">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path
-                    d="M12 4c-2.2 2.4-3.5 5-3.5 8S9.8 17.6 12 20c2.2-2.4 3.5-5 3.5-8S14.2 6.4 12 4Z"
-                    stroke={CYAN}
-                    strokeWidth="1.5"
-                  />
-                  <circle cx="12" cy="12" r="1.6" fill={CYAN} />
-                </svg>
-              </div>
-            </div>
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-white/40">NFC · un toque</p>
-                <p className="mt-0.5 text-xs text-white/65">Reviews · WhatsApp · Menú · más</p>
-              </div>
-              <div
-                className="h-8 w-11 rounded-md border border-white/15"
-                style={{
-                  background:
-                    'repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 1px, transparent 1px 3px)',
-                }}
-                aria-hidden
-              />
-            </div>
-          </div>
-        </div>
-        <div
-          className="absolute inset-0 -z-10 rounded-2xl bg-black/50 blur-md"
-          style={{ transform: 'translateY(18px) rotateX(70deg) scale(0.92)' }}
-          aria-hidden
-        />
-      </motion.div>
     </div>
   );
 }
@@ -958,6 +864,7 @@ export function LealtadLanding() {
               Hecho para el negocio de la esquina — y el que quiere crecer
             </h2>
           </ScrollReveal>
+          <IndustryPhoneCarousel />
           <div className="mt-8 flex flex-wrap gap-2">
             {INDUSTRIES.map((ind) => (
               <button
@@ -1094,7 +1001,7 @@ export function LealtadLanding() {
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.08}>
-              <NfcCardMockup />
+              <NfcTapSequence />
             </ScrollReveal>
           </div>
         </section>
@@ -1390,26 +1297,7 @@ export function LealtadLanding() {
               Un solo sistema: captura, recompra, recuperación, NFC y reseñas trabajando juntos.
             </p>
           </ScrollReveal>
-          <div className="mt-10 overflow-x-auto pb-2">
-            <div className="mx-auto flex min-w-[640px] max-w-4xl flex-wrap items-center justify-center gap-2 sm:min-w-0">
-              {ECOSYSTEM.map((node, i) => (
-                <div key={node} className="flex items-center gap-2">
-                  <div
-                    className={`rounded-2xl border px-3.5 py-2.5 text-center text-xs font-semibold sm:text-sm ${
-                      i === ECOSYSTEM.length - 1
-                        ? 'border-[#00D4FF]/45 bg-[#00D4FF]/12 text-[#00D4FF]'
-                        : 'border-white/12 bg-white/[0.04] text-white/75'
-                    }`}
-                  >
-                    {node}
-                  </div>
-                  {i < ECOSYSTEM.length - 1 ? (
-                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/25" aria-hidden />
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </div>
+          <EcosystemFlow />
         </section>
 
         <footer className="border-t border-white/10 pt-8 text-center text-sm text-white/40">
