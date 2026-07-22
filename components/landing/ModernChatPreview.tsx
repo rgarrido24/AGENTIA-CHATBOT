@@ -26,7 +26,7 @@ function TypingDots() {
 type Props = {
   businessName: string;
   accent?: string;
-  messages: ChatLine[];
+  messages: readonly ChatLine[];
   animate?: boolean;
   compact?: boolean;
 };
