@@ -111,6 +111,8 @@ const INDUSTRIES = [
     id: 'cafe',
     label: 'Cafeterías',
     icon: '☕',
+    logoSrc: '/images/mockups/cafe-luna-logo.jpg',
+    logoAlt: 'Café Luna',
     example: 'Café #10 gratis → la rutina matutina se queda contigo.',
     color: 'from-[#4A2C1A] to-[#1A0E08]',
   },
@@ -170,7 +172,7 @@ const INDUSTRIES = [
     example: 'Sellos en temporada escolar y clientes que vuelven todo el año.',
     color: 'from-[#1e3a8a] to-[#0f172a]',
   },
-];
+] as const;
 
 const AUTOMATIONS = [
   {
@@ -962,13 +964,26 @@ export function LealtadLanding() {
                 key={ind.id}
                 type="button"
                 onClick={() => setIndustry(ind)}
-                className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition-[transform,border-color,background-color,color] duration-150 active:scale-[0.97] ${
+                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold transition-[transform,border-color,background-color,color] duration-150 active:scale-[0.97] ${
                   industry.id === ind.id
                     ? 'border-[#00D4FF] bg-[#00D4FF]/12 text-[#00D4FF]'
                     : 'border-white/12 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white'
                 }`}
               >
-                {ind.icon} {ind.label}
+                {'logoSrc' in ind && ind.logoSrc ? (
+                  <span className="relative inline-flex h-5 w-5 shrink-0 overflow-hidden rounded-full bg-[#F5F0E8]">
+                    <Image
+                      src={ind.logoSrc}
+                      alt=""
+                      width={24}
+                      height={24}
+                      className="h-[118%] w-[118%] max-w-none object-cover object-center"
+                    />
+                  </span>
+                ) : (
+                  <span aria-hidden>{ind.icon}</span>
+                )}
+                {ind.label}
               </button>
             ))}
           </div>
@@ -981,7 +996,20 @@ export function LealtadLanding() {
               transition={{ duration: 0.25 }}
               className={`mt-8 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br ${industry.color} p-8 sm:p-10`}
             >
-              <p className="text-4xl">{industry.icon}</p>
+              {'logoSrc' in industry && industry.logoSrc ? (
+                <div className="relative flex h-16 w-16 overflow-hidden rounded-full bg-[#F5F0E8] shadow-[0_8px_24px_rgba(0,0,0,0.35)] sm:h-20 sm:w-20">
+                  <Image
+                    src={industry.logoSrc}
+                    alt={industry.logoAlt}
+                    width={96}
+                    height={96}
+                    className="h-[118%] w-[118%] max-w-none object-cover object-center"
+                    quality={95}
+                  />
+                </div>
+              ) : (
+                <p className="text-4xl">{industry.icon}</p>
+              )}
               <h3 className="mt-4 font-[family-name:var(--font-space)] text-2xl font-bold">
                 {industry.label}
               </h3>
