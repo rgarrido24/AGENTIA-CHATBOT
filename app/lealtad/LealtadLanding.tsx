@@ -422,7 +422,7 @@ function PhoneHero() {
                       🎉
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-semibold text-white/50">Bruma Coffee</p>
+                      <p className="text-[10px] font-semibold text-white/50">Café Luna</p>
                       <p className="text-[12px] font-medium leading-snug text-white">
                         🎉 ¡Felicidades! Has desbloqueado tu recompensa
                       </p>
@@ -481,18 +481,21 @@ function PhoneHero() {
 
                       <div className="relative z-[3]">
                         <div className="flex items-center gap-3">
-                          <div
-                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl font-[family-name:var(--font-space)] text-sm font-bold text-[#0a0a0a]"
-                            style={{
-                              background: `linear-gradient(145deg, #f0f0f0, #a8a8a8)`,
-                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
-                            }}
-                          >
-                            BR
+                          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F5F0E8] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_0_0_1px_rgba(255,255,255,0.12)]">
+                            <Image
+                              src="/images/mockups/cafe-luna-logo.jpg"
+                              alt="Café Luna"
+                              width={56}
+                              height={56}
+                              className="h-[118%] w-[118%] max-w-none object-cover object-center"
+                              style={{ imageRendering: 'auto' }}
+                              quality={95}
+                              priority
+                            />
                           </div>
                           <div className="min-w-0">
                             <p className="font-[family-name:var(--font-space)] text-lg font-bold leading-tight text-white">
-                              Bruma Coffee
+                              Café Luna
                             </p>
                             <p className="text-[12px] text-white/55">Sofía Reyes</p>
                           </div>
