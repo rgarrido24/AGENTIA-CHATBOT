@@ -48,8 +48,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.getString("userId")!;
     final userName = prefs.getString("userName")!;
+    final plaza = prefs.getString("plaza")!;
 
-    final jornadaId = await _api.startJornada(userId, userName);
+    final jornadaId = await _api.startJornada(userId, userName, plaza);
     if (jornadaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("No se pudo iniciar la jornada. Revisa tu conexión.")),

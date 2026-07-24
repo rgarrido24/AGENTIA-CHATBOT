@@ -6,7 +6,7 @@ const dbName = "agentia_chatbot_ventas";
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, userName } = await req.json();
+    const { userId, userName, plaza } = await req.json();
     if (!userId) return NextResponse.json({ error: "Falta userId" }, { status: 400 });
 
     const jornadaId = `jornada_${Date.now()}_${userId}`;
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       jornadaId,
       userId,
       userName,
+      plaza,
       startTime: new Date(),
       endTime: null,
       status: "activa",
