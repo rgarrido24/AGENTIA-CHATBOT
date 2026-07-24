@@ -21,12 +21,16 @@ type StreetSegment = {
 };
 
 function formatJornadaLabel(jornada: Jornada) {
-  const fecha = new Date(jornada.startTime).toLocaleString("es-MX");
+  const fecha = new Date(jornada.startTime).toLocaleString("es-MX", {
+    timeZone: "America/Merida",
+  });
   return `${jornada.userName} - ${fecha} (${jornada.status})`;
 }
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleString("es-MX");
+  return new Date(iso).toLocaleString("es-MX", {
+    timeZone: "America/Merida",
+  });
 }
 
 export default function TrackingPanel() {
