@@ -36,12 +36,13 @@ export const ASSETS = {
 
 export const CARTA_TEXTO = `¡Al infinito y más allá!
 
-Querido aventurero: hoy cerramos una misión llena de risas, juegos y descubrimientos. En estas páginas vive el eco de tus primeros grandes viajes — con botas de vaquero, naves espaciales y amigos para siempre.
+Wow, ya creciste amigo… ¡Felicidades!
 
-Gracias por ser parte de la Generación 2024-2026 del Colegio Asbaje. El Comando Estelar estará siempre orgulloso de ti.
+Hoy celebramos que completaste tu primera gran misión: el preescolar. Guardamos en esta bitácora tus risas, tus juegos y a tus compañeros de aventura.
 
-Con cariño,
-Miss Vale & Miss Paty`;
+Ahora te espera primaria — una nueva misión llena de descubrimientos.
+
+¡Felicidades, generación 2024-2026!`;
 
 function pathAvatar(slug: string) {
   return `/anuario-k3/alumnos/${slug}/avatar.jpg`;
@@ -78,7 +79,7 @@ export const STUDENTS: Student[] = [
       { icon: "🚒", label: "Sueña ser", value: "BOMBERO" },
       { icon: "🌭", label: "Comida favorita", value: "HOT DOG" },
       { icon: "🎨", label: "Color favorito", value: "ROSA" },
-      { icon: "👧", label: "Mejor amigo", value: "SARITA, FABIO" },
+      { icon: "👧", label: "Mejor amiga", value: "SARITA, FER" },
       {
         icon: "🎙️",
         label: "Frase favorita",

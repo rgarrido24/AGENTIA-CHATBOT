@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { StudentCard, StudentBitacora } from "./StudentCard";
 import { VaulDrawer } from "./VaulDrawer";
 import { SoftImage, springCard, springTap } from "./SoftImage";
+import { usePhotoStudio } from "./PhotoStudioContext";
 import { FEATURED_SLUG, STUDENTS, ASSETS, type Student } from "../data";
 
 export function GenerationWall() {
@@ -13,6 +14,8 @@ export function GenerationWall() {
   const [filter, setFilter] = useState<"todos" | "f" | "m">("todos");
   const [selected, setSelected] = useState<Student | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const { resolve } = usePhotoStudio();
+  const grupal = resolve("generacion.grupal", ASSETS.fotoGrupal);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)");
@@ -41,7 +44,7 @@ export function GenerationWall() {
   return (
     <section className="section muro" id="generacion">
       <div className="section__head">
-        <p className="section__eyebrow">Generación 2024-2026</p>
+        <p className="eyebrow">Generación 2024-2026</p>
         <h2 className="section__title">Muro de la Tripulación</h2>
         <p className="section__sub">Toca una tarjeta para abrir la bitácora de cada vaquerito.</p>
       </div>
@@ -132,11 +135,11 @@ export function GenerationWall() {
 
       <div className="muro__group">
         <SoftImage
-          src={ASSETS.fotoGrupal}
+          src={grupal}
           alt="Foto grupal Generación 2024-2026"
           className="muro__group-img"
           fallbackLabel="Foto grupal pendiente"
-          accent="#7B5294"
+          accent="#1E90D6"
         />
       </div>
     </section>

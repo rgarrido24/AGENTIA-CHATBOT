@@ -3,65 +3,90 @@
 import { motion } from "framer-motion";
 import { GrowthSlider } from "./GrowthSlider";
 import { AudioVisualizer } from "./AudioVisualizer";
-import { springCard } from "./SoftImage";
+import { SoftImage, springCard, springTap } from "./SoftImage";
+import { usePhotoStudio } from "./PhotoStudioContext";
 import { FEATURED_SLUG, STUDENTS, bitacoraTitulo } from "../data";
 
 export function FeaturedBitacora() {
   const student = STUDENTS.find((s) => s.slug === FEATURED_SLUG)!;
+  const { resolve } = usePhotoStudio();
+
+  const primer = resolve("amaia.primerDia", student.primerDiaSrc);
+  const final = resolve("amaia.diaFinal", student.diaFinalSrc);
+  const avatar = resolve("amaia.avatar", student.avatarSrc);
 
   return (
     <section className="section featured-bitacora" id="bitacora">
       <div className="section__head">
-        <p className="section__eyebrow">{bitacoraTitulo(student)}</p>
-        <h2 className="section__title">{student.nombreCompleto}</h2>
-        <p className="section__sub">
-          Plantilla lista: sustituye las fotos en{" "}
-          <code>/public/anuario-k3/alumnos/{student.slug}/</code>
-        </p>
+        <p className="eyebrow">Misión cumplida</p>
+        <h2 className="section__title">{bitacoraTitulo(student)}</h2>
       </div>
 
       <motion.div
-        className="bitacora bitacora--desktop"
-        style={{ margin: "0 auto", ["--accent" as string]: student.accent }}
-        initial={{ opacity: 0, y: 24 }}
+        className="mission-board"
+        initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.25 }}
+        viewport={{ once: true, amount: 0.2 }}
         transition={springCard}
       >
-        <div className="bitacora__top">
-          <div className="bitacora__photo-wrap">
-            <GrowthSlider
-              primerDiaSrc={student.primerDiaSrc}
-              diaFinalSrc={student.diaFinalSrc}
-              alt={student.nombreCompleto}
-              accent={student.accent}
-            />
+        <div className="mission-board__texture" aria-hidden />
+
+        <div className="mission-board__grid">
+          <div className="polaroid-stack">
+            <span className="sheriff-star sheriff-star--tl" aria-hidden />
+            <span className="tape" aria-hidden />
+            <motion.div
+              className="polaroid"
+              whileHover={{ rotate: -1.5, y: -6 }}
+              transition={springTap}
+            >
+              <GrowthSlider
+                primerDiaSrc={primer}
+                diaFinalSrc={final || avatar}
+                alt={student.nombreCompleto}
+                accent="#E8A0BF"
+              />
+            </motion.div>
+            <h3 className="polaroid-name">{student.nombreCompleto.split(" ").slice(0, 2).join(" ")}</h3>
+            <span className="sheriff-star sheriff-star--br" aria-hidden />
           </div>
-          <div>
-            <p className="bitacora__eyebrow">Insignias de Sheriff</p>
-            <h3 className="bitacora__name">Su misión personal</h3>
-            <p style={{ margin: "0.75rem 0 0", opacity: 0.75, fontWeight: 600 }}>
-              Pasa el cursor o mantén la foto para ver Primer Día ↔ Día Final.
-            </p>
-          </div>
+
+          <ul className="fact-list">
+            {student.badges.map((b, i) => (
+              <motion.li
+                key={b.label}
+                className="fact-row"
+                initial={{ opacity: 0, x: 16 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ type: "spring", duration: 0.45, bounce: 0.15, delay: i * 0.04 }}
+                whileHover={{ x: 4 }}
+              >
+                <span className="fact-row__icon" aria-hidden>
+                  {b.icon}
+                </span>
+                <div>
+                  <p className="fact-row__label">{b.label}</p>
+                  <p className="fact-row__value">{b.value}</p>
+                  {"audioSrc" in b ? (
+                    <AudioVisualizer src={b.audioSrc} label="Escuchar voz" bars={10} />
+                  ) : null}
+                </div>
+              </motion.li>
+            ))}
+          </ul>
         </div>
 
-        <ul className="bitacora__badges">
-          {student.badges.map((b) => (
-            <li key={b.label} className="badge-sheriff">
-              <span className="badge-sheriff__icon" aria-hidden>
-                {b.icon}
-              </span>
-              <div>
-                <p className="badge-sheriff__label">{b.label}</p>
-                <p className="badge-sheriff__value">{b.value}</p>
-                {"audioSrc" in b ? (
-                  <AudioVisualizer src={b.audioSrc} label="Voz del niño" bars={12} />
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="mission-board__avatar-hint">
+          <SoftImage
+            src={avatar}
+            alt="Avatar Amaia"
+            className="mission-board__mini"
+            fallbackLabel="Avatar"
+            accent="#E8A0BF"
+          />
+          <p>Usa “Subir fotos” para reemplazar Primer día / Día final / Avatar.</p>
+        </div>
       </motion.div>
     </section>
   );

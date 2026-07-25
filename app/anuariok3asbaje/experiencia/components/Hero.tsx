@@ -1,25 +1,34 @@
 "use client";
 
 import { useMemo, useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 import { SoftImage, springCard } from "./SoftImage";
-import { ASSETS } from "../data";
+import { usePhotoStudio } from "./PhotoStudioContext";
 
-const TITLE = "Mis Días de Aventura";
+const TITLE_WORDS = ["Mis", "Días", "de", "Aventura"];
 
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
+  const { resolve } = usePhotoStudio();
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
-  const sx = useSpring(mx, { stiffness: 120, damping: 22 });
-  const sy = useSpring(my, { stiffness: 120, damping: 22 });
-  const balloons = useMemo(
+  const sx = useSpring(mx, { stiffness: 140, damping: 22 });
+  const sy = useSpring(my, { stiffness: 140, damping: 22 });
+  const plateX = useTransform(sx, (v: number) => v * -12);
+  const plateY = useTransform(sy, (v: number) => v * -10);
+
+  const layers = useMemo(
     () => [
-      { emoji: "🤠", x: "12%", y: "22%", depth: 18 },
-      { emoji: "🚀", x: "78%", y: "18%", depth: 28 },
-      { emoji: "⭐", x: "68%", y: "58%", depth: 14 },
-      { emoji: "🎈", x: "22%", y: "62%", depth: 22 },
-      { emoji: "🛸", x: "86%", y: "42%", depth: 16 },
+      { id: "cow", depth: 10, className: "hero-layer hero-layer--cow" },
+      { id: "bandana", depth: 16, className: "hero-layer hero-layer--bandana" },
+      { id: "plaid", depth: 8, className: "hero-layer hero-layer--plaid" },
+      { id: "sky", depth: 4, className: "hero-layer hero-layer--sky" },
     ],
     []
   );
@@ -28,11 +37,11 @@ export function Hero() {
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width - 0.5;
-    const py = (e.clientY - r.top) / r.height - 0.5;
-    mx.set(px);
-    my.set(py);
+    mx.set((e.clientX - r.left) / r.width - 0.5);
+    my.set((e.clientY - r.top) / r.height - 0.5);
   };
+
+  const portada = resolve("hero.portada", "/anuario-k3/refs/portada-ref.png");
 
   return (
     <section
@@ -44,90 +53,69 @@ export function Hero() {
         my.set(0);
       }}
     >
-      <div className="hero__grain" aria-hidden />
-      <div className="hero__mesh" aria-hidden />
+      <div className="hero__stage">
+        {layers.map((layer) => (
+          <ParallaxLayer key={layer.id} className={layer.className} depth={layer.depth} sx={sx} sy={sy} />
+        ))}
 
-      {balloons.map((b, i) => (
-        <Balloon key={i} emoji={b.emoji} x={b.x} y={b.y} depth={b.depth} sx={sx} sy={sy} />
-      ))}
-
-      <div className="hero__content">
-        <motion.div
-          className="hero__stamp"
-          initial={{ opacity: 0, rotate: -8, y: 24 }}
-          animate={{ opacity: 1, rotate: -3, y: 0 }}
-          transition={springCard}
-        >
-          <SoftImage
-            src={ASSETS.heroPortada}
-            alt="Sello postal Toy Story"
-            className="hero__stamp-img"
-            fallbackLabel="Sello postal"
-            accent="#7B5294"
-          />
-          <span className="hero__stamp-label">POSTAL · K3</span>
+        <motion.div className="hero__plate" style={{ x: plateX, y: plateY }}>
+          <div className="bezel">
+            <div className="bezel__inner hero__collage">
+              <SoftImage
+                src={portada}
+                alt="Mis Días de Aventura — portada"
+                className="hero__collage-img"
+                fallbackLabel="Portada"
+                accent="#1E90D6"
+              />
+              <div className="hero__nameplate">
+                <span>Colegio Asbaje</span>
+                <strong>Amaia Garrido Cárdenas</strong>
+              </div>
+            </div>
+          </div>
         </motion.div>
+      </div>
 
-        <p className="hero__eyebrow">Colegio Asbaje · Generación 2024-2026</p>
-        <WordReveal text={TITLE} />
+      <div className="hero__copy">
+        <p className="eyebrow">Generación 2024-2026 · Kinder 3</p>
+        <h1 className="hero__title" aria-label="Mis Días de Aventura">
+          {TITLE_WORDS.map((word, i) => (
+            <motion.span
+              key={word}
+              initial={{ opacity: 0, y: 22, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ type: "spring", duration: 0.55, bounce: 0.18, delay: 0.08 + i * 0.06 }}
+            >
+              {word}
+            </motion.span>
+          ))}
+        </h1>
         <motion.p
           className="hero__sub"
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ ...springCard, delay: 0.35 }}
+          transition={{ ...springCard, delay: 0.32 }}
         >
-          Bitácora espacial de vaqueritos — una misión llena de amigos, risas y estrellas.
+          Bitácora digital de una misión cumplida — vaqueritos, estrellas y amigos para siempre.
         </motion.p>
       </div>
     </section>
   );
 }
 
-function Balloon({
-  emoji,
-  x,
-  y,
+function ParallaxLayer({
+  className,
   depth,
   sx,
   sy,
 }: {
-  emoji: string;
-  x: string;
-  y: string;
+  className: string;
   depth: number;
-  sx: ReturnType<typeof useSpring>;
-  sy: ReturnType<typeof useSpring>;
+  sx: MotionValue<number>;
+  sy: MotionValue<number>;
 }) {
-  const tx = useTransform(sx, (v) => v * depth);
-  const ty = useTransform(sy, (v) => v * depth);
-  return (
-    <motion.span
-      className="hero__balloon"
-      style={{ left: x, top: y, x: tx, y: ty }}
-      animate={{ y: [0, -10, 0] }}
-      transition={{ duration: 4.2 + depth * 0.05, repeat: Infinity, ease: "easeInOut" }}
-      aria-hidden
-    >
-      {emoji}
-    </motion.span>
-  );
-}
-
-function WordReveal({ text }: { text: string }) {
-  const words = text.split(" ");
-  return (
-    <h1 className="hero__title" aria-label={text}>
-      {words.map((word, i) => (
-        <motion.span
-          key={`${word}-${i}`}
-          className="hero__word"
-          initial={{ opacity: 0, y: 28, filter: "blur(6px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ ...springCard, delay: 0.12 + i * 0.08 }}
-        >
-          {word}
-        </motion.span>
-      ))}
-    </h1>
-  );
+  const x = useTransform(sx, (v: number) => v * depth);
+  const y = useTransform(sy, (v: number) => v * depth);
+  return <motion.div className={className} style={{ x, y }} aria-hidden />;
 }

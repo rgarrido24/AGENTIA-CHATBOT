@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 
 type Props = {
@@ -15,6 +15,10 @@ type Props = {
 export function SoftImage({ src, alt, className = "", fallbackLabel, accent = "#7B5294" }: Props) {
   const [failed, setFailed] = useState(!src);
 
+  useEffect(() => {
+    setFailed(!src);
+  }, [src]);
+
   if (failed || !src) {
     return (
       <div
@@ -25,8 +29,8 @@ export function SoftImage({ src, alt, className = "", fallbackLabel, accent = "#
         role="img"
         aria-label={alt}
       >
-        <span className="soft-image-fallback__badge">📸</span>
-        <span className="soft-image-fallback__label">{fallbackLabel || "Foto pendiente"}</span>
+        <span className="soft-image-fallback__badge">Foto</span>
+        <span className="soft-image-fallback__label">{fallbackLabel || "Pendiente"}</span>
       </div>
     );
   }
