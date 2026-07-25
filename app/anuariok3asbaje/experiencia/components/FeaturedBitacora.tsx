@@ -1,25 +1,43 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { FactSceneGrid, SceneCanvas } from "../../demos/_components/SceneCanvas";
+import { scenesForStudent } from "../../demos/_lib/themeScenes";
 import { GrowthSlider } from "./GrowthSlider";
-import { AudioVisualizer } from "./AudioVisualizer";
-import { SoftImage, springCard, springTap } from "./SoftImage";
+import { springCard } from "./SoftImage";
 import { usePhotoStudio } from "./PhotoStudioContext";
 import { FEATURED_SLUG, STUDENTS, bitacoraTitulo } from "../data";
 
 export function FeaturedBitacora() {
   const student = STUDENTS.find((s) => s.slug === FEATURED_SLUG)!;
   const { resolve } = usePhotoStudio();
+  const [focus, setFocus] = useState(0);
 
   const primer = resolve("amaia.primerDia", student.primerDiaSrc);
   const final = resolve("amaia.diaFinal", student.diaFinalSrc);
-  const avatar = resolve("amaia.avatar", student.avatarSrc);
+
+  const scenes = useMemo(
+    () =>
+      scenesForStudent({
+        suenioDeGrande: student.badges[0]?.value,
+        comidaFavorita: student.badges[1]?.value,
+        colorFavorito: student.badges[2]?.value,
+        mejorAmigo: student.badges[3]?.value,
+        fraseFavorita: student.badges[4]?.value,
+        loQueMasLeGusto: student.badges[5]?.value,
+      }),
+    [student]
+  );
 
   return (
     <section className="section featured-bitacora" id="bitacora">
       <div className="section__head">
         <p className="eyebrow">Misión cumplida</p>
         <h2 className="section__title">{bitacoraTitulo(student)}</h2>
+        <p className="section__sub">
+          Escenas interactivas: toca sueño, comida, color… y cambia el universo visual.
+        </p>
       </div>
 
       <motion.div
@@ -30,62 +48,30 @@ export function FeaturedBitacora() {
         transition={springCard}
       >
         <div className="mission-board__texture" aria-hidden />
-
         <div className="mission-board__grid">
           <div className="polaroid-stack">
             <span className="sheriff-star sheriff-star--tl" aria-hidden />
             <span className="tape" aria-hidden />
-            <motion.div
-              className="polaroid"
-              whileHover={{ rotate: -1.5, y: -6 }}
-              transition={springTap}
-            >
+            <motion.div className="polaroid" whileHover={{ rotate: -1.5, y: -6 }} transition={{ type: "spring", stiffness: 400, damping: 25 }}>
               <GrowthSlider
                 primerDiaSrc={primer}
-                diaFinalSrc={final || avatar}
+                diaFinalSrc={final}
                 alt={student.nombreCompleto}
                 accent="#E8A0BF"
               />
             </motion.div>
-            <h3 className="polaroid-name">{student.nombreCompleto.split(" ").slice(0, 2).join(" ")}</h3>
+            <h3 className="polaroid-name">
+              {student.nombreCompleto.split(" ").slice(0, 2).join(" ")}
+            </h3>
             <span className="sheriff-star sheriff-star--br" aria-hidden />
           </div>
 
-          <ul className="fact-list">
-            {student.badges.map((b, i) => (
-              <motion.li
-                key={b.label}
-                className="fact-row"
-                initial={{ opacity: 0, x: 16 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ type: "spring", duration: 0.45, bounce: 0.15, delay: i * 0.04 }}
-                whileHover={{ x: 4 }}
-              >
-                <span className="fact-row__icon" aria-hidden>
-                  {b.icon}
-                </span>
-                <div>
-                  <p className="fact-row__label">{b.label}</p>
-                  <p className="fact-row__value">{b.value}</p>
-                  {"audioSrc" in b ? (
-                    <AudioVisualizer src={b.audioSrc} label="Escuchar voz" bars={10} />
-                  ) : null}
-                </div>
-              </motion.li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mission-board__avatar-hint">
-          <SoftImage
-            src={avatar}
-            alt="Avatar Amaia"
-            className="mission-board__mini"
-            fallbackLabel="Avatar"
-            accent="#E8A0BF"
-          />
-          <p>Usa “Subir fotos” para reemplazar Primer día / Día final / Avatar.</p>
+          <div>
+            <div style={{ borderRadius: "1.1rem", overflow: "hidden", marginBottom: "0.75rem" }}>
+              <SceneCanvas scene={scenes[focus]} active />
+            </div>
+            <FactSceneGrid scenes={scenes} onSelect={(_s, i) => setFocus(i)} />
+          </div>
         </div>
       </motion.div>
     </section>
