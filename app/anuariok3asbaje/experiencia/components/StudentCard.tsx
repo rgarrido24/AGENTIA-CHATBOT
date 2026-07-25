@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { SoftImage, springCard, springLayout, springTap } from "./SoftImage";
 import { GrowthSlider } from "./GrowthSlider";
-import { AudioVisualizer } from "./AudioVisualizer";
+import { FactSceneGrid, SceneCanvas } from "../../demos/_components/SceneCanvas";
+import { scenesForStudent } from "../../demos/_lib/themeScenes";
 import type { Student } from "../data";
 import { bitacoraTitulo } from "../data";
+import "../../demos/demos.css";
 
 type Props = {
   student: Student;
@@ -41,7 +44,9 @@ export function StudentCard({ student, onSelect, featured }: Props) {
       <motion.div layoutId={`student-meta-${student.id}`} transition={springLayout}>
         <p className="student-card__name">{student.nombreCorto}</p>
         <p className="student-card__sub">
-          {featured ? bitacoraTitulo(student) : "Abrir bitácora"}
+          {featured
+            ? bitacoraTitulo(student)
+            : student.suenioDeGrande || "Abrir bitácora"}
         </p>
       </motion.div>
     </motion.button>
@@ -57,6 +62,9 @@ export function StudentBitacora({
   onClose: () => void;
   desktop?: boolean;
 }) {
+  const [focus, setFocus] = useState(0);
+  const scenes = scenesForStudent(student);
+
   return (
     <motion.div
       className={`bitacora ${desktop ? "bitacora--desktop" : ""}`}
@@ -80,25 +88,35 @@ export function StudentBitacora({
         <motion.div layoutId={`student-meta-${student.id}`} transition={springLayout}>
           <p className="bitacora__eyebrow">{bitacoraTitulo(student)}</p>
           <h3 className="bitacora__name">{student.nombreCompleto}</h3>
+          {!student.formularioEnviado ? (
+            <p style={{ margin: "0.4rem 0 0", fontSize: "0.8rem", opacity: 0.65, fontWeight: 700 }}>
+              Formulario pendiente — datos incompletos
+            </p>
+          ) : null}
         </motion.div>
       </div>
 
-      <ul className="bitacora__badges">
-        {student.badges.map((b) => (
-          <li key={b.label} className="badge-sheriff">
-            <span className="badge-sheriff__icon" aria-hidden>
-              {b.icon}
-            </span>
-            <div>
-              <p className="badge-sheriff__label">{b.label}</p>
-              <p className="badge-sheriff__value">{b.value}</p>
-              {"audioSrc" in b ? (
-                <AudioVisualizer src={b.audioSrc} label="Voz del niño" bars={12} />
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
+      <div style={{ borderRadius: "1.1rem", overflow: "hidden", marginBottom: "0.75rem" }}>
+        <SceneCanvas scene={scenes[focus]} active />
+      </div>
+      <FactSceneGrid scenes={scenes} onSelect={(_s, i) => setFocus(i)} />
+
+      {(student.dedicatoriaMama || student.dedicatoriaPapa) && (
+        <div className="demo-dedicatorias" style={{ marginTop: "1rem" }}>
+          {student.dedicatoriaMama ? (
+            <blockquote>
+              <span>Mamá</span>
+              <p>{student.dedicatoriaMama}</p>
+            </blockquote>
+          ) : null}
+          {student.dedicatoriaPapa ? (
+            <blockquote>
+              <span>Papá</span>
+              <p>{student.dedicatoriaPapa}</p>
+            </blockquote>
+          ) : null}
+        </div>
+      )}
 
       {desktop ? (
         <motion.button

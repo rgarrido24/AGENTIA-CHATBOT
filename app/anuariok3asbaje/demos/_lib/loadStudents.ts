@@ -42,6 +42,9 @@ export async function loadDemoStudents(): Promise<DemoStudent[]> {
       formularioEnviado: a.formularioEnviado,
       dedicatoriaMama: a.dedicatoriaMama || "",
       dedicatoriaPapa: a.dedicatoriaPapa || "",
+      fotos: Array.isArray((a as { fotos?: string[] }).fotos)
+        ? (a as { fotos?: string[] }).fotos
+        : [],
     }));
   } catch (e) {
     console.error(e);

@@ -17,6 +17,17 @@ export type Student = {
   diaFinalSrc: string | null;
   fraseAudioSrc: string | null;
   badges: StudentBadge[];
+  suenioDeGrande: string;
+  comidaFavorita: string;
+  colorFavorito: string;
+  mejorAmigo: string;
+  fraseFavorita: string;
+  loQueMasLeGusto: string;
+  dedicatoriaMama: string;
+  dedicatoriaPapa: string;
+  formularioEnviado: boolean;
+  /** URLs originales subidas en el formulario (Cloudinary) */
+  formFotos: string[];
 };
 
 export type Teacher = {
@@ -27,9 +38,8 @@ export type Teacher = {
   accent: string;
 };
 
-/** Rutas listas para reemplazar por archivos reales en /public/anuario-k3 */
 export const ASSETS = {
-  heroPortada: "/anuario-k3/hero/portada.jpg",
+  heroPortada: "/anuario-k3/refs/portada-ref.png",
   cartaAudio: "/anuario-k3/carta/narracion.mp3",
   fotoGrupal: "/anuario-k3/generacion/foto-grupal.jpg",
 } as const;
@@ -44,221 +54,7 @@ Ahora te espera primaria — una nueva misión llena de descubrimientos.
 
 ¡Felicidades, generación 2024-2026!`;
 
-function pathAvatar(slug: string) {
-  return `/anuario-k3/alumnos/${slug}/avatar.jpg`;
-}
-
-function pathPrimer(slug: string) {
-  return `/anuario-k3/alumnos/${slug}/primer-dia.jpg`;
-}
-
-function pathFinal(slug: string) {
-  return `/anuario-k3/alumnos/${slug}/dia-final.jpg`;
-}
-
-function pathFrase(slug: string) {
-  return `/anuario-k3/alumnos/${slug}/frase.mp3`;
-}
-
-/** Amaia con datos reales de plantilla; el resto listo para completar */
 export const FEATURED_SLUG = "amaia";
-
-export const STUDENTS: Student[] = [
-  {
-    id: "amaia",
-    slug: "amaia",
-    nombreCorto: "Amaia",
-    nombreCompleto: "Amaia Garrido Cárdenas",
-    genero: "f",
-    accent: "#E8A0BF",
-    avatarSrc: pathAvatar("amaia"),
-    primerDiaSrc: pathPrimer("amaia"),
-    diaFinalSrc: pathFinal("amaia"),
-    fraseAudioSrc: pathFrase("amaia"),
-    badges: [
-      { icon: "🚒", label: "Sueña ser", value: "BOMBERO" },
-      { icon: "🌭", label: "Comida favorita", value: "HOT DOG" },
-      { icon: "🎨", label: "Color favorito", value: "ROSA" },
-      { icon: "👧", label: "Mejor amiga", value: "SARITA, FER" },
-      {
-        icon: "🎙️",
-        label: "Frase favorita",
-        value: "DIME VERDAD",
-        audioSrc: pathFrase("amaia"),
-      },
-      { icon: "🎈", label: "Lo que más me gustó", value: "JUGAR CON MIS AMIGOS" },
-    ],
-  },
-  {
-    id: "elias",
-    slug: "elias",
-    nombreCorto: "Elías",
-    nombreCompleto: "Elías",
-    genero: "m",
-    accent: "#5B8DEF",
-    avatarSrc: pathAvatar("elias"),
-    primerDiaSrc: pathPrimer("elias"),
-    diaFinalSrc: pathFinal("elias"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "fernanda",
-    slug: "fernanda",
-    nombreCorto: "Fernanda",
-    nombreCompleto: "Fernanda",
-    genero: "f",
-    accent: "#F5B041",
-    avatarSrc: pathAvatar("fernanda"),
-    primerDiaSrc: pathPrimer("fernanda"),
-    diaFinalSrc: pathFinal("fernanda"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "ana-pau",
-    slug: "ana-pau",
-    nombreCorto: "Ana Pau",
-    nombreCompleto: "Ana Pau",
-    genero: "f",
-    accent: "#C084FC",
-    avatarSrc: pathAvatar("ana-pau"),
-    primerDiaSrc: pathPrimer("ana-pau"),
-    diaFinalSrc: pathFinal("ana-pau"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "gabito",
-    slug: "gabito",
-    nombreCorto: "Gabito",
-    nombreCompleto: "Gabito",
-    genero: "m",
-    accent: "#34D399",
-    avatarSrc: pathAvatar("gabito"),
-    primerDiaSrc: pathPrimer("gabito"),
-    diaFinalSrc: pathFinal("gabito"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "naty",
-    slug: "naty",
-    nombreCorto: "Naty",
-    nombreCompleto: "Naty",
-    genero: "f",
-    accent: "#FB7185",
-    avatarSrc: pathAvatar("naty"),
-    primerDiaSrc: pathPrimer("naty"),
-    diaFinalSrc: pathFinal("naty"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "fabio",
-    slug: "fabio",
-    nombreCorto: "Fabio",
-    nombreCompleto: "Fabio",
-    genero: "m",
-    accent: "#38BDF8",
-    avatarSrc: pathAvatar("fabio"),
-    primerDiaSrc: pathPrimer("fabio"),
-    diaFinalSrc: pathFinal("fabio"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "matthias",
-    slug: "matthias",
-    nombreCorto: "Matthías",
-    nombreCompleto: "Matthías",
-    genero: "m",
-    accent: "#A78BFA",
-    avatarSrc: pathAvatar("matthias"),
-    primerDiaSrc: pathPrimer("matthias"),
-    diaFinalSrc: pathFinal("matthias"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "luciana",
-    slug: "luciana",
-    nombreCorto: "Luciana",
-    nombreCompleto: "Luciana",
-    genero: "f",
-    accent: "#F472B6",
-    avatarSrc: pathAvatar("luciana"),
-    primerDiaSrc: pathPrimer("luciana"),
-    diaFinalSrc: pathFinal("luciana"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "cami",
-    slug: "cami",
-    nombreCorto: "Cami",
-    nombreCompleto: "Cami",
-    genero: "f",
-    accent: "#FBBF24",
-    avatarSrc: pathAvatar("cami"),
-    primerDiaSrc: pathPrimer("cami"),
-    diaFinalSrc: pathFinal("cami"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "lia",
-    slug: "lia",
-    nombreCorto: "Lia",
-    nombreCompleto: "Lia",
-    genero: "f",
-    accent: "#67E8F9",
-    avatarSrc: pathAvatar("lia"),
-    primerDiaSrc: pathPrimer("lia"),
-    diaFinalSrc: pathFinal("lia"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "kesleigh",
-    slug: "kesleigh",
-    nombreCorto: "Kesleigh",
-    nombreCompleto: "Kesleigh",
-    genero: "f",
-    accent: "#F9A8D4",
-    avatarSrc: pathAvatar("kesleigh"),
-    primerDiaSrc: pathPrimer("kesleigh"),
-    diaFinalSrc: pathFinal("kesleigh"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "sara",
-    slug: "sara",
-    nombreCorto: "Sara",
-    nombreCompleto: "Sara",
-    genero: "f",
-    accent: "#FDA4AF",
-    avatarSrc: pathAvatar("sara"),
-    primerDiaSrc: pathPrimer("sara"),
-    diaFinalSrc: pathFinal("sara"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-  {
-    id: "romina",
-    slug: "romina",
-    nombreCorto: "Romina",
-    nombreCompleto: "Romina",
-    genero: "f",
-    accent: "#C4B5FD",
-    avatarSrc: pathAvatar("romina"),
-    primerDiaSrc: pathPrimer("romina"),
-    diaFinalSrc: pathFinal("romina"),
-    fraseAudioSrc: null,
-    badges: placeholderBadges(),
-  },
-];
 
 export const TEACHERS: Teacher[] = [
   {
@@ -277,21 +73,86 @@ export const TEACHERS: Teacher[] = [
   },
 ];
 
-function placeholderBadges(): StudentBadge[] {
-  return [
-    { icon: "⭐", label: "Sueña ser", value: "Por completar" },
-    { icon: "🍕", label: "Comida favorita", value: "Por completar" },
-    { icon: "🎨", label: "Color favorito", value: "Por completar" },
-    { icon: "🤝", label: "Mejor amigo", value: "Por completar" },
-    { icon: "💬", label: "Frase favorita", value: "Por completar" },
-    { icon: "🎈", label: "Lo que más me gustó", value: "Por completar" },
-  ];
-}
-
-export function bitacoraTitulo(student: Student) {
+export function bitacoraTitulo(student: Pick<Student, "genero">) {
   return student.genero === "f" ? "Bitácora de una Vaquerita" : "Bitácora de un Vaquero";
 }
 
-export function getStudent(slug: string) {
-  return STUDENTS.find((s) => s.slug === slug);
+export function buildBadges(a: {
+  suenioDeGrande?: string;
+  comidaFavorita?: string;
+  colorFavorito?: string;
+  mejorAmigo?: string;
+  fraseFavorita?: string;
+  loQueMasLeGusto?: string;
+  genero?: "f" | "m";
+}): StudentBadge[] {
+  return [
+    { icon: "★", label: "Sueña ser", value: (a.suenioDeGrande || "Por completar").toUpperCase() },
+    { icon: "◆", label: "Comida favorita", value: (a.comidaFavorita || "Por completar").toUpperCase() },
+    { icon: "●", label: "Color favorito", value: (a.colorFavorito || "Por completar").toUpperCase() },
+    {
+      icon: "✦",
+      label: a.genero === "f" ? "Mejor amiga" : "Mejor amigo",
+      value: (a.mejorAmigo || "Por completar").toUpperCase(),
+    },
+    { icon: "♫", label: "Frase favorita", value: (a.fraseFavorita || "—").toUpperCase() },
+    {
+      icon: "✧",
+      label: "Lo que más me gustó",
+      value: (a.loQueMasLeGusto || "Por completar").toUpperCase(),
+    },
+  ];
+}
+
+type RawAlumno = {
+  id: string;
+  slug: string;
+  nombreCorto: string;
+  nombreCompleto: string;
+  genero: string;
+  accent: string;
+  suenioDeGrande?: string;
+  comidaFavorita?: string;
+  colorFavorito?: string;
+  mejorAmigo?: string;
+  fraseFavorita?: string;
+  loQueMasLeGusto?: string;
+  dedicatoriaMama?: string;
+  dedicatoriaPapa?: string;
+  formularioEnviado?: boolean;
+  avatarSrc?: string | null;
+  primerDiaSrc?: string | null;
+  diaFinalSrc?: string | null;
+  fotos?: string[];
+};
+
+/** Convierte alumnos de Mongo → modelo de la experiencia Toy Story */
+export function mapAlumnosToStudents(rows: RawAlumno[]): Student[] {
+  return rows.map((a) => {
+    const genero: "f" | "m" = a.genero === "f" ? "f" : "m";
+    const formFotos = Array.isArray(a.fotos) ? a.fotos.filter(Boolean) : [];
+    return {
+      id: a.id,
+      slug: a.slug,
+      nombreCorto: a.nombreCorto,
+      nombreCompleto: a.nombreCompleto || a.nombreCorto,
+      genero,
+      accent: a.accent,
+      avatarSrc: a.avatarSrc || formFotos[0] || null,
+      primerDiaSrc: a.primerDiaSrc || formFotos[1] || formFotos[0] || null,
+      diaFinalSrc: a.diaFinalSrc || formFotos[2] || formFotos[0] || null,
+      fraseAudioSrc: null,
+      badges: buildBadges({ ...a, genero }),
+      suenioDeGrande: a.suenioDeGrande || "",
+      comidaFavorita: a.comidaFavorita || "",
+      colorFavorito: a.colorFavorito || "",
+      mejorAmigo: a.mejorAmigo || "",
+      fraseFavorita: a.fraseFavorita || "",
+      loQueMasLeGusto: a.loQueMasLeGusto || "",
+      dedicatoriaMama: a.dedicatoriaMama || "",
+      dedicatoriaPapa: a.dedicatoriaPapa || "",
+      formularioEnviado: Boolean(a.formularioEnviado),
+      formFotos,
+    };
+  });
 }

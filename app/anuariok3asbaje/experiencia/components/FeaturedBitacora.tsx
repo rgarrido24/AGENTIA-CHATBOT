@@ -6,30 +6,26 @@ import { FactSceneGrid, SceneCanvas } from "../../demos/_components/SceneCanvas"
 import { scenesForStudent } from "../../demos/_lib/themeScenes";
 import { GrowthSlider } from "./GrowthSlider";
 import { springCard } from "./SoftImage";
-import { usePhotoStudio } from "./PhotoStudioContext";
-import { FEATURED_SLUG, STUDENTS, bitacoraTitulo } from "../data";
+import { useStudents } from "./StudentsContext";
+import { bitacoraTitulo } from "../data";
 import "../../demos/demos.css";
 
 export function FeaturedBitacora() {
-  const student = STUDENTS.find((s) => s.slug === FEATURED_SLUG)!;
-  const { resolve } = usePhotoStudio();
+  const { featured, setStudents } = useStudents();
   const [focus, setFocus] = useState(0);
 
-  const primer = resolve("amaia.primerDia", student.primerDiaSrc);
-  const final = resolve("amaia.diaFinal", student.diaFinalSrc);
+  const student = featured;
+  const scenes = useMemo(() => (student ? scenesForStudent(student) : []), [student]);
 
-  const scenes = useMemo(
-    () =>
-      scenesForStudent({
-        suenioDeGrande: student.badges[0]?.value,
-        comidaFavorita: student.badges[1]?.value,
-        colorFavorito: student.badges[2]?.value,
-        mejorAmigo: student.badges[3]?.value,
-        fraseFavorita: student.badges[4]?.value,
-        loQueMasLeGusto: student.badges[5]?.value,
-      }),
-    [student]
-  );
+  if (!student) {
+    return (
+      <section className="section" id="bitacora">
+        <p className="section__sub" style={{ textAlign: "center" }}>
+          Aún no hay alumnos cargados desde el formulario.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="section featured-bitacora" id="bitacora">
@@ -37,7 +33,8 @@ export function FeaturedBitacora() {
         <p className="eyebrow">Misión cumplida</p>
         <h2 className="section__title">{bitacoraTitulo(student)}</h2>
         <p className="section__sub">
-          Escenas interactivas: toca sueño, comida, color… y cambia el universo visual.
+          {student.nombreCompleto} — datos del formulario. Toca las escenas (sueño, comida,
+          color…) para ver el universo visual.
         </p>
       </div>
 
@@ -53,12 +50,16 @@ export function FeaturedBitacora() {
           <div className="polaroid-stack">
             <span className="sheriff-star sheriff-star--tl" aria-hidden />
             <span className="tape" aria-hidden />
-            <motion.div className="polaroid" whileHover={{ rotate: -1.5, y: -6 }} transition={{ type: "spring", stiffness: 400, damping: 25 }}>
+            <motion.div
+              className="polaroid"
+              whileHover={{ rotate: -1.5, y: -6 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            >
               <GrowthSlider
-                primerDiaSrc={primer}
-                diaFinalSrc={final}
+                primerDiaSrc={student.primerDiaSrc}
+                diaFinalSrc={student.diaFinalSrc}
                 alt={student.nombreCompleto}
-                accent="#E8A0BF"
+                accent={student.accent}
               />
             </motion.div>
             <h3 className="polaroid-name">
@@ -69,10 +70,50 @@ export function FeaturedBitacora() {
 
           <div>
             <div style={{ borderRadius: "1.1rem", overflow: "hidden", marginBottom: "0.75rem" }}>
-              <SceneCanvas scene={scenes[focus]} active />
+              {scenes[focus] ? <SceneCanvas scene={scenes[focus]} active /> : null}
             </div>
             <FactSceneGrid scenes={scenes} onSelect={(_s, i) => setFocus(i)} />
           </div>
+        </div>
+
+        <div className="mission-board__avatar-hint" style={{ marginTop: "1rem" }}>
+          <p>
+            {student.formFotos.length > 0
+              ? `${student.formFotos.length} foto(s) del formulario listas. Usa “Subir / migrar fotos” para reasignar.`
+              : "Sin fotos del formulario — súbelas con el botón flotante."}
+          </p>
+          {student.formFotos.length > 0 ? (
+            <motion.button
+              type="button"
+              style={{
+                border: 0,
+                borderRadius: 999,
+                padding: "0.45rem 0.85rem",
+                fontWeight: 800,
+                cursor: "pointer",
+                background: "#2aa4df",
+                color: "#fff",
+                flex: "none",
+              }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                setStudents((prev) =>
+                  prev.map((s) =>
+                    s.id !== student.id
+                      ? s
+                      : {
+                          ...s,
+                          avatarSrc: s.formFotos[0] || s.avatarSrc,
+                          primerDiaSrc: s.formFotos[1] || s.formFotos[0] || s.primerDiaSrc,
+                          diaFinalSrc: s.formFotos[2] || s.formFotos[0] || s.diaFinalSrc,
+                        }
+                  )
+                );
+              }}
+            >
+              Reaplicar fotos del form
+            </motion.button>
+          ) : null}
         </div>
       </motion.div>
     </section>

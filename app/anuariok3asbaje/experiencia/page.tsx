@@ -1,37 +1,17 @@
-"use client";
+import { getAlumnosPublic } from "@/lib/anuario-k3/getAlumnosPublic";
+import { mapAlumnosToStudents } from "./data";
+import { ExperienciaClient } from "./ExperienciaClient";
 
-import { PhotoStudioProvider } from "./components/PhotoStudioContext";
-import { PhotoStudioButton } from "./components/PhotoStudioButton";
-import { Hero } from "./components/Hero";
-import { StarCommandLetter } from "./components/StarCommandLetter";
-import { FeaturedBitacora } from "./components/FeaturedBitacora";
-import { Teachers } from "./components/Teachers";
-import { GenerationWall } from "./components/GenerationWall";
-import "./experiencia.css";
+export const dynamic = "force-dynamic";
 
-export default function ExperienciaAnuarioPage() {
-  return (
-    <PhotoStudioProvider>
-      <main className="experiencia-root">
-        <nav className="experiencia-nav" aria-label="Secciones del anuario">
-          <a href="#carta">Carta</a>
-          <a href="#bitacora">Bitácora</a>
-          <a href="#maestras">Maestras</a>
-          <a href="#generacion">Generación</a>
-        </nav>
+export default async function ExperienciaAnuarioPage() {
+  let students = [];
+  try {
+    const rows = await getAlumnosPublic();
+    students = mapAlumnosToStudents(rows);
+  } catch (e) {
+    console.error("Experiencia: no se pudieron cargar alumnos", e);
+  }
 
-        <Hero />
-        <StarCommandLetter />
-        <FeaturedBitacora />
-        <Teachers />
-        <GenerationWall />
-
-        <footer className="experiencia-footer">
-          Kinder 3 · Colegio Asbaje · Generación 2024-2026 · Al infinito y más allá
-        </footer>
-
-        <PhotoStudioButton />
-      </main>
-    </PhotoStudioProvider>
-  );
+  return <ExperienciaClient students={students} />;
 }

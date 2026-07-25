@@ -7,9 +7,11 @@ import { StudentCard, StudentBitacora } from "./StudentCard";
 import { VaulDrawer } from "./VaulDrawer";
 import { SoftImage, springCard, springTap } from "./SoftImage";
 import { usePhotoStudio } from "./PhotoStudioContext";
-import { FEATURED_SLUG, STUDENTS, ASSETS, type Student } from "../data";
+import { useStudents } from "./StudentsContext";
+import { ASSETS, type Student } from "../data";
 
 export function GenerationWall() {
+  const { students, featured } = useStudents();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"todos" | "f" | "m">("todos");
   const [selected, setSelected] = useState<Student | null>(null);
@@ -25,33 +27,35 @@ export function GenerationWall() {
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  const featured = STUDENTS.find((s) => s.slug === FEATURED_SLUG)!;
-
   const list = useMemo(() => {
-    return STUDENTS.filter((s) => {
-      // Amaia ya aparece destacada arriba; evita layoutId duplicado en el grid
-      if (s.slug === FEATURED_SLUG) return false;
+    return students.filter((s) => {
+      if (featured && s.id === featured.id) return false;
       if (filter !== "todos" && s.genero !== filter) return false;
       if (!query.trim()) return true;
       const q = query.trim().toLowerCase();
       return (
         s.nombreCorto.toLowerCase().includes(q) ||
-        s.nombreCompleto.toLowerCase().includes(q)
+        s.nombreCompleto.toLowerCase().includes(q) ||
+        s.suenioDeGrande.toLowerCase().includes(q)
       );
     });
-  }, [query, filter]);
+  }, [students, featured, query, filter]);
 
   return (
     <section className="section muro" id="generacion">
       <div className="section__head">
         <p className="eyebrow">Generación 2024-2026</p>
         <h2 className="section__title">Muro de la Tripulación</h2>
-        <p className="section__sub">Toca una tarjeta para abrir la bitácora de cada vaquerito.</p>
+        <p className="section__sub">
+          Datos del formulario en vivo. Toca una tarjeta para abrir la bitácora con escenas.
+        </p>
       </div>
 
-      <div className="muro__featured">
-        <StudentCard student={featured} onSelect={setSelected} featured />
-      </div>
+      {featured ? (
+        <div className="muro__featured">
+          <StudentCard student={featured} onSelect={setSelected} featured />
+        </div>
+      ) : null}
 
       <div className="muro__controls">
         <label className="muro__search">
@@ -59,7 +63,7 @@ export function GenerationWall() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar compañero…"
+            placeholder="Buscar compañero o sueño…"
             aria-label="Buscar compañero"
           />
         </label>
