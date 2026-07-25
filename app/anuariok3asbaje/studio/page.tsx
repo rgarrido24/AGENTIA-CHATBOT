@@ -14,7 +14,7 @@ export default async function StudioPage() {
   if (!autenticado) redirect(anuarioPath('/dashboard/login'));
 
   await connectDB();
-  const alumnos = await Alumno.find().sort('nombreCorto').lean();
+  const alumnos = (await Alumno.find().sort('nombreCorto').lean()) as Array<Record<string, unknown>>;
   const list = alumnos.map((a) => {
     const m = mapAlumnoToMemoria(a);
     return {

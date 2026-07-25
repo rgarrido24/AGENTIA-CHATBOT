@@ -8,6 +8,16 @@ import { StudioEditor } from './StudioEditor';
 
 export const dynamic = 'force-dynamic';
 
+type MemoriaRecuerdo = { url?: string; publicId?: string; caption?: string };
+type MemoriaMensaje = { autor?: string; texto?: string };
+type MemoriaDoc = {
+  portadaUrl?: string;
+  perfilUrl?: string;
+  recuerdos?: MemoriaRecuerdo[];
+  mensajes?: MemoriaMensaje[];
+  published?: boolean;
+};
+
 export default async function StudioAlumnoPage({ params }: { params: { slug: string } }) {
   const expected = anuarioAdminPassword();
   const autenticado = expected && cookies().get(ANUARIO_COOKIE)?.value === expected;
@@ -18,7 +28,9 @@ export default async function StudioAlumnoPage({ params }: { params: { slug: str
   if (!alumno) notFound();
 
   const mapped = mapAlumnoToMemoria(alumno);
-  const memoria = alumno.memoria || {};
+  const memoria = (alumno.memoria || {}) as MemoriaDoc;
+  const recuerdos = memoria.recuerdos || [];
+  const mensajesMemoria = memoria.mensajes || [];
 
   return (
     <StudioEditor
@@ -29,13 +41,16 @@ export default async function StudioAlumnoPage({ params }: { params: { slug: str
         nombreCompleto: mapped.nombreCompleto,
         portadaUrl: memoria.portadaUrl || mapped.portadaUrl || '',
         perfilUrl: memoria.perfilUrl || mapped.perfilUrl || '',
-        recuerdos: (memoria.recuerdos || []).map((r) => ({
-          url: r.url,
+        recuerdos: recuerdos.map((r: MemoriaRecuerdo) => ({
+          url: r.url || '',
           publicId: r.publicId || '',
           caption: r.caption || '',
         })),
-        mensajes: (memoria.mensajes || []).length
-          ? memoria.mensajes.map((m) => ({ autor: m.autor || 'Familia', texto: m.texto || '' }))
+        mensajes: mensajesMemoria.length
+          ? mensajesMemoria.map((m: MemoriaMensaje) => ({
+              autor: m.autor || 'Familia',
+              texto: m.texto || '',
+            }))
           : mapped.mensajes.length
             ? mapped.mensajes
             : [{ autor: 'Familia', texto: '' }],

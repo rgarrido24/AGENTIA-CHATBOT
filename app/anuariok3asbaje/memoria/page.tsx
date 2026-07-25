@@ -15,7 +15,7 @@ export default async function MemoriaSalonPage() {
   let students: MemoriaStudent[] = [];
   try {
     await connectDB();
-    const alumnos = await Alumno.find().sort('nombreCorto').lean();
+    const alumnos = (await Alumno.find().sort('nombreCorto').lean()) as Array<Record<string, unknown>>;
     students = alumnos
       .map((a) => alumnoToStudentView(a))
       .filter((s) => hasMemoriaContent(s));

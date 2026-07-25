@@ -13,7 +13,10 @@ export const metadata = {
 /** Índice público de links por niño (datos del formulario; fotos después en Studio). */
 export default async function MemoriaLinksPage() {
   await connectDB();
-  const alumnos = await Alumno.find().sort('nombreCorto').lean();
+  const alumnos = (await Alumno.find().sort('nombreCorto').lean()) as Array<{
+    slug: string;
+    [key: string]: unknown;
+  }>;
 
   return (
     <main
