@@ -22,7 +22,7 @@ export function AudioVisualizer({
   const [playing, setPlaying] = useState(false);
   const [available, setAvailable] = useState(Boolean(src));
   const heights = useMemo(
-    () => Array.from({ length: bars }, (_, i) => 0.25 + ((i * 37) % 75) / 100),
+    () => Array.from({ length: bars }, (_n: number, i: number) => 0.25 + ((i * 37) % 75) / 100),
     [bars]
   );
 

@@ -50,7 +50,7 @@ export function VaulDrawer({ open, onClose, title, children }: Props) {
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={0.12}
-            onDragEnd={(_, info) => {
+            onDragEnd={(_event: unknown, info: { offset: { y: number }; velocity: { y: number } }) => {
               if (info.offset.y > 120 || info.velocity.y > 600) onClose();
             }}
           >
