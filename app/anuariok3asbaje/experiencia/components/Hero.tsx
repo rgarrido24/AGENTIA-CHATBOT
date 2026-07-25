@@ -1,17 +1,13 @@
 "use client";
 
 import { useMemo, useRef } from "react";
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { SoftImage, springCard } from "./SoftImage";
 import { usePhotoStudio } from "./PhotoStudioContext";
 
 const TITLE_WORDS = ["Mis", "Días", "de", "Aventura"];
+
+type SpringMotion = ReturnType<typeof useSpring>;
 
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
@@ -55,7 +51,13 @@ export function Hero() {
     >
       <div className="hero__stage">
         {layers.map((layer) => (
-          <ParallaxLayer key={layer.id} className={layer.className} depth={layer.depth} sx={sx} sy={sy} />
+          <ParallaxLayer
+            key={layer.id}
+            className={layer.className}
+            depth={layer.depth}
+            sx={sx}
+            sy={sy}
+          />
         ))}
 
         <motion.div className="hero__plate" style={{ x: plateX, y: plateY }}>
@@ -112,8 +114,8 @@ function ParallaxLayer({
 }: {
   className: string;
   depth: number;
-  sx: MotionValue<number>;
-  sy: MotionValue<number>;
+  sx: SpringMotion;
+  sy: SpringMotion;
 }) {
   const x = useTransform(sx, (v: number) => v * depth);
   const y = useTransform(sy, (v: number) => v * depth);
