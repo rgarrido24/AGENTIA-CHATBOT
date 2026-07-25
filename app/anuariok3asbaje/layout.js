@@ -9,7 +9,7 @@ export default function AnuarioLayout({ children }) {
   return (
     <>
       <link
-        href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Lilita+One&family=Nunito:wght@400;500;600;700;800&display=swap"
         rel="stylesheet"
       />
       {children}
