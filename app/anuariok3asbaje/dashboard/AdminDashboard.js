@@ -55,6 +55,9 @@ export default function AdminDashboard({ alumnos }) {
         <button onClick={descargarCSV} style={{ background:'#FFD54F', color:'#1B4F8A', border:'none', padding:'0.6rem 1.2rem', borderRadius:'8px', fontWeight:'800', cursor:'pointer', fontFamily:"'Nunito',sans-serif" }}>
           📥 Descargar CSV
         </button>
+        <a href={anuarioPath('/studio')} style={{ background:'rgba(255,255,255,0.15)', color:'white', padding:'0.6rem 1.2rem', borderRadius:'8px', fontWeight:'700', textDecoration:'none', fontFamily:"'Nunito',sans-serif" }}>
+          Studio Memoria
+        </a>
       </header>
 
       <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'2rem' }}>

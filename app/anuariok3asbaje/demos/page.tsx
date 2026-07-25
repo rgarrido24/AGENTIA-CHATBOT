@@ -8,6 +8,21 @@ export const metadata = {
 
 const DEMOS = [
   {
+    href: "/anuariok3asbaje/memoria",
+    title: "Demo 5 · Memoria (Apple Event)",
+    desc: "Documental inmersivo: intro negra, Ken Burns, cartas, scroll pesado. No es un sitio web.",
+  },
+  {
+    href: "/anuariok3asbaje/memoria/links",
+    title: "Links por niño",
+    desc: "Índice de links personalizados con datos del formulario (fotos después en Studio).",
+  },
+  {
+    href: "/anuariok3asbaje/studio",
+    title: "Studio · Panel de plantillas",
+    desc: "Agregar alumno, subir portada/perfil/recuerdos, mensajes y link personalizado.",
+  },
+  {
     href: "/anuariok3asbaje/demos/toy-story",
     title: "Demo 1 · Toy Story",
     desc: "Misión vaquera / espacial. Escenas vivas por sueño y comida.",
@@ -53,11 +68,19 @@ export default function DemosHubPage() {
         </div>
 
         <div className="demos-hub__note">
-          También sigue viva la experiencia editorial Toy Story en{" "}
+          Nueva línea premium:{" "}
+          <Link href="/anuariok3asbaje/memoria" style={{ color: "#7dd3fc" }}>
+            /memoria
+          </Link>{" "}
+          + panel{" "}
+          <Link href="/anuariok3asbaje/studio" style={{ color: "#7dd3fc" }}>
+            /studio
+          </Link>
+          . La editorial Toy Story sigue en{" "}
           <Link href="/anuariok3asbaje/experiencia" style={{ color: "#7dd3fc" }}>
             /experiencia
           </Link>
-          . Las demos nuevas priorizan cards interactivas con datos de Mongo.
+          .
         </div>
       </div>
     </main>

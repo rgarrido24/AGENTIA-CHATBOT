@@ -27,11 +27,27 @@ function sanitizeToken(token) {
 }
 
 async function main() {
-  const envPath = "C:/Users/Rodolfo/Desktop/AGENTIA CHATBOT/.env";
-  const envText = fs.readFileSync(envPath, "utf8");
-  const uri = getEnvValue(envText, "MONGODB_URI");
-  const dbName = getEnvValue(envText, "MONGODB_DB") || undefined;
-  if (!uri) throw new Error("No se encontró MONGODB_URI en .env");
+  const root = path.join(__dirname, "..");
+  const readEnv = (filename) => {
+    const envPath = path.join(root, filename);
+    return fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
+  };
+  const envLocal = readEnv(".env.local");
+  const envEnv = readEnv(".env");
+  const uri =
+    process.env.MONGODB_URI ||
+    getEnvValue(envLocal, "MONGODB_URI") ||
+    getEnvValue(envEnv, "MONGODB_URI");
+  const dbName =
+    process.env.MONGODB_DB ||
+    getEnvValue(envLocal, "MONGODB_DB") ||
+    getEnvValue(envEnv, "MONGODB_DB") ||
+    undefined;
+  if (!uri) {
+    throw new Error(
+      "No se encontró MONGODB_URI. Añádela a .env.local o .env en la raíz del proyecto (d:\\AGENTIA-CHATBOT)."
+    );
+  }
 
   const tokensPath = path.join(__dirname, "page-tokens.json");
   if (!fs.existsSync(tokensPath)) {
