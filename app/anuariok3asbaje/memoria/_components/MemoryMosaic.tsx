@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 
 type Item = { url: string; caption?: string };
 
@@ -116,7 +116,7 @@ export function MemoryMosaic({ items, title = 'Recuerdos' }: { items: Item[]; ti
                 overflow: 'hidden',
                 boxShadow: '0 40px 100px rgba(0,0,0,0.55)',
               }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: MouseEvent) => e.stopPropagation()}
             >
               <Image
                 src={active.url}
