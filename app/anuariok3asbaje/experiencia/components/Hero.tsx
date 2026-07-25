@@ -37,7 +37,7 @@ export function Hero() {
     my.set((e.clientY - r.top) / r.height - 0.5);
   };
 
-  const portada = resolve("hero.portada", "/anuario-k3/refs/portada-ref.png");
+  const portada = resolve("hero.portada", "/anuario-k3/paginas/pagina-01.jpg");
 
   return (
     <section

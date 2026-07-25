@@ -7,6 +7,8 @@ import { scenesForStudent } from "../../demos/_lib/themeScenes";
 import { GrowthSlider } from "./GrowthSlider";
 import { springCard } from "./SoftImage";
 import { useStudents } from "./StudentsContext";
+import { LaminaStrip } from "./LaminaGallery";
+import { laminasForSlug } from "../pdfManifest";
 import { bitacoraTitulo } from "../data";
 import "../../demos/demos.css";
 
@@ -16,6 +18,7 @@ export function FeaturedBitacora() {
 
   const student = featured;
   const scenes = useMemo(() => (student ? scenesForStudent(student) : []), [student]);
+  const laminas = student ? laminasForSlug(student.slug) : [];
 
   if (!student) {
     return (
@@ -75,6 +78,16 @@ export function FeaturedBitacora() {
             <FactSceneGrid scenes={scenes} onSelect={(_s, i) => setFocus(i)} />
           </div>
         </div>
+
+        {laminas.length > 0 ? (
+          <div style={{ marginTop: "1.1rem", position: "relative", zIndex: 1 }}>
+            <LaminaStrip
+              laminas={laminas}
+              heading="Láminas Canva de esta vaquerita"
+              sub="Bitácora diseñada · Recuerdos · Mensaje de papás"
+            />
+          </div>
+        ) : null}
 
         <div className="mission-board__avatar-hint" style={{ marginTop: "1rem" }}>
           <p>

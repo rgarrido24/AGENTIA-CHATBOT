@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { SoftImage, springCard, springLayout, springTap } from "./SoftImage";
+import { springCard, springLayout, springTap } from "./SoftImage";
+import { SoftImage } from "./SoftImage";
 import { GrowthSlider } from "./GrowthSlider";
 import { FactSceneGrid, SceneCanvas } from "../../demos/_components/SceneCanvas";
 import { scenesForStudent } from "../../demos/_lib/themeScenes";
+import { LaminaStrip } from "./LaminaGallery";
+import { laminasForSlug } from "../pdfManifest";
 import type { Student } from "../data";
 import { bitacoraTitulo } from "../data";
 import "../../demos/demos.css";
@@ -44,9 +47,7 @@ export function StudentCard({ student, onSelect, featured }: Props) {
       <motion.div layoutId={`student-meta-${student.id}`} transition={springLayout}>
         <p className="student-card__name">{student.nombreCorto}</p>
         <p className="student-card__sub">
-          {featured
-            ? bitacoraTitulo(student)
-            : student.suenioDeGrande || "Abrir bitácora"}
+          {featured ? bitacoraTitulo(student) : student.suenioDeGrande || "Abrir bitácora"}
         </p>
       </motion.div>
     </motion.button>
@@ -64,6 +65,7 @@ export function StudentBitacora({
 }) {
   const [focus, setFocus] = useState(0);
   const scenes = scenesForStudent(student);
+  const laminas = laminasForSlug(student.slug);
 
   return (
     <motion.div
@@ -88,11 +90,6 @@ export function StudentBitacora({
         <motion.div layoutId={`student-meta-${student.id}`} transition={springLayout}>
           <p className="bitacora__eyebrow">{bitacoraTitulo(student)}</p>
           <h3 className="bitacora__name">{student.nombreCompleto}</h3>
-          {!student.formularioEnviado ? (
-            <p style={{ margin: "0.4rem 0 0", fontSize: "0.8rem", opacity: 0.65, fontWeight: 700 }}>
-              Formulario pendiente — datos incompletos
-            </p>
-          ) : null}
         </motion.div>
       </div>
 
@@ -101,17 +98,27 @@ export function StudentBitacora({
       </div>
       <FactSceneGrid scenes={scenes} onSelect={(_s, i) => setFocus(i)} />
 
+      {laminas.length > 0 ? (
+        <div style={{ marginTop: "1rem" }}>
+          <LaminaStrip
+            laminas={laminas}
+            heading="Láminas del anuario"
+            sub="Diseño Canva: bitácora, recuerdos y comando estelar"
+          />
+        </div>
+      ) : null}
+
       {(student.dedicatoriaMama || student.dedicatoriaPapa) && (
         <div className="demo-dedicatorias" style={{ marginTop: "1rem" }}>
           {student.dedicatoriaMama ? (
             <blockquote>
-              <span>Mamá</span>
+              <span>Mamá (formulario)</span>
               <p>{student.dedicatoriaMama}</p>
             </blockquote>
           ) : null}
           {student.dedicatoriaPapa ? (
             <blockquote>
-              <span>Papá</span>
+              <span>Papá (formulario)</span>
               <p>{student.dedicatoriaPapa}</p>
             </blockquote>
           ) : null}
