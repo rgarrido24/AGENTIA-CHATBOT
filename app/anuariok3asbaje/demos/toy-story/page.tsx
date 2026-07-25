@@ -1,18 +1,9 @@
-import { getAlumnosPublic } from "@/lib/anuario-k3/getAlumnosPublic";
+import { loadDemoStudents } from "../_lib/loadStudents";
 import { DemoRoster } from "../_components/DemoRoster";
 import "../demos.css";
 
-async function loadStudents() {
-  try {
-    return await getAlumnosPublic();
-  } catch (e) {
-    console.error(e);
-    return [];
-  }
-}
-
 export default async function ToyStoryDemoPage() {
-  const students = await loadStudents();
+  const students = await loadDemoStudents();
   return (
     <DemoRoster
       students={students}
