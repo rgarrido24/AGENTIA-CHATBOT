@@ -8,6 +8,7 @@ import { GrowthSlider } from "./GrowthSlider";
 import { springCard } from "./SoftImage";
 import { usePhotoStudio } from "./PhotoStudioContext";
 import { FEATURED_SLUG, STUDENTS, bitacoraTitulo } from "../data";
+import "../../demos/demos.css";
 
 export function FeaturedBitacora() {
   const student = STUDENTS.find((s) => s.slug === FEATURED_SLUG)!;
