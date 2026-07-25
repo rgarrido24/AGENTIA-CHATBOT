@@ -1,11 +1,11 @@
 import { getAlumnosPublic } from "@/lib/anuario-k3/getAlumnosPublic";
-import { mapAlumnosToStudents } from "./data";
+import { mapAlumnosToStudents, type Student } from "./data";
 import { ExperienciaClient } from "./ExperienciaClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExperienciaAnuarioPage() {
-  let students = [];
+  let students: Student[] = [];
   try {
     const rows = await getAlumnosPublic();
     students = mapAlumnosToStudents(rows);
