@@ -53,12 +53,12 @@ function timeAgo(iso: string | null): string {
 
 function displayStatus(status: string): string {
   const s = (status || '').toLowerCase().trim();
-  if (s === 'nuevos') return 'Nuevo';
+  if (s === 'en_seguimiento') return 'En Seguimiento';
   if (s === 'preguntones' || s === 'seguimiento') return 'Contactado';
   if (s === 'interesado') return 'Interesado';
   if (s === 'cierres') return 'Cerrado';
   if (s === 'cancelados') return 'No contestó';
-  return status || 'Nuevo';
+  return status || 'En Seguimiento';
 }
 
 function botPausedVisual(l: LeadRow): boolean {
@@ -123,7 +123,7 @@ export default function IzziPipelinePage() {
       senderName: String(l.senderName || 'Sin nombre'),
       senderId: l.senderId ? String(l.senderId) : undefined,
       clientId: String(l.clientId || ''),
-      status: String(l.status || 'nuevos'),
+      status: String(l.status || 'en_seguimiento'),
       assignedTo: (l.assignedTo as string | null | undefined) ?? null,
       bot_status: (l.bot_status as 'active' | 'paused') || 'active',
       lastMessageAt: l.lastMessageAt ? new Date(l.lastMessageAt as string).toISOString() : null,

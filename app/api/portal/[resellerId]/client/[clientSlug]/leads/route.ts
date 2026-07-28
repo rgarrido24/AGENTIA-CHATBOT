@@ -66,7 +66,7 @@ export async function GET(
     platform_src:       (d.platform_src || '') as string,
     form_fields:        (d.form_fields || {}) as Record<string, string>,
     estado:             mapEstado(d.status_vendedor as string | undefined),
-    status_seguimiento: (d.status_seguimiento || 'nuevo') as string,
+    status_seguimiento: (d.status_seguimiento || 'en_seguimiento') as string,
     notas:              (d.notas || []) as Array<{ texto: string; autor: string; fecha: string }>,
     createdAt:          (d.createdAt as Date).toISOString(),
   }));
@@ -113,8 +113,7 @@ function readLeadTelefono(doc: Record<string, unknown>): string {
   return String(raw).trim();
 }
 
-function mapEstado(sv: string | undefined): 'nuevo' | 'contactado' | 'en_seguimiento' {
-  if (!sv || sv === 'nuevo') return 'nuevo';
+function mapEstado(sv: string | undefined): 'contactado' | 'en_seguimiento' {
   if (sv === 'contactado' || sv === 'en_negociacion' || sv === 'vio_demo') return 'contactado';
   return 'en_seguimiento';
 }

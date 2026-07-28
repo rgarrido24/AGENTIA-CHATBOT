@@ -58,8 +58,8 @@ type Alert = {
 
 const PIPELINE = [
   {
-    id: 'nuevos',
-    label: 'Nuevos',
+    id: 'en_seguimiento',
+    label: 'En Seguimiento',
     icon: '👋',
     color: 'text-slate-300',
     headerBg: 'bg-slate-500/10',
@@ -482,7 +482,7 @@ export default function LeadsPage() {
   };
 
   // Filtered leads
-  const norm = (s: string) => (s || 'nuevos').toLowerCase().trim();
+  const norm = (s: string) => (s || 'en_seguimiento').toLowerCase().trim();
   const filteredLeads = leads.filter((l) => {
     const q = search.toLowerCase();
     const matchSearch = !q || (l.senderName || '').toLowerCase().includes(q) ||
@@ -497,7 +497,7 @@ export default function LeadsPage() {
     {} as Record<string, Lead[]>
   );
   const unknownLeads = filteredLeads.filter((l) => !PIPELINE.some((p) => norm(l.status) === p.id));
-  if (unknownLeads.length > 0) leadsByStatus.nuevos = [...(leadsByStatus.nuevos ?? []), ...unknownLeads];
+  if (unknownLeads.length > 0) leadsByStatus.en_seguimiento = [...(leadsByStatus.en_seguimiento ?? []), ...unknownLeads];
 
   const totalLeads = leads.length;
   const pendingAlerts = alerts.filter((a) => !a.sentAt && a.reason === 'documents_confirmed');

@@ -20,7 +20,7 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type StatusSeg = 'nuevo' | 'contactado' | 'interesado' | 'cerrado' | 'no_contesto';
+type StatusSeg = 'en_seguimiento' | 'contactado' | 'interesado' | 'cerrado' | 'no_contesto' | 'no_interesado';
 type EstadoLegacy = 'nuevo' | 'contactado' | 'en_seguimiento';
 
 type Nota = { texto: string; autor: string; fecha: string };
@@ -52,14 +52,15 @@ const ACCENT = '#CCFF00';
 const EMERALD = '#50C878';
 
 const STATUS_SEG_CONFIG: Record<StatusSeg, { label: string; bg: string; color: string }> = {
-  nuevo:       { label: 'Nuevo',         bg: '#111',    color: '#666'    },
-  contactado:  { label: 'Contactado',    bg: '#0d1a2b', color: '#60a5fa' },
-  interesado:  { label: 'Interesado',    bg: '#1e1a00', color: '#fbbf24' },
-  cerrado:     { label: 'Cerrado ✓',     bg: '#0d1f00', color: ACCENT    },
-  no_contesto: { label: 'No contestó',   bg: '#1a0a0a', color: '#ef4444' },
+  en_seguimiento: { label: 'En Seguimiento', bg: '#0d1f00', color: '#4ade80' },
+  contactado:     { label: 'Contactado',     bg: '#0d1a2b', color: '#60a5fa' },
+  interesado:     { label: 'Interesado',     bg: '#1e1a00', color: '#fbbf24' },
+  cerrado:        { label: 'Cerrado ✓',      bg: '#0d1f00', color: ACCENT    },
+  no_contesto:    { label: 'No contestó',    bg: '#1a0a0a', color: '#ef4444' },
+  no_interesado:  { label: 'No interesado',  bg: '#1a0a0a', color: '#f87171' },
 };
 
-const STATUS_SEG_OPTIONS: StatusSeg[] = ['nuevo', 'contactado', 'interesado', 'cerrado', 'no_contesto'];
+const STATUS_SEG_OPTIONS: StatusSeg[] = ['en_seguimiento', 'contactado', 'interesado', 'cerrado', 'no_contesto', 'no_interesado'];
 
 export type LeadUITokens = {
   accent: string;
@@ -133,11 +134,12 @@ export type LeadUITokens = {
 };
 
 const STATUS_SEG_LIGHT: Record<StatusSeg, { label: string; bg: string; color: string }> = {
-  nuevo:       { label: 'Nuevo',         bg: '#f1f5f9', color: '#64748b' },
-  contactado:  { label: 'Contactado',    bg: '#eff6ff', color: '#2563eb' },
-  interesado:  { label: 'Interesado',    bg: '#fffbeb', color: '#b45309' },
-  cerrado:     { label: 'Cerrado ✓',     bg: '#ecfdf5', color: '#047857' },
-  no_contesto: { label: 'No contestó',   bg: '#fef2f2', color: '#b91c1c' },
+  en_seguimiento: { label: 'En Seguimiento', bg: '#eff6ff', color: '#2563eb' },
+  contactado:     { label: 'Contactado',     bg: '#eff6ff', color: '#2563eb' },
+  interesado:     { label: 'Interesado',     bg: '#fffbeb', color: '#b45309' },
+  cerrado:        { label: 'Cerrado ✓',      bg: '#ecfdf5', color: '#047857' },
+  no_contesto:    { label: 'No contestó',    bg: '#fef2f2', color: '#b91c1c' },
+  no_interesado:  { label: 'No interesado',  bg: '#fdf2ff', color: '#a21caf' },
 };
 
 const TOKENS_DARK: LeadUITokens = {
@@ -993,7 +995,7 @@ export function LeadsPanel({
   const week    = new Date(); week.setDate(week.getDate() - 7);
   const totalHoy    = leads.filter((l) => new Date(l.createdAt) >= today).length;
   const totalSemana = leads.filter((l) => new Date(l.createdAt) >= week).length;
-  const contactados = leads.filter((l) => l.status_seguimiento !== 'nuevo').length;
+  const contactados = leads.filter((l) => l.status_seguimiento !== 'en_seguimiento').length;
 
   const selectedLead = leads.find((l) => l.id === selectedId) ?? null;
 

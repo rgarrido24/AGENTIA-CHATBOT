@@ -3,7 +3,7 @@ import { getMongoDb } from '@/lib/mongodb';
 import { verifyResellerCookie, COOKIE_NAME } from '@/lib/reseller-auth';
 import { verifyAnyClientCookie, CLIENT_COOKIE_NAME } from '@/lib/client-auth';
 
-const VALID_STATUS = ['nuevo', 'contactado', 'interesado', 'cerrado', 'no_contesto'] as const;
+const VALID_STATUS = ['en_seguimiento', 'contactado', 'interesado', 'cerrado', 'no_contesto', 'no_interesado'] as const;
 type StatusSeg = typeof VALID_STATUS[number];
 
 export async function PATCH(
