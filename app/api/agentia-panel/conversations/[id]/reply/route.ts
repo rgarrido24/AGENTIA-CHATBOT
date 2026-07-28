@@ -41,6 +41,8 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     mediaType?: 'image' | 'document';
     mediaUrl?: string;
     fileName?: string;
+    waMessageId?: string;
+    deliveryStatus?: 'sent' | 'failed';
   };
 
   if (conv.channel === 'whatsapp') {

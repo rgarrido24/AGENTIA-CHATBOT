@@ -1,5 +1,27 @@
 export type WhatsAppCloudMediaType = 'image' | 'document';
 
+export type WhatsAppCloudSendResult = {
+  ok: boolean;
+  status: number;
+  error?: string;
+  messageId?: string;
+};
+
+async function parseGraphSendResponse(res: Response): Promise<WhatsAppCloudSendResult> {
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    return { ok: false, status: res.status, error: errText.slice(0, 300) || 'Error Graph API' };
+  }
+  const data = (await res.json().catch(() => ({}))) as {
+    messages?: Array<{ id?: string }>;
+  };
+  const messageId =
+    Array.isArray(data.messages) && typeof data.messages[0]?.id === 'string'
+      ? data.messages[0].id
+      : undefined;
+  return { ok: true, status: res.status, messageId };
+}
+
 /** Envío de imagen o documento vía WhatsApp Cloud API (Meta Graph). */
 export async function sendWhatsAppCloudMedia(params: {
   to: string;
@@ -9,7 +31,7 @@ export async function sendWhatsAppCloudMedia(params: {
   fileName?: string;
   phoneNumberId?: string;
   accessToken?: string;
-}): Promise<{ ok: boolean; status: number; error?: string }> {
+}): Promise<WhatsAppCloudSendResult> {
   const phoneId = (
     params.phoneNumberId ||
     process.env.AGENTIA_WHATSAPP_PHONE_NUMBER_ID ||
@@ -69,11 +91,7 @@ export async function sendWhatsAppCloudMedia(params: {
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    return { ok: false, status: res.status, error: errText.slice(0, 300) || 'Error Graph API' };
-  }
-  return { ok: true, status: res.status };
+  return parseGraphSendResponse(res);
 }
 
 /** Envío de texto vía WhatsApp Cloud API (Meta Graph). */
@@ -82,7 +100,7 @@ export async function sendWhatsAppCloudText(params: {
   bodyText: string;
   phoneNumberId?: string;
   accessToken?: string;
-}): Promise<{ ok: boolean; status: number; error?: string }> {
+}): Promise<WhatsAppCloudSendResult> {
   const phoneId = (
     params.phoneNumberId ||
     process.env.AGENTIA_WHATSAPP_PHONE_NUMBER_ID ||
@@ -119,9 +137,5 @@ export async function sendWhatsAppCloudText(params: {
     }),
   });
 
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    return { ok: false, status: res.status, error: errText.slice(0, 300) || 'Error Graph API' };
-  }
-  return { ok: true, status: res.status };
+  return parseGraphSendResponse(res);
 }

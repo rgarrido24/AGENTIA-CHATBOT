@@ -127,6 +127,28 @@ async function sendWhatsAppCloudApiTextReply(
 async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> {
   if (!isWhatsAppCloudApiWithMessages(body)) {
     const value = getWhatsAppCloudChangeValue(body);
+    const statuses = value?.statuses;
+    if (Array.isArray(statuses) && statuses.length > 0) {
+      const { updatePanelMessageDeliveryStatus } = await import('@/lib/panel-conversations');
+      for (const raw of statuses) {
+        if (!raw || typeof raw !== 'object') continue;
+        const st = raw as { id?: string; status?: string };
+        const waMessageId = typeof st.id === 'string' ? st.id : '';
+        const statusRaw = String(st.status || '').toLowerCase();
+        const deliveryStatus =
+          statusRaw === 'sent' || statusRaw === 'delivered' || statusRaw === 'read' || statusRaw === 'failed'
+            ? statusRaw
+            : null;
+        if (!waMessageId || !deliveryStatus) continue;
+        await updatePanelMessageDeliveryStatus({ waMessageId, status: deliveryStatus }).catch((err) => {
+          console.error(
+            '[webhook/whatsapp] status update:',
+            err instanceof Error ? err.message : err
+          );
+        });
+      }
+      return NextResponse.json({ ok: true, statuses: true });
+    }
     if (value) {
       console.error('[webhook/whatsapp] STATUSES DEBUG:', JSON.stringify(value));
     }

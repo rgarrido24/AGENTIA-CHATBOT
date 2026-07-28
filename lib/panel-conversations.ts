@@ -11,6 +11,9 @@ export type PanelMessageRole = 'user' | 'assistant' | 'agent';
 
 export type PanelMediaType = 'image' | 'document';
 
+/** Estado de entrega estilo WhatsApp (solo salientes). */
+export type PanelDeliveryStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
+
 export type PanelConversationMessage = {
   role: PanelMessageRole;
   content: string;
@@ -18,6 +21,8 @@ export type PanelConversationMessage = {
   mediaType?: PanelMediaType;
   mediaUrl?: string;
   fileName?: string;
+  waMessageId?: string;
+  deliveryStatus?: PanelDeliveryStatus;
 };
 
 export type PanelConversation = {
@@ -46,6 +51,8 @@ type RawMessage = {
   mediaType?: string;
   mediaUrl?: string;
   fileName?: string;
+  waMessageId?: string;
+  deliveryStatus?: string;
 };
 
 type RawConversation = {
@@ -96,6 +103,12 @@ function normalizeMediaType(raw: unknown): PanelMediaType | undefined {
   return undefined;
 }
 
+function normalizeDeliveryStatus(raw: unknown): PanelDeliveryStatus | undefined {
+  const s = String(raw || '').toLowerCase();
+  if (s === 'pending' || s === 'sent' || s === 'delivered' || s === 'read' || s === 'failed') return s;
+  return undefined;
+}
+
 function normalizeMessages(doc: RawConversation): PanelConversationMessage[] {
   const raw = Array.isArray(doc.messages) ? doc.messages : Array.isArray(doc.history) ? doc.history : [];
   return raw
@@ -106,6 +119,8 @@ function normalizeMessages(doc: RawConversation): PanelConversationMessage[] {
       mediaType: normalizeMediaType(m.mediaType),
       mediaUrl: typeof m.mediaUrl === 'string' ? m.mediaUrl : undefined,
       fileName: typeof m.fileName === 'string' ? m.fileName : undefined,
+      waMessageId: typeof m.waMessageId === 'string' ? m.waMessageId : undefined,
+      deliveryStatus: normalizeDeliveryStatus(m.deliveryStatus),
     }))
     .filter((m) => m.content.trim() || m.mediaUrl);
 }
@@ -251,6 +266,8 @@ export async function appendPanelMessages(params: {
     mediaType?: PanelMediaType;
     mediaUrl?: string;
     fileName?: string;
+    waMessageId?: string;
+    deliveryStatus?: PanelDeliveryStatus;
   }>;
 }): Promise<void> {
   const entries = params.entries
@@ -261,6 +278,8 @@ export async function appendPanelMessages(params: {
       ...(e.mediaType ? { mediaType: e.mediaType } : {}),
       ...(e.mediaUrl ? { mediaUrl: e.mediaUrl } : {}),
       ...(e.fileName ? { fileName: e.fileName } : {}),
+      ...(e.waMessageId ? { waMessageId: e.waMessageId } : {}),
+      ...(e.deliveryStatus ? { deliveryStatus: e.deliveryStatus } : {}),
     }))
     .filter((e) => e.content || e.mediaUrl);
 
@@ -357,6 +376,47 @@ export async function setPanelConversationPaused(
       updatedAt: now,
     },
   });
+  return result.matchedCount > 0;
+}
+
+const DELIVERY_RANK: Record<PanelDeliveryStatus, number> = {
+  pending: 0,
+  sent: 1,
+  delivered: 2,
+  read: 3,
+  failed: 4,
+};
+
+/** Actualiza deliveryStatus de un mensaje saliente por waMessageId (webhook statuses). */
+export async function updatePanelMessageDeliveryStatus(params: {
+  waMessageId: string;
+  status: PanelDeliveryStatus;
+}): Promise<boolean> {
+  const waMessageId = params.waMessageId.trim();
+  if (!waMessageId) return false;
+
+  const coll = await conversationsColl();
+  const doc = await coll.findOne(
+    { 'messages.waMessageId': waMessageId },
+    { projection: { messages: 1 } }
+  );
+  if (!doc || !Array.isArray(doc.messages) || !doc._id) return false;
+
+  const msg = doc.messages.find((m) => m.waMessageId === waMessageId);
+  const current = normalizeDeliveryStatus(msg?.deliveryStatus) || 'pending';
+  if (params.status !== 'failed' && DELIVERY_RANK[params.status] < DELIVERY_RANK[current]) {
+    return true;
+  }
+
+  const result = await coll.updateOne(
+    { _id: doc._id, 'messages.waMessageId': waMessageId },
+    {
+      $set: {
+        'messages.$.deliveryStatus': params.status,
+        updatedAt: new Date(),
+      },
+    }
+  );
   return result.matchedCount > 0;
 }
 

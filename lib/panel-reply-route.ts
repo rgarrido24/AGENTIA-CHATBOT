@@ -52,20 +52,34 @@ export async function buildAttachmentFromPayload(
 }
 
 export type PanelWhatsAppSenders = {
-  sendText: (to: string, text: string) => Promise<{ ok: boolean; status: number; error?: string }>;
+  sendText: (
+    to: string,
+    text: string
+  ) => Promise<{ ok: boolean; status: number; error?: string; messageId?: string }>;
   sendMedia: (
     to: string,
-    params: { mediaType: WhatsAppCloudMediaType; link: string; caption?: string; fileName?: string },
-  ) => Promise<{ ok: boolean; status: number; error?: string }>;
+    params: { mediaType: WhatsAppCloudMediaType; link: string; caption?: string; fileName?: string }
+  ) => Promise<{ ok: boolean; status: number; error?: string; messageId?: string }>;
 };
 
 export async function sendPanelWhatsAppReply(
   conv: PanelConversation,
   payload: PanelReplyPayload,
   senders: PanelWhatsAppSenders,
-  cloudinaryFolder: string,
+  cloudinaryFolder: string
 ): Promise<
-  | { ok: true; entry: { role: 'agent'; content: string; mediaType?: 'image' | 'document'; mediaUrl?: string; fileName?: string } }
+  | {
+      ok: true;
+      entry: {
+        role: 'agent';
+        content: string;
+        mediaType?: 'image' | 'document';
+        mediaUrl?: string;
+        fileName?: string;
+        waMessageId?: string;
+        deliveryStatus?: 'sent' | 'failed';
+      };
+    }
   | { ok: false; status: number; error: string }
 > {
   if (payload.kind === 'text') {
@@ -73,7 +87,14 @@ export async function sendPanelWhatsAppReply(
     if (!sent.ok) {
       return { ok: false, status: sent.status || 502, error: sent.error || 'No se pudo enviar por WhatsApp' };
     }
-    return { ok: true, entry: { role: 'agent', content: payload.text } };
+    return {
+      ok: true,
+      entry: {
+        role: 'agent',
+        content: payload.text,
+        ...(sent.messageId ? { waMessageId: sent.messageId, deliveryStatus: 'sent' as const } : { deliveryStatus: 'sent' as const }),
+      },
+    };
   }
 
   const prepared = await buildAttachmentFromPayload(payload, cloudinaryFolder);
@@ -100,6 +121,7 @@ export async function sendPanelWhatsAppReply(
       mediaType,
       mediaUrl,
       fileName,
+      ...(sent.messageId ? { waMessageId: sent.messageId, deliveryStatus: 'sent' as const } : { deliveryStatus: 'sent' as const }),
     },
   };
 }
