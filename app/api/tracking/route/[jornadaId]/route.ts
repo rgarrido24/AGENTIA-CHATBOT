@@ -1,6 +1,8 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { MongoClient, ObjectId } from "mongodb";
 
+export const dynamic = "force-dynamic";
+
 const client = new MongoClient(process.env.MONGODB_URI!);
 const dbName = "agentia_chatbot_ventas";
 
