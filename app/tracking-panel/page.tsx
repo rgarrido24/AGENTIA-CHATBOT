@@ -8,6 +8,7 @@ type Jornada = {
   jornadaId: string;
   userId: string;
   userName: string;
+  plaza: string;
   startTime: string;
   endTime: string | null;
   status: string;
@@ -24,7 +25,7 @@ function formatJornadaLabel(jornada: Jornada) {
   const fecha = new Date(jornada.startTime).toLocaleString("es-MX", {
     timeZone: "America/Merida",
   });
-  return `${jornada.userName} - ${fecha} (${jornada.status})`;
+  return `${jornada.userName} (${jornada.plaza}) - ${fecha} (${jornada.status})`;
 }
 
 function formatTime(iso: string) {

@@ -20,6 +20,7 @@ export async function GET() {
             jornadaId: 1,
             userId: 1,
             userName: 1,
+            plaza: 1,
             startTime: 1,
             endTime: 1,
             status: 1,
