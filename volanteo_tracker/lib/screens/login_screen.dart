@@ -24,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const TrackingScreen()),
+        MaterialPageRoute(builder: (_) => TrackingScreen()),
       );
     } else {
       setState(() => _error = "ID o contraseña incorrectos");

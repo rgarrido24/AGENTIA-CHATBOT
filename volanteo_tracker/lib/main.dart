@@ -54,6 +54,6 @@ class _SessionGateState extends State<SessionGate> {
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    return _hasSession ? const TrackingScreen() : const LoginScreen();
+    return _hasSession ? TrackingScreen() : LoginScreen();
   }
 }
