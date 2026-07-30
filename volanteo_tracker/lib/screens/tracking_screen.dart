@@ -80,6 +80,55 @@ class _TrackingScreenState extends State<TrackingScreen> {
     });
   }
 
+  Future<void> _onIniciarJornadaPressed() async {
+    final acepto = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Aviso de Privacidad"),
+        content: const Text(
+          "Esta aplicación registrará tu ubicación GPS durante tu "
+          "jornada laboral con el fin de dar seguimiento a rutas de trabajo. "
+          "El rastreo se activa al iniciar tu jornada y se detiene por completo "
+          "al finalizarla. Esta información se usa exclusivamente para fines "
+          "de supervisión operativa.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancelar"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Acepto e Inicio Jornada"),
+          ),
+        ],
+      ),
+    );
+    if (acepto != true || !mounted) return;
+    await _iniciarJornada();
+  }
+
+  Future<void> _onFinalizarJornadaPressed() async {
+    await _finalizarJornada();
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Jornada Finalizada"),
+        content: const Text(
+          "Se ha detenido el rastreo de ubicación. Ya no se están "
+          "recabando datos de tu posición.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Entendido"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _cerrarSesion() async {
     if (_jornadaActiva) {
       final confirmar = await showDialog<bool>(
@@ -144,7 +193,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
               width: 220,
               height: 60,
               child: ElevatedButton(
-                onPressed: _jornadaActiva ? _finalizarJornada : _iniciarJornada,
+                onPressed: _jornadaActiva
+                    ? _onFinalizarJornadaPressed
+                    : _onIniciarJornadaPressed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _jornadaActiva ? Colors.red : Colors.green,
                 ),
