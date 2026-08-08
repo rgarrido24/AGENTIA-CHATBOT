@@ -375,18 +375,20 @@ async function insertFbLeadHighActivityAlert(
 }
 
 // ─── Formato Zapier: JSON plano ───────────────────────────────────────────────
-const ZAPIER_STANDARD_KEYS = new Set([
-  'full_name','nombre','phone_number','phone','telefono','email','correo',
-  'campaign_name','campaña','ad_name','anuncio','form_id','adset_name',
-  'id','time','created_time',
-  // Real Zapier format (capitalized/spaced keys)
-  'Nombre','Whatsapp','Email','Form Id','Lead Id','Platform','Page Name','Form Name',
-]);
-
 async function processZapierLead(data: Record<string, unknown>) {
   console.log('[fb-leads/zapier] keys recibidos:', Object.keys(data).join(', '));
 
-  const full_name     = String(data['Nombre']       ?? data.full_name     ?? data.nombre    ?? '').trim();
+  // Nombre: buscar en múltiples campos posibles (Zapier usa nombres distintos por formulario)
+  const resolvedName = String(
+    data.nombre ??
+    data['Nombre'] ??
+    data.full_name ??
+    data.nombre_completo ??
+    data.name ??
+    data.nombre_y_apellido ??
+    ''
+  ).trim();
+  const full_name = resolvedName || 'Sin nombre';
   // Try all known Whatsapp key variants from Zapier
   const phone_raw     = String(
     data['Whatsapp'] ?? data['whatsapp'] ?? data['WhatsApp'] ??
@@ -402,21 +404,22 @@ async function processZapierLead(data: Record<string, unknown>) {
   const page_name     = String(data['Page Name']    ?? '').trim();
   const form_name     = String(data['Form Name']    ?? '').trim();
 
-  // Collect all non-standard fields as form_fields
+  // Guardar TODOS los campos del formulario para poder recuperarlos después
+  // (p. ej. si el nombre vino en un campo no estándar y se guardó como "Sin nombre")
   const form_fields: Record<string, string> = {};
   for (const [k, v] of Object.entries(data)) {
-    if (!ZAPIER_STANDARD_KEYS.has(k) && v !== null && v !== undefined && v !== '') {
+    if (v !== null && v !== undefined && v !== '') {
       form_fields[k] = String(v);
     }
   }
 
   console.log(`[fb-leads/zapier] nombre="${full_name}" tel="${phone_raw}" campaña="${campaign_name}"`);
   console.log(
-    `[fb-leads/zapier] form_fields extras (${Object.keys(form_fields).length}): ` +
+    `[fb-leads/zapier] form_fields (${Object.keys(form_fields).length}): ` +
       JSON.stringify(form_fields).slice(0, 400),
   );
 
-  if (!phone_raw && !email && !full_name) {
+  if (!phone_raw && !email && !resolvedName) {
     console.warn('[fb-leads/zapier] Sin datos de contacto, ignorando');
     return;
   }
@@ -443,8 +446,8 @@ async function processZapierLead(data: Record<string, unknown>) {
     clientId,
     pageId:          'fb-zapier',
     senderId,
-    senderName:      full_name    || undefined,
-    nombre:          full_name    || undefined,
+    senderName:      full_name,
+    nombre:          full_name,
     telefono:        phone        || undefined,
     email:           email        || undefined,
     platform:        'facebook',
@@ -458,7 +461,7 @@ async function processZapierLead(data: Record<string, unknown>) {
     form_name:       form_name     || undefined,
     page_name:       page_name     || undefined,
     platform_src:    platform_src  || undefined,
-    ...(Object.keys(form_fields).length > 0 ? { form_fields } : {}),
+    form_fields,
     resellerId:      resellerMatch?.resellerId  ?? 'unknown',
     clientSlug:      resellerMatch?.clientSlug  ?? undefined,
     lastMessage:     `Lead desde FB Ads — ${campaign_name || ad_name || 'Sin campaña'}`,
