@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ObjectId } from 'mongodb';
 import { getMongoDb } from '@/lib/mongodb';
+import { isDashboardAuthenticated } from '@/lib/dashboard-auth';
 import { getAgentiaWhatsAppPhoneNumberId } from '@/lib/agentia-panel';
 import { sendWhatsAppCloudText } from '@/lib/whatsapp-cloud';
 
@@ -9,6 +11,13 @@ const SOURCE = 'edurne';
 const NOTIFY_TO = ['525628426889', '525630663423'] as const;
 
 const OBJECTIVES = new Set(['vender', 'whatsapp', 'leads', 'citas', 'dar_a_conocer']);
+const OBJECTIVE_LABELS: Record<string, string> = {
+  vender: 'Vender online',
+  whatsapp: 'Generar chats de WhatsApp',
+  leads: 'Captar leads / formularios',
+  citas: 'Agendar citas',
+  dar_a_conocer: 'Dar a conocer la marca',
+};
 const STYLES = new Set(['elegante', 'minimalista', 'premium', 'calida']);
 
 const MATERIAL_OPTS = new Set(['logo', 'fotos', 'videos', 'textos']);
@@ -48,10 +57,28 @@ function asStringArray(v: unknown, allowed: Set<string>): string[] {
   return [...new Set(v.map((x) => String(x).trim()).filter((x) => allowed.has(x)))];
 }
 
+/** Acepta `objetivos[]` (nuevo) o `objetivo` string (legacy). Máx. 3. */
+function parseObjetivos(body: Record<string, unknown>): string[] {
+  const fromArray = asStringArray(body.objetivos, OBJECTIVES);
+  if (fromArray.length > 0) return fromArray.slice(0, 3);
+  const single = asString(body.objetivo, 40);
+  if (OBJECTIVES.has(single)) return [single];
+  return [];
+}
+
+function labelObjetivos(ids: string[]): string {
+  return ids.map((id) => OBJECTIVE_LABELS[id] || id).join(' · ');
+}
+
 function buildWhatsAppSummary(data: Record<string, unknown>): string {
   const str = (k: string) => String(data[k] ?? '').trim();
   const list = (k: string) =>
     Array.isArray(data[k]) ? (data[k] as string[]).filter(Boolean).join(', ') : '';
+  const objetivos = Array.isArray(data.objetivos)
+    ? (data.objetivos as string[])
+    : str('objetivo')
+      ? [str('objetivo')]
+      : [];
 
   const lines = [
     '📋 Nuevo brief landing — Edurne',
@@ -61,7 +88,7 @@ function buildWhatsAppSummary(data: Record<string, unknown>): string {
     `✉️ ${str('email')}`,
     str('redes') ? `🔗 Redes: ${str('redes')}` : null,
     '',
-    `🎯 Objetivo: ${str('objetivo')}`,
+    `🎯 Objetivos: ${labelObjetivos(objetivos)}`,
     `👥 Público: ${str('publicoEdad')} · ${str('publicoSexo')} · ${str('publicoUbicacion')}`,
     str('publicoNecesidades') ? `   Necesidades: ${str('publicoNecesidades')}` : null,
     '',
@@ -93,6 +120,75 @@ function buildWhatsAppSummary(data: Record<string, unknown>): string {
   return msg;
 }
 
+function serializeBrief(doc: Record<string, unknown>) {
+  const data = (doc.data && typeof doc.data === 'object' ? doc.data : {}) as Record<
+    string,
+    unknown
+  >;
+  const objetivos = Array.isArray(data.objetivos)
+    ? (data.objetivos as string[])
+    : typeof data.objetivo === 'string' && data.objetivo
+      ? [data.objetivo]
+      : [];
+
+  return {
+    id: String(doc._id),
+    source: doc.source,
+    kind: doc.kind,
+    createdAt:
+      doc.createdAt instanceof Date
+        ? doc.createdAt.toISOString()
+        : doc.createdAt
+          ? String(doc.createdAt)
+          : null,
+    completedAt:
+      doc.completedAt instanceof Date
+        ? doc.completedAt.toISOString()
+        : doc.completedAt
+          ? String(doc.completedAt)
+          : null,
+    client: doc.client ?? null,
+    data: {
+      ...data,
+      objetivos,
+    },
+    objetivosLabels: labelObjetivos(objetivos),
+  };
+}
+
+export async function GET(req: NextRequest) {
+  if (!isDashboardAuthenticated(req)) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id')?.trim();
+
+  const db = await getMongoDb();
+  const coll = db.collection('briefs');
+
+  if (id) {
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+    const doc = await coll.findOne({ _id: new ObjectId(id), source: SOURCE });
+    if (!doc) {
+      return NextResponse.json({ error: 'Brief no encontrado' }, { status: 404 });
+    }
+    return NextResponse.json({ brief: serializeBrief(doc as Record<string, unknown>) });
+  }
+
+  const docs = await coll
+    .find({ source: SOURCE })
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .toArray();
+
+  return NextResponse.json({
+    briefs: docs.map((d) => serializeBrief(d as Record<string, unknown>)),
+  });
+}
+
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
   try {
@@ -111,7 +207,7 @@ export async function POST(req: NextRequest) {
   const email = asString(body.email, 160).toLowerCase();
   const redes = asString(body.redes, 500);
 
-  const objetivo = asString(body.objetivo, 40);
+  const objetivos = parseObjetivos(body);
   const publicoEdad = asString(body.publicoEdad, 80);
   const publicoSexo = asString(body.publicoSexo, 80);
   const publicoUbicacion = asString(body.publicoUbicacion, 200);
@@ -150,8 +246,8 @@ export async function POST(req: NextRequest) {
   if (!emailOk(email)) {
     return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
   }
-  if (!OBJECTIVES.has(objetivo)) {
-    return NextResponse.json({ error: 'Objetivo inválido' }, { status: 400 });
+  if (objetivos.length < 1 || objetivos.length > 3) {
+    return NextResponse.json({ error: 'Selecciona entre 1 y 3 objetivos' }, { status: 400 });
   }
   if (!productoQueEs || productoQueEs.length < 5) {
     return NextResponse.json({ error: 'Describe el producto o servicio' }, { status: 400 });
@@ -168,7 +264,8 @@ export async function POST(req: NextRequest) {
     telefono,
     email,
     redes,
-    objetivo,
+    objetivos,
+    objetivo: objetivos[0],
     publicoEdad,
     publicoSexo,
     publicoUbicacion,

@@ -97,6 +97,15 @@ export const INTERNAL_DASHBOARD_LINKS: InternalLinkSection[] = [
         hint: 'Requiere login admin; guarda en project_briefs',
       },
       {
+        href: '/brief/edurne',
+        label: 'Brief landing — Edurne (formulario público)',
+      },
+      {
+        href: '/brief/edurne/panel',
+        label: 'Panel briefs — Edurne',
+        hint: 'Requiere login admin; lista briefs source=edurne',
+      },
+      {
         href: '/dashboard/demos-internos',
         label: 'Demos internos (página legacy)',
         hint: 'Rutas que no están en el menú público',

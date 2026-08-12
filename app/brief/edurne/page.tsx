@@ -47,7 +47,7 @@ type FormData = {
   telefono: string;
   email: string;
   redes: string;
-  objetivo: string;
+  objetivos: string[];
   publicoEdad: string;
   publicoSexo: string;
   publicoUbicacion: string;
@@ -77,7 +77,7 @@ const INITIAL: FormData = {
   telefono: '',
   email: '',
   redes: '',
-  objetivo: '',
+  objetivos: [],
   publicoEdad: '',
   publicoSexo: '',
   publicoUbicacion: '',
@@ -104,7 +104,7 @@ const INITIAL: FormData = {
 
 const STEP_META: { title: string; subtitle: string }[] = [
   { title: 'Empecemos por ti', subtitle: 'Nombre, teléfono, email y redes' },
-  { title: '¿Cuál es el objetivo?', subtitle: 'Qué quieres que logre la landing' },
+  { title: '¿Cuáles son los objetivos?', subtitle: 'Elige hasta 3 prioridades' },
   { title: 'Tu público objetivo', subtitle: 'A quién le hablamos' },
   { title: 'Producto o servicio', subtitle: 'Qué ofreces y a qué precio' },
   { title: 'Lo que te hace única', subtitle: 'Diferenciador y testimonios' },
@@ -233,7 +233,7 @@ export default function EdurneBriefPage() {
           /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())
         );
       case 1:
-        return Boolean(data.objetivo);
+        return data.objetivos.length >= 1 && data.objetivos.length <= 3;
       case 2:
         return Boolean(
           data.publicoEdad.trim() && data.publicoSexo.trim() && data.publicoUbicacion.trim()
@@ -431,14 +431,33 @@ export default function EdurneBriefPage() {
 
                     {step === 1 && (
                       <div className="space-y-2.5">
-                        {OBJECTIVES.map((o) => (
-                          <ChoiceButton
-                            key={o.id}
-                            active={data.objetivo === o.id}
-                            label={o.label}
-                            onClick={() => set('objetivo', o.id)}
-                          />
-                        ))}
+                        <p className="text-xs text-white/45">
+                          Seleccionados: {data.objetivos.length}/3
+                          {data.objetivos.length >= 3
+                            ? ' · Máximo alcanzado (quita uno para cambiar)'
+                            : ''}
+                        </p>
+                        {OBJECTIVES.map((o) => {
+                          const active = data.objetivos.includes(o.id);
+                          return (
+                            <ChoiceButton
+                              key={o.id}
+                              active={active}
+                              label={o.label}
+                              onClick={() => {
+                                if (active) {
+                                  set(
+                                    'objetivos',
+                                    data.objetivos.filter((id) => id !== o.id)
+                                  );
+                                  return;
+                                }
+                                if (data.objetivos.length >= 3) return;
+                                set('objetivos', [...data.objetivos, o.id]);
+                              }}
+                            />
+                          );
+                        })}
                       </div>
                     )}
 
@@ -752,7 +771,10 @@ export default function EdurneBriefPage() {
               </p>
               <SummaryRow label="Contacto" value={`${data.nombre} · ${data.telefono} · ${data.email}`} />
               {data.redes ? <SummaryRow label="Redes" value={data.redes} /> : null}
-              <SummaryRow label="Objetivo" value={labelObjetivo(data.objetivo)} />
+              <SummaryRow
+                label="Objetivos"
+                value={data.objetivos.map(labelObjetivo).join(' · ')}
+              />
               <SummaryRow
                 label="Público"
                 value={`${data.publicoEdad} · ${data.publicoSexo} · ${data.publicoUbicacion}`}
