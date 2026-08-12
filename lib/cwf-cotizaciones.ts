@@ -37,6 +37,10 @@ export type CwfCotizacion = {
   precioEspecialDistribuidor: boolean;
   estado: CotizacionEstado;
   notas: string;
+  /** Link público temporal para WhatsApp (sin auth). */
+  publicToken?: string;
+  publicUrl?: string;
+  publicExpiresAt?: Date | string;
 };
 
 /** Precios de lista con IVA incluido (lo que el usuario captura en el formulario). */

@@ -5,6 +5,7 @@ import {
   getNextCwfFolio,
   saveCwfCotizacion,
 } from '@/lib/cwf-cotizaciones-db';
+import { publishCotizacionPdf } from '@/lib/cwf-cotizacion-public-pdf';
 import {
   totalesDesdePreciosConIva,
   type CotizacionCliente,
@@ -62,7 +63,6 @@ function parseBody(body: Record<string, unknown>): { ok: true; data: CwfCotizaci
   if (!cliente.nombre) return { ok: false, error: 'Nombre del cliente requerido' };
   if (!productos.length) return { ok: false, error: 'Agrega al menos un producto' };
 
-  // precioUnitario / subtotales de línea llegan con IVA incluido — desglose siempre en servidor
   const envio = Number(body.envio) || 0;
   const { subtotal, iva, total } = totalesDesdePreciosConIva(productos, envio);
   const estado = ESTADOS.has(body.estado as CotizacionEstado)
@@ -103,6 +103,7 @@ export async function POST(req: NextRequest) {
 
   await saveCwfCotizacion(doc);
   const pdf = await renderCotizacionPdf(doc);
+  const published = await publishCotizacionPdf({ folio: doc.folio, pdf });
 
   return new NextResponse(new Uint8Array(pdf), {
     status: 200,
@@ -110,6 +111,8 @@ export async function POST(req: NextRequest) {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="cotizacion-${doc.folio}.pdf"`,
       'X-Cotizacion-Folio': doc.folio,
+      'X-Cotizacion-Public-Url': published.publicUrl,
+      'X-Cotizacion-Public-Expires': published.expiresAt.toISOString(),
     },
   });
 }

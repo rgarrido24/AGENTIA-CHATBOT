@@ -19,6 +19,10 @@ export async function GET(req: NextRequest) {
     cotizaciones: cotizaciones.map((c) => ({
       ...c,
       fecha: c.fecha.toISOString(),
+      publicExpiresAt:
+        c.publicExpiresAt instanceof Date
+          ? c.publicExpiresAt.toISOString()
+          : c.publicExpiresAt ?? null,
     })),
     nextFolio: folio,
   });

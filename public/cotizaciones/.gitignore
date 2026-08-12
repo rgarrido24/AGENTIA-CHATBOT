@@ -1,0 +1,3 @@
+# PDFs públicos temporales (token UUID). Se regeneran al crear cotizaciones.
+*.pdf
+!.gitkeep

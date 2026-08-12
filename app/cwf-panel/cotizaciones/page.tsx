@@ -5,6 +5,7 @@ import {
   Copy,
   Download,
   FileText,
+  Link2,
   MessageCircle,
   Minus,
   Plus,
@@ -91,6 +92,7 @@ function estadoLabel(e: CotizacionEstado) {
 
 async function downloadPdfResponse(res: Response, fallbackName: string) {
   const folio = res.headers.get('X-Cotizacion-Folio');
+  const publicUrl = res.headers.get('X-Cotizacion-Public-Url');
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -100,6 +102,14 @@ async function downloadPdfResponse(res: Response, fallbackName: string) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  return { folio, publicUrl };
+}
+
+function isPublicLinkActive(c: { publicUrl?: string | null; publicExpiresAt?: string | Date | null }) {
+  if (!c.publicUrl) return false;
+  if (!c.publicExpiresAt) return true;
+  const exp = new Date(c.publicExpiresAt).getTime();
+  return Number.isFinite(exp) && exp > Date.now();
 }
 
 function waLink(whatsapp: string, folio: string) {
@@ -135,6 +145,8 @@ export default function CwfCotizacionesPage() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [draftReady, setDraftReady] = useState(false);
+  const [lastPublicUrl, setLastPublicUrl] = useState('');
+  const [copiedHint, setCopiedHint] = useState('');
 
   useEffect(() => {
     const draft = loadCwfCotizacionDraft();
@@ -239,6 +251,18 @@ export default function CwfCotizacionesPage() {
     notas: showNotas ? notas : '',
   });
 
+  const copyPublicLink = async (url: string) => {
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedHint(url);
+      window.setTimeout(() => setCopiedHint(''), 2500);
+    } catch {
+      setError('No se pudo copiar el link. Cópialo manualmente.');
+      setLastPublicUrl(url);
+    }
+  };
+
   const generarPdf = async () => {
     if (!cliente.nombre.trim()) {
       setError('El nombre del cliente es obligatorio');
@@ -257,7 +281,11 @@ export default function CwfCotizacionesPage() {
         setError(data?.error || 'No se pudo generar el PDF');
         return;
       }
-      await downloadPdfResponse(res, 'cotizacion-cwf.pdf');
+      const { publicUrl } = await downloadPdfResponse(res, 'cotizacion-cwf.pdf');
+      if (publicUrl) {
+        setLastPublicUrl(publicUrl);
+        await copyPublicLink(publicUrl);
+      }
       await loadData();
     } finally {
       setGenerating(false);
@@ -277,7 +305,11 @@ export default function CwfCotizacionesPage() {
         setError(data?.error || 'No se pudo descargar el PDF');
         return;
       }
-      await downloadPdfResponse(res, `cotizacion-${folio}.pdf`);
+      const { publicUrl } = await downloadPdfResponse(res, `cotizacion-${folio}.pdf`);
+      if (publicUrl) {
+        setLastPublicUrl(publicUrl);
+        await loadData();
+      }
     } catch {
       setError('Error al descargar PDF');
     }
@@ -337,6 +369,31 @@ export default function CwfCotizacionesPage() {
             {error}
           </div>
         )}
+
+        {lastPublicUrl ? (
+          <div
+            className="rounded-xl border px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3"
+            style={{ borderColor: BRAND.border, background: BRAND.card }}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-xs uppercase tracking-wide text-amber-400/80 font-semibold">
+                Link público (7 días)
+              </p>
+              <p className="text-sm text-stone-300 truncate mt-0.5">{lastPublicUrl}</p>
+              {copiedHint === lastPublicUrl ? (
+                <p className="text-xs text-emerald-400 mt-1">Copiado al portapapeles</p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => void copyPublicLink(lastPublicUrl)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-amber-600/40 bg-amber-800/40 hover:bg-amber-700/50 shrink-0"
+            >
+              <Link2 className="h-4 w-4" />
+              Copiar link público
+            </button>
+          </div>
+        ) : null}
 
         {/* Folio */}
         <div
@@ -609,6 +666,28 @@ export default function CwfCotizacionesPage() {
                             >
                               <Download className="h-3 w-3" /> PDF
                             </button>
+                            {isPublicLinkActive(c) && c.publicUrl ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setLastPublicUrl(c.publicUrl!);
+                                  void copyPublicLink(c.publicUrl!);
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-cyan-700/40 text-cyan-200 hover:bg-cyan-900/20"
+                              >
+                                <Link2 className="h-3 w-3" />
+                                {copiedHint === c.publicUrl ? 'Copiado' : 'Copiar link público'}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => void verPdf(c.folio)}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs border border-cyan-700/40 text-cyan-200/70 hover:bg-cyan-900/20"
+                                title="Regenera el PDF y crea un link público nuevo"
+                              >
+                                <Link2 className="h-3 w-3" /> Crear link
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => duplicar(c)}

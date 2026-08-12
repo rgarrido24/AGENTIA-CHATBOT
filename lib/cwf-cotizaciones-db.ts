@@ -24,6 +24,14 @@ function mapCwfCotizacionDoc(d: Record<string, unknown>): CwfCotizacion {
     precioEspecialDistribuidor: Boolean(d.precioEspecialDistribuidor),
     estado: (d.estado as CotizacionEstado) || 'borrador',
     notas: String(d.notas || ''),
+    publicToken: typeof d.publicToken === 'string' ? d.publicToken : undefined,
+    publicUrl: typeof d.publicUrl === 'string' ? d.publicUrl : undefined,
+    publicExpiresAt:
+      d.publicExpiresAt instanceof Date
+        ? d.publicExpiresAt
+        : d.publicExpiresAt
+          ? new Date(String(d.publicExpiresAt))
+          : undefined,
   };
 }
 
