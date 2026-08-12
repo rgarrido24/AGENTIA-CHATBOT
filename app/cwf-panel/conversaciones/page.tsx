@@ -457,7 +457,12 @@ export default function CwfConversacionesPage() {
               >
                 {!botPaused && (
                   <p className="text-xs text-amber-400/80 mb-2">
-                    Usa &quot;Tomar control&quot; para pausar el bot y responder manualmente.
+                    Usa &quot;Tomar control&quot; para pausar el bot y responder o adjuntar archivos.
+                  </p>
+                )}
+                {botPaused && (
+                  <p className="text-xs text-amber-200/70 mb-2">
+                    📎 Puedes adjuntar imágenes, PDF o documentos (máx. 16 MB) vía WhatsApp API.
                   </p>
                 )}
                 <PanelReplyComposer
@@ -466,6 +471,7 @@ export default function CwfConversacionesPage() {
                   onSendText={sendReply}
                   onSendFile={sendAttachment}
                   disabled={!botPaused}
+                  attachEnabled={botPaused}
                   sending={sending}
                   placeholder={
                     botPaused
@@ -473,7 +479,8 @@ export default function CwfConversacionesPage() {
                       : 'Toma control primero para responder...'
                   }
                   accentSendClass="bg-amber-700 hover:bg-amber-600"
-                  textareaClass="flex-1 resize-none rounded-xl px-4 py-3 bg-stone-900/80 border border-amber-900/40 text-stone-100 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-600 disabled:opacity-50 text-sm min-h-[44px]"
+                  attachButtonClass="border-amber-500/50 bg-amber-600/25 text-amber-100 hover:bg-amber-600/40"
+                  textareaClass="flex-1 min-w-0 resize-none rounded-xl px-4 py-3 bg-stone-900/80 border border-amber-900/40 text-stone-100 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-600 disabled:opacity-50 text-sm min-h-[44px]"
                 />
               </div>
             </>

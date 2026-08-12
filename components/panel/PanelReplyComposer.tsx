@@ -14,6 +14,9 @@ type PanelReplyComposerProps = {
   accentSendClass: string;
   textareaClass: string;
   attachHint?: string;
+  /** Si no se pasa, sigue el estado de `disabled` (tomar control). */
+  attachEnabled?: boolean;
+  attachButtonClass?: string;
 };
 
 export function PanelReplyComposer({
@@ -27,11 +30,16 @@ export function PanelReplyComposer({
   accentSendClass,
   textareaClass,
   attachHint,
+  attachEnabled: attachEnabledProp,
+  attachButtonClass = '',
 }: PanelReplyComposerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [attachNotice, setAttachNotice] = useState('');
 
+  const attachEnabled = attachEnabledProp ?? !disabled;
   const busy = disabled || sending;
+  const canAttach = attachEnabled && !sending;
 
   const clearFile = () => {
     setPendingFile(null);
@@ -39,8 +47,19 @@ export function PanelReplyComposer({
   };
 
   const handleFilePick = (file: File | null) => {
-    if (!file || busy) return;
+    if (!file || !canAttach) return;
+    setAttachNotice('');
     setPendingFile(file);
+  };
+
+  const handleAttachClick = () => {
+    if (!attachEnabled) {
+      setAttachNotice('Toma control del chat para adjuntar archivos.');
+      return;
+    }
+    if (sending) return;
+    setAttachNotice('');
+    fileInputRef.current?.click();
   };
 
   const handleSend = async () => {
@@ -61,6 +80,7 @@ export function PanelReplyComposer({
   return (
     <div className="space-y-2">
       {attachHint ? <p className="text-xs opacity-70">{attachHint}</p> : null}
+      {attachNotice ? <p className="text-xs text-amber-300/90">{attachNotice}</p> : null}
       {pendingFile ? (
         <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm">
           <Paperclip className="h-4 w-4 shrink-0 opacity-70" />
@@ -82,7 +102,7 @@ export function PanelReplyComposer({
           type="file"
           accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.xls,.xlsx,.txt"
           className="hidden"
-          disabled={busy}
+          disabled={!canAttach}
           onChange={(e) => {
             const file = e.target.files?.[0] ?? null;
             handleFilePick(file);
@@ -90,11 +110,16 @@ export function PanelReplyComposer({
         />
         <button
           type="button"
-          disabled={busy}
-          onClick={() => fileInputRef.current?.click()}
-          className="self-end px-3 py-3 rounded-xl border border-white/10 hover:bg-white/5 disabled:opacity-40 transition"
-          title="Adjuntar archivo"
-          aria-label="Adjuntar archivo"
+          disabled={sending}
+          onClick={handleAttachClick}
+          className={`self-end shrink-0 min-w-[48px] min-h-[48px] inline-flex items-center justify-center rounded-xl border transition ${
+            attachEnabled
+              ? attachButtonClass ||
+                'border-white/25 bg-white/10 text-white hover:bg-white/15 active:scale-[0.97]'
+              : 'border-white/20 bg-white/[0.06] text-white/55 hover:bg-white/10'
+          } disabled:opacity-40`}
+          title={attachEnabled ? 'Adjuntar imagen o documento' : 'Toma control para adjuntar'}
+          aria-label={attachEnabled ? 'Adjuntar archivo' : 'Adjuntar archivo (requiere tomar control)'}
         >
           <Paperclip className="h-5 w-5" />
         </button>
@@ -116,7 +141,7 @@ export function PanelReplyComposer({
           type="button"
           disabled={!canSend}
           onClick={() => void handleSend()}
-          className={`self-end px-4 py-3 rounded-xl text-white disabled:opacity-40 transition ${accentSendClass}`}
+          className={`self-end shrink-0 min-w-[48px] min-h-[48px] inline-flex items-center justify-center rounded-xl text-white disabled:opacity-40 transition ${accentSendClass}`}
         >
           <Send className="h-5 w-5" />
         </button>
