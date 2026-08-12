@@ -34,16 +34,18 @@ function DeliveryTicks({
     return <span className="text-[10px] text-red-400 ml-1">Error</span>;
   }
   if (s === 'pending') {
-    return <Check className="inline h-3.5 w-3.5 ml-1 opacity-40" aria-label="Enviando" />;
+    return <Check className="inline h-3.5 w-3.5 ml-1 text-white/35" aria-label="Enviando" />;
   }
+  // Leído: 2 palomitas en azul (como WhatsApp)
   if (s === 'read') {
-    return <CheckCheck className="inline h-3.5 w-3.5 ml-1 text-sky-400" aria-label="Leído" />;
+    return <CheckCheck className="inline h-3.5 w-3.5 ml-1 text-[#53bdeb]" aria-label="Leído" />;
   }
+  // Entregado: 2 palomitas grises
   if (s === 'delivered') {
-    return <CheckCheck className="inline h-3.5 w-3.5 ml-1 opacity-70" aria-label="Entregado" />;
+    return <CheckCheck className="inline h-3.5 w-3.5 ml-1 text-white/55" aria-label="Entregado" />;
   }
-  // sent
-  return <Check className="inline h-3.5 w-3.5 ml-1 opacity-60" aria-label="Enviado" />;
+  // Enviado: 2 palomitas más tenues (aún no entregado / no leído)
+  return <CheckCheck className="inline h-3.5 w-3.5 ml-1 text-white/40" aria-label="Enviado" />;
 }
 
 export function PanelMessageBubble({

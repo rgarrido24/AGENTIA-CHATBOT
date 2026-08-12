@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { MessageSquare, Pause, Play, RefreshCw, User } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, MessageSquare, Pause, Play, RefreshCw, User } from 'lucide-react';
 import { CwfPanelNav } from '@/components/cwf/CwfPanelNav';
 import { PanelMessageBubble } from '@/components/panel/PanelMessageBubble';
 import { PanelReplyComposer } from '@/components/panel/PanelReplyComposer';
@@ -25,6 +25,8 @@ type ConversationMessage = {
   mediaType?: 'image' | 'document';
   mediaUrl?: string;
   fileName?: string;
+  waMessageId?: string;
+  deliveryStatus?: 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
 };
 
 type ConversationDetail = ConversationSummary & {
@@ -57,6 +59,11 @@ function roleLabel(role: ConversationMessage['role']) {
   return 'Bot';
 }
 
+function isDesktopViewport() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(min-width: 1024px)').matches;
+}
+
 export default function CwfConversacionesPage() {
   const [list, setList] = useState<ConversationSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -67,6 +74,8 @@ export default function CwfConversacionesPage() {
   const [sending, setSending] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatOpen = Boolean(selectedId);
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
@@ -80,15 +89,19 @@ export default function CwfConversacionesPage() {
       }
       const items = (data.conversations ?? []) as ConversationSummary[];
       setList(items);
-      if (!selectedId && items[0]) {
-        setSelectedId(items[0].id);
-      }
+      setSelectedId((prev) => {
+        if (prev && !items.some((c) => c.id === prev)) {
+          return isDesktopViewport() ? items[0]?.id ?? null : null;
+        }
+        if (!prev && items[0] && isDesktopViewport()) return items[0].id;
+        return prev;
+      });
     } catch {
       setError('Error de conexión al cargar conversaciones');
     } finally {
       setLoadingList(false);
     }
-  }, [selectedId]);
+  }, []);
 
   const loadDetail = useCallback(async (id: string) => {
     setLoadingDetail(true);
@@ -118,6 +131,19 @@ export default function CwfConversacionesPage() {
 
   useEffect(() => {
     if (selectedId) void loadDetail(selectedId);
+    else setDetail(null);
+  }, [selectedId, loadDetail]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [detail?.messages?.length, selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const t = window.setInterval(() => {
+      void loadDetail(selectedId);
+    }, 8000);
+    return () => window.clearInterval(t);
   }, [selectedId, loadDetail]);
 
   const selectedSummary = useMemo(
@@ -126,6 +152,12 @@ export default function CwfConversacionesPage() {
   );
 
   const botPaused = detail?.botPaused ?? selectedSummary?.botPaused ?? false;
+
+  const closeChat = () => {
+    setSelectedId(null);
+    setDetail(null);
+    setReplyText('');
+  };
 
   const takeControl = async () => {
     if (!selectedId) return;
@@ -241,11 +273,11 @@ export default function CwfConversacionesPage() {
 
   return (
     <main
-      className="min-h-screen text-stone-100"
+      className="min-h-[100dvh] text-stone-100 flex flex-col"
       style={{ background: `linear-gradient(160deg, ${BRAND.bg} 0%, #2a1a0c 50%, #1a1208 100%)` }}
     >
       <header
-        className="border-b px-4 py-4 space-y-3"
+        className={`border-b px-4 py-4 space-y-3 ${chatOpen ? 'hidden lg:block' : ''}`}
         style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.25)' }}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -278,13 +310,18 @@ export default function CwfConversacionesPage() {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
+      <div className="flex flex-1 min-h-0 flex-col lg:flex-row lg:h-[calc(100dvh-160px)]">
         {/* Lista */}
         <aside
-          className="lg:w-96 border-b lg:border-b-0 lg:border-r overflow-y-auto shrink-0"
+          className={`${
+            chatOpen ? 'hidden lg:flex' : 'flex'
+          } flex-col w-full lg:w-96 border-b lg:border-b-0 lg:border-r overflow-y-auto shrink-0 min-h-0 flex-1 lg:flex-none`}
           style={{ borderColor: BRAND.border, background: BRAND.card }}
         >
-          <div className="p-3 text-xs text-stone-500 uppercase tracking-wide">
+          <div
+            className="p-3 text-xs text-stone-500 uppercase tracking-wide sticky top-0 z-10 backdrop-blur-sm"
+            style={{ background: BRAND.card }}
+          >
             Activas · {list.length}
           </div>
           {loadingList && list.length === 0 ? (
@@ -300,14 +337,14 @@ export default function CwfConversacionesPage() {
                     <button
                       type="button"
                       onClick={() => setSelectedId(c.id)}
-                      className={`w-full text-left px-4 py-3 border-b transition ${
-                        active ? 'bg-amber-900/25' : 'hover:bg-white/5'
+                      className={`w-full text-left px-4 py-3.5 border-b transition ${
+                        active ? 'bg-amber-900/25' : 'hover:bg-white/5 active:bg-white/10'
                       }`}
                       style={{ borderColor: BRAND.border }}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-medium text-amber-50 truncate">{c.senderName}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-amber-50 truncate text-[15px]">{c.senderName}</p>
                           <p className="text-xs text-stone-500 truncate">{c.senderId}</p>
                         </div>
                         <span
@@ -331,54 +368,67 @@ export default function CwfConversacionesPage() {
         </aside>
 
         {/* Detalle */}
-        <section className="flex-1 flex flex-col min-h-0">
+        <section
+          className={`${
+            chatOpen ? 'flex' : 'hidden lg:flex'
+          } flex-1 flex-col min-h-0 min-w-0 ${chatOpen ? 'fixed inset-0 z-40 lg:static lg:z-auto' : ''}`}
+          style={chatOpen ? { background: BRAND.bg } : undefined}
+        >
           {!selectedId ? (
-            <div className="flex-1 flex items-center justify-center text-stone-500 text-sm">
+            <div className="flex-1 flex items-center justify-center text-stone-500 text-sm px-6 text-center">
               Selecciona una conversación
             </div>
           ) : (
             <>
               <div
-                className="px-4 py-3 border-b flex flex-wrap items-center justify-between gap-3"
-                style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.2)' }}
+                className="px-3 sm:px-4 py-3 border-b flex items-center gap-2 sm:gap-3 shrink-0"
+                style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.35)' }}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="h-10 w-10 rounded-full bg-amber-900/40 flex items-center justify-center shrink-0">
-                    <User className="h-5 w-5 text-amber-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-amber-50 truncate">
-                      {detail?.senderName ?? selectedSummary?.senderName}
-                    </p>
-                    <p className="text-xs text-stone-500">{detail?.senderId ?? selectedSummary?.senderId}</p>
-                  </div>
+                <button
+                  type="button"
+                  onClick={closeChat}
+                  className="lg:hidden shrink-0 rounded-lg p-2 -ml-1 hover:bg-white/10 text-amber-100"
+                  aria-label="Volver a conversaciones"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <div className="h-10 w-10 rounded-full bg-amber-900/40 flex items-center justify-center shrink-0">
+                  <User className="h-5 w-5 text-amber-400" />
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-amber-50 truncate text-[15px]">
+                    {detail?.senderName ?? selectedSummary?.senderName}
+                  </p>
+                  <p className="text-xs text-stone-500 truncate">
+                    {detail?.senderId ?? selectedSummary?.senderId}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
                   {!botPaused ? (
                     <button
                       type="button"
                       disabled={actionLoading}
                       onClick={() => void takeControl()}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-700 hover:bg-amber-600 text-white text-sm font-medium disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg bg-amber-700 hover:bg-amber-600 text-white text-xs sm:text-sm font-medium disabled:opacity-50"
                     >
                       <Pause className="h-4 w-4" />
-                      Tomar control
+                      <span className="hidden sm:inline">Tomar control</span>
                     </button>
                   ) : (
                     <button
                       type="button"
                       disabled={actionLoading}
                       onClick={() => void reactivateBot()}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-500/40 text-emerald-300 bg-emerald-500/10 text-sm font-medium disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg border border-emerald-500/40 text-emerald-300 bg-emerald-500/10 text-xs sm:text-sm font-medium disabled:opacity-50"
                     >
                       <Play className="h-4 w-4" />
-                      Reactivar bot
+                      <span className="hidden sm:inline">Reactivar bot</span>
                     </button>
                   )}
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3 min-h-0">
                 {loadingDetail && !detail ? (
                   <p className="text-sm text-stone-500">Cargando historial...</p>
                 ) : !detail?.messages?.length ? (
@@ -386,7 +436,7 @@ export default function CwfConversacionesPage() {
                 ) : (
                   detail.messages.map((m, i) => (
                     <PanelMessageBubble
-                      key={`${m.at}-${i}`}
+                      key={`${m.at}-${i}-${m.waMessageId || ''}`}
                       message={m}
                       isUser={m.role === 'user'}
                       isAgent={m.role === 'agent'}
@@ -398,11 +448,12 @@ export default function CwfConversacionesPage() {
                     />
                   ))
                 )}
+                <div ref={messagesEndRef} />
               </div>
 
               <div
-                className="p-4 border-t"
-                style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.25)' }}
+                className="p-3 sm:p-4 border-t shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+                style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.35)' }}
               >
                 {!botPaused && (
                   <p className="text-xs text-amber-400/80 mb-2">
@@ -422,7 +473,7 @@ export default function CwfConversacionesPage() {
                       : 'Toma control primero para responder...'
                   }
                   accentSendClass="bg-amber-700 hover:bg-amber-600"
-                  textareaClass="flex-1 resize-none rounded-xl px-4 py-3 bg-stone-900/80 border border-amber-900/40 text-stone-100 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-600 disabled:opacity-50 text-sm"
+                  textareaClass="flex-1 resize-none rounded-xl px-4 py-3 bg-stone-900/80 border border-amber-900/40 text-stone-100 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-600 disabled:opacity-50 text-sm min-h-[44px]"
                 />
               </div>
             </>

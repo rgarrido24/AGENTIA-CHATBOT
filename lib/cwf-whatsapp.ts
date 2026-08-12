@@ -1,10 +1,15 @@
-import { sendWhatsAppCloudMedia, sendWhatsAppCloudText, type WhatsAppCloudMediaType } from './whatsapp-cloud';
+import {
+  sendWhatsAppCloudMedia,
+  sendWhatsAppCloudText,
+  type WhatsAppCloudMediaType,
+  type WhatsAppCloudSendResult,
+} from './whatsapp-cloud';
 
 /** Envío CWF vía WhatsApp Cloud API. */
 export async function sendCwfWhatsAppText(
   to: string,
   bodyText: string
-): Promise<{ ok: boolean; status: number; error?: string }> {
+): Promise<WhatsAppCloudSendResult> {
   return sendWhatsAppCloudText({
     to,
     bodyText,
@@ -15,7 +20,7 @@ export async function sendCwfWhatsAppText(
 export async function sendCwfWhatsAppMedia(
   to: string,
   params: { mediaType: WhatsAppCloudMediaType; link: string; caption?: string; fileName?: string },
-): Promise<{ ok: boolean; status: number; error?: string }> {
+): Promise<WhatsAppCloudSendResult> {
   return sendWhatsAppCloudMedia({
     to,
     ...params,
