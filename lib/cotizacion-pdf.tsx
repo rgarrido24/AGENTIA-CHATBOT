@@ -14,6 +14,16 @@ const COPPER = '#C47D2E';
 const LIGHT_BG = '#F5F5F0';
 const ROW_ALT = '#EFEFEA';
 
+const EMISOR = {
+  razonSocial: 'Garrido Holdings S.A.S. de C.V.',
+  rfc: 'GHO2606309U4',
+  regimen: 'Persona Moral',
+  domicilio: 'Mérida, Yucatán',
+} as const;
+
+const FORMA_PAGO =
+  'Transferencia SPEI o tarjeta de crédito/débito. Datos bancarios se comparten al confirmar el pedido.';
+
 const INCLUYE_ITEMS = [
   'Tinte protector Flood CWF-UV de alta duración',
   'Resistencia a rayos UV, humedad y hongos',
@@ -47,8 +57,14 @@ const styles = StyleSheet.create({
   },
   contactBlock: {
     textAlign: 'right',
+    fontSize: 8,
+    lineHeight: 1.45,
+  },
+  emisorName: {
+    fontFamily: 'Helvetica-Bold',
     fontSize: 9,
-    lineHeight: 1.5,
+    color: GREEN,
+    marginBottom: 2,
   },
   copperLine: {
     height: 3,
@@ -171,6 +187,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e8d5c0',
   },
+  condicionesBox: {
+    backgroundColor: LIGHT_BG,
+    padding: 12,
+    marginBottom: 14,
+    borderRadius: 4,
+    fontSize: 9,
+    lineHeight: 1.45,
+  },
+  condicionesLabel: {
+    fontFamily: 'Helvetica-Bold',
+    color: GREEN,
+  },
   badge: {
     fontSize: 8,
     color: COPPER,
@@ -185,10 +213,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COPPER,
     paddingTop: 8,
+    fontSize: 8,
+    lineHeight: 1.4,
+    color: '#666',
+  },
+  footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    fontSize: 9,
-    color: '#666',
+    marginBottom: 3,
   },
 });
 
@@ -210,10 +242,13 @@ export function CotizacionPdfDocument({ data }: { data: CwfCotizacion }) {
             <Text style={styles.brandSub}>Flood CWF-UV · Protección para madera</Text>
           </View>
           <View style={styles.contactBlock}>
-            <Text>cwf.com.mx</Text>
+            <Text style={styles.emisorName}>{EMISOR.razonSocial}</Text>
+            <Text>RFC: {EMISOR.rfc}</Text>
+            <Text>Régimen: {EMISOR.regimen}</Text>
+            <Text>Domicilio fiscal: {EMISOR.domicilio}</Text>
+            <Text style={{ marginTop: 6 }}>cwf.com.mx</Text>
             <Text>999 130 6399</Text>
             <Text>cotizaciones@cwf.com.mx</Text>
-            <Text>Mérida, Yucatán</Text>
           </View>
         </View>
         <View style={styles.copperLine} />
@@ -323,10 +358,29 @@ export function CotizacionPdfDocument({ data }: { data: CwfCotizacion }) {
           </View>
         ) : null}
 
+        <Text style={styles.sectionTitle}>Condiciones de pago</Text>
+        <View style={styles.condicionesBox}>
+          <Text>
+            <Text style={styles.condicionesLabel}>Forma de pago: </Text>
+            {FORMA_PAGO}
+          </Text>
+          <Text style={{ marginTop: 6 }}>
+            <Text style={styles.condicionesLabel}>Vigencia: </Text>
+            15 días naturales a partir de la fecha de emisión.
+          </Text>
+        </View>
+
         <View style={styles.footer}>
-          <Text>cwf.com.mx</Text>
-          <Text>999 130 6399</Text>
-          <Text>Vigencia: 15 días naturales</Text>
+          <View style={styles.footerRow}>
+            <Text>{EMISOR.razonSocial}</Text>
+            <Text>RFC: {EMISOR.rfc}</Text>
+          </View>
+          <View style={styles.footerRow}>
+            <Text>
+              {EMISOR.regimen} · Domicilio fiscal: {EMISOR.domicilio}
+            </Text>
+            <Text>cwf.com.mx · 999 130 6399</Text>
+          </View>
         </View>
       </Page>
     </Document>
