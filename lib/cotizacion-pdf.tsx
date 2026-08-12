@@ -21,8 +21,11 @@ const EMISOR = {
   domicilio: 'Mérida, Yucatán',
 } as const;
 
-const FORMA_PAGO =
-  'Transferencia SPEI o tarjeta de crédito/débito. Datos bancarios se comparten al confirmar el pedido.';
+const FORMAS_PAGO = [
+  'Transferencia SPEI — datos bancarios se comparten al confirmar el pedido',
+  'Tarjeta de crédito o débito — se envía link de pago seguro por WhatsApp o correo',
+  'Mercado Pago — link directo para pago inmediato',
+] as const;
 
 const INCLUYE_ITEMS = [
   'Tinte protector Flood CWF-UV de alta duración',
@@ -195,6 +198,21 @@ const styles = StyleSheet.create({
     fontSize: 9,
     lineHeight: 1.45,
   },
+  condicionesItem: {
+    flexDirection: 'row',
+    marginBottom: 3,
+    fontSize: 9,
+  },
+  condicionesBullet: {
+    width: 12,
+    color: COPPER,
+    fontFamily: 'Helvetica-Bold',
+  },
+  condicionesNote: {
+    marginTop: 8,
+    fontSize: 9,
+    lineHeight: 1.45,
+  },
   condicionesLabel: {
     fontFamily: 'Helvetica-Bold',
     color: GREEN,
@@ -360,12 +378,18 @@ export function CotizacionPdfDocument({ data }: { data: CwfCotizacion }) {
 
         <Text style={styles.sectionTitle}>Condiciones de pago</Text>
         <View style={styles.condicionesBox}>
-          <Text>
-            <Text style={styles.condicionesLabel}>Forma de pago: </Text>
-            {FORMA_PAGO}
+          <Text style={[styles.condicionesLabel, { marginBottom: 6 }]}>Formas de pago aceptadas:</Text>
+          {FORMAS_PAGO.map((item) => (
+            <View key={item} style={styles.condicionesItem}>
+              <Text style={styles.condicionesBullet}>•</Text>
+              <Text style={{ flex: 1 }}>{item}</Text>
+            </View>
+          ))}
+          <Text style={styles.condicionesNote}>
+            El pedido se procesa al confirmar la recepción del pago.
           </Text>
-          <Text style={{ marginTop: 6 }}>
-            <Text style={styles.condicionesLabel}>Vigencia: </Text>
+          <Text style={{ marginTop: 4, fontSize: 9, lineHeight: 1.45 }}>
+            <Text style={styles.condicionesLabel}>Vigencia de la cotización: </Text>
             15 días naturales a partir de la fecha de emisión.
           </Text>
         </View>
