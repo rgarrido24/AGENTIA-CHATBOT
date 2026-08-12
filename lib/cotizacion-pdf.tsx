@@ -304,7 +304,7 @@ export function CotizacionPdfDocument({ data }: { data: CwfCotizacion }) {
             <Text style={styles.colPresentacion}>Presentación</Text>
             <Text style={styles.colColor}>Color</Text>
             <Text style={styles.colCant}>Cant.</Text>
-            <Text style={styles.colPU}>P. unitario</Text>
+            <Text style={styles.colPU}>P. unit. (c/IVA)</Text>
             <Text style={styles.colSub}>Subtotal</Text>
           </View>
           {data.productos.map((p, i) => (
@@ -324,11 +324,11 @@ export function CotizacionPdfDocument({ data }: { data: CwfCotizacion }) {
 
         <View style={styles.totalsBox}>
           <View style={styles.totalRow}>
-            <Text>Subtotal</Text>
+            <Text>Subtotal (sin IVA)</Text>
             <Text>{money(data.subtotal)}</Text>
           </View>
           <View style={styles.totalRow}>
-            <Text>IVA (16%)</Text>
+            <Text>IVA 16%</Text>
             <Text>{money(data.iva)}</Text>
           </View>
           <View style={styles.totalRow}>

@@ -5,6 +5,10 @@ import { ArrowLeft, MessageSquare, Pause, Play, RefreshCw, User } from 'lucide-r
 import { CwfPanelNav } from '@/components/cwf/CwfPanelNav';
 import { PanelMessageBubble } from '@/components/panel/PanelMessageBubble';
 import { PanelReplyComposer } from '@/components/panel/PanelReplyComposer';
+import {
+  loadCwfConversacionesSession,
+  saveCwfConversacionesSession,
+} from '@/lib/cwf-panel-session';
 
 type ConversationSummary = {
   id: string;
@@ -75,7 +79,20 @@ export default function CwfConversacionesPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [sessionReady, setSessionReady] = useState(false);
   const chatOpen = Boolean(selectedId);
+
+  useEffect(() => {
+    const saved = loadCwfConversacionesSession();
+    if (saved.selectedId) setSelectedId(saved.selectedId);
+    if (saved.replyText) setReplyText(saved.replyText);
+    setSessionReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!sessionReady) return;
+    saveCwfConversacionesSession({ selectedId, replyText });
+  }, [selectedId, replyText, sessionReady]);
 
   const loadList = useCallback(async () => {
     setLoadingList(true);
@@ -157,6 +174,7 @@ export default function CwfConversacionesPage() {
     setSelectedId(null);
     setDetail(null);
     setReplyText('');
+    saveCwfConversacionesSession({ selectedId: null, replyText: '' });
   };
 
   const takeControl = async () => {

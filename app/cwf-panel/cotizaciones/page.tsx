@@ -14,11 +14,16 @@ import { CwfPanelNav } from '@/components/cwf/CwfPanelNav';
 import {
   normalizeWhatsapp52,
   precioDefaultPorPresentacion,
+  totalesDesdePreciosConIva,
   type CotizacionColor,
   type CotizacionEstado,
   type CotizacionPresentacion,
   type CwfCotizacion,
 } from '@/lib/cwf-cotizaciones';
+import {
+  loadCwfCotizacionDraft,
+  saveCwfCotizacionDraft,
+} from '@/lib/cwf-panel-session';
 
 const BRAND = {
   bg: '#1a1208',
@@ -129,6 +134,40 @@ export default function CwfCotizacionesPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
+  const [draftReady, setDraftReady] = useState(false);
+
+  useEffect(() => {
+    const draft = loadCwfCotizacionDraft();
+    if (draft) {
+      setCliente(draft.cliente);
+      setProductos(
+        draft.productos.map((p) => ({
+          id: p.id,
+          presentacion: p.presentacion as CotizacionPresentacion,
+          color: p.color as CotizacionColor,
+          cantidad: p.cantidad,
+          precioUnitario: p.precioUnitario,
+        })),
+      );
+      setEnvio(draft.envio);
+      setPrecioEspecial(draft.precioEspecial);
+      setNotas(draft.notas);
+      setShowNotas(draft.showNotas);
+    }
+    setDraftReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    saveCwfCotizacionDraft({
+      cliente,
+      productos,
+      envio,
+      precioEspecial,
+      notas,
+      showNotas,
+    });
+  }, [cliente, productos, envio, precioEspecial, notas, showNotas, draftReady]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -157,14 +196,16 @@ export default function CwfCotizacionesPage() {
     () =>
       productos.map((p) => ({
         ...p,
+        // Subtotal de línea = precio CON IVA × cantidad (lo que ve el cliente en tabla)
         subtotal: p.cantidad * p.precioUnitario,
       })),
     [productos],
   );
 
-  const subtotal = useMemo(() => lineas.reduce((s, p) => s + p.subtotal, 0), [lineas]);
-  const iva = useMemo(() => subtotal * 0.16, [subtotal]);
-  const total = useMemo(() => subtotal + iva + envio, [subtotal, iva, envio]);
+  const { subtotal, iva, total } = useMemo(
+    () => totalesDesdePreciosConIva(lineas, envio),
+    [lineas, envio],
+  );
 
   const updateProducto = (id: string, patch: Partial<ProductoRow>) => {
     setProductos((rows) =>
@@ -379,7 +420,7 @@ export default function CwfCotizacionesPage() {
                   <th className="py-2 pr-2">Presentación</th>
                   <th className="py-2 pr-2">Color</th>
                   <th className="py-2 pr-2 w-20">Cant.</th>
-                  <th className="py-2 pr-2 w-28">P. unit.</th>
+                  <th className="py-2 pr-2 w-36">Precio unitario (IVA incluido)</th>
                   <th className="py-2 pr-2 w-28 text-right">Subtotal</th>
                   <th className="py-2 w-10" />
                 </tr>
@@ -450,7 +491,7 @@ export default function CwfCotizacionesPage() {
           <div className="flex flex-col sm:flex-row sm:justify-end gap-4 pt-2">
             <div className="w-full sm:w-72 space-y-2 text-sm">
               <div className="flex justify-between text-stone-400">
-                <span>Subtotal</span>
+                <span>Subtotal (sin IVA)</span>
                 <span>{money(subtotal)}</span>
               </div>
               <div className="flex justify-between text-stone-400">

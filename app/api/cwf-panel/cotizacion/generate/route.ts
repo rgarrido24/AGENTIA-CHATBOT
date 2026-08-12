@@ -5,13 +5,14 @@ import {
   getNextCwfFolio,
   saveCwfCotizacion,
 } from '@/lib/cwf-cotizaciones-db';
-import type {
-  CotizacionCliente,
-  CotizacionColor,
-  CotizacionEstado,
-  CotizacionPresentacion,
-  CotizacionProducto,
-  CwfCotizacion,
+import {
+  totalesDesdePreciosConIva,
+  type CotizacionCliente,
+  type CotizacionColor,
+  type CotizacionEstado,
+  type CotizacionPresentacion,
+  type CotizacionProducto,
+  type CwfCotizacion,
 } from '@/lib/cwf-cotizaciones';
 
 export const dynamic = 'force-dynamic';
@@ -61,10 +62,9 @@ function parseBody(body: Record<string, unknown>): { ok: true; data: CwfCotizaci
   if (!cliente.nombre) return { ok: false, error: 'Nombre del cliente requerido' };
   if (!productos.length) return { ok: false, error: 'Agrega al menos un producto' };
 
-  const subtotal = Number(body.subtotal) || productos.reduce((s, p) => s + p.subtotal, 0);
-  const iva = Number(body.iva) || subtotal * 0.16;
+  // precioUnitario / subtotales de línea llegan con IVA incluido — desglose siempre en servidor
   const envio = Number(body.envio) || 0;
-  const total = Number(body.total) || subtotal + iva + envio;
+  const { subtotal, iva, total } = totalesDesdePreciosConIva(productos, envio);
   const estado = ESTADOS.has(body.estado as CotizacionEstado)
     ? (body.estado as CotizacionEstado)
     : 'borrador';

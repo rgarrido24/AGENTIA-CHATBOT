@@ -39,11 +39,45 @@ export type CwfCotizacion = {
   notas: string;
 };
 
-export const PRECIO_DEFAULT_GALON = 1050;
-export const PRECIO_DEFAULT_CUBETA = 4600;
+/** Precios de lista con IVA incluido (lo que el usuario captura en el formulario). */
+export const PRECIO_DEFAULT_GALON = 1218;
+export const PRECIO_DEFAULT_CUBETA = 5336;
+
+export const IVA_RATE = 0.16;
+export const IVA_DIVISOR = 1 + IVA_RATE; // 1.16
 
 export function precioDefaultPorPresentacion(p: CotizacionPresentacion): number {
   return p === 'Cubeta 19L' ? PRECIO_DEFAULT_CUBETA : PRECIO_DEFAULT_GALON;
+}
+
+/** Desglosa un monto con IVA incluido → base + IVA. */
+export function desgloseIvaIncluido(montoConIva: number): { sinIva: number; iva: number } {
+  const conIva = Math.max(0, Number(montoConIva) || 0);
+  const sinIva = conIva / IVA_DIVISOR;
+  const iva = conIva - sinIva;
+  return { sinIva, iva };
+}
+
+/**
+ * Totales de cotización cuando precioUnitario / subtotales de línea
+ * ya vienen con IVA incluido.
+ */
+export function totalesDesdePreciosConIva(
+  productos: Array<{ cantidad: number; precioUnitario: number }>,
+  envio = 0,
+): { productosConIva: number; subtotal: number; iva: number; total: number } {
+  const productosConIva = productos.reduce(
+    (s, p) => s + Math.max(0, p.cantidad) * Math.max(0, p.precioUnitario),
+    0,
+  );
+  const { sinIva: subtotal, iva } = desgloseIvaIncluido(productosConIva);
+  const envioN = Math.max(0, Number(envio) || 0);
+  return {
+    productosConIva,
+    subtotal,
+    iva,
+    total: productosConIva + envioN,
+  };
 }
 
 export function normalizeWhatsapp52(raw: string): string {
