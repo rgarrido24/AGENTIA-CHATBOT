@@ -21,11 +21,13 @@ const EMISOR = {
   domicilio: 'Mérida, Yucatán',
 } as const;
 
-const FORMAS_PAGO = [
-  'Transferencia SPEI — datos bancarios se comparten al confirmar el pedido',
-  'Tarjeta de crédito o débito — se envía link de pago seguro por WhatsApp o correo',
-  'Mercado Pago — link directo para pago inmediato',
-] as const;
+const DATOS_BANCARIOS_SPEI = {
+  banco: 'Mercado Pago Wallet',
+  clabe: '722969015572057526',
+  cuenta: '3562441418',
+  beneficiario: 'Garrido Holdings S.A.S. de C.V.',
+  rfc: 'GHO2606309U4',
+} as const;
 
 const INCLUYE_ITEMS = [
   'Tinte protector Flood CWF-UV de alta duración',
@@ -378,13 +380,23 @@ export function CotizacionPdfDocument({ data }: { data: CwfCotizacion }) {
 
         <Text style={styles.sectionTitle}>Condiciones de pago</Text>
         <View style={styles.condicionesBox}>
-          <Text style={[styles.condicionesLabel, { marginBottom: 6 }]}>Formas de pago aceptadas:</Text>
-          {FORMAS_PAGO.map((item) => (
-            <View key={item} style={styles.condicionesItem}>
-              <Text style={styles.condicionesBullet}>•</Text>
-              <Text style={{ flex: 1 }}>{item}</Text>
-            </View>
-          ))}
+          <Text style={[styles.condicionesLabel, { marginBottom: 8 }]}>FORMAS DE PAGO:</Text>
+
+          <Text style={[styles.condicionesLabel, { marginBottom: 4 }]}>Transferencia SPEI:</Text>
+          <Text style={{ marginLeft: 8, marginBottom: 8, lineHeight: 1.5 }}>
+            {`  Banco: ${DATOS_BANCARIOS_SPEI.banco}\n  CLABE: ${DATOS_BANCARIOS_SPEI.clabe}\n  Cuenta: ${DATOS_BANCARIOS_SPEI.cuenta}\n  Beneficiario: ${DATOS_BANCARIOS_SPEI.beneficiario}\n  RFC: ${DATOS_BANCARIOS_SPEI.rfc}`}
+          </Text>
+
+          <Text style={[styles.condicionesLabel, { marginBottom: 4 }]}>Tarjeta de crédito o débito:</Text>
+          <Text style={{ marginLeft: 8, marginBottom: 8, lineHeight: 1.5 }}>
+            Se envía link de pago seguro por WhatsApp o correo electrónico.
+          </Text>
+
+          <Text style={[styles.condicionesLabel, { marginBottom: 4 }]}>Mercado Pago:</Text>
+          <Text style={{ marginLeft: 8, marginBottom: 8, lineHeight: 1.5 }}>
+            Link directo para pago inmediato.
+          </Text>
+
           <Text style={styles.condicionesNote}>
             El pedido se procesa al confirmar la recepción del pago.
           </Text>
