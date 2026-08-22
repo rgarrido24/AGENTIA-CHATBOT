@@ -63,6 +63,7 @@
     "googleapis": "^144.0.0",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.563.0",
     "mongodb": "^7.1.0",
     "mongoose": "^9.7.1",
@@ -92,6 +93,7 @@
     "gsap": "^3.12.7"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.9",
     "@vercel/node": "^3.2.27"
   },
   "overrides": {
