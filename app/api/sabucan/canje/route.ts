@@ -5,12 +5,13 @@ import { formatPuntos } from '@/lib/wallet-sabucan-points';
 
 export const dynamic = 'force-dynamic';
 
-/** POST /api/sabucan/canje — { telefono, puntos } · 1 punto = $1 MXN */
+/** POST /api/sabucan/canje — { telefono, puntos, skipWalletSync? } · 1 punto = $1 MXN */
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as {
       telefono?: string;
       puntos?: number;
+      skipWalletSync?: boolean;
     };
 
     const result = await canjearPuntosSabucan(
@@ -18,7 +19,10 @@ export async function POST(req: Request) {
       Number(body.puntos),
     );
 
-    await syncSabucanWalletPuntos(result.cliente.id, result.cliente.puntos);
+    // En flujo combinado caja (canje+venta) el sync lo hace la venta al final
+    if (!body.skipWalletSync) {
+      await syncSabucanWalletPuntos(result.cliente.id, result.cliente.puntos);
+    }
 
     return NextResponse.json({
       ok: true,
