@@ -1,6 +1,6 @@
 import { ObjectId, type Collection } from 'mongodb';
 import { getMongoDb } from '@/lib/mongodb';
-import { calcularPuntos } from '@/lib/wallet-sabucan-points';
+import { calcularPuntos, roundPuntos } from '@/lib/wallet-sabucan-points';
 
 export const SABUCAN_CLIENTES_COLLECTION = 'sabucan_clientes';
 
@@ -18,7 +18,11 @@ export type SabucanCompra = {
 export type SabucanCliente = {
   id: string;
   telefono: string;
+  /** Nombre completo (UI y Wallet). */
   nombre: string;
+  nombreCompleto: string;
+  fechaNacimiento: string | null;
+  ultimaVisita: string | null;
   puntos: number;
   historial: SabucanCompra[];
 };
@@ -26,7 +30,11 @@ export type SabucanCliente = {
 type SabucanClienteDoc = {
   _id?: ObjectId;
   telefono: string;
+  /** Legacy; se mantiene sincronizado con nombreCompleto */
   nombre: string;
+  nombreCompleto?: string;
+  fechaNacimiento?: string | Date | null;
+  ultimaVisita?: string | Date | null;
   puntos: number;
   historial: SabucanCompra[];
   created_at?: string;
@@ -44,12 +52,56 @@ export function normalizeSabucanTelefono(raw: string): string {
   return digits;
 }
 
+function toIsoDate(value: string | Date | null | undefined): string | null {
+  if (value == null || value === '') return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  }
+  const s = String(value).trim();
+  if (!s) return null;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/** Acepta YYYY-MM-DD o ISO; guarda ISO UTC a medianoche local aproximada. */
+export function parseFechaNacimiento(raw: string): string {
+  const s = String(raw ?? '').trim();
+  if (!s) throw new Error('Fecha de nacimiento requerida');
+  // date input → YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const d = new Date(`${s}T12:00:00.000Z`);
+    if (Number.isNaN(d.getTime())) throw new Error('Fecha de nacimiento inválida');
+    const now = new Date();
+    if (d.getTime() > now.getTime()) throw new Error('Fecha de nacimiento inválida');
+    return d.toISOString();
+  }
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) throw new Error('Fecha de nacimiento inválida');
+  if (d.getTime() > Date.now()) throw new Error('Fecha de nacimiento inválida');
+  return d.toISOString();
+}
+
+function resolveUltimaVisita(doc: SabucanClienteDoc): string | null {
+  const direct = toIsoDate(doc.ultimaVisita ?? null);
+  if (direct) return direct;
+  const hist = Array.isArray(doc.historial) ? doc.historial : [];
+  if (hist[0]?.fecha) {
+    const fromHist = toIsoDate(hist[0].fecha);
+    if (fromHist) return fromHist;
+  }
+  return toIsoDate(doc.updated_at ?? doc.created_at ?? null);
+}
+
 function docToCliente(doc: SabucanClienteDoc & { _id: ObjectId }): SabucanCliente {
+  const nombreCompleto = String(doc.nombreCompleto ?? doc.nombre ?? '').trim();
   return {
     id: doc._id.toString(),
     telefono: doc.telefono,
-    nombre: doc.nombre,
-    puntos: doc.puntos ?? 0,
+    nombre: nombreCompleto || String(doc.nombre ?? '').trim(),
+    nombreCompleto: nombreCompleto || String(doc.nombre ?? '').trim(),
+    fechaNacimiento: toIsoDate(doc.fechaNacimiento ?? null),
+    ultimaVisita: resolveUltimaVisita(doc),
+    puntos: roundPuntos(doc.puntos ?? 0),
     historial: Array.isArray(doc.historial) ? doc.historial : [],
   };
 }
@@ -86,11 +138,30 @@ export async function findSabucanById(id: string): Promise<SabucanCliente | null
   return docToCliente(doc as SabucanClienteDoc & { _id: ObjectId });
 }
 
+export async function listSabucanClientes(): Promise<SabucanCliente[]> {
+  const coll = await collection();
+  const docs = await coll.find({}).toArray();
+  const clientes = docs
+    .filter((d): d is SabucanClienteDoc & { _id: ObjectId } => Boolean(d._id))
+    .map(docToCliente);
+
+  clientes.sort((a, b) => {
+    const ta = a.ultimaVisita ? new Date(a.ultimaVisita).getTime() : 0;
+    const tb = b.ultimaVisita ? new Date(b.ultimaVisita).getTime() : 0;
+    // Sin visita → al final del “más inactivo” (timestamp 0 = más antiguo)
+    return ta - tb;
+  });
+
+  return clientes;
+}
+
 export type RegistrarVentaInput = {
   telefono: string;
   monto: number;
   /** Obligatorio si el cliente no existe */
   nombre?: string;
+  nombreCompleto?: string;
+  fechaNacimiento?: string;
 };
 
 export type RegistrarVentaResult = {
@@ -123,7 +194,7 @@ export async function registrarVentaSabucan(
       {
         $inc: { puntos: puntosGanados },
         $push: { historial: { $each: [compra], $position: 0 } },
-        $set: { updated_at: now },
+        $set: { updated_at: now, ultimaVisita: now },
       },
       { returnDocument: 'after' },
     );
@@ -135,14 +206,21 @@ export async function registrarVentaSabucan(
     };
   }
 
-  const nombre = String(input.nombre ?? '').trim();
-  if (!nombre) {
-    throw new Error('Nombre requerido para cliente nuevo');
+  const nombreCompleto = String(input.nombreCompleto ?? input.nombre ?? '').trim();
+  if (!nombreCompleto) {
+    throw new Error('Nombre completo requerido para cliente nuevo');
   }
+  if (!input.fechaNacimiento) {
+    throw new Error('Fecha de nacimiento requerida para cliente nuevo');
+  }
+  const fechaNacimiento = parseFechaNacimiento(input.fechaNacimiento);
 
   const insert: SabucanClienteDoc = {
     telefono,
-    nombre,
+    nombre: nombreCompleto,
+    nombreCompleto,
+    fechaNacimiento,
+    ultimaVisita: now,
     puntos: puntosGanados,
     historial: [compra],
     created_at: now,
@@ -153,7 +231,10 @@ export async function registrarVentaSabucan(
     cliente: {
       id: insertedId.toString(),
       telefono,
-      nombre,
+      nombre: nombreCompleto,
+      nombreCompleto,
+      fechaNacimiento,
+      ultimaVisita: now,
       puntos: puntosGanados,
       historial: [compra],
     },
@@ -178,7 +259,7 @@ export async function canjearPuntosSabucan(
     throw new Error('Teléfono inválido (mínimo 10 dígitos)');
   }
 
-  const puntosCanjeados = Math.floor(Number(puntosRaw));
+  const puntosCanjeados = roundPuntos(Number(puntosRaw));
   if (!Number.isFinite(puntosCanjeados) || puntosCanjeados <= 0) {
     throw new Error('Cantidad de puntos inválida');
   }
@@ -188,12 +269,13 @@ export async function canjearPuntosSabucan(
   if (!existing?._id) {
     throw new Error('Cliente no encontrado');
   }
-  if ((existing.puntos ?? 0) < puntosCanjeados) {
-    throw new Error(`Saldo insuficiente (${existing.puntos}/${puntosCanjeados} pts)`);
+  const saldo = roundPuntos(existing.puntos ?? 0);
+  if (saldo < puntosCanjeados) {
+    throw new Error(`Saldo insuficiente (${saldo}/${puntosCanjeados} pts)`);
   }
 
   const now = new Date().toISOString();
-  const descuentoMxn = puntosCanjeados; // 1 punto = $1 MXN
+  const descuentoMxn = puntosCanjeados; // 1 punto = $1 MXN (con decimales)
   const registro: SabucanCompra = {
     fecha: now,
     monto: descuentoMxn,
@@ -206,7 +288,7 @@ export async function canjearPuntosSabucan(
     {
       $inc: { puntos: -puntosCanjeados },
       $push: { historial: { $each: [registro], $position: 0 } },
-      $set: { updated_at: now },
+      $set: { updated_at: now, ultimaVisita: now },
     },
     { returnDocument: 'after' },
   );
@@ -220,4 +302,21 @@ export async function canjearPuntosSabucan(
     puntosCanjeados,
     descuentoMxn,
   };
+}
+
+/** Días desde ultimaVisita (o Infinity si no hay fecha). */
+export function diasInactividad(ultimaVisita: string | null | undefined): number {
+  if (!ultimaVisita) return Number.POSITIVE_INFINITY;
+  const t = new Date(ultimaVisita).getTime();
+  if (Number.isNaN(t)) return Number.POSITIVE_INFINITY;
+  const ms = Date.now() - t;
+  return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+}
+
+export type SemaforoInactividad = 'verde' | 'amarillo' | 'rojo';
+
+export function semaforoInactividad(dias: number): SemaforoInactividad {
+  if (dias <= 7) return 'verde';
+  if (dias <= 15) return 'amarillo';
+  return 'rojo';
 }

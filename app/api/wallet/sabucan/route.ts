@@ -20,6 +20,7 @@
  *   window.location.href = saveUrl;
  */
 import jwt from 'jsonwebtoken';
+import { formatPuntos } from '@/lib/wallet-sabucan-points';
 import {
   getWalletIssuerId,
   getWalletServiceAccount,
@@ -68,9 +69,14 @@ export async function POST(req: Request) {
       state: 'ACTIVE',
       accountName: clienteNombre,
       accountId: telefono,
+      barcode: {
+        type: 'QR_CODE',
+        value: telefono,
+        alternateText: telefono,
+      },
       loyaltyPoints: {
         label: 'Puntos',
-        balance: { int: Math.max(0, Math.floor(puntosActuales)) },
+        balance: { string: formatPuntos(Math.max(0, puntosActuales)) },
       },
       textModulesData: [
         { header: 'Cómo acumular', body: '1 punto por cada $100 MXN de compra' },

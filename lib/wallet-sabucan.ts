@@ -78,7 +78,8 @@ export async function actualizarPaseWallet(
   const id = String(objectId ?? '').trim();
   if (!id) return false;
 
-  const balance = Math.max(0, Math.floor(Number(puntosNuevos) || 0));
+  const balance = Math.max(0, Number(puntosNuevos) || 0);
+  const balanceStr = (Math.round(balance * 10) / 10).toFixed(1);
 
   try {
     const accessToken = await getWalletAccessToken();
@@ -93,7 +94,7 @@ export async function actualizarPaseWallet(
       },
       body: JSON.stringify({
         loyaltyPoints: {
-          balance: { int: balance },
+          balance: { string: balanceStr },
         },
       }),
     });

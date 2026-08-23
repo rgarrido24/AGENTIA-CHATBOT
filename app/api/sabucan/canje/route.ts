@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { canjearPuntosSabucan } from '@/lib/sabucan-clientes';
 import { syncSabucanWalletPuntos } from '@/lib/wallet-sabucan';
+import { formatPuntos } from '@/lib/wallet-sabucan-points';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
       puntosCanjeados: result.puntosCanjeados,
       descuentoMxn: result.descuentoMxn,
       cliente: result.cliente,
-      mensaje: `Canjeados ${result.puntosCanjeados} puntos = $${result.descuentoMxn} MXN de descuento. Saldo restante: ${result.cliente.puntos} puntos`,
+      mensaje: `Canjeados ${formatPuntos(result.puntosCanjeados)} puntos = $${formatPuntos(result.descuentoMxn)} MXN de descuento. Saldo restante: ${formatPuntos(result.cliente.puntos)} puntos`,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Error al canjear puntos';

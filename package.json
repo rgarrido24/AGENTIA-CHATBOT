@@ -63,6 +63,7 @@
     "framer-motion": "^11.11.17",
     "googleapis": "^144.0.0",
     "gsap": "^3.12.7",
+    "html5-qrcode": "^2.3.8",
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",

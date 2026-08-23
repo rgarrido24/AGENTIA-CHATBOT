@@ -9,14 +9,15 @@ import {
   UserPlus,
   UserRound,
 } from 'lucide-react';
-import { POINTS_RATE } from '@/lib/wallet-sabucan-points';
+import { POINTS_RATE, calcularPuntos, formatPuntos } from '@/lib/wallet-sabucan-points';
 import {
-  WalletButton,
+  SendPassWhatsAppButton,
   formatMxn,
   sabucanInputClass,
   sabucanLabelClass,
   type SabucanClienteUi,
 } from '../_components';
+import { SabucanQrScanner } from '../QrScanner';
 
 type Step = 'form' | 'confirm' | 'done';
 
@@ -31,6 +32,7 @@ export default function SabucanCajaPage() {
   const [telefono, setTelefono] = useState('');
   const [monto, setMonto] = useState('');
   const [nombreNuevo, setNombreNuevo] = useState('');
+  const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [lookup, setLookup] = useState<LookupState>({ status: 'idle' });
   const [step, setStep] = useState<Step>('form');
   const [saving, setSaving] = useState(false);
@@ -42,10 +44,10 @@ export default function SabucanCajaPage() {
   } | null>(null);
 
   const montoNum = Number(monto);
-  const puntosPreview = useMemo(() => {
-    if (!Number.isFinite(montoNum) || montoNum <= 0) return 0;
-    return Math.floor(montoNum / POINTS_RATE);
-  }, [montoNum]);
+  const puntosPreview = useMemo(() => calcularPuntos(montoNum), [montoNum]);
+
+  const altaValida =
+    nombreNuevo.trim().length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(fechaNacimiento);
 
   async function buscarCliente() {
     setFormError(null);
@@ -79,12 +81,18 @@ export default function SabucanCajaPage() {
     setFormError(null);
     setSaving(true);
     try {
-      const body: { telefono: string; monto: number; nombre?: string } = {
+      const body: {
+        telefono: string;
+        monto: number;
+        nombreCompleto?: string;
+        fechaNacimiento?: string;
+      } = {
         telefono: telefono.trim(),
         monto: montoNum,
       };
       if (lookup.status === 'new') {
-        body.nombre = nombreNuevo.trim();
+        body.nombreCompleto = nombreNuevo.trim();
+        body.fechaNacimiento = fechaNacimiento;
       }
       const res = await fetch('/api/sabucan/venta', {
         method: 'POST',
@@ -118,6 +126,7 @@ export default function SabucanCajaPage() {
     setTelefono('');
     setMonto('');
     setNombreNuevo('');
+    setFechaNacimiento('');
     setLookup({ status: 'idle' });
     setStep('form');
     setResultado(null);
@@ -127,22 +136,22 @@ export default function SabucanCajaPage() {
   return (
     <div>
       <div className="mb-8">
-        <p className="font-[family-name:var(--font-space)] text-xs font-medium uppercase tracking-[0.2em] text-[#00D4FF]">
+        <p className="font-[family-name:var(--font-space)] text-xs font-medium uppercase tracking-[0.2em] text-[#F2691F]">
           Flujo de caja
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-space)] text-3xl font-bold tracking-tight">
           Registrar venta
         </h1>
         <p className="mt-2 text-sm text-white/50">
-          1 punto por cada ${POINTS_RATE} MXN · Tablet / laptop de recepción
+          1 punto por cada ${POINTS_RATE} MXN (con decimales) · Tablet / laptop de recepción
         </p>
       </div>
 
       {step === 'done' && resultado ? (
         <div className="space-y-5">
-          <div className="rounded-3xl border border-[#00D4FF]/30 bg-[#00D4FF]/[0.07] p-6 sm:p-8">
+          <div className="rounded-3xl border border-[#F2691F]/35 bg-[#F2691F]/[0.08] p-6 sm:p-8">
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-7 w-7 shrink-0 text-[#00D4FF]" />
+              <CheckCircle2 className="mt-0.5 h-7 w-7 shrink-0 text-[#F2691F]" />
               <div>
                 <p className="font-[family-name:var(--font-space)] text-lg font-bold text-white">
                   Venta registrada
@@ -151,18 +160,20 @@ export default function SabucanCajaPage() {
                 <dl className="mt-5 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
                     <dt className="text-[10px] uppercase tracking-wider text-white/40">Cliente</dt>
-                    <dd className="mt-1 font-semibold">{resultado.cliente.nombre}</dd>
+                    <dd className="mt-1 font-semibold">
+                      {resultado.cliente.nombreCompleto || resultado.cliente.nombre}
+                    </dd>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
                     <dt className="text-[10px] uppercase tracking-wider text-white/40">+ Puntos</dt>
-                    <dd className="mt-1 font-[family-name:var(--font-space)] text-xl font-bold text-[#00D4FF]">
-                      +{resultado.puntosGanados}
+                    <dd className="mt-1 font-[family-name:var(--font-space)] text-xl font-bold text-[#F2691F]">
+                      +{formatPuntos(resultado.puntosGanados)}
                     </dd>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
                     <dt className="text-[10px] uppercase tracking-wider text-white/40">Saldo</dt>
-                    <dd className="mt-1 font-[family-name:var(--font-space)] text-xl font-bold text-[#FFD700]">
-                      {resultado.cliente.puntos}
+                    <dd className="mt-1 font-[family-name:var(--font-space)] text-xl font-bold text-white">
+                      {formatPuntos(resultado.cliente.puntos)}
                     </dd>
                   </div>
                 </dl>
@@ -170,7 +181,7 @@ export default function SabucanCajaPage() {
             </div>
           </div>
 
-          <WalletButton cliente={resultado.cliente} />
+          <SendPassWhatsAppButton cliente={resultado.cliente} />
 
           <button
             type="button"
@@ -189,17 +200,29 @@ export default function SabucanCajaPage() {
                 <label className={sabucanLabelClass()} htmlFor="tel">
                   Teléfono del cliente
                 </label>
-                <input
-                  id="tel"
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  placeholder="999 123 4567"
-                  value={telefono}
-                  disabled={step === 'confirm'}
-                  onChange={(e) => setTelefono(e.target.value)}
-                  className={sabucanInputClass()}
-                />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                  <input
+                    id="tel"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    placeholder="999 123 4567"
+                    value={telefono}
+                    disabled={step === 'confirm'}
+                    onChange={(e) => setTelefono(e.target.value)}
+                    className={sabucanInputClass()}
+                  />
+                  <SabucanQrScanner
+                    disabled={step === 'confirm'}
+                    onScan={(tel) => {
+                      setTelefono(tel);
+                      setFormError(null);
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-white/35">
+                  Escanea el QR del pase o teclea el teléfono manualmente.
+                </p>
               </div>
               <div>
                 <label className={sabucanLabelClass()} htmlFor="monto">
@@ -218,12 +241,12 @@ export default function SabucanCajaPage() {
                   className={sabucanInputClass()}
                 />
                 {puntosPreview > 0 ? (
-                  <p className="mt-2 text-xs text-[#00D4FF]/80">
-                    Esta compra suma <strong>+{puntosPreview} puntos</strong>
+                  <p className="mt-2 text-xs text-[#F2691F]/90">
+                    Esta compra suma <strong>+{formatPuntos(puntosPreview)} puntos</strong>
                   </p>
                 ) : (
                   <p className="mt-2 text-xs text-white/35">
-                    Compras menores a ${POINTS_RATE} no generan puntos
+                    Ingresa un monto mayor a 0 para acumular puntos
                   </p>
                 )}
               </div>
@@ -234,7 +257,7 @@ export default function SabucanCajaPage() {
                 type="button"
                 onClick={() => void buscarCliente()}
                 disabled={lookup.status === 'loading' || !telefono.trim() || !(montoNum > 0)}
-                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#00D4FF] px-5 py-3.5 text-sm font-bold text-[#0a0a0a] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#F2691F] px-5 py-3.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {lookup.status === 'loading' ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -252,48 +275,67 @@ export default function SabucanCajaPage() {
 
           {step === 'confirm' && lookup.status === 'found' ? (
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-              <div className="flex items-center gap-2 text-[#00D4FF]">
+              <div className="flex items-center gap-2 text-[#F2691F]">
                 <UserRound className="h-5 w-5" />
                 <p className="font-[family-name:var(--font-space)] text-sm font-semibold">
                   Cliente encontrado
                 </p>
               </div>
-              <p className="mt-3 text-xl font-semibold">{lookup.cliente.nombre}</p>
+              <p className="mt-3 text-xl font-semibold">
+                {lookup.cliente.nombreCompleto || lookup.cliente.nombre}
+              </p>
               <p className="mt-1 text-sm text-white/50">{lookup.cliente.telefono}</p>
-              <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 px-3 py-1 text-sm font-semibold text-[#FFD700]">
-                Saldo actual: {lookup.cliente.puntos} puntos
+              <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#F2691F]/35 bg-[#F2691F]/15 px-3 py-1 text-sm font-semibold text-[#F2691F]">
+                Saldo actual: {formatPuntos(lookup.cliente.puntos)} puntos
               </p>
               <p className="mt-4 text-sm text-white/55">
-                Venta {formatMxn(montoNum)} → +{puntosPreview} pts · nuevo saldo estimado:{' '}
-                <strong className="text-white">{lookup.cliente.puntos + puntosPreview}</strong>
+                Venta {formatMxn(montoNum)} → +{formatPuntos(puntosPreview)} pts · nuevo saldo estimado:{' '}
+                <strong className="text-white">
+                  {formatPuntos(lookup.cliente.puntos + puntosPreview)}
+                </strong>
               </p>
             </div>
           ) : null}
 
           {step === 'confirm' && lookup.status === 'new' ? (
-            <div className="rounded-3xl border border-dashed border-[#00D4FF]/35 bg-[#00D4FF]/[0.05] p-5 sm:p-6">
-              <div className="flex items-center gap-2 text-[#00D4FF]">
+            <div className="rounded-3xl border border-dashed border-[#F2691F]/40 bg-[#F2691F]/[0.06] p-5 sm:p-6">
+              <div className="flex items-center gap-2 text-[#F2691F]">
                 <UserPlus className="h-5 w-5" />
                 <p className="font-[family-name:var(--font-space)] text-sm font-semibold">
                   Cliente nuevo
                 </p>
               </div>
               <p className="mt-2 text-sm text-white/55">
-                No hay registro con {lookup.telefono}. Ingresa el nombre para crearlo.
+                No hay registro con {lookup.telefono}. Completa los datos para darlo de alta.
               </p>
-              <div className="mt-4">
-                <label className={sabucanLabelClass()} htmlFor="nombre">
-                  Nombre completo
-                </label>
-                <input
-                  id="nombre"
-                  type="text"
-                  autoComplete="name"
-                  placeholder="María López"
-                  value={nombreNuevo}
-                  onChange={(e) => setNombreNuevo(e.target.value)}
-                  className={sabucanInputClass()}
-                />
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className={sabucanLabelClass()} htmlFor="nombre">
+                    Nombre completo
+                  </label>
+                  <input
+                    id="nombre"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="María López García"
+                    value={nombreNuevo}
+                    onChange={(e) => setNombreNuevo(e.target.value)}
+                    className={sabucanInputClass()}
+                  />
+                </div>
+                <div>
+                  <label className={sabucanLabelClass()} htmlFor="fecha-nac">
+                    Fecha de nacimiento
+                  </label>
+                  <input
+                    id="fecha-nac"
+                    type="date"
+                    value={fechaNacimiento}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={(e) => setFechaNacimiento(e.target.value)}
+                    className={sabucanInputClass()}
+                  />
+                </div>
               </div>
             </div>
           ) : null}
@@ -316,10 +358,10 @@ export default function SabucanCajaPage() {
                 onClick={() => void confirmarVenta()}
                 disabled={
                   saving ||
-                  (lookup.status === 'new' && !nombreNuevo.trim()) ||
+                  (lookup.status === 'new' && !altaValida) ||
                   lookup.status === 'loading'
                 }
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#00D4FF] px-5 py-3.5 text-sm font-bold text-[#0a0a0a] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#F2691F] px-5 py-3.5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                 Confirmar venta

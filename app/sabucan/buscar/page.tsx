@@ -14,10 +14,12 @@ import {
   WalletButton,
   formatFecha,
   formatMxn,
+  formatPuntos,
   sabucanInputClass,
   sabucanLabelClass,
   type SabucanClienteUi,
 } from '../_components';
+import { roundPuntos } from '@/lib/wallet-sabucan-points';
 
 export default function SabucanBuscarPage() {
   const [telefono, setTelefono] = useState('');
@@ -67,13 +69,13 @@ export default function SabucanBuscarPage() {
     setCanjeError(null);
     setCanjeOk(null);
 
-    const pts = Math.floor(Number(puntosCanje));
+    const pts = roundPuntos(Number(puntosCanje));
     if (!Number.isFinite(pts) || pts <= 0) {
       setCanjeError('Ingresa una cantidad válida de puntos');
       return;
     }
-    if (pts > cliente.puntos) {
-      setCanjeError(`No puedes canjear más de ${cliente.puntos} puntos`);
+    if (pts > roundPuntos(cliente.puntos)) {
+      setCanjeError(`No puedes canjear más de ${formatPuntos(cliente.puntos)} puntos`);
       return;
     }
 
@@ -96,7 +98,7 @@ export default function SabucanBuscarPage() {
       setCliente(json.cliente);
       setCanjeOk(
         json.mensaje ??
-          `Canjeados ${pts} puntos = $${pts} MXN de descuento. Saldo restante: ${json.cliente.puntos} puntos`,
+          `Canjeados ${formatPuntos(pts)} puntos = ${formatMxn(pts)} de descuento. Saldo restante: ${formatPuntos(json.cliente.puntos)} puntos`,
       );
       setCanjeOpen(false);
       setPuntosCanje('');
@@ -112,14 +114,14 @@ export default function SabucanBuscarPage() {
   return (
     <div>
       <div className="mb-8">
-        <p className="font-[family-name:var(--font-space)] text-xs font-medium uppercase tracking-[0.2em] text-[#FFD700]">
+        <p className="font-[family-name:var(--font-space)] text-xs font-medium uppercase tracking-[0.2em] text-[#F2691F]">
           Consulta
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-space)] text-3xl font-bold tracking-tight">
           Buscar cliente
         </h1>
         <p className="mt-2 text-sm text-white/50">
-          Nombre, saldo, canje (1 pt = $1 MXN) y últimas 5 movimientos
+          Nombre, saldo, canje (1 pt = $1 MXN, con decimales) y últimos movimientos
         </p>
       </div>
 
@@ -144,7 +146,7 @@ export default function SabucanBuscarPage() {
             type="button"
             onClick={() => void buscar()}
             disabled={loading || !telefono.trim()}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#00D4FF] px-6 py-3.5 text-sm font-bold text-[#0a0a0a] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#F2691F] px-6 py-3.5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             Buscar
@@ -154,7 +156,7 @@ export default function SabucanBuscarPage() {
         {notFound ? (
           <p className="mt-3 text-sm text-white/50">
             No hay cliente con ese teléfono. Regístralo en{' '}
-            <a href="/sabucan/caja" className="text-[#00D4FF] underline-offset-2 hover:underline">
+            <a href="/sabucan/caja" className="text-[#F2691F] underline-offset-2 hover:underline">
               Caja
             </a>
             .
@@ -166,8 +168,8 @@ export default function SabucanBuscarPage() {
         <div className="mt-6 space-y-5">
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7">
             <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#00D4FF]/30 bg-[#00D4FF]/10">
-                <UserRound className="h-5 w-5 text-[#00D4FF]" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#F2691F]/30 bg-[#F2691F]/10">
+                <UserRound className="h-5 w-5 text-[#F2691F]" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-[family-name:var(--font-space)] text-xl font-bold">
@@ -175,8 +177,8 @@ export default function SabucanBuscarPage() {
                 </p>
                 <p className="mt-0.5 text-sm text-white/45">{cliente.telefono}</p>
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <p className="inline-flex rounded-full border border-[#FFD700]/30 bg-[#FFD700]/10 px-3 py-1 text-sm font-semibold text-[#FFD700]">
-                    {cliente.puntos} puntos
+                  <p className="inline-flex rounded-full border border-[#F2691F]/30 bg-[#F2691F]/10 px-3 py-1 text-sm font-semibold text-[#F2691F]">
+                    {formatPuntos(cliente.puntos)} puntos
                   </p>
                   <button
                     type="button"
@@ -186,7 +188,7 @@ export default function SabucanBuscarPage() {
                       setCanjeOk(null);
                     }}
                     disabled={cliente.puntos <= 0}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[#00D4FF]/40 bg-[#00D4FF]/10 px-3 py-1 text-sm font-semibold text-[#00D4FF] transition-colors hover:bg-[#00D4FF]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#F2691F]/40 bg-[#F2691F]/10 px-3 py-1 text-sm font-semibold text-[#F2691F] transition-colors hover:bg-[#F2691F]/20 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Gift className="h-3.5 w-3.5" />
                     Canjear puntos
@@ -199,7 +201,7 @@ export default function SabucanBuscarPage() {
               <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <p className="text-sm font-medium text-white/80">
-                    ¿Cuántos puntos canjear? · 1 pt = $1 MXN
+                    ¿Cuántos puntos canjear? · 1 pt = $1 MXN (decimales OK)
                   </p>
                   <button
                     type="button"
@@ -211,16 +213,16 @@ export default function SabucanBuscarPage() {
                   </button>
                 </div>
                 <label className={sabucanLabelClass()} htmlFor="puntos-canje">
-                  Puntos (máx. {cliente.puntos})
+                  Puntos (máx. {formatPuntos(cliente.puntos)})
                 </label>
                 <input
                   id="puntos-canje"
                   type="number"
-                  inputMode="numeric"
-                  min={1}
+                  inputMode="decimal"
+                  min={0.1}
                   max={cliente.puntos}
-                  step={1}
-                  placeholder="Ej. 50"
+                  step={0.1}
+                  placeholder="Ej. 1.5"
                   value={puntosCanje}
                   onChange={(e) => setPuntosCanje(e.target.value)}
                   className={sabucanInputClass()}
@@ -228,8 +230,8 @@ export default function SabucanBuscarPage() {
                 {Number(puntosCanje) > 0 ? (
                   <p className="mt-2 text-xs text-white/50">
                     Descuento:{' '}
-                    <strong className="text-[#FFD700]">
-                      {formatMxn(Math.floor(Number(puntosCanje)) || 0)}
+                    <strong className="text-[#F2691F]">
+                      {formatMxn(roundPuntos(Number(puntosCanje)) || 0)}
                     </strong>
                   </p>
                 ) : null}
@@ -238,7 +240,7 @@ export default function SabucanBuscarPage() {
                   type="button"
                   onClick={() => void confirmarCanje()}
                   disabled={canjeLoading}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#00D4FF] px-5 py-3 text-sm font-bold text-[#0a0a0a] hover:opacity-90 disabled:opacity-50"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#F2691F] px-5 py-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
                 >
                   {canjeLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -251,8 +253,8 @@ export default function SabucanBuscarPage() {
             ) : null}
 
             {canjeOk ? (
-              <div className="mt-4 flex items-start gap-2 rounded-2xl border border-[#00D4FF]/30 bg-[#00D4FF]/[0.08] px-4 py-3">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#00D4FF]" />
+              <div className="mt-4 flex items-start gap-2 rounded-2xl border border-[#F2691F]/30 bg-[#F2691F]/[0.08] px-4 py-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#F2691F]" />
                 <p className="text-sm text-white/85">{canjeOk}</p>
               </div>
             ) : null}
@@ -264,7 +266,7 @@ export default function SabucanBuscarPage() {
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7">
             <div className="mb-4 flex items-center gap-2 text-white/70">
-              <History className="h-4 w-4 text-[#00D4FF]" />
+              <History className="h-4 w-4 text-[#F2691F]" />
               <h2 className="font-[family-name:var(--font-space)] text-sm font-semibold">
                 Últimos movimientos
               </h2>
@@ -290,10 +292,10 @@ export default function SabucanBuscarPage() {
                       </div>
                       <span
                         className={`shrink-0 text-sm font-bold ${
-                          esCanje ? 'text-red-400' : 'text-[#00D4FF]'
+                          esCanje ? 'text-red-400' : 'text-[#F2691F]'
                         }`}
                       >
-                        {esCanje ? `−${h.puntosGanados}` : `+${h.puntosGanados}`} pts
+                        {esCanje ? `−${formatPuntos(h.puntosGanados)}` : `+${formatPuntos(h.puntosGanados)}`} pts
                       </span>
                     </li>
                   );
