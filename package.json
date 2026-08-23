@@ -47,6 +47,7 @@
     "@react-pdf/renderer": "^4.5.1",
     "@stripe/react-stripe-js": "^6.3.0",
     "@stripe/stripe-js": "^9.3.1",
+    "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.19.15",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.14",
@@ -93,7 +94,6 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^9.0.10",
     "@vercel/node": "^3.2.27"
   },
   "overrides": {
