@@ -91,6 +91,23 @@ export async function POST(req: Request) {
       payload: { loyaltyObjects: [loyaltyObject] },
     };
 
+    // Diagnóstico Save-to-Wallet (revisar logs de Render al generar el pase)
+    console.log('[wallet/sabucan] loyaltyObject antes de firmar JWT:', JSON.stringify(loyaltyObject, null, 2));
+    console.log('[wallet/sabucan] claims (sin private_key) antes de firmar JWT:', JSON.stringify({
+      ...claims,
+      iss: serviceAccount.client_email,
+      barcodeCheck: {
+        type: loyaltyObject.barcode?.type,
+        value: loyaltyObject.barcode?.value,
+        valueEmpty: !loyaltyObject.barcode?.value,
+        alternateText: loyaltyObject.barcode?.alternateText,
+      },
+      balanceCheck: {
+        balance: loyaltyObject.loyaltyPoints?.balance,
+        stringType: typeof loyaltyObject.loyaltyPoints?.balance?.string,
+      },
+    }, null, 2));
+
     const token = jwt.sign(claims, serviceAccount.private_key, { algorithm: 'RS256' });
     const saveUrl = `https://pay.google.com/gp/v/save/${token}`;
 
