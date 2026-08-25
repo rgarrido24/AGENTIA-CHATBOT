@@ -1,6 +1,7 @@
 import { ObjectId, type Collection } from 'mongodb';
 import { getMongoDb } from '@/lib/mongodb';
 import { calcularPuntos, roundPuntos } from '@/lib/wallet-sabucan-points';
+import { getTenant, type TenantId } from '@/lib/wallet-tenant';
 
 export const SABUCAN_CLIENTES_COLLECTION = 'sabucan_clientes';
 
@@ -9,16 +10,13 @@ export type SabucanHistorialTipo = 'compra' | 'canje';
 export type SabucanCompra = {
   fecha: string;
   monto: number;
-  /** En compra: puntos sumados. En canje: puntos restados. */
   puntosGanados: number;
-  /** Registros viejos sin tipo = compra */
   tipo?: SabucanHistorialTipo;
 };
 
 export type SabucanCliente = {
   id: string;
   telefono: string;
-  /** Nombre completo (UI y Wallet). */
   nombre: string;
   nombreCompleto: string;
   fechaNacimiento: string | null;
@@ -30,7 +28,6 @@ export type SabucanCliente = {
 type SabucanClienteDoc = {
   _id?: ObjectId;
   telefono: string;
-  /** Legacy; se mantiene sincronizado con nombreCompleto */
   nombre: string;
   nombreCompleto?: string;
   fechaNacimiento?: string | Date | null;
@@ -41,9 +38,8 @@ type SabucanClienteDoc = {
   updated_at?: string;
 };
 
-let indexReady = false;
+const indexReadyByCollection = new Set<string>();
 
-/** Solo dígitos; si viene con 52 y 12+ dígitos, se queda el nacional de 10. */
 export function normalizeSabucanTelefono(raw: string): string {
   let digits = String(raw ?? '').replace(/\D/g, '');
   if (digits.startsWith('52') && digits.length >= 12) {
@@ -63,16 +59,13 @@ function toIsoDate(value: string | Date | null | undefined): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-/** Acepta YYYY-MM-DD o ISO; guarda ISO UTC a medianoche local aproximada. */
 export function parseFechaNacimiento(raw: string): string {
   const s = String(raw ?? '').trim();
   if (!s) throw new Error('Fecha de nacimiento requerida');
-  // date input → YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
     const d = new Date(`${s}T12:00:00.000Z`);
     if (Number.isNaN(d.getTime())) throw new Error('Fecha de nacimiento inválida');
-    const now = new Date();
-    if (d.getTime() > now.getTime()) throw new Error('Fecha de nacimiento inválida');
+    if (d.getTime() > Date.now()) throw new Error('Fecha de nacimiento inválida');
     return d.toISOString();
   }
   const d = new Date(s);
@@ -106,59 +99,90 @@ function docToCliente(doc: SabucanClienteDoc & { _id: ObjectId }): SabucanClient
   };
 }
 
-async function collection(): Promise<Collection<SabucanClienteDoc>> {
+function resolveCollectionName(tenantId?: TenantId | string): string {
+  if (!tenantId || tenantId === 'sabucan') return SABUCAN_CLIENTES_COLLECTION;
+  const t = getTenant(tenantId);
+  if (!t) throw new Error(`Tenant inválido: ${tenantId}`);
+  return t.collection;
+}
+
+async function collection(tenantId?: TenantId | string): Promise<Collection<SabucanClienteDoc>> {
+  const name = resolveCollectionName(tenantId);
   const db = await getMongoDb();
-  const coll = db.collection<SabucanClienteDoc>(SABUCAN_CLIENTES_COLLECTION);
-  if (!indexReady) {
+  const coll = db.collection<SabucanClienteDoc>(name);
+  if (!indexReadyByCollection.has(name)) {
     try {
       await coll.createIndex({ telefono: 1 }, { unique: true });
-      indexReady = true;
     } catch (e) {
-      console.warn('[sabucan_clientes] index:', e instanceof Error ? e.message : e);
-      indexReady = true;
+      console.warn(`[${name}] index:`, e instanceof Error ? e.message : e);
     }
+    indexReadyByCollection.add(name);
   }
   return coll;
 }
 
-export async function findSabucanByTelefono(telefonoRaw: string): Promise<SabucanCliente | null> {
+export async function findClienteByTelefono(
+  tenantId: TenantId | string,
+  telefonoRaw: string,
+): Promise<SabucanCliente | null> {
   const telefono = normalizeSabucanTelefono(telefonoRaw);
   if (telefono.length < 10) return null;
-  const coll = await collection();
+  const coll = await collection(tenantId);
   const doc = await coll.findOne({ telefono });
   if (!doc?._id) return null;
   return docToCliente(doc as SabucanClienteDoc & { _id: ObjectId });
 }
 
-export async function findSabucanById(id: string): Promise<SabucanCliente | null> {
+export async function findSabucanByTelefono(telefonoRaw: string): Promise<SabucanCliente | null> {
+  return findClienteByTelefono('sabucan', telefonoRaw);
+}
+
+export async function findClienteById(
+  tenantId: TenantId | string,
+  id: string,
+): Promise<SabucanCliente | null> {
   if (!ObjectId.isValid(id)) return null;
-  const coll = await collection();
+  const coll = await collection(tenantId);
   const doc = await coll.findOne({ _id: new ObjectId(id) });
   if (!doc?._id) return null;
   return docToCliente(doc as SabucanClienteDoc & { _id: ObjectId });
 }
 
-export async function listSabucanClientes(): Promise<SabucanCliente[]> {
-  const coll = await collection();
+export async function findSabucanById(id: string): Promise<SabucanCliente | null> {
+  return findClienteById('sabucan', id);
+}
+
+export async function listClientes(tenantId: TenantId | string): Promise<SabucanCliente[]> {
+  const coll = await collection(tenantId);
   const docs = await coll.find({}).toArray();
   const clientes = docs
     .filter((d): d is SabucanClienteDoc & { _id: ObjectId } => Boolean(d._id))
     .map(docToCliente);
-
   clientes.sort((a, b) => {
     const ta = a.ultimaVisita ? new Date(a.ultimaVisita).getTime() : 0;
     const tb = b.ultimaVisita ? new Date(b.ultimaVisita).getTime() : 0;
-    // Sin visita → al final del “más inactivo” (timestamp 0 = más antiguo)
     return ta - tb;
   });
-
   return clientes;
+}
+
+export async function listSabucanClientes(): Promise<SabucanCliente[]> {
+  return listClientes('sabucan');
+}
+
+export async function resetClientesCollection(tenantId: TenantId | string): Promise<number> {
+  const t = getTenant(tenantId);
+  if (!t?.isDemo) {
+    throw new Error('Solo se pueden reiniciar colecciones de demo');
+  }
+  const coll = await collection(tenantId);
+  const result = await coll.deleteMany({});
+  return result.deletedCount ?? 0;
 }
 
 export type RegistrarVentaInput = {
   telefono: string;
   monto: number;
-  /** Obligatorio si el cliente no existe */
   nombre?: string;
   nombreCompleto?: string;
   fechaNacimiento?: string;
@@ -170,7 +194,8 @@ export type RegistrarVentaResult = {
   esNuevo: boolean;
 };
 
-export async function registrarVentaSabucan(
+export async function registrarVenta(
+  tenantId: TenantId | string,
   input: RegistrarVentaInput,
 ): Promise<RegistrarVentaResult> {
   const telefono = normalizeSabucanTelefono(input.telefono);
@@ -185,7 +210,7 @@ export async function registrarVentaSabucan(
   const puntosGanados = calcularPuntos(monto);
   const now = new Date().toISOString();
   const compra: SabucanCompra = { fecha: now, monto, puntosGanados, tipo: 'compra' };
-  const coll = await collection();
+  const coll = await collection(tenantId);
   const existing = await coll.findOne({ telefono });
 
   if (existing?._id) {
@@ -243,14 +268,20 @@ export async function registrarVentaSabucan(
   };
 }
 
+export async function registrarVentaSabucan(
+  input: RegistrarVentaInput,
+): Promise<RegistrarVentaResult> {
+  return registrarVenta('sabucan', input);
+}
+
 export type CanjearPuntosResult = {
   cliente: SabucanCliente;
   puntosCanjeados: number;
   descuentoMxn: number;
 };
 
-/** 1 punto = $1 MXN. Cualquier cantidad ≤ saldo. */
-export async function canjearPuntosSabucan(
+export async function canjearPuntos(
+  tenantId: TenantId | string,
   telefonoRaw: string,
   puntosRaw: number,
 ): Promise<CanjearPuntosResult> {
@@ -264,7 +295,7 @@ export async function canjearPuntosSabucan(
     throw new Error('Cantidad de puntos inválida');
   }
 
-  const coll = await collection();
+  const coll = await collection(tenantId);
   const existing = await coll.findOne({ telefono });
   if (!existing?._id) {
     throw new Error('Cliente no encontrado');
@@ -275,7 +306,7 @@ export async function canjearPuntosSabucan(
   }
 
   const now = new Date().toISOString();
-  const descuentoMxn = puntosCanjeados; // 1 punto = $1 MXN (con decimales)
+  const descuentoMxn = puntosCanjeados;
   const registro: SabucanCompra = {
     fecha: now,
     monto: descuentoMxn,
@@ -304,13 +335,18 @@ export async function canjearPuntosSabucan(
   };
 }
 
-/** Días desde ultimaVisita (o Infinity si no hay fecha). */
+export async function canjearPuntosSabucan(
+  telefonoRaw: string,
+  puntosRaw: number,
+): Promise<CanjearPuntosResult> {
+  return canjearPuntos('sabucan', telefonoRaw, puntosRaw);
+}
+
 export function diasInactividad(ultimaVisita: string | null | undefined): number {
   if (!ultimaVisita) return Number.POSITIVE_INFINITY;
   const t = new Date(ultimaVisita).getTime();
   if (Number.isNaN(t)) return Number.POSITIVE_INFINITY;
-  const ms = Date.now() - t;
-  return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+  return Math.max(0, Math.floor((Date.now() - t) / (1000 * 60 * 60 * 24)));
 }
 
 export type SemaforoInactividad = 'verde' | 'amarillo' | 'rojo';

@@ -120,6 +120,22 @@ export async function actualizarPaseWallet(
   }
 }
 
+/** Sync Wallet genérico por objectId completo. */
+export async function syncWalletPuntosByObjectId(
+  objectId: string,
+  puntosNuevos: number,
+): Promise<void> {
+  try {
+    if (!objectId) return;
+    await actualizarPaseWallet(objectId, puntosNuevos);
+  } catch (e) {
+    console.warn(
+      '[wallet] syncWalletPuntosByObjectId:',
+      e instanceof Error ? e.message : e,
+    );
+  }
+}
+
 /** Construye objectId del cliente y hace PATCH; nunca lanza. */
 export async function syncSabucanWalletPuntos(
   clienteId: string,
