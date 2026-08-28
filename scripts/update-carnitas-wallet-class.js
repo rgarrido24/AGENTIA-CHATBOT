@@ -106,13 +106,12 @@ function buildPatch() {
   const direccion = env('NEXT_PUBLIC_CARNITAS_DIRECCION');
   const horario = env('NEXT_PUBLIC_CARNITAS_HORARIO');
   const rows = [];
+  // labelValueRows usa label/value (header/body es solo de textModulesData).
   if (direccion) {
-    rows.push({
-      columns: [{ header: 'Dónde estamos', body: direccion }],
-    });
+    rows.push({ columns: [{ label: 'Dónde estamos', value: direccion }] });
   }
   if (horario) {
-    rows.push({ columns: [{ header: 'Horario', body: horario }] });
+    rows.push({ columns: [{ label: 'Horario', value: horario }] });
   }
   if (rows.length > 0) {
     patch.infoModuleData = { labelValueRows: rows, showLastUpdateTime: false };

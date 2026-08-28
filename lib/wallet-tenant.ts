@@ -38,13 +38,43 @@ export type TenantConfig = {
   ubicacion?: { lat: number; lng: number };
 };
 
-function envStr(...keys: string[]): string | undefined {
-  if (typeof process === 'undefined') return undefined;
-  for (const k of keys) {
-    const v = process.env[k]?.trim();
-    if (v) return v;
+/**
+ * Primer valor no vacío. Recibe los `process.env.X` ya resueltos porque Next
+ * solo inlinea las NEXT_PUBLIC_* cuando se leen de forma estática.
+ */
+function pick(...values: (string | undefined)[]): string | undefined {
+  for (const v of values) {
+    const t = v?.trim();
+    if (t) return t;
   }
   return undefined;
+}
+
+/**
+ * Deriva una variante horizontal de una imagen de Cloudinary rellenando con
+ * el color de marca, para no recortar logos cuadrados en el hero del pase.
+ */
+function cloudinaryBanner(
+  url: string | undefined,
+  width: number,
+  height: number,
+  hexBg: string,
+): string | undefined {
+  if (!url || !url.includes('/upload/')) return url;
+  const bg = hexBg.replace('#', '').toLowerCase();
+  return url.replace(
+    '/upload/',
+    `/upload/c_pad,w_${width},h_${height},b_rgb:${bg}/`,
+  );
+}
+
+function parseLatLng(raw: string | undefined): { lat: number; lng: number } | undefined {
+  if (!raw) return undefined;
+  const [latRaw, lngRaw] = raw.split(',');
+  const lat = Number(latRaw);
+  const lng = Number(lngRaw);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
+  return { lat, lng };
 }
 
 function classIdFor(suffix: string): string {
@@ -59,6 +89,12 @@ const CARNITAS_LOGO =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL?.trim()) ||
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg';
 
+const BARBERIA_LOGO =
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_mjdgvv.jpg';
+
+const ABARROTES_LOGO =
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_1_x7ktpa.jpg';
+
 /** Cashback de Carnitas Granada — ajustable sin deploy. Default 5%. */
 function carnitasCashbackPct(): number {
   const raw =
@@ -67,17 +103,6 @@ function carnitasCashbackPct(): number {
     '';
   const pct = Number(String(raw).trim());
   return Number.isFinite(pct) && pct > 0 ? pct : 5;
-}
-
-/** Coordenadas del local en formato "lat,lng". */
-function carnitasUbicacion(): { lat: number; lng: number } | undefined {
-  const raw = envStr('NEXT_PUBLIC_CARNITAS_LATLNG');
-  if (!raw) return undefined;
-  const [latRaw, lngRaw] = raw.split(',');
-  const lat = Number(latRaw);
-  const lng = Number(lngRaw);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
-  return { lat, lng };
 }
 
 /**
@@ -97,6 +122,20 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/sabucan',
     isDemo: false,
     cashbackPct: 1,
+    heroImageUrl: pick(
+      process.env.NEXT_PUBLIC_SABUCAN_HERO_URL,
+      cloudinaryBanner(SABUCAN_LOGO, 1032, 336, '#1E2340'),
+    ),
+    wideLogoUrl: pick(
+      process.env.NEXT_PUBLIC_SABUCAN_WIDE_LOGO_URL,
+      cloudinaryBanner(SABUCAN_LOGO, 660, 220, '#1E2340'),
+    ),
+    // Datos de contacto solo si el cliente real los define: no inventamos
+    // direcciones ni teléfonos en un pase que ya tienen clientes finales.
+    waNumber: pick(process.env.NEXT_PUBLIC_SABUCAN_WA_NUMBER),
+    mapsUrl: pick(process.env.NEXT_PUBLIC_SABUCAN_MAPS_URL),
+    direccion: pick(process.env.NEXT_PUBLIC_SABUCAN_DIRECCION),
+    horario: pick(process.env.NEXT_PUBLIC_SABUCAN_HORARIO),
   },
   carnitas_granada: {
     id: 'carnitas_granada',
@@ -110,19 +149,30 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/carnitas',
     isDemo: false,
     cashbackPct: carnitasCashbackPct(),
-    heroImageUrl: envStr('NEXT_PUBLIC_CARNITAS_HERO_URL'),
-    wideLogoUrl: envStr('NEXT_PUBLIC_CARNITAS_WIDE_LOGO_URL'),
-    waNumber: envStr('NEXT_PUBLIC_CARNITAS_WA_NUMBER'),
-    mapsUrl: envStr('NEXT_PUBLIC_CARNITAS_MAPS_URL'),
-    direccion: envStr('NEXT_PUBLIC_CARNITAS_DIRECCION'),
-    horario: envStr('NEXT_PUBLIC_CARNITAS_HORARIO'),
-    ubicacion: carnitasUbicacion(),
+    heroImageUrl: pick(
+      process.env.NEXT_PUBLIC_CARNITAS_HERO_URL,
+      cloudinaryBanner(CARNITAS_LOGO, 1032, 336, '#E3231D'),
+    ),
+    wideLogoUrl: pick(
+      process.env.NEXT_PUBLIC_CARNITAS_WIDE_LOGO_URL,
+      cloudinaryBanner(CARNITAS_LOGO, 660, 220, '#E3231D'),
+    ),
+    waNumber: pick(process.env.NEXT_PUBLIC_CARNITAS_WA_NUMBER, '+525657008418'),
+    mapsUrl: pick(
+      process.env.NEXT_PUBLIC_CARNITAS_MAPS_URL,
+      'https://maps.app.goo.gl/h82G3F5Udy7PDTKTA',
+    ),
+    direccion: pick(
+      process.env.NEXT_PUBLIC_CARNITAS_DIRECCION,
+      'Maximino Ávila Camacho 33, Cd. de los Deportes, Benito Juárez, 03710 CDMX',
+    ),
+    horario: pick(process.env.NEXT_PUBLIC_CARNITAS_HORARIO, '9:30 am a 5:30 pm'),
+    ubicacion: parseLatLng(process.env.NEXT_PUBLIC_CARNITAS_LATLNG),
   },
   barberia: {
     id: 'barberia',
     nombre: 'Barbería El Patrón',
-    logoUrl:
-      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_mjdgvv.jpg',
+    logoUrl: BARBERIA_LOGO,
     colorPrimario: '#1B2438',
     colorAcento: '#C9A227',
     classSuffix: 'demo_barberia_lealtad',
@@ -131,12 +181,18 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/demo/barberia',
     isDemo: true,
     cashbackPct: 1,
+    heroImageUrl: cloudinaryBanner(BARBERIA_LOGO, 1032, 336, '#1B2438'),
+    wideLogoUrl: cloudinaryBanner(BARBERIA_LOGO, 660, 220, '#1B2438'),
+    // Datos ficticios: es una demo de venta.
+    waNumber: '+525555010101',
+    mapsUrl: 'https://maps.google.com/?q=Barberia+El+Patron+CDMX',
+    direccion: 'Av. Insurgentes Sur 480, Roma Sur, CDMX (demo)',
+    horario: 'Lun a sáb · 10:00 am a 8:00 pm',
   },
   abarrotes: {
     id: 'abarrotes',
     nombre: 'Abarrotes La Providencia',
-    logoUrl:
-      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_1_x7ktpa.jpg',
+    logoUrl: ABARROTES_LOGO,
     colorPrimario: '#3E7D32',
     colorAcento: '#D2691E',
     classSuffix: 'demo_abarrotes_lealtad',
@@ -145,6 +201,13 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/demo/abarrotes',
     isDemo: true,
     cashbackPct: 1,
+    heroImageUrl: cloudinaryBanner(ABARROTES_LOGO, 1032, 336, '#3E7D32'),
+    wideLogoUrl: cloudinaryBanner(ABARROTES_LOGO, 660, 220, '#3E7D32'),
+    // Datos ficticios: es una demo de venta.
+    waNumber: '+525555020202',
+    mapsUrl: 'https://maps.google.com/?q=Abarrotes+La+Providencia+CDMX',
+    direccion: 'Calle Morelos 15, Col. Providencia, CDMX (demo)',
+    horario: 'Todos los días · 7:00 am a 10:00 pm',
   },
 };
 

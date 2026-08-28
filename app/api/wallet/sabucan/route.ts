@@ -27,6 +27,7 @@ import {
   sabucanClassId,
   sabucanObjectId,
 } from '@/lib/wallet-sabucan';
+import { TENANTS, sabucanWaDigits } from '@/lib/wallet-tenant';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,6 +64,22 @@ export async function POST(req: Request) {
     const objectId = sabucanObjectId(issuerId, clienteId);
     const classId = sabucanClassId(issuerId);
 
+    const cfg = TENANTS.sabucan;
+    const saldo = Math.max(0, puntosActuales);
+
+    const links = [
+      ...(cfg.waNumber
+        ? [
+            {
+              uri: `https://wa.me/${sabucanWaDigits(cfg.waNumber)}`,
+              description: `WhatsApp ${cfg.nombre}`,
+              id: 'whatsapp',
+            },
+          ]
+        : []),
+      ...(cfg.mapsUrl ? [{ uri: cfg.mapsUrl, description: 'Cómo llegar', id: 'maps' }] : []),
+    ];
+
     const loyaltyObject = {
       id: objectId,
       classId,
@@ -76,11 +93,34 @@ export async function POST(req: Request) {
       },
       loyaltyPoints: {
         label: 'Puntos',
-        balance: { string: formatPuntos(Math.max(0, puntosActuales)) },
+        balance: { string: formatPuntos(saldo) },
+      },
+      secondaryLoyaltyPoints: {
+        label: 'Saldo a favor',
+        balance: {
+          money: { currencyCode: 'MXN', micros: Math.round(saldo * 1_000_000) },
+        },
       },
       textModulesData: [
         { header: 'Cómo acumular', body: '1 punto por cada $100 MXN de compra' },
+        {
+          header: 'Cómo usarlo',
+          body: 'Muestra este código en la caja. Puedes usar tu saldo como pago en cualquier visita.',
+        },
+        ...(cfg.direccion ? [{ header: 'Dónde estamos', body: cfg.direccion }] : []),
+        ...(cfg.horario ? [{ header: 'Horario', body: cfg.horario }] : []),
       ],
+      ...(links.length > 0 ? { linksModuleData: { uris: links } } : {}),
+      ...(cfg.heroImageUrl
+        ? {
+            heroImage: {
+              sourceUri: { uri: cfg.heroImageUrl },
+              contentDescription: {
+                defaultValue: { language: 'es-MX', value: cfg.nombre },
+              },
+            },
+          }
+        : {}),
     };
 
     const claims = {
