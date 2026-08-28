@@ -92,13 +92,13 @@ const CARNITAS_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg';
 
 const CAFE_LOGO =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787937994/1787937848976_da0kgk.png';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787942156/cafe-luna-logo-transparente_xskmgn.png';
 
 const BARBERIA_LOGO =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_mjdgvv.jpg';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787941859/barberia-el-patron-logo-transparente_ej3ruw.png';
 
 const ABARROTES_LOGO =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_1_x7ktpa.jpg';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787941811/abarrotes-la-providencia-logo-transparente_jgk7kf.png';
 
 /** Cashback de Carnitas Granada — ajustable sin deploy. Default 5%. */
 function carnitasCashbackPct(): number {
@@ -178,16 +178,16 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     id: 'cafe',
     nombre: 'Café Luna',
     logoUrl: CAFE_LOGO,
-    colorPrimario: '#6B4226',
-    colorAcento: '#D9A94E',
+    colorPrimario: '#1B4332',
+    colorAcento: '#C9A24B',
     classSuffix: 'demo_cafe_lealtad',
     objectPrefix: 'demo-cafe',
     collection: 'demo_cafe_clientes',
     basePath: '/demo/cafe',
     isDemo: true,
     cashbackPct: 1,
-    heroImageUrl: cloudinaryBanner(CAFE_LOGO, 1032, 336, '#6B4226'),
-    wideLogoUrl: cloudinaryBanner(CAFE_LOGO, 660, 220, '#6B4226'),
+    heroImageUrl: cloudinaryBanner(CAFE_LOGO, 1032, 336, '#1B4332'),
+    wideLogoUrl: cloudinaryBanner(CAFE_LOGO, 660, 220, '#1B4332'),
     // Datos ficticios: es una demo de venta.
     waNumber: '+525555030303',
     mapsUrl: 'https://maps.google.com/?q=Cafe+Luna+CDMX',

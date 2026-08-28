@@ -14,21 +14,21 @@ const DEMO_TENANTS = {
   cafe: {
     nombre: 'Café Luna',
     logoUrl:
-      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787937994/1787937848976_da0kgk.png',
-    colorPrimario: '#6B4226',
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787942156/cafe-luna-logo-transparente_xskmgn.png',
+    colorPrimario: '#1B4332',
     classId: `${ISSUER_ID}.demo_cafe_lealtad`,
   },
   barberia: {
     nombre: 'Barbería El Patrón',
     logoUrl:
-      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_mjdgvv.jpg',
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787941859/barberia-el-patron-logo-transparente_ej3ruw.png',
     colorPrimario: '#1B2438',
     classId: `${ISSUER_ID}.demo_barberia_lealtad`,
   },
   abarrotes: {
     nombre: 'Abarrotes La Providencia',
     logoUrl:
-      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_1_x7ktpa.jpg',
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787941811/abarrotes-la-providencia-logo-transparente_jgk7kf.png',
     colorPrimario: '#3E7D32',
     classId: `${ISSUER_ID}.demo_abarrotes_lealtad`,
   },

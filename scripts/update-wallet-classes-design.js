@@ -43,11 +43,11 @@ const CARNITAS_LOGO =
   env('NEXT_PUBLIC_CARNITAS_LOGO_URL') ||
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg';
 const CAFE_LOGO =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787937994/1787937848976_da0kgk.png';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787942156/cafe-luna-logo-transparente_xskmgn.png';
 const BARBERIA_LOGO =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_mjdgvv.jpg';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787941859/barberia-el-patron-logo-transparente_ej3ruw.png';
 const ABARROTES_LOGO =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_1_x7ktpa.jpg';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787941811/abarrotes-la-providencia-logo-transparente_jgk7kf.png';
 
 /** Variante horizontal con relleno de color, para no recortar logos cuadrados. */
 function banner(url, w, h, hex) {
@@ -90,7 +90,7 @@ const TENANTS = {
   cafe: {
     nombre: 'Café Luna',
     classSuffix: 'demo_cafe_lealtad',
-    color: '#6B4226',
+    color: '#1B4332',
     logo: CAFE_LOGO,
     comoAcumular: '1 punto por cada $100 MXN de compra (1 punto = $1 MXN).',
     wa: '+525555030303',
