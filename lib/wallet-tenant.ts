@@ -24,7 +24,28 @@ export type TenantConfig = {
   isDemo: boolean;
   /** % de cashback en puntos (1 punto = $1 MXN). 1 = 1 pt por cada $100. */
   cashbackPct: number;
+  /** Banda horizontal del pase (~1032x336). Vacío = Wallet no la muestra. */
+  heroImageUrl?: string;
+  /** Logo horizontal para la vista de lista de Wallet. */
+  wideLogoUrl?: string;
+  /** Teléfono del negocio para el botón de WhatsApp del pase. */
+  waNumber?: string;
+  /** URL de Google Maps del local. */
+  mapsUrl?: string;
+  direccion?: string;
+  horario?: string;
+  /** Coordenadas para el aviso de Wallet al pasar cerca del local. */
+  ubicacion?: { lat: number; lng: number };
 };
+
+function envStr(...keys: string[]): string | undefined {
+  if (typeof process === 'undefined') return undefined;
+  for (const k of keys) {
+    const v = process.env[k]?.trim();
+    if (v) return v;
+  }
+  return undefined;
+}
 
 function classIdFor(suffix: string): string {
   return `${getIssuerId()}.${suffix}`;
@@ -46,6 +67,17 @@ function carnitasCashbackPct(): number {
     '';
   const pct = Number(String(raw).trim());
   return Number.isFinite(pct) && pct > 0 ? pct : 5;
+}
+
+/** Coordenadas del local en formato "lat,lng". */
+function carnitasUbicacion(): { lat: number; lng: number } | undefined {
+  const raw = envStr('NEXT_PUBLIC_CARNITAS_LATLNG');
+  if (!raw) return undefined;
+  const [latRaw, lngRaw] = raw.split(',');
+  const lat = Number(latRaw);
+  const lng = Number(lngRaw);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
+  return { lat, lng };
 }
 
 /**
@@ -78,6 +110,13 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/carnitas',
     isDemo: false,
     cashbackPct: carnitasCashbackPct(),
+    heroImageUrl: envStr('NEXT_PUBLIC_CARNITAS_HERO_URL'),
+    wideLogoUrl: envStr('NEXT_PUBLIC_CARNITAS_WIDE_LOGO_URL'),
+    waNumber: envStr('NEXT_PUBLIC_CARNITAS_WA_NUMBER'),
+    mapsUrl: envStr('NEXT_PUBLIC_CARNITAS_MAPS_URL'),
+    direccion: envStr('NEXT_PUBLIC_CARNITAS_DIRECCION'),
+    horario: envStr('NEXT_PUBLIC_CARNITAS_HORARIO'),
+    ubicacion: carnitasUbicacion(),
   },
   barberia: {
     id: 'barberia',

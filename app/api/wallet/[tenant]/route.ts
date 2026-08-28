@@ -9,6 +9,7 @@ import {
 } from '@/lib/wallet-sabucan';
 import {
   getTenant,
+  sabucanWaDigits,
   tenantCashbackPct,
   tenantClassId,
   tenantObjectId,
@@ -57,6 +58,40 @@ export async function POST(req: Request, ctx: Ctx) {
     const objectId = tenantObjectId(cfg, clienteId);
     const classId = tenantClassId(cfg);
 
+    const saldo = Math.max(0, puntosActuales);
+    const pct = tenantCashbackPct(cfg);
+
+    const textModulesData = [
+      {
+        header: 'Cómo acumular',
+        body:
+          pct === 1
+            ? `1 punto por cada $100 MXN · ${cfg.nombre}`
+            : `${pct}% de cashback en puntos (1 punto = $1 MXN) · ${cfg.nombre}`,
+      },
+      {
+        header: 'Cómo usarlo',
+        body: 'Muestra este código en la caja. Puedes usar tu saldo como pago en cualquier visita.',
+      },
+      ...(cfg.direccion ? [{ header: 'Dónde estamos', body: cfg.direccion }] : []),
+      ...(cfg.horario ? [{ header: 'Horario', body: cfg.horario }] : []),
+    ];
+
+    const links = [
+      ...(cfg.waNumber
+        ? [
+            {
+              uri: `https://wa.me/${sabucanWaDigits(cfg.waNumber)}`,
+              description: `WhatsApp ${cfg.nombre}`,
+              id: 'whatsapp',
+            },
+          ]
+        : []),
+      ...(cfg.mapsUrl
+        ? [{ uri: cfg.mapsUrl, description: 'Cómo llegar', id: 'maps' }]
+        : []),
+    ];
+
     const loyaltyObject = {
       id: objectId,
       classId,
@@ -70,17 +105,26 @@ export async function POST(req: Request, ctx: Ctx) {
       },
       loyaltyPoints: {
         label: 'Puntos',
-        balance: { string: formatPuntos(Math.max(0, puntosActuales)) },
+        balance: { string: formatPuntos(saldo) },
       },
-      textModulesData: [
-        {
-          header: 'Cómo acumular',
-          body:
-            tenantCashbackPct(cfg) === 1
-              ? `1 punto por cada $100 MXN · ${cfg.nombre}`
-              : `${tenantCashbackPct(cfg)}% de cashback en puntos (1 punto = $1 MXN) · ${cfg.nombre}`,
+      secondaryLoyaltyPoints: {
+        label: 'Saldo a favor',
+        balance: {
+          money: { currencyCode: 'MXN', micros: Math.round(saldo * 1_000_000) },
         },
-      ],
+      },
+      textModulesData,
+      ...(links.length > 0 ? { linksModuleData: { uris: links } } : {}),
+      ...(cfg.heroImageUrl
+        ? {
+            heroImage: {
+              sourceUri: { uri: cfg.heroImageUrl },
+              contentDescription: {
+                defaultValue: { language: 'es-MX', value: cfg.nombre },
+              },
+            },
+          }
+        : {}),
     };
 
     const claims = {
