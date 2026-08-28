@@ -111,16 +111,8 @@ export async function POST(req: Request) {
         ...(cfg.horario ? [{ header: 'Horario', body: cfg.horario }] : []),
       ],
       ...(links.length > 0 ? { linksModuleData: { uris: links } } : {}),
-      ...(cfg.heroImageUrl
-        ? {
-            heroImage: {
-              sourceUri: { uri: cfg.heroImageUrl },
-              contentDescription: {
-                defaultValue: { language: 'es-MX', value: cfg.nombre },
-              },
-            },
-          }
-        : {}),
+      // Sin heroImage a nivel objeto: el objeto pisa a la clase y los pases ya
+      // emitidos se quedan con la imagen vieja. El hero se controla en la clase.
     };
 
     const claims = {
