@@ -12,11 +12,11 @@ import {
 } from 'lucide-react';
 import {
   POINTS_RATE,
-  calcularPuntos,
+  calcularPuntosCashback,
   formatPuntos,
   roundPuntos,
 } from '@/lib/wallet-sabucan-points';
-import { getTenant, type TenantId } from '@/lib/wallet-tenant';
+import { getTenant, tenantCashbackPct, type TenantId } from '@/lib/wallet-tenant';
 import {
   SendPassWhatsAppButton,
   formatMxn,
@@ -42,6 +42,7 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: TenantId }) {
   const accent = tenant?.colorAcento ?? '#F2691F';
   const primary = tenant?.colorPrimario ?? '#1E2340';
   const apiBase = `/api/loyalty/${tenantId}`;
+  const cashbackPct = tenant ? tenantCashbackPct(tenant) : 1;
 
   const [telefono, setTelefono] = useState('');
   const [lookup, setLookup] = useState<LookupState>({ status: 'idle' });
@@ -80,7 +81,10 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: TenantId }) {
   }, [ticketNum, usePoints, descuentoMxn]);
 
   const montoVenta = aPagar;
-  const puntosPreview = useMemo(() => calcularPuntos(montoVenta), [montoVenta]);
+  const puntosPreview = useMemo(
+    () => calcularPuntosCashback(montoVenta, cashbackPct),
+    [montoVenta, cashbackPct],
+  );
 
   const puntosUsarValidos =
     usePoints !== 'yes' ||
@@ -273,7 +277,10 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: TenantId }) {
           Registrar venta
         </h1>
         <p className="mt-2 text-sm text-white/50">
-          1 punto por cada ${POINTS_RATE} MXN · canje integrado en la misma venta
+          {cashbackPct === 1
+            ? `1 punto por cada $${POINTS_RATE} MXN`
+            : `${cashbackPct}% de cashback en puntos (1 punto = $1 MXN)`}{' '}
+          · canje integrado en la misma venta
         </p>
       </div>
 

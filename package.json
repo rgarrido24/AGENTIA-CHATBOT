@@ -21,6 +21,7 @@
     "copy:cliente-to-stripe": "node scripts/copy-agentia-cliente-to-clients.js",
     "update:reseller-brand": "node scripts/update-reseller-brand.js",
     "purge:knowledge": "node scripts/purge-knowledge.js",
+    "wallet:carnitas": "node scripts/create-carnitas-wallet-class.js",
     "test:comment": "node scripts/test-comment-webhook.js",
     "debug:export": "node scripts/generate-agentia-debug.js",
     "check:izzi": "node scripts/check-izzi-chat.js",

@@ -6,7 +6,7 @@ export function getIssuerId(): string {
   return (process.env.GOOGLE_WALLET_ISSUER_ID ?? '').trim() || DEFAULT_WALLET_ISSUER_ID;
 }
 
-export type TenantId = 'sabucan' | 'barberia' | 'abarrotes';
+export type TenantId = 'sabucan' | 'barberia' | 'abarrotes' | 'carnitas_granada';
 
 export type TenantConfig = {
   id: TenantId;
@@ -22,6 +22,8 @@ export type TenantConfig = {
   /** Rutas UI base, ej. /sabucan o /demo/barberia */
   basePath: string;
   isDemo: boolean;
+  /** % de cashback en puntos (1 punto = $1 MXN). 1 = 1 pt por cada $100. */
+  cashbackPct: number;
 };
 
 function classIdFor(suffix: string): string {
@@ -31,6 +33,20 @@ function classIdFor(suffix: string): string {
 const SABUCAN_LOGO =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SABUCAN_LOGO_URL?.trim()) ||
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787419176/WhatsApp_Image_2026-08-22_at_11.18.53_AM_vr2xah.jpg';
+
+const CARNITAS_LOGO =
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL?.trim()) ||
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg';
+
+/** Cashback de Carnitas Granada — ajustable sin deploy. Default 5%. */
+function carnitasCashbackPct(): number {
+  const raw =
+    (typeof process !== 'undefined' &&
+      (process.env.NEXT_PUBLIC_CARNITAS_CASHBACK_PCT ?? process.env.CARNITAS_CASHBACK_PCT)) ||
+    '';
+  const pct = Number(String(raw).trim());
+  return Number.isFinite(pct) && pct > 0 ? pct : 5;
+}
 
 /**
  * TENANTS — demos + SABUCAN (misma lógica).
@@ -48,6 +64,20 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     collection: 'sabucan_clientes',
     basePath: '/sabucan',
     isDemo: false,
+    cashbackPct: 1,
+  },
+  carnitas_granada: {
+    id: 'carnitas_granada',
+    nombre: 'Carnitas Granada',
+    logoUrl: CARNITAS_LOGO,
+    colorPrimario: '#E3231D',
+    colorAcento: '#FFD400',
+    classSuffix: 'carnitas_granada_lealtad',
+    objectPrefix: 'carnitas-granada',
+    collection: 'carnitas_clientes',
+    basePath: '/carnitas',
+    isDemo: false,
+    cashbackPct: carnitasCashbackPct(),
   },
   barberia: {
     id: 'barberia',
@@ -61,6 +91,7 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     collection: 'demo_barberia_clientes',
     basePath: '/demo/barberia',
     isDemo: true,
+    cashbackPct: 1,
   },
   abarrotes: {
     id: 'abarrotes',
@@ -74,6 +105,7 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     collection: 'demo_abarrotes_clientes',
     basePath: '/demo/abarrotes',
     isDemo: true,
+    cashbackPct: 1,
   },
 };
 
@@ -84,7 +116,18 @@ export const DEMO_TENANTS = {
 } as const;
 
 export function isTenantId(raw: string): raw is TenantId {
-  return raw === 'sabucan' || raw === 'barberia' || raw === 'abarrotes';
+  return (
+    raw === 'sabucan' ||
+    raw === 'barberia' ||
+    raw === 'abarrotes' ||
+    raw === 'carnitas_granada'
+  );
+}
+
+export function tenantCashbackPct(tenant: TenantConfig): number {
+  return Number.isFinite(tenant.cashbackPct) && tenant.cashbackPct > 0
+    ? tenant.cashbackPct
+    : 1;
 }
 
 export function isDemoNegocio(raw: string): raw is 'barberia' | 'abarrotes' {

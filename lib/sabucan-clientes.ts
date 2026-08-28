@@ -1,7 +1,7 @@
 import { ObjectId, type Collection } from 'mongodb';
 import { getMongoDb } from '@/lib/mongodb';
-import { calcularPuntos, roundPuntos } from '@/lib/wallet-sabucan-points';
-import { getTenant, type TenantId } from '@/lib/wallet-tenant';
+import { calcularPuntosCashback, roundPuntos } from '@/lib/wallet-sabucan-points';
+import { getTenant, tenantCashbackPct, type TenantId } from '@/lib/wallet-tenant';
 
 export const SABUCAN_CLIENTES_COLLECTION = 'sabucan_clientes';
 
@@ -207,7 +207,9 @@ export async function registrarVenta(
     throw new Error('Monto inválido');
   }
 
-  const puntosGanados = calcularPuntos(monto);
+  const tenantCfg = getTenant(tenantId);
+  if (!tenantCfg) throw new Error(`Tenant inválido: ${tenantId}`);
+  const puntosGanados = calcularPuntosCashback(monto, tenantCashbackPct(tenantCfg));
   const now = new Date().toISOString();
   const compra: SabucanCompra = { fecha: now, monto, puntosGanados, tipo: 'compra' };
   const coll = await collection(tenantId);

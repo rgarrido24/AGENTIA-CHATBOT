@@ -7,7 +7,12 @@ import {
   getWalletIssuerId,
   getWalletServiceAccount,
 } from '@/lib/wallet-sabucan';
-import { getTenant, tenantClassId, tenantObjectId } from '@/lib/wallet-tenant';
+import {
+  getTenant,
+  tenantCashbackPct,
+  tenantClassId,
+  tenantObjectId,
+} from '@/lib/wallet-tenant';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +75,10 @@ export async function POST(req: Request, ctx: Ctx) {
       textModulesData: [
         {
           header: 'Cómo acumular',
-          body: `1 punto por cada $100 MXN · ${cfg.nombre}`,
+          body:
+            tenantCashbackPct(cfg) === 1
+              ? `1 punto por cada $100 MXN · ${cfg.nombre}`
+              : `${tenantCashbackPct(cfg)}% de cashback en puntos (1 punto = $1 MXN) · ${cfg.nombre}`,
         },
       ],
     };

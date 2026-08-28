@@ -16,8 +16,23 @@ export function formatPuntos(n: number): string {
 
 /**
  * $100 = 1 pt, $150 = 1.5 pts, $250 = 2.5 pts — sin truncar.
+ * Equivale a 1% de cashback (1 punto = $1 MXN).
  */
 export function calcularPuntos(montoCompra: number): number {
   if (!Number.isFinite(montoCompra) || montoCompra <= 0) return 0;
   return roundPuntos(montoCompra / POINTS_RATE);
+}
+
+/** Cashback por defecto cuando el tenant no define uno. */
+export const CASHBACK_PCT_DEFAULT = 1;
+
+/**
+ * Cashback en puntos (1 punto = $1 MXN): 5% de $200 = 10 pts.
+ */
+export function calcularPuntosCashback(montoCompra: number, cashbackPct: number): number {
+  const monto = Number(montoCompra);
+  const pct = Number(cashbackPct);
+  if (!Number.isFinite(monto) || monto <= 0) return 0;
+  if (!Number.isFinite(pct) || pct <= 0) return 0;
+  return roundPuntos(monto * (pct / 100));
 }
