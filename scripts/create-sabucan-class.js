@@ -14,7 +14,7 @@ const WALLET_SCOPE = 'https://www.googleapis.com/auth/wallet_object.issuer';
 
 const LOGO_URL =
   process.env.NEXT_PUBLIC_SABUCAN_LOGO_URL?.trim() ||
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787419176/WhatsApp_Image_2026-08-22_at_11.18.53_AM_vr2xah.jpg';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787945953/sabucan-logo-transparente_kywnjn.png';
 
 function loadEnv(file) {
   const p = path.join(__dirname, '..', file);

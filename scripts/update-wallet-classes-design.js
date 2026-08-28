@@ -38,7 +38,7 @@ const ISSUER_ID = env('GOOGLE_WALLET_ISSUER_ID') || '3388000000023176050';
 
 const SABUCAN_LOGO =
   env('NEXT_PUBLIC_SABUCAN_LOGO_URL') ||
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787419176/WhatsApp_Image_2026-08-22_at_11.18.53_AM_vr2xah.jpg';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787945953/sabucan-logo-transparente_kywnjn.png';
 const CARNITAS_LOGO =
   env('NEXT_PUBLIC_CARNITAS_LOGO_URL') ||
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg';

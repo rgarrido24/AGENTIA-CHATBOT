@@ -1,11 +1,11 @@
 /**
- * PATCH de las imágenes de las 3 clases de demo ya existentes:
+ * PATCH de las imágenes de una clase de lealtad ya existente:
  * programLogo, heroImage y wideProgramLogo. No recrea la clase ni altera
  * textos, links ni info. Imprime la respuesta de cada PATCH y verifica con GET.
  *
- *   node scripts/update-demo-logos.js
- *   node scripts/update-demo-logos.js cafe
- *   node scripts/update-demo-logos.js --sin-hero   # quita el hero de las 3
+ *   node scripts/update-demo-logos.js                  # solo las 3 demos
+ *   node scripts/update-demo-logos.js sabucan
+ *   node scripts/update-demo-logos.js sabucan --sin-hero
  *
  * Los pases ya emitidos se refrescan solos en el celular del cliente.
  */
@@ -35,7 +35,26 @@ loadEnv('.env');
 
 const ISSUER_ID = (process.env.GOOGLE_WALLET_ISSUER_ID || '').trim() || '3388000000023176050';
 
+/** Por defecto solo se tocan las demos; los clientes reales se piden por nombre. */
+const POR_DEFECTO = ['cafe', 'barberia', 'abarrotes'];
+
 const DEMO_LOGOS = {
+  sabucan: {
+    nombre: 'SABUCAN',
+    classSuffix: 'sabucan_lealtad',
+    color: '#1E2340',
+    logoUrl:
+      (process.env.NEXT_PUBLIC_SABUCAN_LOGO_URL || '').trim() ||
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787945953/sabucan-logo-transparente_kywnjn.png',
+  },
+  carnitas_granada: {
+    nombre: 'Carnitas Granada',
+    classSuffix: 'carnitas_granada_lealtad',
+    color: '#E3231D',
+    logoUrl:
+      (process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL || '').trim() ||
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg',
+  },
   cafe: {
     nombre: 'Café Luna',
     classSuffix: 'demo_cafe_lealtad',
@@ -182,7 +201,7 @@ async function main() {
   const argv = process.argv.slice(2);
   const sinHero = argv.includes('--sin-hero');
   const args = argv.filter((a) => a in DEMO_LOGOS);
-  const keys = args.length > 0 ? args : Object.keys(DEMO_LOGOS);
+  const keys = args.length > 0 ? args : POR_DEFECTO;
 
   const { token, email } = await getAccessToken();
   console.log('service account:', email);
