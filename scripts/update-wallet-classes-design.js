@@ -42,6 +42,8 @@ const SABUCAN_LOGO =
 const CARNITAS_LOGO =
   env('NEXT_PUBLIC_CARNITAS_LOGO_URL') ||
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg';
+const CAFE_LOGO =
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787937994/1787937848976_da0kgk.png';
 const BARBERIA_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_mjdgvv.jpg';
 const ABARROTES_LOGO =
@@ -84,6 +86,18 @@ const TENANTS = {
       'Maximino Ávila Camacho 33, Cd. de los Deportes, Benito Juárez, 03710 CDMX',
     horario: env('NEXT_PUBLIC_CARNITAS_HORARIO') || '9:30 am a 5:30 pm',
     latlng: env('NEXT_PUBLIC_CARNITAS_LATLNG'),
+  },
+  cafe: {
+    nombre: 'Café Luna',
+    classSuffix: 'demo_cafe_lealtad',
+    color: '#6B4226',
+    logo: CAFE_LOGO,
+    comoAcumular: '1 punto por cada $100 MXN de compra (1 punto = $1 MXN).',
+    wa: '+525555030303',
+    maps: 'https://maps.google.com/?q=Cafe+Luna+CDMX',
+    direccion: 'Av. Álvaro Obregón 210, Roma Norte, CDMX (demo)',
+    horario: 'Lun a dom · 7:30 am a 9:00 pm',
+    latlng: '',
   },
   barberia: {
     nombre: 'Barbería El Patrón',

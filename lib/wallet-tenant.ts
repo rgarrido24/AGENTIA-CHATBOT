@@ -6,7 +6,9 @@ export function getIssuerId(): string {
   return (process.env.GOOGLE_WALLET_ISSUER_ID ?? '').trim() || DEFAULT_WALLET_ISSUER_ID;
 }
 
-export type TenantId = 'sabucan' | 'barberia' | 'abarrotes' | 'carnitas_granada';
+export type DemoNegocio = 'cafe' | 'barberia' | 'abarrotes';
+
+export type TenantId = 'sabucan' | 'carnitas_granada' | DemoNegocio;
 
 export type TenantConfig = {
   id: TenantId;
@@ -89,6 +91,9 @@ const CARNITAS_LOGO =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL?.trim()) ||
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg';
 
+const CAFE_LOGO =
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787937994/1787937848976_da0kgk.png';
+
 const BARBERIA_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787636931/WhatsApp_Image_2026-08-24_at_11.48.16_PM_mjdgvv.jpg';
 
@@ -169,6 +174,26 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     horario: pick(process.env.NEXT_PUBLIC_CARNITAS_HORARIO, '9:30 am a 5:30 pm'),
     ubicacion: parseLatLng(process.env.NEXT_PUBLIC_CARNITAS_LATLNG),
   },
+  cafe: {
+    id: 'cafe',
+    nombre: 'Café Luna',
+    logoUrl: CAFE_LOGO,
+    colorPrimario: '#6B4226',
+    colorAcento: '#D9A94E',
+    classSuffix: 'demo_cafe_lealtad',
+    objectPrefix: 'demo-cafe',
+    collection: 'demo_cafe_clientes',
+    basePath: '/demo/cafe',
+    isDemo: true,
+    cashbackPct: 1,
+    heroImageUrl: cloudinaryBanner(CAFE_LOGO, 1032, 336, '#6B4226'),
+    wideLogoUrl: cloudinaryBanner(CAFE_LOGO, 660, 220, '#6B4226'),
+    // Datos ficticios: es una demo de venta.
+    waNumber: '+525555030303',
+    mapsUrl: 'https://maps.google.com/?q=Cafe+Luna+CDMX',
+    direccion: 'Av. Álvaro Obregón 210, Roma Norte, CDMX (demo)',
+    horario: 'Lun a dom · 7:30 am a 9:00 pm',
+  },
   barberia: {
     id: 'barberia',
     nombre: 'Barbería El Patrón',
@@ -213,17 +238,15 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
 
 /** Alias pedido en el brief (solo demos). */
 export const DEMO_TENANTS = {
+  cafe: TENANTS.cafe,
   barberia: TENANTS.barberia,
   abarrotes: TENANTS.abarrotes,
 } as const;
 
+export const DEMO_NEGOCIOS: DemoNegocio[] = ['cafe', 'barberia', 'abarrotes'];
+
 export function isTenantId(raw: string): raw is TenantId {
-  return (
-    raw === 'sabucan' ||
-    raw === 'barberia' ||
-    raw === 'abarrotes' ||
-    raw === 'carnitas_granada'
-  );
+  return raw === 'sabucan' || raw === 'carnitas_granada' || isDemoNegocio(raw);
 }
 
 export function tenantCashbackPct(tenant: TenantConfig): number {
@@ -232,8 +255,8 @@ export function tenantCashbackPct(tenant: TenantConfig): number {
     : 1;
 }
 
-export function isDemoNegocio(raw: string): raw is 'barberia' | 'abarrotes' {
-  return raw === 'barberia' || raw === 'abarrotes';
+export function isDemoNegocio(raw: string): raw is DemoNegocio {
+  return raw === 'cafe' || raw === 'barberia' || raw === 'abarrotes';
 }
 
 export function getTenant(tenantId: string): TenantConfig | null {

@@ -24,6 +24,8 @@
     "wallet:carnitas": "node scripts/create-carnitas-wallet-class.js",
     "wallet:carnitas:update": "node scripts/update-carnitas-wallet-class.js",
     "wallet:design": "node scripts/update-wallet-classes-design.js",
+    "wallet:demos": "node scripts/create-demo-classes.js",
+    "seed:demos": "node scripts/seed-demo-data.js",
     "test:comment": "node scripts/test-comment-webhook.js",
     "debug:export": "node scripts/generate-agentia-debug.js",
     "check:izzi": "node scripts/check-izzi-chat.js",

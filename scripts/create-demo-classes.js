@@ -1,5 +1,5 @@
 /**
- * Crea las Loyalty Classes de demos (barbería + abarrotes).
+ * Crea las Loyalty Classes de demos (café + barbería + abarrotes).
  * Tras cada POST hace GET inmediato para confirmar.
  *
  *   node scripts/create-demo-classes.js
@@ -11,6 +11,13 @@ const ISSUER_ID =
   (process.env.GOOGLE_WALLET_ISSUER_ID || '').trim() || '3388000000023176050';
 
 const DEMO_TENANTS = {
+  cafe: {
+    nombre: 'Café Luna',
+    logoUrl:
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787937994/1787937848976_da0kgk.png',
+    colorPrimario: '#6B4226',
+    classId: `${ISSUER_ID}.demo_cafe_lealtad`,
+  },
   barberia: {
     nombre: 'Barbería El Patrón',
     logoUrl:
