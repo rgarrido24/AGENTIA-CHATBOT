@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
-import SabucanAuthGuard from '@/app/sabucan/SabucanAuthGuard';
 import { LoyaltyShell } from '@/components/loyalty/LoyaltyShell';
 import { getTenant, isDemoNegocio } from '@/lib/wallet-tenant';
 
@@ -28,11 +27,7 @@ export default function DemoNegocioLayout({ children, params }: Props) {
     notFound();
   }
 
-  const from = `/demo/${params.negocio}/caja`;
-
-  return (
-    <SabucanAuthGuard from={from}>
-      <LoyaltyShell tenantId={params.negocio}>{children}</LoyaltyShell>
-    </SabucanAuthGuard>
-  );
+  // El guard vive en cada sección (caja/buscar/clientes) para que /login
+  // quede accesible con el branding del negocio.
+  return <LoyaltyShell tenantId={params.negocio}>{children}</LoyaltyShell>;
 }

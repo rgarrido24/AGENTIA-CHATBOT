@@ -8,15 +8,11 @@
  *   POST /api/demo/cafe/seed   { "clientes": [ ... ] }
  *   DELETE /api/demo/cafe/seed  → borra únicamente lo insertado por aquí
  *
- * Requiere la cookie de sesión del login existente (uno solo para las 3 demos).
+ * Requiere la cookie del login de demos (uno solo para las 3).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import {
-  SABUCAN_AUTH_COOKIE,
-  expectedSabucanAuthToken,
-  isSabucanAuthConfigured,
-} from '@/lib/sabucan-auth';
+import { DEMO_AUTH_COOKIE, expectedDemoAuthToken } from '@/lib/demo-auth';
 import { getMongoDb } from '@/lib/mongodb';
 import { normalizeSabucanTelefono, parseFechaNacimiento } from '@/lib/sabucan-clientes';
 import { roundPuntos } from '@/lib/wallet-sabucan-points';
@@ -40,15 +36,9 @@ type SeedInput = {
 };
 
 async function requireAuth(): Promise<NextResponse | null> {
-  if (!isSabucanAuthConfigured()) {
-    return NextResponse.json(
-      { error: 'Auth no configurado (SABUCAN_ADMIN_USER / SABUCAN_ADMIN_PASSWORD)' },
-      { status: 500 },
-    );
-  }
-  const expected = await expectedSabucanAuthToken();
-  const token = (await cookies()).get(SABUCAN_AUTH_COOKIE)?.value;
-  if (!expected || token !== expected) {
+  const expected = await expectedDemoAuthToken();
+  const token = (await cookies()).get(DEMO_AUTH_COOKIE)?.value;
+  if (token !== expected) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
   return null;
