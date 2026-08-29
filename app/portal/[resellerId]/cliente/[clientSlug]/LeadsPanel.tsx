@@ -10,7 +10,7 @@ import {
   useState,
 } from 'react';
 import Link from 'next/link';
-import { MessageCircle, Moon, RefreshCw, Plus, Sun, Trash2, X } from 'lucide-react';
+import { Instagram, MessageCircle, Moon, RefreshCw, Plus, Sun, Trash2, X } from 'lucide-react';
 import {
   isLucianoReseller,
   LUCINO_PRODUCT_TITLE,
@@ -40,6 +40,8 @@ type Lead = {
   page_name:          string;
   platform_src:       string;
   form_fields:        Record<string, string>;
+  /** El nombre es un @usuario de Instagram, no el nombre real del lead. */
+  nombre_es_usuario_ig?: boolean;
   estado:             EstadoLegacy;
   status_seguimiento: StatusSeg;
   notas:              Nota[];
@@ -479,6 +481,14 @@ function LeadCard({
           <span className="font-semibold text-sm truncate" style={{ color: ui.leadName }}>
             {lead.nombre}
           </span>
+          {lead.nombre_es_usuario_ig && (
+            <Instagram
+              className="h-3.5 w-3.5 shrink-0"
+              style={{ color: ui.leadMuted }}
+              aria-label="Usuario de Instagram"
+              title="Es un usuario de Instagram, no el nombre real"
+            />
+          )}
           {isNew && (
             <span
               className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
@@ -699,7 +709,17 @@ function LeadDetail({
           {initials(lead.nombre)}
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="truncate text-lg font-bold" style={{ color: ui.detailTitle }}>{lead.nombre}</h2>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h2 className="truncate text-lg font-bold" style={{ color: ui.detailTitle }}>{lead.nombre}</h2>
+            {lead.nombre_es_usuario_ig && (
+              <Instagram className="h-4 w-4 shrink-0" style={{ color: ui.detailSubtitle }} aria-label="Usuario de Instagram" />
+            )}
+          </div>
+          {lead.nombre_es_usuario_ig && (
+            <p className="text-xs" style={{ color: ui.detailSubtitle }}>
+              Instagram no proporcionó el nombre completo
+            </p>
+          )}
           <p className="text-sm" style={{ color: ui.detailSubtitle }}>{lead.form_display || lead.form_name || lead.form_id || lead.campana || lead.platform_src || 'Lead'}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">

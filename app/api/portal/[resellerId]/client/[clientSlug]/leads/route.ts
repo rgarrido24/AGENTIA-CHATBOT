@@ -40,7 +40,7 @@ export async function GET(
       leadId: 1, nombre: 1, senderName: 1, telefono: 1, senderId: 1,
       email: 1, campana: 1, adset: 1, canal_origen: 1,
       form_id: 1, form_name: 1, page_name: 1, platform_src: 1,
-      form_fields: 1, status_vendedor: 1, status: 1,
+      form_fields: 1, nombre_es_usuario_ig: 1, status_vendedor: 1, status: 1,
       status_seguimiento: 1, notas: 1, createdAt: 1, _id: 0,
     })
     .toArray();
@@ -65,6 +65,8 @@ export async function GET(
     page_name:          (d.page_name || '') as string,
     platform_src:       (d.platform_src || '') as string,
     form_fields:        (d.form_fields || {}) as Record<string, string>,
+    // Meta solo mandó el @usuario de Instagram: el panel lo marca con un ícono.
+    nombre_es_usuario_ig: d.nombre_es_usuario_ig === true,
     estado:             mapEstado(d.status_vendedor as string | undefined),
     status_seguimiento: (d.status_seguimiento || 'en_seguimiento') as string,
     notas:              (d.notas || []) as Array<{ texto: string; autor: string; fecha: string }>,
