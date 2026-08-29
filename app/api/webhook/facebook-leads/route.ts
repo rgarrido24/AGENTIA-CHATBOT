@@ -95,7 +95,10 @@ function normalizeIncomingLeadPayload(p: Record<string, unknown>): Record<string
       'Whatsapp' in o ||
       'WhatsApp' in o ||
       'full_name' in o ||
+      'first_name' in o ||
+      'nombre_completo' in o ||
       'phone_number' in o ||
+      'whatsapp_number' in o ||
       'email' in o;
     if (looksZapier) {
       console.log('[fb-leads] usando payload anidado (Zapier/plantilla)');
@@ -214,6 +217,108 @@ function normalizePhone(raw: string): string {
   return d;
 }
 
+// ─── Resolución de nombre y teléfono con fallbacks ───────────────────────────
+/**
+ * Los formularios de Meta no comparten un esquema de campos: unos traen
+ * "Full Name", otros "First Name" + "Last Name" y otros una pregunta
+ * personalizada ("nombre_completo", "nombre"). Este lookup normaliza la clave
+ * (minúsculas, sin acentos, espacios/guiones → "_") para que da igual cómo
+ * venga escrita en el formulario.
+ */
+function normalizeFieldKey(key: string): string {
+  return String(key)
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s.\-]+/g, '_');
+}
+
+function indexFields(...sources: Array<Record<string, unknown> | undefined>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const src of sources) {
+    if (!src) continue;
+    for (const [k, v] of Object.entries(src)) {
+      if (v === null || v === undefined) continue;
+      const value = Array.isArray(v) ? String(v[0] ?? '') : String(v);
+      if (!value.trim()) continue;
+      const nk = normalizeFieldKey(k);
+      if (!out[nk]) out[nk] = value.trim();
+    }
+  }
+  return out;
+}
+
+function firstField(fields: Record<string, string>, keys: string[]): string {
+  for (const k of keys) {
+    const v = fields[normalizeFieldKey(k)];
+    if (v && v.trim()) return v.trim();
+  }
+  return '';
+}
+
+const SIN_NOMBRE = 'Sin nombre';
+
+type ResolvedName = {
+  /** Nombre a guardar; "Sin nombre" si ningún campo conocido trajo dato. */
+  nombre: string;
+  /** El nombre es un @usuario de Instagram, no un nombre real. */
+  esUsuarioIg: boolean;
+};
+
+/**
+ * Resuelve el nombre del lead probando, en orden: full_name →
+ * first_name + last_name → nombre_completo → nombre → variantes conocidas.
+ * Aplica a todos los clientes y formularios: no hay reglas por form_id.
+ */
+function resolveLeadName(formFields: Record<string, unknown>): ResolvedName {
+  const fields = indexFields(formFields);
+
+  const directo = firstField(fields, ['full_name']);
+  const first = firstField(fields, ['first_name']);
+  const last = firstField(fields, ['last_name']);
+  const compuesto = first ? [first, last].filter(Boolean).join(' ') : '';
+
+  const resuelto =
+    directo ||
+    compuesto ||
+    firstField(fields, [
+      'nombre_completo',
+      'nombre',
+      'name',
+      'nombre_y_apellido',
+      'nombre_y_apellidos',
+    ]);
+
+  if (!resuelto) return { nombre: SIN_NOMBRE, esUsuarioIg: false };
+
+  // Un @usuario de Instagram es el único dato que Meta manda en algunos casos:
+  // se usa como nombre, pero marcado para que el panel lo distinga.
+  return { nombre: resuelto, esUsuarioIg: resuelto.startsWith('@') };
+}
+
+/**
+ * Teléfono con la misma lógica de fallback: algunos formularios traen el
+ * número bajo `whatsapp_number` en lugar de `phone_number`, y a veces a nivel
+ * raíz del payload y no dentro de form_fields.
+ */
+function resolveLeadPhone(
+  formFields: Record<string, unknown>,
+  rootPayload?: Record<string, unknown>,
+): string {
+  const fields = indexFields(formFields, rootPayload);
+  return firstField(fields, [
+    'phone_number',
+    'telefono',
+    'phone',
+    'whatsapp_number',
+    'whatsapp',
+    'numero_de_whatsapp',
+    'celular',
+    'movil',
+  ]);
+}
+
 // ─── Router: detecta formato y deriva ────────────────────────────────────────
 async function processLead(payload: Record<string, unknown>) {
   const isZapier =
@@ -225,7 +330,11 @@ async function processLead(payload: Record<string, unknown>) {
     'WhatsApp' in payload ||
     'Email' in payload ||
     'Phone' in payload ||
-    'phone' in payload;
+    'phone' in payload ||
+    // Formularios que solo traen las variantes alternativas de nombre/teléfono
+    'first_name' in payload ||
+    'nombre_completo' in payload ||
+    'whatsapp_number' in payload;
 
   if (isZapier) {
     await processZapierLead(payload);
@@ -378,22 +487,10 @@ async function insertFbLeadHighActivityAlert(
 async function processZapierLead(data: Record<string, unknown>) {
   console.log('[fb-leads/zapier] keys recibidos:', Object.keys(data).join(', '));
 
-  // Nombre: buscar en múltiples campos posibles (Zapier usa nombres distintos por formulario)
-  const resolvedName = String(
-    data.nombre ??
-    data['Nombre'] ??
-    data.full_name ??
-    data.nombre_completo ??
-    data.name ??
-    data.nombre_y_apellido ??
-    ''
-  ).trim();
-  const full_name = resolvedName || 'Sin nombre';
-  // Try all known Whatsapp key variants from Zapier
-  const phone_raw     = String(
-    data['Whatsapp'] ?? data['whatsapp'] ?? data['WhatsApp'] ??
-    data.phone_number ?? data.phone ?? data.telefono ?? ''
-  ).trim();
+  // Nombre y teléfono con los fallbacks generales (Zapier manda el formulario plano)
+  const { nombre: full_name, esUsuarioIg } = resolveLeadName(data);
+  const resolvedName = full_name === SIN_NOMBRE ? '' : full_name;
+  const phone_raw = resolveLeadPhone(data);
   const email         = String(data['Email']        ?? data.email         ?? data.correo    ?? '').trim();
   const campaign_name = String(data.campaign_name   ?? data.campaña       ?? '').trim();
   const ad_name       = String(data.ad_name         ?? data.anuncio       ?? '').trim();
@@ -413,7 +510,10 @@ async function processZapierLead(data: Record<string, unknown>) {
     }
   }
 
-  console.log(`[fb-leads/zapier] nombre="${full_name}" tel="${phone_raw}" campaña="${campaign_name}"`);
+  console.log(
+    `[fb-leads/zapier] nombre="${full_name}"${esUsuarioIg ? ' (usuario IG)' : ''} ` +
+      `tel="${phone_raw}" campaña="${campaign_name}"`,
+  );
   console.log(
     `[fb-leads/zapier] form_fields (${Object.keys(form_fields).length}): ` +
       JSON.stringify(form_fields).slice(0, 400),
@@ -448,6 +548,7 @@ async function processZapierLead(data: Record<string, unknown>) {
     senderId,
     senderName:      full_name,
     nombre:          full_name,
+    ...(esUsuarioIg ? { nombre_es_usuario_ig: true } : {}),
     telefono:        phone        || undefined,
     email:           email        || undefined,
     platform:        'facebook',
@@ -533,9 +634,21 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
       const fieldData: FieldData[] = (value.field_data as FieldData[]) ?? [];
       const field = (name: string) => fieldData.find((f) => f.name === name)?.values?.[0] ?? '';
 
-      const full_name = field('full_name') || field('nombre_completo') || field('name');
-      const phone_raw = field('phone_number') || field('telefono') || field('phone');
+      // Mapa plano de todo el formulario para los fallbacks de nombre/teléfono.
+      const rawFields: Record<string, string> = {};
+      for (const fd of fieldData) {
+        if (fd?.name && fd.values?.[0]) rawFields[fd.name] = fd.values[0];
+      }
+
+      const { nombre: resolvedName, esUsuarioIg } = resolveLeadName(rawFields);
+      const full_name = resolvedName === SIN_NOMBRE ? '' : resolvedName;
+      const phone_raw = resolveLeadPhone(rawFields, value);
       const email     = field('email') || field('correo');
+
+      console.log(
+        `[fb-leads/meta] nombre="${resolvedName}"${esUsuarioIg ? ' (usuario IG)' : ''} ` +
+          `tel="${phone_raw}" campos=${Object.keys(rawFields).join(',')}`,
+      );
 
       // Save ALL field_data entries (excluding the three standard ones)
       const STANDARD_META = new Set(['full_name','nombre_completo','name','phone_number','telefono','phone','email','correo']);
@@ -564,6 +677,7 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
           $set: {
             senderName:    full_name || undefined,
             nombre:        full_name || undefined,
+            ...(esUsuarioIg ? { nombre_es_usuario_ig: true } : {}),
             telefono:      phone    || undefined,
             email:         email    || undefined,
             platform:      'facebook',
