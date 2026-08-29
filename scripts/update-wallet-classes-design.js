@@ -152,7 +152,8 @@ function buildPatch(cfg) {
     reviewStatus: 'UNDER_REVIEW',
     accountNameLabel: 'Cliente',
     accountIdLabel: 'Teléfono',
-    heroImage: image(banner(cfg.logo, 1032, 336, cfg.color), `${cfg.nombre} — bienvenida`),
+    // Sin heroImage a propósito: la banda debajo del QR se quitó en todas las
+    // clases porque el pase se ve más limpio con solo el logo y el código.
     wideProgramLogo: image(banner(cfg.logo, 660, 220, cfg.color), `Logo ${cfg.nombre}`),
     textModulesData: [
       { header: 'Cómo acumular', body: cfg.comoAcumular },
@@ -236,13 +237,12 @@ async function updateOne(token, key) {
   const ok =
     verify.ok &&
     json.id === classId &&
-    Boolean(json.heroImage) &&
     Boolean(json.wideProgramLogo) &&
     (!patch.linksModuleData || Boolean(json.linksModuleData)) &&
     (!patch.infoModuleData || Boolean(json.infoModuleData));
 
   console.log('GET verificación:', verify.status);
-  console.log('hero:', Boolean(json.heroImage), '· wideLogo:', Boolean(json.wideProgramLogo));
+  console.log('wideLogo:', Boolean(json.wideProgramLogo));
   console.log('links:', Boolean(json.linksModuleData), '· info:', Boolean(json.infoModuleData));
   if (!ok) console.log(JSON.stringify(json, null, 2));
 

@@ -26,8 +26,6 @@ export type TenantConfig = {
   isDemo: boolean;
   /** % de cashback en puntos (1 punto = $1 MXN). 1 = 1 pt por cada $100. */
   cashbackPct: number;
-  /** Banda horizontal del pase (~1032x336). Vacío = Wallet no la muestra. */
-  heroImageUrl?: string;
   /** Logo horizontal para la vista de lista de Wallet. */
   wideLogoUrl?: string;
   /** Teléfono del negocio para el botón de WhatsApp del pase. */
@@ -127,10 +125,6 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/sabucan',
     isDemo: false,
     cashbackPct: 1,
-    heroImageUrl: pick(
-      process.env.NEXT_PUBLIC_SABUCAN_HERO_URL,
-      cloudinaryBanner(SABUCAN_LOGO, 1032, 336, '#1E2340'),
-    ),
     wideLogoUrl: pick(
       process.env.NEXT_PUBLIC_SABUCAN_WIDE_LOGO_URL,
       cloudinaryBanner(SABUCAN_LOGO, 660, 220, '#1E2340'),
@@ -154,10 +148,6 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/carnitas',
     isDemo: false,
     cashbackPct: carnitasCashbackPct(),
-    heroImageUrl: pick(
-      process.env.NEXT_PUBLIC_CARNITAS_HERO_URL,
-      cloudinaryBanner(CARNITAS_LOGO, 1032, 336, '#E3231D'),
-    ),
     wideLogoUrl: pick(
       process.env.NEXT_PUBLIC_CARNITAS_WIDE_LOGO_URL,
       cloudinaryBanner(CARNITAS_LOGO, 660, 220, '#E3231D'),
@@ -186,7 +176,6 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/demo/cafe',
     isDemo: true,
     cashbackPct: 1,
-    heroImageUrl: cloudinaryBanner(CAFE_LOGO, 1032, 336, '#1B4332'),
     wideLogoUrl: cloudinaryBanner(CAFE_LOGO, 660, 220, '#1B4332'),
     // Datos ficticios: es una demo de venta.
     waNumber: '+525555030303',
@@ -206,7 +195,6 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/demo/barberia',
     isDemo: true,
     cashbackPct: 1,
-    heroImageUrl: cloudinaryBanner(BARBERIA_LOGO, 1032, 336, '#1B2438'),
     wideLogoUrl: cloudinaryBanner(BARBERIA_LOGO, 660, 220, '#1B2438'),
     // Datos ficticios: es una demo de venta.
     waNumber: '+525555010101',
@@ -226,7 +214,6 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/demo/abarrotes',
     isDemo: true,
     cashbackPct: 1,
-    heroImageUrl: cloudinaryBanner(ABARROTES_LOGO, 1032, 336, '#3E7D32'),
     wideLogoUrl: cloudinaryBanner(ABARROTES_LOGO, 660, 220, '#3E7D32'),
     // Datos ficticios: es una demo de venta.
     waNumber: '+525555020202',
