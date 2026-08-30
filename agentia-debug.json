@@ -1,0 +1,143 @@
+{
+  "generatedAt": "2026-03-09T16:58:38.444Z",
+  "projectRoot": "E:\\AGENTIA-CHATBOT-LIMPIO",
+  "routes": {
+    "pages": [
+      "/",
+      "/admin/dashboard",
+      "/admin/settings",
+      "/book",
+      "/dashboard",
+      "/dashboard/analytics",
+      "/dashboard/calendar",
+      "/dashboard/campaigns",
+      "/dashboard/knowledge",
+      "/dashboard/leads",
+      "/dashboard/settings",
+      "/dashboard/whatsapp",
+      "/demo-barber",
+      "/demo/barber",
+      "/login"
+    ],
+    "api": [
+      "/api/admin/contacts",
+      "/api/alerts/pending",
+      "/api/alerts/sent",
+      "/api/analytics",
+      "/api/auth/login",
+      "/api/auth/logout",
+      "/api/book/appointments",
+      "/api/book/reserve",
+      "/api/book/slots",
+      "/api/business-settings",
+      "/api/calendar/appointments",
+      "/api/calendar/availability",
+      "/api/calendar/book",
+      "/api/calendar/cancel",
+      "/api/calendar/confirm",
+      "/api/chat",
+      "/api/chat-demo",
+      "/api/chat/outbound",
+      "/api/chat/send",
+      "/api/cron/reminders",
+      "/api/demo/whatsapp-bienvenida",
+      "/api/health",
+      "/api/health/gemini",
+      "/api/knowledge",
+      "/api/leads",
+      "/api/leads/alerts",
+      "/api/leads/assign",
+      "/api/leads/delete",
+      "/api/leads/handle",
+      "/api/leads/pause",
+      "/api/leads/pause-global",
+      "/api/leads/status",
+      "/api/reminders/pending",
+      "/api/reminders/sent",
+      "/api/webhook",
+      "/api/whatsapp/qr",
+      "/api/whatsapp/qr-store"
+    ]
+  },
+  "barberDemo": {
+    "source": "src/lib/demo-config.ts",
+    "defaultServices": [
+      {
+        "name": "Corte",
+        "price": "200",
+        "tipo": "Barbería",
+        "duracionEstimada": 30
+      },
+      {
+        "name": "Barba",
+        "price": "100",
+        "tipo": "Barbería",
+        "duracionEstimada": 20
+      },
+      {
+        "name": "Tinte",
+        "price": "850",
+        "tipo": "Estética",
+        "duracionEstimada": 120
+      },
+      {
+        "name": "Peinado",
+        "price": "450",
+        "tipo": "Estética",
+        "duracionEstimada": 60
+      },
+      {
+        "name": "Acrygel",
+        "price": "400",
+        "tipo": "Uñas",
+        "duracionEstimada": 60
+      },
+      {
+        "name": "Retoque",
+        "price": "250",
+        "tipo": "Uñas",
+        "duracionEstimada": 45
+      },
+      {
+        "name": "Corte niño",
+        "price": "180",
+        "tipo": "Infantil",
+        "duracionEstimada": 25
+      }
+    ],
+    "defaultBusinessConfig": {
+      "businessName": "Agentia Barber",
+      "address": "Mérida, Yucatán",
+      "mapUrl": "https://www.google.com/maps/place/Plaza+Altabrisa...",
+      "schedule": "Lunes a Sábado 9:00 - 20:00",
+      "capacidadSimultanea": 1,
+      "servicesCount": 7
+    },
+    "defaultServicesDescription": "Servicios por defecto (Corte, Barba, Tinte, etc.)"
+  },
+  "whatsappBridge": {
+    "scriptPath": "scripts/whatsapp-bridge.js",
+    "startCommand": "npm run whatsapp",
+    "description": "Proceso independiente. Conecta WhatsApp vía QR y reenvía mensajes a POST /api/chat. No se inicia con el servidor Next.js.",
+    "envVarsRequired": {
+      "AGENTIA_CHATBOT_API_URL": "URL base del API (ej: https://tu-app.onrender.com)",
+      "AGENTIA_WHATSAPP_CLIENT_ID": "clientId para business_config en MongoDB (default: agentia)"
+    },
+    "envVarsOptional": {
+      "WHATSAPP_QR_SECRET": "Bearer token para POST /api/whatsapp/qr-store",
+      "CRON_SECRET": "Bearer para /api/chat/outbound, /api/reminders/pending, /api/alerts/pending",
+      "ALERT_WHATSAPP_NUMBER": "Número al que se envían alertas de leads"
+    },
+    "apiEndpointsUsed": [
+      "POST /api/chat (mensajes entrantes → IA → respuesta)",
+      "POST /api/whatsapp/qr-store (guardar QR para dashboard)",
+      "GET /api/chat/outbound (mensajes salientes CRM)",
+      "GET /api/reminders/pending",
+      "POST /api/reminders/sent",
+      "GET /api/alerts/pending",
+      "POST /api/alerts/sent"
+    ],
+    "pipelineLeads": "Los mensajes entrantes llegan a /api/chat → chat-handler crea/actualiza lead en MongoDB y responde con IA. Colecciones: leads, chat_messages, outbound_messages.",
+    "renderRecommendation": "Crear un segundo servicio en Render tipo Background Worker con comando: npm run whatsapp. Variables: AGENTIA_CHATBOT_API_URL, MONGODB_URI (no; el API usa la app), CRON_SECRET si las APIs están protegidas."
+  }
+}

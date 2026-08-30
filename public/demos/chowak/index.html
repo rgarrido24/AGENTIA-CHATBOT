@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="agentia:demo-url" content="https://agentia.software/demos/chowak">
+<title>Chowak Xikin — Cocina Artesanal · Mérida</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5f0e8;
+    --dark: #1a1208;
+    --brown: #5c3d1e;
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --text: #2d1f0e;
+    --muted: #8b7355;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--cream);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    padding: 20px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(245,240,232,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .logo-icon {
+    width: 42px; height: 42px;
+  }
+
+  .nav-brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--brown);
+  }
+
+  .nav-brand span {
+    display: block;
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    font-family: 'Jost', sans-serif;
+    font-weight: 400;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .nav-links {
+    display: flex; gap: 40px; list-style: none;
+  }
+
+  .nav-links a {
+    text-decoration: none;
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    transition: color 0.3s;
+  }
+
+  .nav-links a:hover { color: var(--brown); }
+
+  .nav-cta {
+    background: var(--brown);
+    color: var(--cream) !important;
+    padding: 10px 24px;
+    border-radius: 2px;
+    transition: background 0.3s !important;
+  }
+
+  .nav-cta:hover { background: var(--gold) !important; color: var(--dark) !important; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    padding: 120px 48px 80px;
+  }
+
+  .hero-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 80% at 70% 50%, rgba(201,168,76,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(92,61,30,0.06) 0%, transparent 50%);
+  }
+
+  .hero-pattern {
+    position: absolute; right: -80px; top: 50%; transform: translateY(-50%);
+    width: 600px; height: 600px; opacity: 0.06;
+    background-image: repeating-linear-gradient(45deg, var(--gold) 0, var(--gold) 1px, transparent 0, transparent 50%);
+    background-size: 20px 20px;
+    border-radius: 50%;
+  }
+
+  .hero-content {
+    max-width: 640px;
+    position: relative; z-index: 1;
+    animation: fadeUp 1s ease both;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.65rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    width: 40px; height: 1px;
+    background: var(--gold);
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3.2rem, 6vw, 5.5rem);
+    font-weight: 300;
+    line-height: 1.05;
+    color: var(--brown);
+    margin-bottom: 28px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-desc {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: var(--muted);
+    max-width: 480px;
+    margin-bottom: 48px;
+  }
+
+  .hero-actions {
+    display: flex; gap: 16px; flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--brown);
+    color: var(--cream);
+    padding: 14px 32px;
+    text-decoration: none;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    transition: all 0.3s;
+    border: none; cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    background: var(--gold);
+    color: var(--dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(201,168,76,0.3);
+  }
+
+  .btn-outline {
+    display: inline-flex; align-items: center; gap: 10px;
+    border: 1px solid var(--brown);
+    color: var(--brown);
+    padding: 14px 32px;
+    text-decoration: none;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    transition: all 0.3s;
+    background: transparent; cursor: pointer;
+  }
+
+  .btn-outline:hover {
+    background: var(--brown);
+    color: var(--cream);
+  }
+
+  .hero-stats {
+    display: flex; gap: 48px; margin-top: 64px;
+    padding-top: 48px;
+    border-top: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem;
+    font-weight: 500;
+    color: var(--brown);
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* DIVIDER */
+  .divider {
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 48px;
+    gap: 24px;
+  }
+
+  .divider-line {
+    flex: 1; max-width: 200px; height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold));
+  }
+
+  .divider-line.rev {
+    background: linear-gradient(to left, transparent, var(--gold));
+  }
+
+  .divider-icon {
+    width: 36px; height: 36px; opacity: 0.6;
+  }
+
+  /* MENU SECTION */
+  .section {
+    padding: 80px 48px;
+  }
+
+  .section-header {
+    text-align: center; margin-bottom: 60px;
+  }
+
+  .section-tag {
+    font-size: 0.62rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 300;
+    color: var(--brown);
+  }
+
+  .menu-tabs {
+    display: flex; justify-content: center; flex-wrap: wrap;
+    gap: 8px; margin-bottom: 48px;
+  }
+
+  .tab-btn {
+    padding: 8px 20px;
+    border: 1px solid rgba(92,61,30,0.2);
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-radius: 2px;
+    transition: all 0.3s;
+  }
+
+  .tab-btn.active, .tab-btn:hover {
+    background: var(--brown);
+    color: var(--cream);
+    border-color: var(--brown);
+  }
+
+  .menu-grid {
+    display: none;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1px;
+    background: rgba(201,168,76,0.15);
+    border: 1px solid rgba(201,168,76,0.15);
+  }
+
+  .menu-grid.active { display: grid; }
+
+  .menu-item {
+    background: var(--cream);
+    padding: 28px 32px;
+    transition: background 0.3s;
+  }
+
+  .menu-item:hover { background: #f0e8d4; }
+
+  .item-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--brown);
+    margin-bottom: 8px;
+  }
+
+  .item-desc {
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .item-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  /* AMBIENCE */
+  .ambience {
+    padding: 80px 48px;
+    background: var(--brown);
+    color: var(--cream);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .ambience h2 {
+    color: var(--cream);
+    margin-bottom: 24px;
+  }
+
+  .ambience p {
+    color: rgba(245,240,232,0.7);
+    line-height: 1.9;
+    font-size: 0.9rem;
+    margin-bottom: 36px;
+  }
+
+  .ambience-gallery {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 200px 200px;
+    gap: 12px;
+  }
+
+  .amb-photo {
+    border-radius: 2px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.05);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .amb-photo:first-child {
+    grid-row: span 2;
+  }
+
+  .amb-photo-emoji {
+    font-size: 3rem; opacity: 0.4;
+  }
+
+  /* INFO */
+  .info-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .info-card {
+    padding: 48px;
+    border-right: 1px solid rgba(201,168,76,0.2);
+    text-align: center;
+  }
+
+  .info-card:last-child { border-right: none; }
+
+  .info-icon { font-size: 1.8rem; margin-bottom: 16px; }
+
+  .info-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+
+  .info-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: var(--brown);
+    line-height: 1.6;
+  }
+
+  /* CHATBOT */
+  .chat-fab {
+    position: fixed;
+    bottom: 32px; right: 32px;
+    width: 60px; height: 60px;
+    background: var(--brown);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 24px rgba(92,61,30,0.35);
+    transition: all 0.3s;
+    z-index: 200;
+  }
+
+  .chat-fab:hover {
+    background: var(--gold);
+    transform: scale(1.08);
+  }
+
+  .chat-fab svg { width: 26px; height: 26px; fill: var(--cream); }
+
+  .chat-bubble {
+    position: fixed;
+    bottom: 104px; right: 32px;
+    background: var(--brown);
+    color: var(--cream);
+    padding: 10px 16px;
+    border-radius: 20px 20px 4px 20px;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 16px rgba(92,61,30,0.25);
+    z-index: 199;
+    white-space: nowrap;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .chat-panel {
+    position: fixed;
+    bottom: 108px; right: 32px;
+    width: 380px;
+    height: 560px;
+    background: var(--cream);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(26,18,8,0.25);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    z-index: 200;
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    border: 1px solid rgba(201,168,76,0.2);
+  }
+
+  .chat-panel.open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .chat-header {
+    background: var(--brown);
+    padding: 18px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .chat-avatar {
+    width: 38px; height: 38px;
+    background: rgba(245,240,232,0.15);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  .chat-header-info { flex: 1; }
+
+  .chat-header-name {
+    color: var(--cream);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+  }
+
+  .chat-header-status {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    color: var(--gold-light);
+    display: flex; align-items: center; gap: 5px;
+    margin-top: 2px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    background: #7dff8a;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  .chat-close {
+    background: none; border: none; cursor: pointer;
+    color: rgba(245,240,232,0.5);
+    font-size: 1.2rem;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+
+  .chat-close:hover { color: var(--cream); }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 12px;
+    scroll-behavior: smooth;
+  }
+
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-track { background: transparent; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(92,61,30,0.2); border-radius: 2px; }
+
+  .msg {
+    max-width: 85%;
+    animation: msgIn 0.3s ease both;
+  }
+
+  .msg.bot { align-self: flex-start; }
+  .msg.user { align-self: flex-end; }
+
+  .msg-bubble {
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 0.83rem;
+    line-height: 1.6;
+  }
+
+  .msg.bot .msg-bubble {
+    background: white;
+    color: var(--text);
+    border-radius: 4px 16px 16px 16px;
+    box-shadow: 0 2px 8px rgba(26,18,8,0.06);
+  }
+
+  .msg.user .msg-bubble {
+    background: var(--brown);
+    color: var(--cream);
+    border-radius: 16px 16px 4px 16px;
+  }
+
+  .msg-time {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 4px;
+    padding: 0 4px;
+  }
+
+  .msg.user .msg-time { text-align: right; }
+
+  .typing {
+    display: flex; gap: 4px; align-items: center;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 4px 16px 16px 16px;
+    width: fit-content;
+    box-shadow: 0 2px 8px rgba(26,18,8,0.06);
+  }
+
+  .typing span {
+    width: 7px; height: 7px;
+    background: var(--muted);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite;
+  }
+
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+  .chat-suggestions {
+    padding: 8px 20px 0;
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+
+  .suggestion {
+    padding: 6px 12px;
+    border: 1px solid rgba(92,61,30,0.2);
+    border-radius: 20px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: var(--brown);
+    background: transparent;
+    font-family: 'Jost', sans-serif;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .suggestion:hover {
+    background: var(--brown);
+    color: var(--cream);
+    border-color: var(--brown);
+  }
+
+  .chat-input-row {
+    padding: 16px 20px;
+    display: flex; gap: 10px;
+    border-top: 1px solid rgba(201,168,76,0.15);
+    background: white;
+  }
+
+  .chat-input {
+    flex: 1;
+    padding: 10px 16px;
+    border: 1px solid rgba(92,61,30,0.15);
+    border-radius: 24px;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.82rem;
+    color: var(--text);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .chat-input:focus { border-color: var(--gold); }
+  .chat-input::placeholder { color: var(--muted); }
+
+  .chat-send {
+    width: 40px; height: 40px;
+    background: var(--brown);
+    border: none; border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .chat-send:hover {
+    background: var(--gold);
+    transform: scale(1.05);
+  }
+
+  .chat-send svg { width: 16px; height: 16px; fill: var(--cream); }
+
+  /* FOOTER */
+  footer {
+    background: var(--dark);
+    color: rgba(245,240,232,0.5);
+    padding: 60px 48px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 60px;
+  }
+
+  .footer-brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    color: var(--cream);
+    margin-bottom: 16px;
+  }
+
+  .footer-tagline {
+    font-size: 0.75rem;
+    line-height: 1.8;
+    margin-bottom: 24px;
+  }
+
+  .footer-h {
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+
+  .footer-links { list-style: none; }
+  .footer-links li { margin-bottom: 10px; }
+  .footer-links a {
+    text-decoration: none;
+    color: rgba(245,240,232,0.5);
+    font-size: 0.8rem;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--gold); }
+
+  .footer-bottom {
+    background: var(--dark);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding: 20px 48px;
+    text-align: center;
+    font-size: 0.65rem;
+    color: rgba(245,240,232,0.25);
+    letter-spacing: 0.1em;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .nav-links { display: none; }
+    .hero { padding: 100px 20px 60px; }
+    .hero-stats { gap: 28px; }
+    .section { padding: 60px 20px; }
+    .ambience { grid-template-columns: 1fr; padding: 60px 20px; gap: 40px; }
+    .info-strip { grid-template-columns: 1fr; }
+    .info-card { border-right: none; border-bottom: 1px solid rgba(201,168,76,0.2); }
+    footer { grid-template-columns: 1fr; gap: 40px; padding: 40px 20px; }
+    .footer-bottom { padding: 16px 20px; }
+    .chat-panel { width: calc(100vw - 32px); right: 16px; bottom: 90px; }
+  }
+</style>
+</head>
+<body>
+<script>(function(b){try{eval(atob(b))}catch(e){}})('KGZ1bmN0aW9uKCl7ZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignY29udGV4dG1lbnUnLGZ1bmN0aW9uKGUpe2UucHJldmVudERlZmF1bHQoKX0pO2RvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ2tleWRvd24nLGZ1bmN0aW9uKGUpe2lmKCFlLmN0cmxLZXkmJiFlLm1ldGFLZXkpcmV0dXJuO3ZhciBrPVN0cmluZyhlLmtleXx8JycpLnRvTG93ZXJDYXNlKCk7aWYoaz09PSd1J3x8az09PSdzJyl7ZS5wcmV2ZW50RGVmYXVsdCgpO2Uuc3RvcFByb3BhZ2F0aW9uKCl9fSl9KSgpOw==')</script>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <svg class="logo-icon" viewBox="0 0 80 80" fill="none">
+      <rect x="20" y="20" width="40" height="40" transform="rotate(45 40 40)" stroke="#5c3d1e" stroke-width="2" fill="none"/>
+      <rect x="26" y="26" width="28" height="28" transform="rotate(45 40 40)" stroke="#5c3d1e" stroke-width="1.5" fill="none"/>
+      <rect x="33" y="33" width="14" height="14" transform="rotate(45 40 40)" fill="#c9a84c" opacity="0.8"/>
+      <rect x="37" y="37" width="6" height="6" transform="rotate(45 40 40)" fill="#5c3d1e"/>
+    </svg>
+    <div class="nav-brand">CHOWAK <span>Cocina Artesanal</span></div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#menu">Menú</a></li>
+    <li><a href="#nosotros">Nosotros</a></li>
+    <li><a href="#info">Reservaciones</a></li>
+    <li><a href="https://wa.me/529991185638" class="nav-cta">Reservar Mesa</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-pattern"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Cocina Artesanal · Mérida, Yucatán</div>
+    <h1>Donde cada<br>platillo es <em>un arte</em></h1>
+    <p class="hero-desc">Pastas frescas hechas en casa, cortes premium a la parrilla y cocina mediterránea artesanal. Un rincón íntimo en el corazón de Mérida donde el tiempo se detiene.</p>
+    <div class="hero-actions">
+      <a href="#menu" class="btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        Ver Menú Completo
+      </a>
+      <a href="https://wa.me/529991185638" class="btn-outline">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">17K</div>
+        <div class="stat-label">Seguidores</div>
+      </div>
+      <div>
+        <div class="stat-num">96%</div>
+        <div class="stat-label">Recomendado</div>
+      </div>
+      <div>
+        <div class="stat-num">590+</div>
+        <div class="stat-label">Opiniones</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIVIDER -->
+<div class="divider">
+  <div class="divider-line"></div>
+  <svg class="divider-icon" viewBox="0 0 60 60" fill="none">
+    <rect x="10" y="10" width="40" height="40" transform="rotate(45 30 30)" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+    <rect x="20" y="20" width="20" height="20" transform="rotate(45 30 30)" fill="#c9a84c" opacity="0.3"/>
+  </svg>
+  <div class="divider-line rev"></div>
+</div>
+
+<!-- MENU -->
+<section class="section" id="menu">
+  <div class="section-header">
+    <div class="section-tag">Cocina Artesanal</div>
+    <h2>Nuestro Menú</h2>
+  </div>
+
+  <div class="menu-tabs">
+    <button class="tab-btn active" onclick="showTab('entradas')">Entradas</button>
+    <button class="tab-btn" onclick="showTab('ensaladas')">Ensaladas</button>
+    <button class="tab-btn" onclick="showTab('pastas')">Pastas</button>
+    <button class="tab-btn" onclick="showTab('pizzas')">Pizzas</button>
+    <button class="tab-btn" onclick="showTab('cortes')">Cortes</button>
+    <button class="tab-btn" onclick="showTab('mariscos')">Mariscos</button>
+    <button class="tab-btn" onclick="showTab('baguettes')">Baguettes</button>
+    <button class="tab-btn" onclick="showTab('postres')">Bebidas y Postres</button>
+  </div>
+
+  <div id="tab-entradas" class="menu-grid active">
+    <div class="menu-item"><div class="item-name">Krispy Skins</div><div class="item-desc">Papas Cambray fritas y doradas con relleno de tocino, queso crema y gratinadas con la mezcla de quesos de la casa.</div><div class="item-price">$139</div></div>
+    <div class="menu-item"><div class="item-name">Provoleta</div><div class="item-desc">Generosa rebanada de queso provolone servida en sartén de hierro con aceite de oliva, orégano y finas hojuelas de chile de árbol.</div><div class="item-price">$159</div></div>
+    <div class="menu-item"><div class="item-name">Brochetas</div><div class="item-desc">Selección de tres brochetas asadas (jugoso lomo, crujiente pollo y chorizo argentino) con salsa chimichurri.</div><div class="item-price">$139</div></div>
+    <div class="menu-item"><div class="item-name">Pulpos</div><div class="item-desc">Frescos pulpos servidos en sartén de hierro con aceite de oliva, ajo y finas rebanadas de guajillo.</div><div class="item-price">$289</div></div>
+    <div class="menu-item"><div class="item-name">Higos Parrillados con Serrano</div><div class="item-desc">Higos frescos parrillados sobre cama de jamón serrano con vinagre balsámico y aceite de oliva.</div><div class="item-price">$229</div></div>
+    <div class="menu-item"><div class="item-name">Espárragos Rostizados</div><div class="item-desc">Provolone en sartén de hierro con aceite de grano y finas hojuelas de chile de árbol.</div><div class="item-price">$229</div></div>
+    <div class="menu-item"><div class="item-name">Carpaccio de Res</div><div class="item-desc">Finas rebanadas de filete aderezado con limón, aceite de oliva y lascas de queso parmesano.</div><div class="item-price">$259</div></div>
+    <div class="menu-item"><div class="item-name">Fondue</div><div class="item-desc">Deliciosa mezcla de quesos: Gorgonzola, Emmental, Gouda. Con vino blanco, fruta fresca y pan artesanal.</div><div class="item-price">$229</div></div>
+    <div class="menu-item"><div class="item-name">Tabla de Jamones y Quesos</div><div class="item-desc">Selección de quesos de oveja maduros, jamón ibérico, aceitunas, frutas cristalizadas y almendras.</div><div class="item-price">$479</div></div>
+  </div>
+
+  <div id="tab-ensaladas" class="menu-grid">
+    <div class="menu-item"><div class="item-name">Ensalada Mixta</div><div class="item-desc">Verduras al vapor (zanahorias, chayotes, calabaza, betabel, brócoli, ejote y tomate cherry) con aderezos de la casa.</div><div class="item-price">$119</div></div>
+    <div class="menu-item"><div class="item-name">Ensalada Melocotón y Serrano</div><div class="item-desc">Lechugas mixtas, almendras, chabacano, tomatitos y lascas de parmesano con vinagreta de estragón.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Ensalada de Fresa</div><div class="item-desc">Lechugas exóticas, fresas frescas rebanadas con nueces garapiñadas y queso mozzarella fresco.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Ensalada Caprese</div><div class="item-desc">Rebanadas de tomate con queso mozzarella, hojas de albahaca y pesto de almendras.</div><div class="item-price">$189</div></div>
+  </div>
+
+  <div id="tab-pastas" class="menu-grid">
+    <div class="menu-item"><div class="item-name">Bolognesa</div><div class="item-desc">Tradicional salsa de carne, tomate, verduras aromáticas, vino y especias.</div><div class="item-price">$149</div></div>
+    <div class="menu-item"><div class="item-name">Fetuccini Carbonara</div><div class="item-desc">Pasta con salsa cremosa de tocino, ajo, vino y un toque de peperoncino.</div><div class="item-price">$149</div></div>
+    <div class="menu-item"><div class="item-name">Fetuccini Funggi</div><div class="item-desc">Frescos hongos salteados con mantequilla, vino, salvia, peperoncino y queso parmesano.</div><div class="item-price">$179</div></div>
+    <div class="menu-item"><div class="item-name">Tradicional Lasagna</div><div class="item-desc">Finas hojas de pasta hecha en casa con nuestra salsa bolognesa gratinada con queso Mozzarella.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Fetuccini al Pesto</div><div class="item-desc">Exquisita salsa de almendras tostadas, aceite de oliva extra virgen, albahaca, queso parmesano y ajo.</div><div class="item-price">$149</div></div>
+    <div class="menu-item"><div class="item-name">Lasagna de Vegetales</div><div class="item-desc">Láminas de pasta con zucchini, tomate, hongos y bechamel gratinada con mozzarella.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Ravioli</div><div class="item-desc">A la mantequilla de salvia y vino.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Ingredientes Extra</div><div class="item-desc">Agrégale a tu pasta: Pollo +$50 · Camarones +$69</div><div class="item-price">Desde $50</div></div>
+  </div>
+
+  <div id="tab-pizzas" class="menu-grid">
+    <div class="menu-item"><div class="item-name">Pizza Hawaiana</div><div class="item-desc">Delicioso jamón Virginia con fresca piña en almíbar casero y nuestra mezcla de quesos.</div><div class="item-price">$149</div></div>
+    <div class="menu-item"><div class="item-name">Pizza de Jamón Serrano</div><div class="item-desc">Jamón de paleta serrana, salsa napolitana y nuestra deliciosa mezcla de quesos.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Pizza de Camarones</div><div class="item-desc">Frescos camarones salteados con mantequilla ajo, pimiento y nuestra mezcla de quesos.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Pizza de Pepperoni</div><div class="item-desc">Tradicional pizza con frescas rebanadas de pepperoni y nuestra exquisita mezcla de quesos.</div><div class="item-price">$149</div></div>
+    <div class="menu-item"><div class="item-name">Pizza Bolognesa</div><div class="item-desc">Salsa de carne, tomate, verduras aromáticas, vino, especias y hojas de albahaca con mezcla de quesos.</div><div class="item-price">$159</div></div>
+    <div class="menu-item"><div class="item-name">Pizza de Tomates Deshidratados</div><div class="item-desc">Deliciosa pizza de tomates deshidratados acompañada de corazones de alcachofas.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Pizza Margarita</div><div class="item-desc">Tradicional pizza con rebanadas de tomate, albahaca y queso mozzarella.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Ingredientes Extra</div><div class="item-desc">Hongos portobello, cebolla, pimientos, tomates cherry, extra queso, jamón virginia y pepperoni.</div><div class="item-price">$49 c/u</div></div>
+  </div>
+
+  <div id="tab-cortes" class="menu-grid">
+    <div class="menu-item"><div class="item-name">Rib Eye (400gr)</div><div class="item-desc">Jugoso corte parrillado servido con papas gajo sazonadas y vegetales mixtos a la parrilla.</div><div class="item-price">$369</div></div>
+    <div class="menu-item"><div class="item-name">Filete Mignon (200gr)</div><div class="item-desc">Corazón de filete en salsa de hongos con espárragos rostizados y papas gajo.</div><div class="item-price">$329</div></div>
+    <div class="menu-item"><div class="item-name">Arrachera (350gr)</div><div class="item-desc">Jugosa arrachera servida con frijoles refritos, guacamole y chiles toreados.</div><div class="item-price">$329</div></div>
+    <div class="menu-item"><div class="item-name">Pork Chop (550gr)</div><div class="item-desc">Chuletón de cerdo con chorizos y verduras parrilladas acompañado de chimichurri.</div><div class="item-price">$289</div></div>
+  </div>
+
+  <div id="tab-mariscos" class="menu-grid">
+    <div class="menu-item"><div class="item-name">Camarones a la Mantequilla de Chiles</div><div class="item-desc">Servido con verduras a la parrilla y arroz al azafrán.</div><div class="item-price">$289</div></div>
+    <div class="menu-item"><div class="item-name">Salmón</div><div class="item-desc">Lomo de salmón del atlántico servido con una reducción de vinagre balsámico y miel yucateca.</div><div class="item-price">$289</div></div>
+    <div class="menu-item"><div class="item-name">Pesca del Día</div><div class="item-desc">Captura fresca de nuestras costas. Pregunte por disponibilidad.</div><div class="item-price">$289</div></div>
+    <div class="menu-item"><div class="item-name">Pulpos Parrillados</div><div class="item-desc">Frescos pulpos a la parrilla acompañados con arroz y verduras.</div><div class="item-price">$289</div></div>
+  </div>
+
+  <div id="tab-baguettes" class="menu-grid">
+    <div class="menu-item"><div class="item-name">Baguette Chowak</div><div class="item-desc">Frescas rebanadas de pechuga de pavo horneada, chorizo de pamplona y queso de bola.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Baguette Serrano</div><div class="item-desc">Delicioso jamón serrano, chorizo de pamplona y exquisito queso ahumado provolone.</div><div class="item-price">$189</div></div>
+    <div class="menu-item"><div class="item-name">Hamburguesa Angus</div><div class="item-desc">Jugosa hamburguesa Angus gratinada servida en pan casero con papas gajo sazonadas.</div><div class="item-price">$209</div></div>
+  </div>
+
+  <div id="tab-postres" class="menu-grid">
+    <div class="menu-item"><div class="item-name">Refresco Embotellado</div><div class="item-desc"></div><div class="item-price">$38</div></div>
+    <div class="menu-item"><div class="item-name">Agua / Mineral</div><div class="item-desc"></div><div class="item-price">$29 / $38</div></div>
+    <div class="menu-item"><div class="item-name">Té Helado (rellenable)</div><div class="item-desc"></div><div class="item-price">$38</div></div>
+    <div class="menu-item"><div class="item-name">Jarras</div><div class="item-desc">Jamaica, horchata y tamarindo.</div><div class="item-price">$119</div></div>
+    <div class="menu-item"><div class="item-name">Café de Prensa Francesa</div><div class="item-desc">Molido en el momento, servido en prensa francesa.</div><div class="item-price">$48</div></div>
+    <div class="menu-item"><div class="item-name">Trilogía de Chocolate</div><div class="item-desc">Nuestro tradicional y delicioso pastel de 3 chocolates.</div><div class="item-price">$89</div></div>
+    <div class="menu-item"><div class="item-name">Tarta de Manzana</div><div class="item-desc">Manzanas Granny Smith caramelizadas en pasta de hojaldre con helado de vainilla.</div><div class="item-price">$89</div></div>
+    <div class="menu-item"><div class="item-name">Postre del Día</div><div class="item-desc">Pregunte a su mesero.</div><div class="item-price">$89</div></div>
+  </div>
+</section>
+
+<!-- AMBIENCE -->
+<section class="ambience" id="nosotros">
+  <div>
+    <div class="section-tag" style="color:var(--gold-light)">Nuestra Historia</div>
+    <h2>Un rincón que<br><em style="color:var(--gold-light)">se descubre</em><br>con el corazón</h2>
+    <p>En Chowak Xikin creamos atmósferas donde el tiempo se detiene y las conversaciones fluyen sin prisa. Nuestra cocina artesanal y mediterránea fusiona ingredientes frescos con técnicas tradicionales para ofrecerte una experiencia gastronómica única en Mérida.</p>
+    <p>Pastas frescas hechas en casa cada día, pan artesanal propio, café molido al momento y una carta diseñada con amor por la buena cocina.</p>
+    <a href="https://wa.me/529991185638" class="btn-primary" style="display:inline-flex">
+      Reserva tu Mesa
+    </a>
+  </div>
+  <div class="ambience-gallery">
+    <div class="amb-photo"><div class="amb-photo-emoji">🕯️</div></div>
+    <div class="amb-photo"><div class="amb-photo-emoji">🍕</div></div>
+    <div class="amb-photo"><div class="amb-photo-emoji">🥩</div></div>
+  </div>
+</section>
+
+<!-- INFO STRIP -->
+<div class="info-strip" id="info">
+  <div class="info-card">
+    <div class="info-icon">📍</div>
+    <div class="info-label">Ubicación</div>
+    <div class="info-value">Calle 36A #455 x23 y 25<br>Col. Jesús Carranza<br>Mérida, Yucatán</div>
+  </div>
+  <div class="info-card">
+    <div class="info-icon">📞</div>
+    <div class="info-label">Reservaciones</div>
+    <div class="info-value">
+      <a href="tel:+529991185638" style="color:var(--brown);text-decoration:none">(999) 118-56-38</a><br>
+      <a href="mailto:info@chowak.com" style="color:var(--muted);text-decoration:none;font-size:0.85rem">info@chowak.com</a>
+    </div>
+  </div>
+  <div class="info-card">
+    <div class="info-icon">⭐</div>
+    <div class="info-label">Calificación</div>
+    <div class="info-value">96% Recomendado<br><span style="font-size:0.8rem;color:var(--muted)">590 opiniones en Facebook</span></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-brand">Chowak Xikin</div>
+    <p class="footer-tagline">Cocina artesanal y mediterránea en el corazón de Mérida. Pastas frescas, cortes premium y una atmósfera única que invita a quedarse.</p>
+    <div style="font-size:0.72rem;color:rgba(245,240,232,0.3)">Todos los precios incluyen IVA</div>
+  </div>
+  <div>
+    <div class="footer-h">Menú</div>
+    <ul class="footer-links">
+      <li><a href="#menu">Entradas</a></li>
+      <li><a href="#menu">Pastas</a></li>
+      <li><a href="#menu">Pizzas</a></li>
+      <li><a href="#menu">Cortes</a></li>
+      <li><a href="#menu">Mariscos</a></li>
+    </ul>
+  </div>
+  <div>
+    <div class="footer-h">Contacto</div>
+    <ul class="footer-links">
+      <li><a href="https://wa.me/529991185638">WhatsApp</a></li>
+      <li><a href="https://facebook.com/ChowakXikin">Facebook</a></li>
+      <li><a href="https://instagram.com/Chowak">Instagram</a></li>
+      <li><a href="mailto:info@chowak.com">info@chowak.com</a></li>
+    </ul>
+  </div>
+</footer>
+<div class="footer-bottom">© 2025 Chowak Xikin · Cocina Artesanal · Mérida, Yucatán</div>
+
+<!-- CHAT BUBBLE -->
+<div class="chat-bubble" id="chatBubble">¿Tienes una pregunta? 👋</div>
+
+<!-- CHAT FAB -->
+<button class="chat-fab" onclick="toggleChat()" id="chatFab" aria-label="Abrir chat">
+  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+</button>
+
+<!-- CHAT PANEL -->
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header">
+    <div class="chat-avatar">🍽️</div>
+    <div class="chat-header-info">
+      <div class="chat-header-name">Chowak Xikin</div>
+      <div class="chat-header-status"><div class="status-dot"></div> Asistente en línea</div>
+    </div>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div class="chat-messages" id="chatMessages">
+    <div class="msg bot">
+      <div class="msg-bubble">¡Hola! 👋 Soy el asistente de <strong>Chowak Xikin</strong>. Puedo ayudarte con nuestro menú, precios, reservaciones y más.<br><br>¿En qué te puedo ayudar hoy?</div>
+      <div class="msg-time">Ahora</div>
+    </div>
+  </div>
+
+  <div class="chat-suggestions" id="suggestions">
+    <button class="suggestion" onclick="sendSuggestion(this)">¿Cuál es su especialidad?</button>
+    <button class="suggestion" onclick="sendSuggestion(this)">Precios del menú</button>
+    <button class="suggestion" onclick="sendSuggestion(this)">¿Cómo reservo?</button>
+    <button class="suggestion" onclick="sendSuggestion(this)">¿Dónde están?</button>
+  </div>
+
+  <div class="chat-input-row">
+    <input class="chat-input" id="chatInput" placeholder="Escribe tu pregunta..." onkeydown="if(event.key==='Enter')sendMessage()">
+    <button class="chat-send" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// ── Tab logic ──
+function showTab(name) {
+  document.querySelectorAll('.menu-grid').forEach(g => g.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Chat toggle ──
+let chatOpen = false;
+let bubbleHidden = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chatPanel').classList.toggle('open', chatOpen);
+  if (!bubbleHidden) {
+    document.getElementById('chatBubble').style.display = 'none';
+    bubbleHidden = true;
+  }
+}
+
+// ── Chat AI ──
+const SYSTEM_PROMPT = `Eres el asistente virtual de Chowak Xikin, un restaurante de cocina artesanal y mediterránea ubicado en Mérida, Yucatán. Responde siempre en español, de forma cálida, breve y útil. Nunca uses listas largas; responde como lo haría un anfitrión amable.
+
+INFORMACIÓN DEL RESTAURANTE:
+- Nombre: Chowak Xikin
+- Descripción: Restaurante/Cafetería con cocina artesanal y mediterránea. Pastas frescas hechas en casa, panadería artesanal, café molido al momento.
+- Dirección: Calle 36A #455 x23 y 25, Col. Jesús Carranza, Mérida, Yucatán, CP 97109
+- Demo web (sin archivo .html): https://agentia.software/demos/chowak
+- Teléfono / WhatsApp reservaciones: +52 999 118 56 38
+- Email: info@chowak.com
+- Redes: Facebook: Chowak Xikin | Instagram: @Chowak
+- Calificación: 96% recomendado, 590 opiniones
+- Todos los precios incluyen IVA
+
+MENÚ COMPLETO:
+
+ENTRADAS:
+- Krispy Skins $139 — Papas Cambray fritas con tocino, queso crema y mezcla de quesos
+- Provoleta $159 — Queso provolone en sartén de hierro con aceite de oliva, orégano y chile de árbol
+- Brochetas $139 — Tres brochetas: lomo, pollo y chorizo argentino con chimichurri
+- Pulpos $289 — Pulpos en sartén de hierro con aceite de oliva, ajo y guajillo
+- Higos Parrillados con Serrano $229 — Higos sobre jamón serrano con balsámico
+- Espárragos Rostizados $229 — Con provolone y chile de árbol
+- Carpaccio de Res $259 — Filete con limón, aceite de oliva y parmesano
+- Fondue $229 — Gorgonzola, Emmental, Gouda con vino blanco y pan artesanal
+- Tabla de Jamones y Quesos $479 — Quesos de oveja, jamón ibérico, aceitunas, frutas cristalizadas y almendras
+
+ENSALADAS:
+- Ensalada Mixta $119 — Verduras al vapor con aderezos de la casa
+- Ensalada Melocotón y Serrano $189 — Lechugas, almendras, chabacano, parmesano, vinagreta estragón
+- Ensalada de Fresa $189 — Lechugas exóticas, fresas, nueces garapiñadas, mozzarella
+- Ensalada Caprese $189 — Tomate, mozzarella, albahaca, pesto de almendras
+
+PASTAS (hechas en casa):
+- Bolognesa $149 — Carne, tomate, vino y especias
+- Fetuccini Carbonara $149 — Tocino, ajo, vino, peperoncino
+- Fetuccini Funggi $179 — Hongos, mantequilla, salvia, parmesano
+- Tradicional Lasagna $189 — Bolognesa y mozzarella
+- Fetuccini al Pesto $149 — Almendras, albahaca, parmesano, ajo
+- Lasagna de Vegetales $189 — Zucchini, tomate, hongos, bechamel
+- Ravioli $189 — Mantequilla de salvia y vino
+- Ingredientes extra: Pollo +$50 / Camarones +$69
+
+PIZZAS:
+- Pizza Hawaiana $149 — Jamón Virginia, piña en almíbar casero, queso
+- Pizza Jamón Serrano $189 — Jamón serrano, napolitana, queso
+- Pizza Camarones $189 — Camarones con mantequilla ajo y pimiento
+- Pizza Pepperoni $149 — Clásica con pepperoni
+- Pizza Bolognesa $159 — Carne, tomate, vino, especias, albahaca
+- Pizza Tomates Deshidratados $189 — Con corazones de alcachofa
+- Pizza Margarita $189 — Tomate, albahaca, mozzarella
+- Ingredientes extra por pizza: $49 c/u (hongos, cebolla, pimientos, cherry, extra queso, jamón, pepperoni)
+
+CORTES:
+- Rib Eye 400gr $369 — Parrillado con papas gajo y vegetales
+- Filete Mignon 200gr $329 — En salsa de hongos con espárragos
+- Arrachera 350gr $329 — Con frijoles refritos, guacamole y chiles toreados
+- Pork Chop 550gr $289 — Con chorizos, verduras y chimichurri
+
+PESCADOS Y MARISCOS:
+- Camarones a la Mantequilla de Chiles $289 — Con verduras y arroz al azafrán
+- Salmón $289 — Con reducción de balsámico y miel yucateca
+- Pesca del Día $289 — Preguntar disponibilidad
+- Pulpos Parrillados $289 — Con arroz y verduras
+
+BAGUETTES Y HAMBURGUESAS:
+- Baguette Chowak $189 — Pavo horneado, chorizo pamplona, queso de bola
+- Baguette Serrano $189 — Jamón serrano, chorizo pamplona, provolone ahumado
+- Hamburguesa Angus $209 — Carne Angus, pan casero, papas gajo
+
+BEBIDAS Y POSTRES:
+- Refresco embotellado $38
+- Agua embotellada $29
+- Agua mineral $38
+- Té helado (rellenable) $38
+- Jarras (Jamaica, horchata, tamarindo) $119
+- Café de prensa francesa (molido al momento) $48
+- Trilogía de Chocolate (pastel 3 chocolates) $89
+- Tarta de Manzana $89 — Granny Smith, hojaldre, helado vainilla
+- Postre del día $89
+
+Si te preguntan por reservaciones, dales el número de WhatsApp: +52 999 118 56 38
+Si preguntan por la dirección, da la dirección completa.
+Si no sabes algo, sugiere que llamen o escriban al WhatsApp.
+Sé conciso y amable, como un anfitrión de restaurante.`;
+
+let conversationHistory = [];
+
+async function callGemini(userMessage) {
+  conversationHistory.push({ role: 'user', content: userMessage });
+
+  const response = await fetch('/api/demos/chowak-chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system: SYSTEM_PROMPT,
+      messages: conversationHistory
+    })
+  });
+
+  const data = await response.json();
+  const reply = data.content?.[0]?.text || 'Lo siento, hubo un error. Por favor llámanos al (999) 118-56-38.';
+  conversationHistory.push({ role: 'assistant', content: reply });
+  return reply;
+}
+
+function addMessage(text, role) {
+  const msgs = document.getElementById('chatMessages');
+  const now = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div><div class="msg-time">${now}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typingIndicator';
+  div.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('suggestions').innerHTML = '';
+  addMessage(text, 'user');
+  showTyping();
+  try {
+    const reply = await callGemini(text);
+    hideTyping();
+    addMessage(reply, 'bot');
+  } catch(e) {
+    hideTyping();
+    addMessage('Hubo un problema de conexión. Por favor escríbenos al WhatsApp: +52 999 118 56 38 🙏', 'bot');
+  }
+}
+
+function sendSuggestion(btn) {
+  document.getElementById('chatInput').value = btn.textContent;
+  document.getElementById('suggestions').innerHTML = '';
+  sendMessage();
+}
+
+// Hide bubble after 5s
+setTimeout(() => {
+  const b = document.getElementById('chatBubble');
+  if (b && !chatOpen) { b.style.opacity = '0'; b.style.transition = 'opacity 0.5s'; setTimeout(()=>b.style.display='none',500); }
+}, 5000);
+</script>
+</body>
+</html>

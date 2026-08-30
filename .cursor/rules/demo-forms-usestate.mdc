@@ -1,0 +1,52 @@
+---
+description: useState en formularios de demos — tipos explícitos (evita fallos de build en Render)
+globs: app/demo/**/*.tsx
+alwaysApply: false
+---
+
+# Formularios en demos (`/app/demo/**`)
+
+Obligatorio antes de crear o editar demos: los objetos de estado de formulario **no** deben inferir literales de string desde el valor inicial (TypeScript estrecha tipos y los `select`/`onChange` rompen el build en `next build` / Render).
+
+## Regla 1 — Tipar siempre el estado del formulario
+
+**Mal:** objeto en `useState({ ... })` sin tipo genérico; campos como `medico: algúnDoctor.nombre` quedan como literal `"Dr. …"` y no aceptan otro `string`.
+
+**Bien:** declarar el tipo (inline o `type Form = { … }`) y usar `useState<Form>({ … })`.
+
+- Campos de texto libre o seleccionados desde `<select>` con opciones dinámicas: **`string`**, nunca el literal del valor inicial.
+- Si el campo solo puede ser un conjunto fijo de valores, usar el **union type completo** en el tipo del estado.
+
+## Regla 2 — Union types y `<select>`
+
+Si existe `type TipoX = "A" | "B" | "C"` y el campo se actualiza con `e.target.value` desde un select, el campo en el tipo del `useState` debe ser **`TipoX`** (o `string` si aceptas cualquier valor), **no** el literal `"A"` inferido solo del inicial.
+
+```tsx
+type TipoCita = 'Revisión' | 'Limpieza' | 'Urgencia';
+
+// ✅
+const [form, setForm] = useState<{
+  medico: string;
+  tipo: TipoCita;
+  status: 'confirmada' | 'pendiente' | 'cancelada'; // o string si aplica
+}>({
+  medico: MEDICOS[0]!.nombre,
+  tipo: 'Revisión',
+  status: 'confirmada',
+});
+```
+
+## Regla 3 — Patrón recomendado
+
+- Extraer `type NombreForm = { … }` junto al componente cuando el formulario tenga varios campos.
+- Revisar con `npx tsc --noEmit` tras cambios en formularios de demo.
+
+---
+
+## Referencia rápida
+
+| Situación                         | Tipo del campo en el estado |
+|----------------------------------|-------------------------------|
+| Nombre de médico/dentista/select | `string`                      |
+| Enum/union acotado               | El union completo             |
+| Fecha ISO (`type="date"`)       | `string`                      |

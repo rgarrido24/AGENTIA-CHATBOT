@@ -1,0 +1,39 @@
+node_modules
+.next
+.vercel
+dist
+
+# CAPA 3: Protección de credenciales - NUNCA comitear
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env*.local
+.env.*.local
+
+# Tokens privados (NO comitear)
+scripts/page-tokens.json
+env-local-restore.txt
+
+# WhatsApp session (whatsapp-web.js + Baileys)
+.wwebjs_auth
+.wwebjs_auth_*
+.wwebjs_cache
+.baileys_auth_*
+.whatsapp-kill.ps1
+
+# Bases de datos locales
+*.db
+*.sqlite
+*.sqlite3
+
+# Artefactos TypeScript
+*.tsbuildinfo
+
+# Backups de exports de Claude.ai (HTMLs gigantes con shell de Claude embebida)
+public/Anuario Digital Kinder*.html
+public/Fiesta de Kinder*.html
+
+# Carpeta temporal de trabajo
+tmp/

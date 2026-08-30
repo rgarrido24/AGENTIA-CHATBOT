@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Figtree:wght@400;500;600;700&display=swap');
+
+.pakalitos-shell {
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'Figtree', system-ui, sans-serif;
+  color: #10261c;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(232, 161, 23, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(45, 82, 64, 0.12), transparent 50%),
+    linear-gradient(180deg, #f7f3ea 0%, #efe8da 100%);
+  position: relative;
+}
+
+.pakalitos-shell::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 0;
+}
+
+.pakalitos-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.pakalitos-shell .font-display {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+.pakalitos-shell .field {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #d5cdb8;
+  background: #fff;
+  padding: 0.875rem 1rem;
+  font-size: 15px;
+  color: #10261c;
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.pakalitos-shell .field:focus {
+  border-color: rgba(16, 38, 28, 0.3);
+  box-shadow: 0 0 0 2px rgba(232, 161, 23, 0.35);
+}
+
+.pakalitos-shell .touch-target {
+  min-height: 48px;
+}

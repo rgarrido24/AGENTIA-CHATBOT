@@ -1,0 +1,21 @@
+﻿Title:            Anuario (792 x 612 px)
+Keywords:        DAHOlCR0uqo,BAC-IpDppm4
+Author:          Edurne Cordova
+Creator:         Canva
+Producer:        Canva
+CreationDate:    Sat Jul 25 01:37:33 2026 Hora estßndar central (MÚxico)
+ModDate:         Sat Jul 25 01:37:33 2026 Hora estßndar central (MÚxico)
+Custom Metadata: yes
+Metadata Stream: yes
+Tagged:          yes
+UserProperties:  no
+Suspects:        no
+Form:            none
+JavaScript:      no
+Pages:           55
+Encrypted:       no
+Page size:       594 x 459 pts
+Page rot:        0
+File size:       219761454 bytes
+Optimized:       no
+PDF version:     1.4

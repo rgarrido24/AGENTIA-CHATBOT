@@ -1,0 +1,33 @@
+{
+  "name": "izzi — Panel",
+  "short_name": "izzi Panel",
+  "description": "Conversaciones WhatsApp izzi: ventas y reclutamiento",
+  "start_url": "/izzi-panel/conversaciones",
+  "scope": "/izzi-panel/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#140810",
+  "theme_color": "#140810",
+  "lang": "es-MX",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/pwa/izzi/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/izzi/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/izzi/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

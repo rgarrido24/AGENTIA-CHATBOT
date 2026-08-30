@@ -1,0 +1,671 @@
+/* ========== Dark Mode Premium - SaaS Luxury ========== */
+.page {
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.meshBg {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(165deg, #0a0f1a 0%, #0f172a 35%, #1e293b 70%, #0f172a 100%);
+  z-index: 0;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Mobile (< 768px): layout tipo WebApp ---------- */
+@media (max-width: 767px) {
+  .page {
+    min-height: 100dvh;
+  }
+  .content {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    max-height: -webkit-fill-available;
+    padding: 0;
+    gap: 0;
+  }
+  .mobileChatColumn {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+  .mobileChatViewport {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .mobileChatInputWrap {
+    flex-shrink: 0;
+    padding: 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: rgba(15, 23, 42, 0.98);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .mobileAgendaColumn {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+  }
+  .mobileCalendarWrap {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .mobileCalendarWrap > div {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+/* Header persistente móvil */
+.barberMobileHeader {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  background: linear-gradient(180deg, #0d9488 0%, #0f766e 100%);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+.barberMobileHeaderTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.barberMobileHeaderBtn {
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.barberMobileHeaderBtn:hover,
+.barberMobileHeaderBtn:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+.barberMobileHeaderBtn:active {
+  transform: scale(0.98);
+}
+
+/* Tabs CHAT | AGENDA */
+.barberTabs {
+  flex-shrink: 0;
+  display: flex;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.barberTab {
+  flex: 1;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.barberTab:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+.barberTabActive {
+  color: #fff;
+  background: rgba(13, 148, 136, 0.25);
+  border-bottom: 2px solid #0d9488;
+}
+
+@media (min-width: 768px) {
+  .barberMobileHeader,
+  .barberTabs,
+  .mobileOnly {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .desktopOnly {
+    display: none !important;
+  }
+  .iphoneFrame {
+    display: none;
+  }
+}
+
+/* Hero móvil: versión compacta para vista móvil */
+.heroMobileWrap {
+  flex-shrink: 0;
+  margin: 0;
+  border-radius: 0;
+}
+.heroMobileWrap .heroWrap {
+  height: 120px;
+  border-radius: 0;
+  margin-bottom: 0;
+}
+.heroMobileWrap .heroContent {
+  padding: 0 16px;
+}
+.heroMobileWrap .heroLogo {
+  width: 48px;
+  height: 48px;
+  font-size: 1.25rem;
+}
+.heroMobileWrap .heroTitle {
+  font-size: 1rem;
+}
+.heroMobileWrap .heroSub {
+  font-size: 0.7rem;
+}
+.heroMobileWrap .heroBtn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 0.65rem;
+}
+
+/* Marco teléfono minimalista (móvil): bordes ultra delgados */
+.phoneFrameMinimal {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin: 8px 12px 12px;
+  border-radius: 28px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.95);
+}
+.phoneFrameMinimalInner {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Tabs con iconos minimalistas */
+.barberTabIcon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.8;
+}
+.barberTabActive .barberTabIcon {
+  opacity: 1;
+}
+
+/* Glassmorphism: celular y calendario */
+.glassPhone,
+.glassCalendar {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 24px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* iPhone mockup moderno - bordes metálicos */
+.iphoneFrame {
+  border-radius: 48px;
+  padding: 14px;
+  background: linear-gradient(155deg, #3d3d3d 0%, #1a1a1a 30%, #0a0a0a 70%, #2a2a2a 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.12),
+    0 0 0 3px rgba(255, 255, 255, 0.08),
+    0 24px 48px rgba(0, 0, 0, 0.5);
+}
+
+.iphoneInner {
+  border-radius: 32px;
+  overflow: hidden;
+  background: #0d1117;
+}
+
+/* Dynamic Island - pulso cuando la IA procesa */
+.dynamicIsland {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 34px;
+  border-radius: 18px;
+  background: #000;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.4s ease, width 0.4s ease, transform 0.4s ease;
+}
+
+.chatDynamicIslandMobile {
+  flex-shrink: 0;
+  height: 24px;
+  width: 100px;
+  margin: 8px auto 0;
+  border-radius: 12px;
+  background: #000;
+  transition: box-shadow 0.4s ease;
+}
+
+.dynamicIslandActive,
+.chatDynamicIslandMobile.dynamicIslandActive {
+  box-shadow:
+    0 0 24px rgba(34, 197, 94, 0.7),
+    0 0 48px rgba(34, 197, 94, 0.35);
+  animation: islandPulse 1.5s ease-in-out infinite;
+}
+
+.dynamicIslandActive {
+  width: 140px;
+}
+
+@keyframes islandPulse {
+  0%, 100% {
+    box-shadow: 0 0 24px rgba(34, 197, 94, 0.7), 0 0 48px rgba(34, 197, 94, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(34, 197, 94, 0.9), 0 0 64px rgba(34, 197, 94, 0.45);
+  }
+}
+
+/* Chat estilo WhatsApp: wallpaper y burbujas */
+.chatWallpaper {
+  background-color: #0b141a;
+  background-image: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.bubbleUser {
+  border-radius: 18px 18px 4px 18px;
+}
+.bubbleAssistant {
+  border-radius: 18px 18px 18px 4px;
+}
+.bubbleMeta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 4px;
+}
+.bubbleTime {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* Typing dots */
+.typingDots span {
+  animation: typingDot 1.4s ease-in-out infinite both;
+}
+.typingDots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.typingDots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes typingDot {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Eventos calendario: glow */
+.eventGlow {
+  animation: eventGlow 1.5s ease-out;
+}
+@keyframes eventGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 16px 2px rgba(255, 255, 255, 0.35);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+
+/* Checkout card - premium */
+.checkoutCard {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+.paymentLogos {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+/* ========== Ticket de reservación premium ========== */
+.ticketCard {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+.ticketCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+}
+.ticketTitle {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.ticketRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+}
+.ticketRowLabel {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+.ticketDivider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  margin: 10px 0;
+}
+.ticketQR {
+  width: 72px;
+  height: 72px;
+  margin: 12px auto 0;
+  background: #fff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+/* ========== FullCalendar tema oscuro (default — barbería) ========== */
+.calendarWrap {
+  height: 100%;
+  --fc-page-bg-color: transparent;
+  --fc-border-color: rgba(255, 255, 255, 0.08);
+  --fc-button-bg-color: rgba(51, 65, 85, 0.8);
+  --fc-button-border-color: rgba(255, 255, 255, 0.1);
+  --fc-button-hover-bg-color: rgba(71, 85, 105, 0.9);
+  --fc-today-bg-color: rgba(59, 130, 246, 0.12);
+  --fc-neutral-bg-color: rgba(30, 41, 59, 0.4);
+  --fc-list-event-hover-bg-color: rgba(255, 255, 255, 0.06);
+}
+.calendarWrap :global(.fc) {
+  font-family: 'Inter', sans-serif;
+}
+.calendarWrap :global(.fc-theme-standard td),
+.calendarWrap :global(.fc-theme-standard th) {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.calendarWrap :global(.fc-col-header-cell-cushion),
+.calendarWrap :global(.fc-timegrid-slot-label-cushion),
+.calendarWrap :global(.fc-scrollgrid-sync-inner) {
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 600;
+}
+.calendarWrap :global(.fc-toolbar-title) {
+  color: rgba(255, 255, 255, 0.98);
+  font-weight: 700;
+}
+.calendarWrap :global(.fc-button) {
+  color: rgba(255, 255, 255, 0.95);
+  text-transform: capitalize;
+  font-weight: 600;
+}
+.calendarWrap :global(.fc-button-active) {
+  background: rgba(13, 148, 136, 0.6) !important;
+  border-color: rgba(13, 148, 136, 0.85) !important;
+}
+
+/* ========== FullCalendar tema claro (nail studio) — agregar clase light al wrapper ========== */
+.calendarWrap.light {
+  --fc-page-bg-color: #ffffff;
+  --fc-border-color: rgba(236, 72, 153, 0.18);
+  --fc-button-bg-color: #fdf2f8;
+  --fc-button-border-color: rgba(236, 72, 153, 0.35);
+  --fc-button-hover-bg-color: #fbcfe8;
+  --fc-today-bg-color: rgba(236, 72, 153, 0.08);
+  --fc-neutral-bg-color: #fdf2f8;
+  --fc-list-event-hover-bg-color: rgba(236, 72, 153, 0.08);
+}
+.calendarWrap.light :global(.fc-theme-standard td),
+.calendarWrap.light :global(.fc-theme-standard th) {
+  border-color: rgba(236, 72, 153, 0.18);
+}
+.calendarWrap.light :global(.fc-col-header-cell-cushion),
+.calendarWrap.light :global(.fc-timegrid-slot-label-cushion),
+.calendarWrap.light :global(.fc-scrollgrid-sync-inner) {
+  color: #4c0519;
+  font-weight: 600;
+}
+.calendarWrap.light :global(.fc-toolbar-title) {
+  color: #831843;
+  font-weight: 700;
+}
+.calendarWrap.light :global(.fc-button) {
+  color: #831843;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+.calendarWrap.light :global(.fc-button-active) {
+  background: #ec4899 !important;
+  border-color: #db2777 !important;
+  color: #fff !important;
+}
+.calendarWrap.light :global(.fc-daygrid-day-number),
+.calendarWrap.light :global(.fc-list-day-text),
+.calendarWrap.light :global(.fc-list-day-side-text) {
+  color: #831843;
+  font-weight: 600;
+}
+.calendarWrap :global(.fc-timegrid-now-indicator-line) {
+  border-color: #ef4444;
+}
+.calendarWrap :global(.fc-timegrid-slot) {
+  min-height: 2.5em;
+}
+.calendarWrap :global(.fc-event) {
+  border-radius: 8px;
+  border-width: 2px;
+  transition: background-color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+.calendarWrap :global(.fc-event.paid) {
+  background: #16a34a !important;
+  border-color: #22c55e !important;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+}
+
+/* ========== Hero / Portada negocio ========== */
+.heroWrap {
+  position: relative;
+  height: 180px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  margin-bottom: 16px;
+}
+.heroBg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.85;
+}
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(30, 41, 59, 0.75) 100%);
+}
+.heroContent {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  gap: 16px;
+}
+.heroLogo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(30, 41, 59, 0.9);
+  border: 3px solid transparent;
+  box-shadow:
+    0 0 20px rgba(59, 130, 246, 0.6),
+    0 0 40px rgba(59, 130, 246, 0.3),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: #60a5fa;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.heroLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.heroText {
+  flex: 1;
+  min-width: 0;
+}
+.heroTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.98);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.heroSub {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 2px;
+}
+.heroBtn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: rgba(59, 130, 246, 0.25);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #93c5fd;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+.heroBtn:hover {
+  background: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.35);
+}
+
+/* Galería en chat */
+.galleryWrap {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+.galleryImg {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Mapa preview en chat */
+.mapPreview {
+  margin-top: 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.6);
+  height: 140px;
+}
+.mapPreview iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}

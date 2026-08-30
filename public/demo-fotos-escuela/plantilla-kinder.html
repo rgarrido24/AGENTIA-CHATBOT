@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plantilla Anuario · Generación Kinder</title>
+<meta name="description" content="Plantilla visual de anuario Kinder — A4 vertical con zonas de caída para fotos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Caveat:wght@500;700&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & TOKENS ──────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --cream:       #FFF8EC;
+  --cream-deep:  #FBEAD0;
+  --pastel-pink: #FFD5DA;
+  --pastel-blue: #BFE3F4;
+  --pastel-mint: #C9EAD3;
+  --pastel-lila: #E0D2F2;
+  --pastel-yelw: #FFE5A1;
+  --coral:       #F38B71;
+  --navy:        #2C3E70;
+  --gold:        #E0A53B;
+  --ink:         #2A2A40;
+  --muted:       #7A7894;
+}
+
+body {
+  font-family: 'Varela Round', 'Fredoka', system-ui, sans-serif;
+  background: #EEE7DA;
+  min-height: 100vh;
+  padding: 36px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  color: var(--ink);
+}
+
+.page-meta {
+  text-align: center;
+  font-size: .82rem;
+  color: var(--muted);
+  font-weight: 600;
+  max-width: 600px;
+}
+.page-meta strong { color: var(--navy); }
+
+/* ── PÁGINA A4 VERTICAL ──────────────────── */
+.page-a4 {
+  width: min(820px, 96vw);
+  aspect-ratio: 210 / 297;
+  background: var(--cream);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 30px 80px -25px rgba(44, 62, 112, .35),
+    0 12px 30px -8px rgba(44, 62, 112, .18),
+    inset 0 0 0 1px rgba(0,0,0,.04);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── FONDO: Estrellas y círculos sutiles ─── */
+.page-a4::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    /* círculos pastel grandes */
+    radial-gradient(circle at 12% 22%, rgba(255,213,218,.35) 0%, transparent 8%),
+    radial-gradient(circle at 88% 18%, rgba(191,227,244,.32) 0%, transparent 9%),
+    radial-gradient(circle at 18% 78%, rgba(201,234,211,.32) 0%, transparent 9%),
+    radial-gradient(circle at 82% 84%, rgba(224,210,242,.34) 0%, transparent 9%),
+    radial-gradient(circle at 50% 50%, rgba(255,229,161,.18) 0%, transparent 14%),
+    /* puntitos decorativos */
+    radial-gradient(circle, rgba(243,139,113,.18) 1px, transparent 1.6px);
+  background-size: auto, auto, auto, auto, auto, 28px 28px;
+  background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Estrellas decorativas — usando SVG inline en pseudo-element */
+.stars-layer {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='22' height='22'><path fill='%23F38B71' fill-opacity='0.22' d='M12 2l2.39 6.99H22l-5.81 4.22L18.58 22 12 17.27 5.42 22l2.39-8.79L2 8.99h7.61z'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='14' height='14'><path fill='%23E0A53B' fill-opacity='0.28' d='M12 2l2.39 6.99H22l-5.81 4.22L18.58 22 12 17.27 5.42 22l2.39-8.79L2 8.99h7.61z'/></svg>"),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='18' height='18'><path fill='%232C3E70' fill-opacity='0.10' d='M12 2l2.39 6.99H22l-5.81 4.22L18.58 22 12 17.27 5.42 22l2.39-8.79L2 8.99h7.61z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: 8% 38%, 92% 52%, 18% 70%;
+}
+
+/* ── BANDERINES SUPERIORES (CSS triangles) ── */
+.bunting {
+  position: relative; z-index: 2;
+  height: 38px;
+  display: flex;
+  margin: 18px 22px 0;
+  gap: 0;
+}
+.bunting::before, .bunting::after {
+  content: '';
+  position: absolute; top: 6px; height: 2px;
+  width: 14px;
+  background: var(--navy);
+  border-radius: 99px;
+  opacity: .25;
+}
+.bunting::before { left: -6px; transform: rotate(35deg); transform-origin: right; }
+.bunting::after  { right: -6px; transform: rotate(-35deg); transform-origin: left; }
+
+.flag {
+  flex: 1;
+  position: relative;
+}
+.flag::before {
+  content: '';
+  position: absolute; left: 0; top: 0; right: 0;
+  height: 28px;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  background: var(--c, var(--pastel-pink));
+  box-shadow: 0 4px 0 rgba(0,0,0,.04);
+}
+.flag::after {
+  content: ''; position: absolute; left: 0; right: 0; top: 0;
+  height: 2px; background: rgba(44,62,112,.35);
+  border-radius: 99px;
+}
+.flag:nth-child(7n+1) { --c: var(--pastel-pink); }
+.flag:nth-child(7n+2) { --c: var(--pastel-blue); }
+.flag:nth-child(7n+3) { --c: var(--pastel-mint); }
+.flag:nth-child(7n+4) { --c: var(--pastel-yelw); }
+.flag:nth-child(7n+5) { --c: var(--pastel-lila); }
+.flag:nth-child(7n+6) { --c: #F8B0A4; }
+.flag:nth-child(7n+7) { --c: #CFE6FF; }
+
+/* ── HEADER ─────────────────────────────── */
+.page-header {
+  position: relative; z-index: 2;
+  padding: 22px 40px 8px;
+  text-align: center;
+}
+.page-eyebrow {
+  font-family: 'Caveat', cursive;
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+  color: var(--coral);
+  margin-bottom: 2px;
+}
+.page-title {
+  font-family: 'Fredoka', 'Varela Round', sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.45rem, 3.8vw, 2.3rem);
+  color: var(--navy);
+  letter-spacing: .01em;
+  line-height: 1.1;
+}
+.page-title em {
+  font-style: normal;
+  color: var(--gold);
+  background: linear-gradient(135deg, var(--gold), var(--coral));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+.page-sub {
+  margin-top: 6px;
+  font-size: clamp(.78rem, 1.4vw, .92rem);
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/* ── ZONA PRINCIPAL DE FOTOS (2 columnas) ── */
+.photos-main {
+  position: relative; z-index: 2;
+  padding: 18px 40px 0;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.dropzone {
+  position: relative;
+  border-radius: 22px;
+  background: rgba(255,255,255,.55);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 2px dashed rgba(44,62,112,.18);
+  box-shadow:
+    0 18px 36px -18px rgba(44,62,112,.30),
+    inset 0 1px 0 rgba(255,255,255,.7);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 12px;
+  transition: transform .25s, box-shadow .25s, border-color .25s;
+}
+.dropzone:hover {
+  border-color: rgba(243,139,113,.55);
+  box-shadow:
+    0 24px 50px -20px rgba(44,62,112,.40),
+    inset 0 1px 0 rgba(255,255,255,.8);
+  transform: translateY(-2px);
+}
+
+.dropzone-grupo  { aspect-ratio: 4/3; }
+.dropzone-indiv  { aspect-ratio: 3/4; }
+
+.dropzone-icon {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--pastel-yelw), var(--gold));
+  margin-bottom: 8px;
+  box-shadow: 0 6px 16px rgba(224,165,59,.30);
+}
+.dropzone-icon svg { width: 22px; height: 22px; color: white; }
+.dropzone-label {
+  font-family: 'Fredoka', 'Varela Round', sans-serif;
+  font-weight: 700;
+  font-size: clamp(.85rem, 1.6vw, 1rem);
+  color: var(--navy);
+  margin-bottom: 2px;
+}
+.dropzone-hint {
+  font-size: clamp(.65rem, 1.1vw, .78rem);
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.dropzone-tag {
+  position: absolute; top: 10px; left: 10px;
+  font-family: 'Caveat', cursive;
+  background: rgba(255,255,255,.85);
+  color: var(--navy);
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: .85rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(44,62,112,.10);
+}
+
+/* ── ZONA INFERIOR: Grid 7×2 círculos ────── */
+.photos-grid-section {
+  position: relative; z-index: 2;
+  padding: 22px 40px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.photos-grid-header {
+  text-align: center;
+  margin-bottom: 14px;
+}
+.photos-grid-header h3 {
+  font-family: 'Fredoka', 'Varela Round', sans-serif;
+  font-weight: 600;
+  font-size: clamp(.92rem, 1.7vw, 1.05rem);
+  color: var(--navy);
+}
+.photos-grid-header span {
+  font-family: 'Caveat', cursive;
+  color: var(--coral);
+  font-size: clamp(.85rem, 1.5vw, 1rem);
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: clamp(6px, 1.2vw, 12px);
+  flex: 1;
+  align-content: center;
+}
+.circle-zone {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255,255,255,.55);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  border: 2px dashed rgba(44,62,112,.18);
+  box-shadow:
+    0 10px 20px -10px rgba(44,62,112,.25),
+    inset 0 1px 0 rgba(255,255,255,.7);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .25s, border-color .25s;
+}
+.circle-zone:hover {
+  border-color: rgba(243,139,113,.55);
+  transform: translateY(-2px);
+}
+.circle-zone span {
+  font-size: clamp(.45rem, 1vw, .58rem);
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: .04em;
+  line-height: 1.1;
+  padding: 0 4px;
+}
+.circle-zone-num {
+  position: absolute; top: -6px; right: -6px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--coral), #E07765);
+  color: white;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: .65rem;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 10px rgba(243,139,113,.45);
+}
+
+/* ── FOOTER ──────────────────────────────── */
+.page-footer {
+  position: relative; z-index: 2;
+  padding: 14px 40px 26px;
+  text-align: center;
+}
+.page-footer-text {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+  font-size: clamp(.92rem, 1.8vw, 1.15rem);
+  color: var(--navy);
+  letter-spacing: .04em;
+}
+.page-footer-text strong {
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--coral), var(--gold));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.page-footer-line {
+  width: 64px; height: 3px;
+  background: linear-gradient(90deg, var(--pastel-pink), var(--coral), var(--gold), var(--pastel-blue));
+  margin: 8px auto 0;
+  border-radius: 99px;
+}
+
+/* ── PIN DECORATIVO en esquina ───────────── */
+.pin {
+  position: absolute;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  z-index: 3;
+  background: radial-gradient(circle at 35% 35%, #fff, var(--coral) 60%, #B65140 100%);
+  box-shadow: 0 3px 6px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.pin.tl { top: 14px; left: 14px; }
+.pin.tr { top: 14px; right: 14px; background: radial-gradient(circle at 35% 35%, #fff, var(--gold) 60%, #A87420 100%); }
+.pin.bl { bottom: 14px; left: 14px; background: radial-gradient(circle at 35% 35%, #fff, var(--pastel-blue) 60%, #5C9DBF 100%); }
+.pin.br { bottom: 14px; right: 14px; background: radial-gradient(circle at 35% 35%, #fff, var(--pastel-mint) 60%, #6DAA82 100%); }
+
+/* ── BOTONES DE ACCIÓN ──────────────────── */
+.actions {
+  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+  margin-top: 8px;
+}
+.actions button {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+  font-size: .92rem;
+  padding: 10px 22px;
+  border-radius: 99px;
+  border: none;
+  cursor: pointer;
+  background: white;
+  color: var(--navy);
+  box-shadow: 0 8px 20px rgba(44,62,112,.12);
+  transition: transform .2s, box-shadow .2s;
+}
+.actions button:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(44,62,112,.18); }
+.actions button.primary {
+  background: linear-gradient(135deg, var(--coral), var(--gold));
+  color: white;
+  box-shadow: 0 10px 24px rgba(243,139,113,.40);
+}
+
+/* ── RESPONSIVE ────────────────────────── */
+@media (max-width: 560px) {
+  body { padding: 18px 8px; }
+  .page-a4 { width: 96vw; border-radius: 8px; }
+  .photos-main { padding: 12px 18px 0; gap: 12px; }
+  .photos-grid-section { padding: 16px 18px 6px; }
+  .page-header { padding: 16px 20px 6px; }
+  .page-footer { padding: 10px 20px 18px; }
+  .bunting { margin: 12px 14px 0; height: 26px; }
+  .flag::before { height: 20px; }
+  .dropzone { border-width: 1.5px; padding: 8px; }
+  .dropzone-icon { width: 32px; height: 32px; margin-bottom: 4px; }
+  .dropzone-icon svg { width: 16px; height: 16px; }
+  .dropzone-label { font-size: .8rem; }
+  .dropzone-hint { font-size: .58rem; }
+  .dropzone-tag { font-size: .68rem; padding: 1px 6px; top: 6px; left: 6px; }
+  .photos-grid { gap: 5px; }
+  .circle-zone span { font-size: .42rem; }
+  .circle-zone-num { width: 16px; height: 16px; font-size: .55rem; top: -4px; right: -4px; }
+  .pin { width: 10px; height: 10px; }
+  .pin.tl, .pin.tr { top: 8px; }
+  .pin.bl, .pin.br { bottom: 8px; }
+  .pin.tl, .pin.bl { left: 8px; }
+  .pin.tr, .pin.br { right: 8px; }
+}
+
+/* ── MODO IMPRESIÓN ────────────────────── */
+@media print {
+  body { background: white; padding: 0; }
+  .page-meta, .actions { display: none; }
+  .page-a4 {
+    width: 210mm;
+    height: 297mm;
+    aspect-ratio: auto;
+    box-shadow: none;
+    border-radius: 0;
+    page-break-after: always;
+  }
+}
+</style>
+</head>
+<body>
+
+<p class="page-meta">
+  Plantilla visual <strong>Anuario Kinder</strong> · A4 vertical (210 × 297 mm) · Sólo HTML/CSS, sin imágenes.
+  Usa <kbd>Ctrl/⌘ + P</kbd> para imprimir o exportar PDF.
+</p>
+
+<div class="page-a4" id="page" aria-label="Plantilla de anuario Kinder en formato A4 vertical">
+
+  <!-- Pins decorativos en las 4 esquinas -->
+  <span class="pin tl" aria-hidden="true"></span>
+  <span class="pin tr" aria-hidden="true"></span>
+  <span class="pin bl" aria-hidden="true"></span>
+  <span class="pin br" aria-hidden="true"></span>
+
+  <!-- Capa de estrellas decorativas -->
+  <div class="stars-layer" aria-hidden="true"></div>
+
+  <!-- Banderines superiores -->
+  <div class="bunting" aria-hidden="true">
+    <span class="flag"></span>
+    <span class="flag"></span>
+    <span class="flag"></span>
+    <span class="flag"></span>
+    <span class="flag"></span>
+    <span class="flag"></span>
+    <span class="flag"></span>
+    <span class="flag"></span>
+    <span class="flag"></span>
+    <span class="flag"></span>
+    <span class="flag"></span>
+    <span class="flag"></span>
+  </div>
+
+  <!-- Header -->
+  <header class="page-header">
+    <p class="page-eyebrow">~ Anuario de Recuerdos ~</p>
+    <h1 class="page-title">Generación <em>KINDER</em> 2024 – 2025</h1>
+    <p class="page-sub">Nuestra Promo · Año Escolar</p>
+  </header>
+
+  <!-- Zona principal: 2 fotos grandes -->
+  <section class="photos-main" aria-label="Fotos principales">
+    <div class="dropzone dropzone-grupo" data-slot="grupo">
+      <span class="dropzone-tag">A</span>
+      <div class="dropzone-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <p class="dropzone-label">Foto Grupal</p>
+      <p class="dropzone-hint">Toda la generación · 4:3</p>
+    </div>
+
+    <div class="dropzone dropzone-indiv" data-slot="toga">
+      <span class="dropzone-tag">B</span>
+      <div class="dropzone-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      </div>
+      <p class="dropzone-label">Individual con Toga</p>
+      <p class="dropzone-hint">Retrato vertical · 3:4</p>
+    </div>
+  </section>
+
+  <!-- Zona inferior: 14 círculos -->
+  <section class="photos-grid-section" aria-label="Retratos rápidos del grupo">
+    <div class="photos-grid-header">
+      <span>nuestros peques</span>
+      <h3>Individuales Rápidas · La Generación Completa</h3>
+    </div>
+    <div class="photos-grid" id="circles-grid">
+      <!-- 14 círculos se generan via JS abajo (también funcionan estáticos si JS desactivado) -->
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="page-footer">
+    <div class="page-footer-text">
+      Pequeños hoy, <strong>GRANDES MAÑANA</strong>
+    </div>
+    <div class="page-footer-line" aria-hidden="true"></div>
+  </footer>
+</div>
+
+<!-- Botones de acción para preview -->
+<div class="actions">
+  <button onclick="window.print()" class="primary">
+    Imprimir / Guardar PDF
+  </button>
+  <button onclick="location.href='/demo/fotos-escuela/anuario'">
+    ← Volver al anuario
+  </button>
+</div>
+
+<script>
+/* Generación dinámica de los 14 círculos.
+   También funciona si el JS está desactivado: en ese caso el grid
+   simplemente queda vacío y se ven los espacios. */
+(function () {
+  const grid = document.getElementById('circles-grid');
+  if (!grid) return;
+  for (let i = 1; i <= 14; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'circle-zone';
+    slot.dataset.slot = 'r' + i;
+    slot.innerHTML = `
+      <span class="circle-zone-num">${i}</span>
+      <span>Individual<br>Rápida</span>
+    `;
+    grid.appendChild(slot);
+  }
+})();
+</script>
+
+</body>
+</html>
