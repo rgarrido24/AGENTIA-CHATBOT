@@ -55,7 +55,7 @@ type RawMessage = {
   deliveryStatus?: string;
 };
 
-type RawConversation = {
+export type RawConversation = {
   _id?: ObjectId;
   clientId?: string;
   channel?: string;

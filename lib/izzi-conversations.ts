@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import { ObjectId, type AnyBulkWriteOperation } from 'mongodb';
 import { getMongoDb } from '@/lib/mongodb';
 import {
   appendPanelMessages,
@@ -7,6 +7,7 @@ import {
   setPanelConversationPaused,
   type PanelConversation,
   type PanelConversationMessage,
+  type RawConversation,
 } from './panel-conversations';
 import {
   IZZI_CLIENT_ID,
@@ -25,10 +26,10 @@ export type IzziConversation = PanelConversation & {
   notas: string;
 };
 
-type RawDoc = Record<string, unknown> & {
-  _id?: ObjectId;
-  messages?: unknown[];
-  history?: unknown[];
+type RawDoc = RawConversation & {
+  tipo?: unknown;
+  etapa?: unknown;
+  notas?: unknown;
   recentMessages?: unknown[];
 };
 
@@ -207,6 +208,10 @@ function parseHistory(raw: unknown): PanelConversationMessage[] {
     .filter((m) => m.content.trim());
 }
 
+function asRecord(doc: unknown): Record<string, unknown> {
+  return doc && typeof doc === 'object' ? (doc as Record<string, unknown>) : {};
+}
+
 /**
  * Trae chats históricos de `leads` + `chat_sessions` a `conversations`
  * para que el panel muestre lo que ya existía antes de este módulo.
@@ -236,10 +241,10 @@ export async function hydrateIzziConversationsFromExistingData(): Promise<void> 
     .limit(400)
     .toArray();
 
-  const sessionById = new Map(sessions.map((s) => [String(s.sessionId || ''), s]));
-  const sessionBySender = new Map(sessions.map((s) => [String(s.senderId || ''), s]));
+  const sessionById = new Map(sessions.map((s) => [String(asRecord(s).sessionId || ''), s]));
+  const sessionBySender = new Map(sessions.map((s) => [String(asRecord(s).senderId || ''), s]));
 
-  const ops: Parameters<typeof convColl.bulkWrite>[0] = [];
+  const ops: AnyBulkWriteOperation[] = [];
   const now = new Date();
 
   const enqueue = (params: {
@@ -287,26 +292,33 @@ export async function hydrateIzziConversationsFromExistingData(): Promise<void> 
     });
   };
 
-  for (const lead of leads) {
+  for (const leadDoc of leads) {
+    const lead = asRecord(leadDoc);
     const senderId = String(lead.senderId || '').trim();
     const conversationId = String(lead.leadId || '').trim() || senderId;
-    const session = sessionById.get(conversationId) || sessionBySender.get(senderId);
-    const messages = parseHistory(session?.recentMessages);
+    const session = asRecord(sessionById.get(conversationId) || sessionBySender.get(senderId));
+    const messages = parseHistory(session.recentMessages);
     enqueue({
       conversationId,
       senderId,
-      senderName: typeof lead.senderName === 'string' ? lead.senderName : typeof lead.nombre === 'string' ? lead.nombre : undefined,
+      senderName:
+        typeof lead.senderName === 'string'
+          ? lead.senderName
+          : typeof lead.nombre === 'string'
+            ? lead.nombre
+            : undefined,
       pageId: String(lead.pageId || IZZI_PAGE_ID),
       platform: String(lead.platform || 'whatsapp'),
       lastMessage: typeof lead.lastMessage === 'string' ? lead.lastMessage : undefined,
       lastMessageAt: lead.lastMessageAt instanceof Date ? lead.lastMessageAt : now,
       createdAt: lead.createdAt instanceof Date ? lead.createdAt : now,
-      botPaused: lead.bot_status === 'paused' || !!lead.assignedTo,
+      botPaused: lead.bot_status === 'paused' || Boolean(lead.assignedTo),
       messages,
     });
   }
 
-  for (const session of sessions) {
+  for (const sessionDoc of sessions) {
+    const session = asRecord(sessionDoc);
     const senderId = String(session.senderId || '').trim();
     const conversationId = String(session.sessionId || '').trim() || senderId;
     enqueue({
