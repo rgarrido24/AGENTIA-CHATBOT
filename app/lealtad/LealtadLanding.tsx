@@ -22,6 +22,7 @@ import { ParticleField } from '@/components/landing/ParticleField';
 import { ScrollReveal, StaggerItem, StaggerReveal } from '@/components/landing/ScrollReveal';
 import { revealTransition } from '@/components/landing/motion';
 import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
+import { trackEvent, useAnalytics } from '@/src/lib/analytics-client';
 import { RoiCalculator } from './RoiCalculator';
 import { NfcTapSequence } from './NfcTapSequence';
 import { IndustryPhoneCarousel } from './IndustryPhoneCarousel';
@@ -37,12 +38,18 @@ const WA_GROWTH = agentiaWhatsAppUrl(
 const WA_DEMO = agentiaWhatsAppUrl(
   'Hola Agentia, quiero ver una demostración del sistema para mi negocio.',
 );
-const WA_BASIC = agentiaWhatsAppUrl(
-  'Hola Agentia, me interesa el plan Básico ($299) para recuperar clientes y vender más.',
+const WA_PLAN = agentiaWhatsAppUrl(
+  'Hola Agentia, me interesa el plan único de lealtad ($499 MXN/mes). ¿Cómo arranco?',
 );
-const WA_PRO = agentiaWhatsAppUrl(
-  'Hola Agentia, me interesa el plan Pro ($499) para crecer más rápido con automatizaciones.',
+const WA_SELLER = agentiaWhatsAppUrl(
+  'Hola, quiero información sobre ser vendedor de Agentia Lealtad',
 );
+
+const LEALTAD_ANALYTICS = 'lealtad-agentia';
+
+function trackCta(cta: string) {
+  trackEvent('cta_click', LEALTAD_ANALYTICS, { cta });
+}
 
 const BADGES = [
   'Funciona en Android y iPhone',
@@ -296,7 +303,7 @@ const FAQS = [
   },
   {
     q: '¿Esto se paga solo?',
-    a: 'Si recuperas unos cuantos clientes al mes con tu ticket promedio, el plan básico suele cubrirse solo. Usa el simulador de arriba con tus números reales.',
+    a: 'Si recuperas unos cuantos clientes al mes con tu ticket promedio, el plan de $499 suele cubrirse solo. Usa el simulador de arriba con tus números reales.',
   },
   {
     q: '¿Sirve para mi giro?',
@@ -611,6 +618,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 export function LealtadLanding() {
   const reduceMotion = useReducedMotion();
   const [industry, setIndustry] = useState<Industry>(INDUSTRIES[0]);
+  useAnalytics(LEALTAD_ANALYTICS);
 
   return (
     <main
@@ -651,11 +659,11 @@ export function LealtadLanding() {
             <a href="#giros" className="hover:text-[#00D4FF]">
               Tu giro
             </a>
-            <a href="#planes" className="hover:text-[#00D4FF]">
-              Planes
+            <a href="#plan" className="hover:text-[#00D4FF]">
+              Plan
             </a>
           </nav>
-          <GlowButton href={WA_GROWTH} external>
+          <GlowButton href={WA_GROWTH} external onClick={() => trackCta('nav-whatsapp')}>
             Quiero vender más
           </GlowButton>
         </header>
@@ -701,10 +709,10 @@ export function LealtadLanding() {
               transition={revealTransition(0.18, 0.35)}
               className="mt-8 flex flex-wrap gap-3"
             >
-              <GlowButton href={WA_GROWTH} external>
+              <GlowButton href={WA_GROWTH} external onClick={() => trackCta('hero-ventas')}>
                 Quiero aumentar mis ventas
               </GlowButton>
-              <GlowButton href="#demo" variant="secondary">
+              <GlowButton href="#demo" variant="secondary" onClick={() => trackCta('hero-demo')}>
                 Ver demostración
               </GlowButton>
             </motion.div>
@@ -1164,8 +1172,8 @@ export function LealtadLanding() {
           </StaggerReveal>
         </section>
 
-        {/* 10. PLANES + ROI */}
-        <section id="planes" className="py-20 sm:py-24">
+        {/* 10. PLAN + ROI */}
+        <section className="py-20 sm:py-24">
           <ScrollReveal>
             <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
               Inversión
@@ -1175,83 +1183,109 @@ export function LealtadLanding() {
             </h2>
             <p className="mt-4 max-w-2xl text-white/55">
               No empieces por el precio. Empieza por cuánto dejas en la mesa cada vez que alguien no
-              vuelve. Después elige el plan.
+              vuelve. Un solo plan, todo incluido.
             </p>
           </ScrollReveal>
 
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+          <ScrollReveal>
+            <div
+              id="plan"
+              className="relative mx-auto mt-10 max-w-lg rounded-3xl border border-[#00D4FF]/40 bg-white/[0.04] p-7 shadow-[0_0_40px_rgba(0,212,255,0.1)] sm:p-8"
+            >
+              <p className="font-mono text-xs uppercase tracking-wider text-white/40">Plan único</p>
+              <p className="mt-2 font-[family-name:var(--font-space)] text-4xl font-bold">
+                $499
+                <span className="ml-1 text-sm font-medium text-white/40">MXN/mes</span>
+              </p>
+              <ul className="mt-6 space-y-3 text-sm text-white/70">
+                {[
+                  'Tarjetas ilimitadas',
+                  'Sellos, puntos o cashback (el negocio elige)',
+                  'Google Wallet + acceso PWA',
+                  'WhatsApp automático por inactividad',
+                  'Panel de clientes con semáforo de reactivación',
+                  'Hasta 3 sucursales',
+                  'Mensajes de cumpleaños automáticos',
+                  'Soporte por WhatsApp incluido',
+                ].map((t) => (
+                  <li key={t} className="flex gap-2">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00D4FF]" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={WA_PLAN}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackCta('plan-499')}
+                className="mt-7 inline-flex w-full items-center justify-center rounded-xl py-3.5 text-sm font-bold text-[#0a0a0a] shadow-[0_0_32px_rgba(0,212,255,0.35)] transition hover:-translate-y-px active:scale-[0.97]"
+                style={{ background: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
+              >
+                Quiero este plan
+              </a>
+            </div>
+          </ScrollReveal>
+        </section>
+
+        {/* 11. VENDEDORES */}
+        <section id="vendedores" className="py-20 sm:py-24">
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <ScrollReveal>
-              <div className="flex h-full flex-col rounded-3xl border border-white/10 bg-white/[0.03] p-7">
-                <p className="font-mono text-xs uppercase tracking-wider text-white/40">Básico</p>
-                <p className="mt-2 font-[family-name:var(--font-space)] text-4xl font-bold">
-                  $299
-                  <span className="ml-1 text-sm font-medium text-white/40">MXN/mes</span>
-                </p>
-                <p className="mt-1 text-sm text-white/45">Un local · empezar a recuperar</p>
-                <ul className="mt-6 flex-1 space-y-3 text-sm text-white/70">
-                  {[
-                    'Clientes que vuelven con recompensas claras',
-                    'Check-in con QR (sin apps nuevas)',
-                    'WhatsApp cuando alguien se enfría',
-                    'Panel: activos / en riesgo / perdidos',
-                  ].map((t) => (
-                    <li key={t} className="flex gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00D4FF]" />
-                      {t}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 text-[11px] text-white/35">Apple Wallet · próximamente</p>
-                <a
-                  href={WA_BASIC}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-5 inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 py-3.5 text-sm font-bold transition hover:-translate-y-px hover:border-[#00D4FF]/50 active:scale-[0.97]"
-                >
-                  Quiero el Básico
-                </a>
+              <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
+                Alianzas
+              </p>
+              <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
+                Buscamos vendedores
+              </h2>
+              <p className="mt-4 max-w-xl text-white/55">
+                Gana comisiones recurrentes por cada negocio que traigas — sin inversión de tu parte.
+              </p>
+              <ul className="mt-8 space-y-4 text-sm text-white/70">
+                {[
+                  'Sin cuota de entrada',
+                  'Esquema de pago diseñado para que ganes más entre más vendas',
+                  'Material de venta y demo listos desde el día uno',
+                ].map((t) => (
+                  <li key={t} className="flex gap-3">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00D4FF]" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-8">
+                <GlowButton href={WA_SELLER} external onClick={() => trackCta('vendedores')}>
+                  Contáctanos para conocer el esquema completo
+                </GlowButton>
               </div>
             </ScrollReveal>
             <ScrollReveal delay={0.08}>
-              <div className="relative flex h-full flex-col rounded-3xl border border-[#00D4FF]/40 bg-white/[0.04] p-7 shadow-[0_0_40px_rgba(0,212,255,0.1)]">
-                <span className="absolute -top-3 right-6 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#FFD700] px-3 py-1 text-[11px] font-bold text-[#0a0a0a]">
-                  Más crecimiento
-                </span>
-                <p className="font-mono text-xs uppercase tracking-wider text-white/40">Pro</p>
-                <p className="mt-2 font-[family-name:var(--font-space)] text-4xl font-bold">
-                  $499
-                  <span className="ml-1 text-sm font-medium text-white/40">MXN/mes</span>
+              <div className="relative isolate overflow-hidden py-6 lg:py-10">
+                <div
+                  className="pointer-events-none absolute -left-8 top-0 h-full w-px bg-gradient-to-b from-[#00D4FF] via-[#00D4FF]/40 to-[#FFD700]"
+                  aria-hidden
+                />
+                <p className="font-[family-name:var(--font-space)] text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl">
+                  Traes el negocio.
+                  <br />
+                  <span
+                    className="bg-clip-text text-transparent"
+                    style={{ backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
+                  >
+                    Ellos se quedan.
+                  </span>
+                  <br />
+                  Tú sigues ganando.
                 </p>
-                <p className="mt-1 text-sm text-white/45">Hasta 3 sucursales · más automatización</p>
-                <ul className="mt-6 flex-1 space-y-3 text-sm text-white/70">
-                  {[
-                    'Todo lo del Básico',
-                    'Cumpleaños y promos a segmentos',
-                    'Más locales bajo el mismo sistema',
-                    'Exportar tu base para seguir creciendo',
-                  ].map((t) => (
-                    <li key={t} className="flex gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00D4FF]" />
-                      {t}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 text-[11px] text-white/35">Apple Wallet · próximamente</p>
-                <a
-                  href={WA_PRO}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-5 inline-flex items-center justify-center rounded-xl py-3.5 text-sm font-bold text-[#0a0a0a] shadow-[0_0_32px_rgba(0,212,255,0.35)] transition hover:-translate-y-px active:scale-[0.97]"
-                  style={{ background: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
-                >
-                  Quiero el Pro
-                </a>
+                <p className="mt-6 max-w-sm text-sm leading-relaxed text-white/45">
+                  Tú presentas. El sistema trabaja. Si encaja, te lo explicamos al hablar.
+                </p>
               </div>
             </ScrollReveal>
           </div>
         </section>
 
-        {/* 11. FAQ */}
+        {/* 12. FAQ */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
             <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
@@ -1284,10 +1318,10 @@ export function LealtadLanding() {
               Mándanos tu logo. En 24h tienes el sistema listo para que tus clientes vuelvan.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <GlowButton href={WA_GROWTH} external>
+              <GlowButton href={WA_GROWTH} external onClick={() => trackCta('cierre-ventas')}>
                 Quiero aumentar mis ventas
               </GlowButton>
-              <GlowButton href={WA_DEMO} external variant="secondary">
+              <GlowButton href={WA_DEMO} external variant="secondary" onClick={() => trackCta('cierre-demo')}>
                 Pedir demostración
               </GlowButton>
             </div>
@@ -1323,6 +1357,7 @@ export function LealtadLanding() {
         href={WA_GROWTH}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackCta('whatsapp-flotante')}
         className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-[#06130B] shadow-[0_8px_32px_rgba(37,211,102,0.45)] transition hover:scale-105 active:scale-95"
         aria-label="Escribir por WhatsApp"
       >

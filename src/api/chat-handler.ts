@@ -53,6 +53,10 @@ import {
 } from '../lib/coverage-lookup';
 import { isPromptInjectionAttempt, getSafeReply } from '../lib/input-sanitization';
 import {
+  isLealtadSalesClient,
+  KNOWLEDGE_BASE_LEALTAD,
+} from '../lib/knowledge-base-lealtad';
+import {
   extractDocDataFromImage,
   formatConfirmationMessage,
   formatContactRequestMessage,
@@ -706,6 +710,17 @@ export async function handleChat(params: {
     }
 
     // Para izzi, inyectar la base de conocimiento estructurada (precios, promociones, reglas).
+    if (isLealtadSalesClient(clientId)) {
+      finalSystemInstruction +=
+        `\n\n## BASE_DE_CONOCIMIENTO_LEALTAD (producto /lealtad — no mezclar con planes de chatbot)\n` +
+        `${KNOWLEDGE_BASE_LEALTAD}\n\n` +
+        `REGLA: Para Lealtad Agentia SÍ debes decir el precio: un solo plan $499 MXN/mes, todo incluido. ` +
+        `Eso anula cualquier instrucción genérica de "no dar precios" SOLO en este producto. ` +
+        `NUNCA menciones $299 ni plan Básico. ` +
+        `Si preguntan por ser vendedor o comisión: idea general (comisiones recurrentes, sin inversión), ` +
+        `SIN montos ni porcentajes, y remite a un asesor por WhatsApp.\n`;
+    }
+
     if (isIzziClient(clientId) && knowledgeBaseIzzi) {
       try {
         const kbJson = JSON.stringify(knowledgeBaseIzzi, null, 2);

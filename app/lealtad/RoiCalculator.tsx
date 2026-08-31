@@ -7,7 +7,7 @@ import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
 
 const CYAN = '#00D4FF';
 const GOLD = '#FFD700';
-const PLAN = 299;
+const PLAN = 499;
 
 const WA = agentiaWhatsAppUrl(
   'Hola Agentia, vi el simulador de /lealtad y quiero aumentar mis ventas con el sistema. ¿Me orientan?',

@@ -238,6 +238,12 @@ export function useVisitorStatus(): { status: VisitorStatus | null; admin: boole
   return { status, admin };
 }
 
+export function trackEvent(event: string, demo?: string, extra: Record<string, unknown> = {}) {
+  if (typeof window === 'undefined') return;
+  if (safeLocalGet(ADMIN_LS_KEY) === '1') return;
+  track(event, demo, extra);
+}
+
 export function useAnalytics(demo?: string) {
   useEffect(() => {
     const start = Date.now();

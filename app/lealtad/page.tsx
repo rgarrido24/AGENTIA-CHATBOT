@@ -4,7 +4,7 @@ import { LealtadLanding } from './LealtadLanding';
 export const metadata: Metadata = {
   title: 'Haz que tus clientes regresen | Agentia',
   description:
-    'Sistema para negocios locales que aumenta la recompra: clientes frecuentes, recuperación de inactivos y marketing automático. Desde $299 MXN/mes. Se paga solo si vuelven unos cuantos.',
+    'Sistema para negocios locales que aumenta la recompra: clientes frecuentes, recuperación de inactivos y marketing automático. $499 MXN/mes. Se paga solo si vuelven unos cuantos.',
   keywords: [
     'clientes frecuentes',
     'programa de recompensas',

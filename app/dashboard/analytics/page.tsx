@@ -24,6 +24,7 @@ interface StatsData {
     hoy: number;
     visitantesUnicos: number;
     ultimaVisita: string | null;
+    clicks: number;
   }[];
   demos:        { demo: string; visitas: number; avgSegundos: number }[];
   paises:       { pais: string; visitas: number; pct: number }[];
@@ -173,6 +174,7 @@ export default function AnalyticsDashboardPage() {
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-500">
                     <span>Hoy: <strong className="text-slate-300">{l.hoy}</strong></span>
                     <span>Únicos: <strong className="text-slate-300">{l.visitantesUnicos}</strong></span>
+                    <span>Clics: <strong className="text-slate-300">{l.clicks ?? 0}</strong></span>
                   </div>
                   <div className="text-[10px] text-slate-600 font-mono truncate">{l.path}</div>
                   {l.ultimaVisita ? (

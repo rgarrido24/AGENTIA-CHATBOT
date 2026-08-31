@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       screenW:     typeof body.screenW === 'number' ? body.screenW : null,
       screenH:     typeof body.screenH === 'number' ? body.screenH : null,
       pixelRatio:  typeof body.pixelRatio === 'number' ? body.pixelRatio : null,
+      cta:         safeStr(body.cta, 80),
       createdAt:   new Date(),
     });
     return NextResponse.json({ ok: true });

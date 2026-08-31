@@ -153,11 +153,13 @@ export async function GET(req: NextRequest) {
     const landings = await Promise.all(
       LANDING_PAGES.map(async (landing) => {
         const base = { event: 'pageview', ...landingPageFilter(landing) };
-        const [total, enPeriodo, hoy, visitantesUnicos] = await Promise.all([
+        const clickFilter = { event: 'cta_click', ...landingPageFilter(landing) };
+        const [total, enPeriodo, hoy, visitantesUnicos, clicks] = await Promise.all([
           col.countDocuments(base),
           col.countDocuments({ ...base, createdAt: { $gte: fromRange } }),
           col.countDocuments({ ...base, createdAt: { $gte: fromToday } }),
           col.distinct('visitorId', { ...base, visitorId: { $ne: null } }).then((ids) => ids.length),
+          col.countDocuments({ ...clickFilter, createdAt: { $gte: fromRange } }),
         ]);
         const ultima = await col
           .findOne(base, { sort: { createdAt: -1 }, projection: { createdAt: 1 } });
@@ -169,6 +171,7 @@ export async function GET(req: NextRequest) {
           enPeriodo,
           hoy,
           visitantesUnicos,
+          clicks,
           ultimaVisita: ultima?.createdAt ?? null,
         };
       }),

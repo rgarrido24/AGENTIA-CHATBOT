@@ -12,6 +12,7 @@ export const LANDING_PAGES: LandingPage[] = [
   { slug: 'biovela', label: 'Biovela', path: '/biovela' },
   { slug: 'masa-madre', label: 'Masa Madre · Menú', path: '/demos/masa-madre' },
   { slug: 'lealtad', label: 'Masa Madre · Lealtad', path: '/demos/lealtad' },
+  { slug: 'lealtad-agentia', label: 'Agentia · Lealtad', path: '/lealtad' },
   { slug: 'izzi', label: 'Izzi Mérida', path: '/izzi/merida' },
   { slug: 'paycesa', label: 'Paycesa', path: '/paycesa' },
   { slug: 'deco-house', label: 'Deco House', path: '/proyectos/deco-house' },

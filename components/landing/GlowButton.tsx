@@ -9,9 +9,17 @@ type Props = {
   variant?: 'primary' | 'secondary';
   external?: boolean;
   className?: string;
+  onClick?: () => void;
 };
 
-export function GlowButton({ href, children, variant = 'primary', external, className = '' }: Props) {
+export function GlowButton({
+  href,
+  children,
+  variant = 'primary',
+  external,
+  className = '',
+  onClick,
+}: Props) {
   const base =
     'relative inline-flex items-center justify-center overflow-hidden rounded-xl px-6 py-3.5 text-sm font-bold transition-[transform,box-shadow,border-color,background-color] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] hover:-translate-y-px';
 
@@ -43,11 +51,15 @@ export function GlowButton({ href, children, variant = 'primary', external, clas
 
   if (external) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer">
+      <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClick}>
         {content}
       </a>
     );
   }
 
-  return <Link href={href}>{content}</Link>;
+  return (
+    <Link href={href} onClick={onClick}>
+      {content}
+    </Link>
+  );
 }
