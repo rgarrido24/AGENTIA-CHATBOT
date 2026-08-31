@@ -21,13 +21,27 @@ const qrcode = require('qrcode');
 const http = require('http');
 const { execFile } = require('child_process');
 
-/** Clientes internos — resellers externos (Luciano) los procesa solo baileys-bridge. */
+/**
+ * Clientes internos — resellers externos (Luciano) los procesa solo baileys-bridge.
+ * decohouse y biovela siguen aquí para que no se clasifiquen como reseller externo;
+ * sus alertas se descartan antes de enviarse (ver DISABLED_ALERT_CLIENT_IDS).
+ */
 const INTERNAL_ALERT_CLIENT_IDS = new Set(['izzi', 'decohouse', 'cwf', 'biovela', 'agentia-ventas']);
+
+/** Clientes dados de baja: sus alertas se descartan sin enviar. */
+const DISABLED_ALERT_CLIENT_IDS = new Set(['decohouse', 'biovela']);
 
 function effectiveAlertResellerId(a) {
   return String(a.resellerId || a.clientId || '')
     .trim()
     .toLowerCase();
+}
+
+function isDisabledAlertClient(a) {
+  return (
+    DISABLED_ALERT_CLIENT_IDS.has(effectiveAlertResellerId(a)) ||
+    a.reason === 'decohouse_lead'
+  );
 }
 
 function isExternalResellerAlert(a) {
@@ -459,7 +473,7 @@ async function main() {
     const defaultAlertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER || '';
     if (!defaultAlertNumber) {
       console.warn(
-        '[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas sin destino por defecto (Deco House puede usar DECOHOUSE_ALERT_NUMBER en documento o env).'
+        '[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas sin destino por defecto (se usará notifyWhatsappTo del documento).'
       );
     }
     try {
@@ -493,14 +507,14 @@ async function main() {
             continue;
           }
 
+          // Se reclama primero para que la alerta no vuelva en cada poll.
+          if (isDisabledAlertClient(a)) {
+            console.log('[Agentia] Cliente dado de baja — alerta descartada:', a.reason, a.id);
+            continue;
+          }
+
           const fromDoc = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
-          const fromDecoEnv =
-            a.reason === 'decohouse_lead'
-              ? String(getEnv('DECOHOUSE_ALERT_NUMBER', '') || process.env.DECOHOUSE_ALERT_NUMBER || '')
-                  .trim()
-                  .replace(/\D/g, '')
-              : '';
-          const targetRaw = fromDoc || fromDecoEnv || defaultAlertNumber;
+          const targetRaw = fromDoc || defaultAlertNumber;
           if (!targetRaw) {
             console.warn('[Agentia] Alerta sin destino WA (omitir):', a.reason, a.id);
             continue;
@@ -521,9 +535,6 @@ async function main() {
               break;
             case 'high_activity':
               msg = await buildHighActivityAlertMessage(a);
-              break;
-            case 'decohouse_lead':
-              msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
               break;
             default:
               msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;

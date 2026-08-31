@@ -399,6 +399,16 @@ const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recep
 /** Resellers con alertas high_activity vía plantilla Graph API (no clientes internos). */
 const EXTERNAL_RESELLERS = ['luciano'];
 
+/** Clientes dados de baja: sus alertas se descartan sin enviar. */
+const DISABLED_ALERT_CLIENT_IDS = new Set(['decohouse', 'biovela']);
+
+function isDisabledAlertClient(a) {
+  const id = String(a.resellerId || a.clientId || '')
+    .trim()
+    .toLowerCase();
+  return DISABLED_ALERT_CLIENT_IDS.has(id) || a.reason === 'decohouse_lead';
+}
+
 function shouldAppendResellerReceiptSuffix(resellerId) {
   const s = String(resellerId ?? '')
     .trim()
@@ -711,7 +721,7 @@ async function pollAndSendAlerts() {
   }
   const defaultAlertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER || '';
   if (!defaultAlertNumber) {
-    console.warn('[Baileys] ALERT_WHATSAPP_NUMBER vacío — solo alertas con DECOHOUSE/notify.');
+    console.warn('[Baileys] ALERT_WHATSAPP_NUMBER vacío — solo alertas con notifyWhatsappTo propio.');
   }
   const apiBase = getApiBase();
   const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
@@ -743,6 +753,12 @@ async function pollAndSendAlerts() {
           continue;
         }
 
+        // Se reclama primero para que la alerta no vuelva en cada poll.
+        if (isDisabledAlertClient(a)) {
+          console.log('[Baileys] Cliente dado de baja — alerta descartada:', a.reason, a.id);
+          continue;
+        }
+
         if (isResellerGraphHighActivityAlert(a)) {
           const alertDoc = { ...a, resellerId: effectiveResellerId(a) };
           await sendResellerHighActivityWithOg(null, null, alertDoc);
@@ -751,13 +767,7 @@ async function pollAndSendAlerts() {
         }
 
         const fromDoc = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
-        const fromDecoEnv =
-          a.reason === 'decohouse_lead'
-            ? String(getEnv('DECOHOUSE_ALERT_NUMBER', '') || process.env.DECOHOUSE_ALERT_NUMBER || '')
-                .trim()
-                .replace(/\D/g, '')
-            : '';
-        const targetRaw = fromDoc || fromDecoEnv || defaultAlertNumber;
+        const targetRaw = fromDoc || defaultAlertNumber;
         if (!targetRaw) {
           console.warn('[Baileys] Alerta sin destino WA (omitir):', a.reason, a.id);
           continue;
@@ -785,9 +795,6 @@ async function pollAndSendAlerts() {
             msg = `⚠️ ATENCION⚠️\n¡Tenes un NUEVO LEAD en tu panel!\nNo dejes que se enfríe y contactalo rápidamente📲\nDale click al enlace para gestionarlo👇\n${portalLink}`;
             break;
           }
-          case 'decohouse_lead':
-            msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
-            break;
           default:
             msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
         }
