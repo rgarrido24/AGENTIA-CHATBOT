@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Download, MessageSquare, Pause, Play, RefreshCw, User, X } from 'lucide-react';
+import { ArrowLeft, Download, MessageSquare, Pause, Play, RefreshCw, Smartphone, User, X } from 'lucide-react';
 import { PanelMessageBubble } from '@/components/panel/PanelMessageBubble';
 import { PanelReplyComposer } from '@/components/panel/PanelReplyComposer';
 import {
@@ -426,6 +427,14 @@ export default function IzziConversacionesPage() {
             ) : null}
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/izzi-panel/whatsapp"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-pink-100/90 hover:bg-white/5 transition min-h-[40px]"
+              style={{ borderColor: BRAND.border }}
+            >
+              <Smartphone className="h-4 w-4" />
+              WhatsApp
+            </Link>
             <button
               type="button"
               onClick={() => setExportOpen(true)}
