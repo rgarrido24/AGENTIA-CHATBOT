@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
 import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
+import { CountUp } from './CountUp';
 
 const BRONZE = '#B8935A';
 const INK = '#14161A';
@@ -22,7 +22,6 @@ function formatMxn(n: number) {
 }
 
 export function RoiCalculator() {
-  const reduceMotion = useReducedMotion();
   const [clientes, setClientes] = useState(280);
   const [ticket, setTicket] = useState(120);
   const [recompra, setRecompra] = useState(15);
@@ -79,15 +78,12 @@ export function RoiCalculator() {
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#B8935A]">
             Ingreso adicional estimado / mes
           </p>
-          <motion.p
-            key={ingresoExtra}
-            initial={reduceMotion ? false : { opacity: 0.4, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
+          <p
             className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl"
             style={{ color: BRONZE }}
           >
-            {formatMxn(ingresoExtra)}
-          </motion.p>
+            <CountUp end={ingresoExtra} format={formatMxn} duration={900} />
+          </p>
 
           <div className="mt-6 space-y-3 text-sm text-[#14161A]/70">
             <p>

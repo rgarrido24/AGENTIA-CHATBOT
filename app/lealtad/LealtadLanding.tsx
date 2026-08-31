@@ -22,12 +22,15 @@ import { revealTransition } from '@/components/landing/motion';
 import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
 import { trackEvent, useAnalytics } from '@/src/lib/analytics-client';
 import { RoiCalculator } from './RoiCalculator';
+import { CountUp } from './CountUp';
+import { SequenceReveal } from './SequenceReveal';
 
 const BG = '#FAFAF8';
 const INK = '#14161A';
 const BRONZE = '#B8935A';
 const WA = '#25D366';
 
+/** Hero principal — sustituir cuando llegue la nueva URL de Cloudinary. */
 const IMG_WALLET =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788157349/captura-tarjeta-wallet_grbubg.jpg';
 const IMG_CAJA =
@@ -58,22 +61,6 @@ const BADGES = [
   'Se usa en segundos',
 ];
 
-const PROBLEM_STATS = [
-  { value: '5×', label: 'más caro atraer un cliente nuevo' },
-  { value: '60–70%', label: 'de ventas vienen de quien ya te conoce' },
-  { value: '0', label: 'seguimiento = clientes que se van' },
-];
-
-const AFTER_STEPS = [
-  'Compra',
-  'Guarda su pase',
-  'Acumula',
-  'Recibe promo',
-  'Regresa',
-  'Compra otra vez',
-  'Trae amigos',
-];
-
 const BENEFITS = [
   { icon: Wallet, title: 'Pase siempre en su celular' },
   { icon: MessageCircle, title: 'WhatsApp si dejan de venir', whatsapp: true },
@@ -83,72 +70,18 @@ const BENEFITS = [
   { icon: Sparkles, title: 'Sellos, puntos o cashback' },
 ];
 
-type Industry = {
-  id: string;
-  label: string;
-  icon: string;
-  example: string;
-  logoSrc?: string;
-  logoAlt?: string;
-};
-
-const INDUSTRIES: Industry[] = [
-  {
-    id: 'cafe',
-    label: 'Cafeterías',
-    icon: '☕',
-    logoSrc: '/images/mockups/cafe-luna-logo.jpg',
-    logoAlt: 'Café Luna',
-    example: 'Café #10 de regalo',
-  },
-  {
-    id: 'barber',
-    label: 'Barberías',
-    icon: '✂️',
-    example: 'Corte #10 de regalo',
-  },
-  {
-    id: 'resto',
-    label: 'Restaurantes',
-    icon: '🍽️',
-    example: 'Postre de la casa al volver',
-  },
-  {
-    id: 'spa',
-    label: 'Estéticas',
-    icon: '🌿',
-    example: 'Puntos + WhatsApp si falta',
-  },
-  {
-    id: 'vet',
-    label: 'Veterinarias',
-    icon: '🐾',
-    example: 'Vacunas que regresan a tiempo',
-  },
-  {
-    id: 'gym',
-    label: 'Gimnasios',
-    icon: '💪',
-    example: 'Check-in que renueva membresía',
-  },
-  {
-    id: 'boutique',
-    label: 'Boutiques',
-    icon: '👗',
-    example: 'Cashback en la segunda compra',
-  },
-  {
-    id: 'farmacia',
-    label: 'Farmacias',
-    icon: '💊',
-    example: 'Recompra de tratamientos',
-  },
-  {
-    id: 'papel',
-    label: 'Papelerías',
-    icon: '📎',
-    example: 'Sellos en temporada escolar',
-  },
+const GIROS = [
+  'Cafeterías',
+  'Barberías',
+  'Restaurantes',
+  'Estéticas',
+  'Veterinarias',
+  'Gimnasios',
+  'Boutiques',
+  'Farmacias',
+  'Papelerías',
+  'Abarrotes',
+  'Tacos / comida rápida',
 ];
 
 const AUTOMATIONS = [
@@ -169,9 +102,9 @@ const COMPARE = [
 ];
 
 const METRICS = [
-  { value: '+28%', label: 'clientes recurrentes' },
-  { value: '+35%', label: 'visitas recuperadas' },
-  { value: '+18%', label: 'ticket promedio' },
+  { end: 28, label: 'clientes recurrentes' },
+  { end: 35, label: 'visitas recuperadas' },
+  { end: 18, label: 'ticket promedio' },
 ];
 
 const NFC_ACTIONS = [
@@ -378,7 +311,6 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export function LealtadLanding() {
   const reduceMotion = useReducedMotion();
-  const [industry, setIndustry] = useState<Industry>(INDUSTRIES[0]);
   useAnalytics(LEALTAD_ANALYTICS);
 
   return (
@@ -472,13 +404,15 @@ export function LealtadLanding() {
           </div>
 
           <div id="demo" className="mx-auto mt-12 max-w-[440px]">
-            <ShotFrame
-              src={IMG_WALLET}
-              alt="Tarjeta de lealtad de Café Luna en Google Wallet, con puntos, saldo y código QR"
-              width={919}
-              height={1294}
-              priority
-            />
+            <div className="lealtad-hero-shot">
+              <ShotFrame
+                src={IMG_WALLET}
+                alt="Tarjeta de lealtad de Café Luna en Google Wallet, con puntos, saldo y código QR"
+                width={919}
+                height={1294}
+                priority
+              />
+            </div>
           </div>
         </section>
 
@@ -490,16 +424,36 @@ export function LealtadLanding() {
             </h2>
           </ScrollReveal>
           <StaggerReveal className="mt-12 grid gap-4 md:grid-cols-3">
-            {PROBLEM_STATS.map((s) => (
-              <StaggerItem key={s.value}>
-                <div className="h-full rounded-[1.5rem] bg-white p-7 ring-1 ring-[#14161A]/8">
-                  <p className="text-4xl font-bold" style={{ color: BRONZE }}>
-                    {s.value}
-                  </p>
-                  <p className="mt-3 text-sm leading-relaxed text-[#14161A]/55">{s.label}</p>
-                </div>
-              </StaggerItem>
-            ))}
+            <StaggerItem>
+              <div className="h-full rounded-[1.5rem] bg-white p-7 ring-1 ring-[#14161A]/8">
+                <p className="text-4xl font-bold" style={{ color: BRONZE }}>
+                  <CountUp end={5} suffix="×" />
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-[#14161A]/55">
+                  más caro atraer un cliente nuevo
+                </p>
+              </div>
+            </StaggerItem>
+            <StaggerItem>
+              <div className="h-full rounded-[1.5rem] bg-white p-7 ring-1 ring-[#14161A]/8">
+                <p className="text-4xl font-bold" style={{ color: BRONZE }}>
+                  <CountUp end={60} />–<CountUp end={70} suffix="%" />
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-[#14161A]/55">
+                  de ventas vienen de quien ya te conoce
+                </p>
+              </div>
+            </StaggerItem>
+            <StaggerItem>
+              <div className="h-full rounded-[1.5rem] bg-white p-7 ring-1 ring-[#14161A]/8">
+                <p className="text-4xl font-bold" style={{ color: BRONZE }}>
+                  0
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-[#14161A]/55">
+                  seguimiento = clientes que se van
+                </p>
+              </div>
+            </StaggerItem>
           </StaggerReveal>
         </section>
 
@@ -510,52 +464,7 @@ export function LealtadLanding() {
               Del “gracias, adiós” al cliente que vuelve solo
             </h2>
           </ScrollReveal>
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
-            <ScrollReveal>
-              <div className="h-full rounded-[1.5rem] bg-white p-7 ring-1 ring-[#14161A]/8">
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#14161A]/40">Antes</p>
-                <ul className="mt-6 space-y-4">
-                  {['Compra', 'Se va', 'No vuelve', 'Pagas otra vez por atraer'].map(
-                    (t, i) => (
-                      <li key={t} className="flex items-center gap-3 text-[#14161A]/55">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F3F1EC] text-xs font-medium text-[#14161A]/40">
-                          {i + 1}
-                        </span>
-                        {t}
-                      </li>
-                    ),
-                  )}
-                </ul>
-              </div>
-            </ScrollReveal>
-            <ScrollReveal delay={0.08}>
-              <div className="h-full rounded-[1.5rem] bg-white p-7 ring-1 ring-[#B8935A]/30">
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: BRONZE }}>
-                  Después
-                </p>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {AFTER_STEPS.map((t, i) => (
-                    <motion.span
-                      key={t}
-                      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: i * 0.05 }}
-                      className="inline-flex items-center gap-2 rounded-full bg-[#F3F1EC] px-3 py-1.5 text-sm text-[#14161A]"
-                    >
-                      <span className="text-[10px] font-semibold" style={{ color: BRONZE }}>
-                        {i + 1}
-                      </span>
-                      {t}
-                      {i < AFTER_STEPS.length - 1 ? (
-                        <ArrowRight className="hidden h-3 w-3 text-[#14161A]/25 sm:inline" />
-                      ) : null}
-                    </motion.span>
-                  ))}
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
+          <SequenceReveal />
         </section>
 
         {/* Así funciona por dentro */}
@@ -643,74 +552,15 @@ export function LealtadLanding() {
             <h2 className="text-3xl font-bold sm:text-4xl">Hecho para tu giro</h2>
           </ScrollReveal>
           <div className="mt-8 flex flex-wrap gap-2">
-            {INDUSTRIES.map((ind) => (
-              <button
-                key={ind.id}
-                type="button"
-                onClick={() => setIndustry(ind)}
-                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold transition-[transform,background-color,color] duration-150 active:scale-[0.97] ${
-                  industry.id === ind.id
-                    ? 'text-[#14161A]'
-                    : 'bg-white text-[#14161A]/65 ring-1 ring-[#14161A]/10 hover:text-[#14161A]'
-                }`}
-                style={industry.id === ind.id ? { background: BRONZE } : undefined}
+            {GIROS.map((giro) => (
+              <span
+                key={giro}
+                className="rounded-full bg-white px-3.5 py-2 text-sm font-medium text-[#14161A]/75 ring-1 ring-[#14161A]/10"
               >
-                {ind.logoSrc ? (
-                  <span className="relative inline-flex h-5 w-5 shrink-0 overflow-hidden rounded-full bg-[#F5F0E8]">
-                    <Image
-                      src={ind.logoSrc}
-                      alt=""
-                      width={24}
-                      height={24}
-                      className="h-[118%] w-[118%] max-w-none object-cover object-center"
-                    />
-                  </span>
-                ) : (
-                  <span aria-hidden>{ind.icon}</span>
-                )}
-                {ind.label}
-              </button>
+                {giro}
+              </span>
             ))}
           </div>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={industry.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.25 }}
-              className="mt-8 overflow-hidden rounded-[1.5rem] bg-white p-8 ring-1 ring-[#14161A]/8 sm:p-10"
-            >
-              {industry.logoSrc ? (
-                <div className="relative flex h-16 w-16 overflow-hidden rounded-full bg-[#F5F0E8] sm:h-20 sm:w-20">
-                  <Image
-                    src={industry.logoSrc}
-                    alt={industry.logoAlt || industry.label}
-                    width={96}
-                    height={96}
-                    className="h-[118%] w-[118%] max-w-none object-cover object-center"
-                    quality={95}
-                  />
-                </div>
-              ) : (
-                <p className="text-4xl">{industry.icon}</p>
-              )}
-              <h3 className="mt-4 text-2xl font-bold">{industry.label}</h3>
-              <p className="mt-3 max-w-xl text-base text-[#14161A]/65">{industry.example}</p>
-              <a
-                href={agentiaWhatsAppUrl(
-                  `Hola Agentia, tengo un negocio de ${industry.label.toLowerCase()} y quiero más clientes frecuentes.`,
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 inline-flex items-center gap-2 text-sm font-semibold"
-                style={{ color: WA }}
-              >
-                Escríbenos
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </motion.div>
-          </AnimatePresence>
         </section>
 
         {/* 7. AUTOMATIZACIONES */}
@@ -850,7 +700,7 @@ export function LealtadLanding() {
               <StaggerItem key={m.label}>
                 <div className="rounded-[1.5rem] bg-white p-8 text-center ring-1 ring-[#14161A]/8">
                   <p className="text-5xl font-bold" style={{ color: BRONZE }}>
-                    {m.value}
+                    <CountUp end={m.end} prefix="+" suffix="%" />
                   </p>
                   <p className="mt-3 text-lg font-semibold">{m.label}</p>
                 </div>
