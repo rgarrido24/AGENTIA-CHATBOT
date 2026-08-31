@@ -36,6 +36,17 @@ export type TenantConfig = {
   horario?: string;
   /** Coordenadas para el aviso de Wallet al pasar cerca del local. */
   ubicacion?: { lat: number; lng: number };
+  /**
+   * Banner del pase (Google Wallet: 1032×336, sin padding blanco).
+   * Preferir URL pública (Cloudinary o https://agentia.software/images/wallet-hero/{id}.png).
+   */
+  heroImageUrl?: string;
+  /**
+   * Link extra en la clase (Instagram, menú, etc.). Si falta, no se manda el botón.
+   */
+  linkModuleData?: { uri: string; description: string };
+  /** Puntos/sellos para la próxima recompensa. Default 10. */
+  rewardMeta?: number;
 };
 
 /**
@@ -92,11 +103,30 @@ const CARNITAS_LOGO =
 const CAFE_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787942156/cafe-luna-logo-transparente_xskmgn.png';
 
+const CAFE_HERO =
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788155757/cafe-luna-hero-wallet_dqnc9p.png';
+
 const BARBERIA_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787941859/barberia-el-patron-logo-transparente_ej3ruw.png';
 
 const ABARROTES_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787941811/abarrotes-la-providencia-logo-transparente_jgk7kf.png';
+
+function extraLinkFromEnv(
+  uriRaw: string | undefined,
+  labelRaw: string | undefined,
+): { uri: string; description: string } | undefined {
+  const uri = pick(uriRaw);
+  if (!uri) return undefined;
+  return { uri, description: pick(labelRaw) || 'Más info' };
+}
+
+function sabucanExtraLink() {
+  return extraLinkFromEnv(
+    process.env.NEXT_PUBLIC_SABUCAN_LINK_URL,
+    process.env.NEXT_PUBLIC_SABUCAN_LINK_LABEL,
+  );
+}
 
 /** Cashback de Carnitas Granada — ajustable sin deploy. Default 5%. */
 function carnitasCashbackPct(): number {
@@ -135,6 +165,9 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     mapsUrl: pick(process.env.NEXT_PUBLIC_SABUCAN_MAPS_URL),
     direccion: pick(process.env.NEXT_PUBLIC_SABUCAN_DIRECCION),
     horario: pick(process.env.NEXT_PUBLIC_SABUCAN_HORARIO),
+    heroImageUrl: pick(process.env.NEXT_PUBLIC_SABUCAN_HERO_URL),
+    linkModuleData: sabucanExtraLink(),
+    rewardMeta: 10,
   },
   carnitas_granada: {
     id: 'carnitas_granada',
@@ -163,6 +196,12 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     ),
     horario: pick(process.env.NEXT_PUBLIC_CARNITAS_HORARIO, '9:30 am a 5:30 pm'),
     ubicacion: parseLatLng(process.env.NEXT_PUBLIC_CARNITAS_LATLNG),
+    heroImageUrl: pick(process.env.NEXT_PUBLIC_CARNITAS_HERO_URL),
+    linkModuleData: extraLinkFromEnv(
+      process.env.NEXT_PUBLIC_CARNITAS_LINK_URL,
+      process.env.NEXT_PUBLIC_CARNITAS_LINK_LABEL,
+    ),
+    rewardMeta: 10,
   },
   cafe: {
     id: 'cafe',
@@ -182,6 +221,12 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     mapsUrl: 'https://maps.google.com/?q=Cafe+Luna+CDMX',
     direccion: 'Av. Álvaro Obregón 210, Roma Norte, CDMX (demo)',
     horario: 'Lun a dom · 7:30 am a 9:00 pm',
+    heroImageUrl: pick(process.env.NEXT_PUBLIC_CAFE_HERO_URL, CAFE_HERO),
+    linkModuleData: extraLinkFromEnv(
+      process.env.NEXT_PUBLIC_CAFE_LINK_URL,
+      process.env.NEXT_PUBLIC_CAFE_LINK_LABEL,
+    ),
+    rewardMeta: 10,
   },
   barberia: {
     id: 'barberia',
@@ -201,6 +246,12 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     mapsUrl: 'https://maps.google.com/?q=Barberia+El+Patron+CDMX',
     direccion: 'Av. Insurgentes Sur 480, Roma Sur, CDMX (demo)',
     horario: 'Lun a sáb · 10:00 am a 8:00 pm',
+    heroImageUrl: pick(process.env.NEXT_PUBLIC_BARBERIA_HERO_URL),
+    linkModuleData: extraLinkFromEnv(
+      process.env.NEXT_PUBLIC_BARBERIA_LINK_URL,
+      process.env.NEXT_PUBLIC_BARBERIA_LINK_LABEL,
+    ),
+    rewardMeta: 10,
   },
   abarrotes: {
     id: 'abarrotes',
@@ -220,6 +271,12 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     mapsUrl: 'https://maps.google.com/?q=Abarrotes+La+Providencia+CDMX',
     direccion: 'Calle Morelos 15, Col. Providencia, CDMX (demo)',
     horario: 'Todos los días · 7:00 am a 10:00 pm',
+    heroImageUrl: pick(process.env.NEXT_PUBLIC_ABARROTES_HERO_URL),
+    linkModuleData: extraLinkFromEnv(
+      process.env.NEXT_PUBLIC_ABARROTES_LINK_URL,
+      process.env.NEXT_PUBLIC_ABARROTES_LINK_LABEL,
+    ),
+    rewardMeta: 10,
   },
 };
 
@@ -240,6 +297,11 @@ export function tenantCashbackPct(tenant: TenantConfig): number {
   return Number.isFinite(tenant.cashbackPct) && tenant.cashbackPct > 0
     ? tenant.cashbackPct
     : 1;
+}
+
+export function tenantRewardMeta(tenant: TenantConfig): number {
+  const meta = Number(tenant.rewardMeta);
+  return Number.isFinite(meta) && meta > 0 ? meta : 10;
 }
 
 export function isDemoNegocio(raw: string): raw is DemoNegocio {

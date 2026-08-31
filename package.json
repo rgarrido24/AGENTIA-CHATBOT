@@ -26,6 +26,7 @@
     "wallet:design": "node scripts/update-wallet-classes-design.js",
     "wallet:demos": "node scripts/create-demo-classes.js",
     "wallet:demos:logos": "node scripts/update-demo-logos.js",
+    "wallet:hero": "node scripts/set-hero-image.js",
     "seed:demos": "node scripts/seed-demo-data.js",
     "test:comment": "node scripts/test-comment-webhook.js",
     "debug:export": "node scripts/generate-agentia-debug.js",

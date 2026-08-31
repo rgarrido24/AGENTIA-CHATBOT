@@ -30,6 +30,7 @@ export async function POST(req: Request, ctx: Ctx) {
       await syncWalletPuntosByObjectId(
         tenantObjectId(cfg, result.cliente.id),
         result.cliente.puntos,
+        cfg,
       );
     }
 

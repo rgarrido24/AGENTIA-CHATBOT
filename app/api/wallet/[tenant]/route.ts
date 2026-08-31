@@ -10,10 +10,10 @@ import {
 import {
   getTenant,
   sabucanWaDigits,
-  tenantCashbackPct,
   tenantClassId,
   tenantObjectId,
 } from '@/lib/wallet-tenant';
+import { buildLoyaltyObjectTextModules } from '@/lib/wallet-pass-modules';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,23 +59,7 @@ export async function POST(req: Request, ctx: Ctx) {
     const classId = tenantClassId(cfg);
 
     const saldo = Math.max(0, puntosActuales);
-    const pct = tenantCashbackPct(cfg);
-
-    const textModulesData = [
-      {
-        header: 'Cómo acumular',
-        body:
-          pct === 1
-            ? `1 punto por cada $100 MXN · ${cfg.nombre}`
-            : `${pct}% de cashback en puntos (1 punto = $1 MXN) · ${cfg.nombre}`,
-      },
-      {
-        header: 'Cómo usarlo',
-        body: 'Muestra este código en la caja. Puedes usar tu saldo como pago en cualquier visita.',
-      },
-      ...(cfg.direccion ? [{ header: 'Dónde estamos', body: cfg.direccion }] : []),
-      ...(cfg.horario ? [{ header: 'Horario', body: cfg.horario }] : []),
-    ];
+    const textModulesData = buildLoyaltyObjectTextModules(cfg, saldo);
 
     const links = [
       ...(cfg.waNumber

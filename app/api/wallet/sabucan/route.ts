@@ -28,6 +28,7 @@ import {
   sabucanObjectId,
 } from '@/lib/wallet-sabucan';
 import { TENANTS, sabucanWaDigits } from '@/lib/wallet-tenant';
+import { buildLoyaltyObjectTextModules } from '@/lib/wallet-pass-modules';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,15 +102,7 @@ export async function POST(req: Request) {
           money: { currencyCode: 'MXN', micros: Math.round(saldo * 1_000_000) },
         },
       },
-      textModulesData: [
-        { header: 'Cómo acumular', body: '1 punto por cada $100 MXN de compra' },
-        {
-          header: 'Cómo usarlo',
-          body: 'Muestra este código en la caja. Puedes usar tu saldo como pago en cualquier visita.',
-        },
-        ...(cfg.direccion ? [{ header: 'Dónde estamos', body: cfg.direccion }] : []),
-        ...(cfg.horario ? [{ header: 'Horario', body: cfg.horario }] : []),
-      ],
+      textModulesData: buildLoyaltyObjectTextModules(cfg, saldo),
       ...(links.length > 0 ? { linksModuleData: { uris: links } } : {}),
       // Sin heroImage a nivel objeto: el objeto pisa a la clase y los pases ya
       // emitidos se quedan con la imagen vieja. El hero se controla en la clase.

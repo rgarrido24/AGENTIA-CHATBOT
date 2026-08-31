@@ -72,6 +72,9 @@ const TENANTS = {
     direccion: env('NEXT_PUBLIC_SABUCAN_DIRECCION'),
     horario: env('NEXT_PUBLIC_SABUCAN_HORARIO'),
     latlng: env('NEXT_PUBLIC_SABUCAN_LATLNG'),
+    hero: env('NEXT_PUBLIC_SABUCAN_HERO_URL'),
+    extraLink: env('NEXT_PUBLIC_SABUCAN_LINK_URL'),
+    extraLinkLabel: env('NEXT_PUBLIC_SABUCAN_LINK_LABEL') || 'Más info',
   },
   carnitas_granada: {
     nombre: 'Carnitas Granada',
@@ -86,6 +89,9 @@ const TENANTS = {
       'Maximino Ávila Camacho 33, Cd. de los Deportes, Benito Juárez, 03710 CDMX',
     horario: env('NEXT_PUBLIC_CARNITAS_HORARIO') || '9:30 am a 5:30 pm',
     latlng: env('NEXT_PUBLIC_CARNITAS_LATLNG'),
+    hero: env('NEXT_PUBLIC_CARNITAS_HERO_URL'),
+    extraLink: env('NEXT_PUBLIC_CARNITAS_LINK_URL'),
+    extraLinkLabel: env('NEXT_PUBLIC_CARNITAS_LINK_LABEL') || 'Más info',
   },
   cafe: {
     nombre: 'Café Luna',
@@ -98,6 +104,11 @@ const TENANTS = {
     direccion: 'Av. Álvaro Obregón 210, Roma Norte, CDMX (demo)',
     horario: 'Lun a dom · 7:30 am a 9:00 pm',
     latlng: '',
+    hero:
+      env('NEXT_PUBLIC_CAFE_HERO_URL') ||
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788155757/cafe-luna-hero-wallet_dqnc9p.png',
+    extraLink: env('NEXT_PUBLIC_CAFE_LINK_URL'),
+    extraLinkLabel: env('NEXT_PUBLIC_CAFE_LINK_LABEL') || 'Más info',
   },
   barberia: {
     nombre: 'Barbería El Patrón',
@@ -110,6 +121,9 @@ const TENANTS = {
     direccion: 'Av. Insurgentes Sur 480, Roma Sur, CDMX (demo)',
     horario: 'Lun a sáb · 10:00 am a 8:00 pm',
     latlng: '',
+    hero: env('NEXT_PUBLIC_BARBERIA_HERO_URL'),
+    extraLink: env('NEXT_PUBLIC_BARBERIA_LINK_URL'),
+    extraLinkLabel: env('NEXT_PUBLIC_BARBERIA_LINK_LABEL') || 'Más info',
   },
   abarrotes: {
     nombre: 'Abarrotes La Providencia',
@@ -122,6 +136,9 @@ const TENANTS = {
     direccion: 'Calle Morelos 15, Col. Providencia, CDMX (demo)',
     horario: 'Todos los días · 7:00 am a 10:00 pm',
     latlng: '',
+    hero: env('NEXT_PUBLIC_ABARROTES_HERO_URL'),
+    extraLink: env('NEXT_PUBLIC_ABARROTES_LINK_URL'),
+    extraLinkLabel: env('NEXT_PUBLIC_ABARROTES_LINK_LABEL') || 'Más info',
   },
 };
 
@@ -152,8 +169,6 @@ function buildPatch(cfg) {
     reviewStatus: 'UNDER_REVIEW',
     accountNameLabel: 'Cliente',
     accountIdLabel: 'Teléfono',
-    // Sin heroImage a propósito: la banda debajo del QR se quitó en todas las
-    // clases porque el pase se ve más limpio con solo el logo y el código.
     wideProgramLogo: image(banner(cfg.logo, 660, 220, cfg.color), `Logo ${cfg.nombre}`),
     textModulesData: [
       { header: 'Cómo acumular', body: cfg.comoAcumular },
@@ -164,6 +179,8 @@ function buildPatch(cfg) {
     ],
   };
 
+  if (cfg.hero) patch.heroImage = image(cfg.hero, `${cfg.nombre} — bienvenida`);
+
   const uris = [];
   if (cfg.wa) {
     uris.push({
@@ -173,6 +190,13 @@ function buildPatch(cfg) {
     });
   }
   if (cfg.maps) uris.push({ uri: cfg.maps, description: 'Cómo llegar', id: 'maps' });
+  if (cfg.extraLink) {
+    uris.push({
+      uri: cfg.extraLink,
+      description: cfg.extraLinkLabel || 'Más info',
+      id: 'extra',
+    });
+  }
   if (uris.length > 0) patch.linksModuleData = { uris };
 
   // labelValueRows usa label/value (header/body es solo de textModulesData).
@@ -238,10 +262,12 @@ async function updateOne(token, key) {
     verify.ok &&
     json.id === classId &&
     Boolean(json.wideProgramLogo) &&
+    (!patch.heroImage || Boolean(json.heroImage)) &&
     (!patch.linksModuleData || Boolean(json.linksModuleData)) &&
     (!patch.infoModuleData || Boolean(json.infoModuleData));
 
   console.log('GET verificación:', verify.status);
+  console.log('heroImage:', Boolean(json.heroImage), json.heroImage?.sourceUri?.uri ?? '');
   console.log('wideLogo:', Boolean(json.wideProgramLogo));
   console.log('links:', Boolean(json.linksModuleData), '· info:', Boolean(json.infoModuleData));
   if (!ok) console.log(JSON.stringify(json, null, 2));

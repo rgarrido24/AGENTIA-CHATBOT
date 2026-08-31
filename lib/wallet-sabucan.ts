@@ -4,6 +4,8 @@ export {
   POINTS_RATE,
   calcularPuntos,
 } from '@/lib/wallet-sabucan-points';
+import { TENANTS, type TenantConfig } from '@/lib/wallet-tenant';
+import { buildLoyaltyObjectTextModules } from '@/lib/wallet-pass-modules';
 
 export const SABUCAN_WALLET_CLASS_SUFFIX = 'sabucan_lealtad';
 
@@ -74,12 +76,22 @@ async function getWalletAccessToken(): Promise<string | null> {
 export async function actualizarPaseWallet(
   objectId: string,
   puntosNuevos: number,
+  tenant?: TenantConfig,
 ): Promise<boolean> {
   const id = String(objectId ?? '').trim();
   if (!id) return false;
 
   const balance = Math.max(0, Number(puntosNuevos) || 0);
   const balanceStr = (Math.round(balance * 10) / 10).toFixed(1);
+
+  const patch: Record<string, unknown> = {
+    loyaltyPoints: {
+      balance: { string: balanceStr },
+    },
+  };
+  if (tenant) {
+    patch.textModulesData = buildLoyaltyObjectTextModules(tenant, balance);
+  }
 
   try {
     const accessToken = await getWalletAccessToken();
@@ -92,11 +104,7 @@ export async function actualizarPaseWallet(
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        loyaltyPoints: {
-          balance: { string: balanceStr },
-        },
-      }),
+      body: JSON.stringify(patch),
     });
 
     if (!res.ok) {
@@ -124,10 +132,11 @@ export async function actualizarPaseWallet(
 export async function syncWalletPuntosByObjectId(
   objectId: string,
   puntosNuevos: number,
+  tenant?: TenantConfig,
 ): Promise<void> {
   try {
     if (!objectId) return;
-    await actualizarPaseWallet(objectId, puntosNuevos);
+    await actualizarPaseWallet(objectId, puntosNuevos, tenant);
   } catch (e) {
     console.warn(
       '[wallet] syncWalletPuntosByObjectId:',
@@ -145,7 +154,7 @@ export async function syncSabucanWalletPuntos(
     const issuerId = getWalletIssuerId();
     if (!issuerId || !clienteId) return;
     const objectId = sabucanObjectId(issuerId, clienteId);
-    await actualizarPaseWallet(objectId, puntosNuevos);
+    await actualizarPaseWallet(objectId, puntosNuevos, TENANTS.sabucan);
   } catch (e) {
     console.warn(
       '[wallet-sabucan] syncSabucanWalletPuntos:',

@@ -1,0 +1,3 @@
+# Banners de Google Wallet (1032×336, sin padding blanco).
+# Nombre: {tenant}.png  →  cafe.png, barberia.png, sabucan.png, carnitas_granada.png, abarrotes.png
+# Luego: node scripts/set-hero-image.js cafe https://agentia.software/images/wallet-hero/cafe.png
