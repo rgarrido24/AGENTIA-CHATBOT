@@ -1,3 +1,4 @@
+import { isIzziClient } from '../../lib/izzi-panel';
 import { generateGeminiReply } from '../lib/gemini';
 import { getMongoDb } from '../../lib/mongodb';
 import {
@@ -491,7 +492,7 @@ export async function handleChat(params: {
       ])
         .then(() => {
           // Mover lead a Cierres en el pipeline al confirmar documentos.
-          if (clientId === 'izzi' && leadId) {
+          if (isIzziClient(clientId) && leadId) {
             updateLeadStatus(leadId, 'cierres', { clientId }).catch(() => {});
           }
         })
@@ -501,7 +502,7 @@ export async function handleChat(params: {
   }
 
   // Flujo recolección: usuario envía texto (correo/teléfono/paquete) para completar expediente
-  if (leadId && clientId === 'izzi' && userMessage && !mediaBase64) {
+  if (leadId && isIzziClient(clientId) && userMessage && !mediaBase64) {
     const db = await getMongoDb();
     const pending = await db.collection('document_pending_confirmations').findOne({ leadId });
     const raw = pending?.extractedData as Record<string, string> | undefined;
@@ -557,7 +558,7 @@ export async function handleChat(params: {
 
   // Flujo OCR: imagen recibida (agregación de múltiples fotos: frente/reverso INE)
   // RESTRICCIÓN: Con imagen + izzi, NUNCA pasar al LLM; solo procesamiento programático.
-  if (mediaBase64 && clientId === 'izzi') {
+  if (mediaBase64 && isIzziClient(clientId)) {
     if (!leadId) {
       return { status: 200, json: { clientId, reply: RECOLLECTION_INCOMPLETE_REPLY } };
     }
@@ -705,7 +706,7 @@ export async function handleChat(params: {
     }
 
     // Para izzi, inyectar la base de conocimiento estructurada (precios, promociones, reglas).
-    if (clientId === 'izzi' && knowledgeBaseIzzi) {
+    if (isIzziClient(clientId) && knowledgeBaseIzzi) {
       try {
         const kbJson = JSON.stringify(knowledgeBaseIzzi, null, 2);
         const fallback =
@@ -727,7 +728,7 @@ export async function handleChat(params: {
 
     const existingLead = leadId ? await getLeadById(leadId) : null;
 
-    if (clientId === 'izzi' && leadId) {
+    if (isIzziClient(clientId) && leadId) {
       const db = await getMongoDb();
       const pending = await db.collection('document_pending_confirmations').findOne({ leadId });
       const expRaw = pending?.extractedData as Record<string, string> | undefined;
@@ -766,7 +767,7 @@ export async function handleChat(params: {
     if (cpFromConversation) {
       console.log(`🔍 [chat-handler] CP extraído del mensaje: "${cpFromConversation}"`);
     }
-    if (cpFromConversation && clientId === 'izzi') {
+    if (cpFromConversation && isIzziClient(clientId)) {
       const coverageResult = await lookupCoverageByCP(clientId, cpFromConversation);
       console.log(
         `✅ [chat-handler] Resultado para ${cpFromConversation}: ${coverageResult.found ? (coverageResult as { tipo: string }).tipo : 'no encontrado'}`
@@ -911,7 +912,7 @@ El usuario acaba de enviar una imagen o documento. DEBES:
             assignedTo: existingLead?.assignedTo,
           })
         : Promise.resolve(),
-      leadId && clientId === 'izzi' && containsGoogleMapsLink(userMessage)
+      leadId && isIzziClient(clientId) && containsGoogleMapsLink(userMessage)
         ? createAlertForLocationVerification({
             leadId,
             clientId,
@@ -920,7 +921,7 @@ El usuario acaba de enviar una imagen o documento. DEBES:
             platform,
           })
         : Promise.resolve(),
-      leadId && clientId === 'izzi' && looksLikeSaleClosed(userMessage)
+      leadId && isIzziClient(clientId) && looksLikeSaleClosed(userMessage)
         ? createAlertForSaleClosed({
             leadId,
             clientId,
@@ -977,7 +978,7 @@ El usuario acaba de enviar una imagen o documento. DEBES:
       clientId,
       reply: finalReply,
     };
-    if (clientId === 'izzi' && isChannelsIntent(userMessage)) {
+    if (isIzziClient(clientId) && isChannelsIntent(userMessage)) {
       responseJson.mediaUrl = CHANNELS_MEDIA_URL;
       console.log('[chat-handler] Intención canales detectada, inyectando mediaUrl');
     }

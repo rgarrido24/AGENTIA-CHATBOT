@@ -1,4 +1,5 @@
 import { getMongoDb } from "../../lib/mongodb";
+import { isIzziClient } from "../../lib/izzi-panel";
 
 export type BusinessConfig = {
   clientId: string;
@@ -177,7 +178,7 @@ export function buildSystemInstruction(params: {
     ``,
   ].join("\n");
 
-  const izziFlow = clientId === 'izzi' ? [
+  const izziFlow = isIzziClient(clientId) ? [
     ``,
     `## IZZI - Ventas y cobertura`,
     ``,

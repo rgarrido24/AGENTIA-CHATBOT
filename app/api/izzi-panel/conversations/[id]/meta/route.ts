@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isIzziPanelAuthenticated } from '@/lib/izzi-panel-auth';
+import { getIzziPanelClientId } from '@/lib/izzi-panel-auth';
 import { updateIzziConversationMeta } from '@/lib/izzi-conversations';
 import { isIzziTipo, type IzziConversationTipo } from '@/lib/izzi-panel';
 import { panelConversationPublicId } from '@/lib/panel-conversations';
@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: NextRequest, ctx: RouteCtx) {
-  if (!isIzziPanelAuthenticated(req)) {
+  const clientId = getIzziPanelClientId(req);
+  if (!clientId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
@@ -25,7 +26,7 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
     return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
   }
 
-  const conv = await updateIzziConversationMeta(id, patch);
+  const conv = await updateIzziConversationMeta(clientId, id, patch);
   if (!conv) {
     return NextResponse.json({ error: 'Conversación no encontrada' }, { status: 404 });
   }

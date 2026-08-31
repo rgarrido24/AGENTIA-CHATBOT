@@ -1,4 +1,5 @@
 import { getMongoDb } from '../../lib/mongodb';
+import { isIzziClient } from '../../lib/izzi-panel';
 
 const isCoberturaFile = (filename: string, content?: string) => {
   if (/cobertura|coverage|d_codigo|codigo|postal|^cp\.|_cp\.|codigos/i.test(filename))
@@ -87,9 +88,11 @@ export async function lookupCoverageByCP(
   }
 
   const db = await getMongoDb();
+  const ids =
+    isIzziClient(normalized) && normalized !== 'izzi' ? [normalized, 'izzi'] : [normalized];
   const docs = await db
     .collection<{ clientId: string; filename: string; content: string }>('knowledge_docs')
-    .find({ clientId: normalized })
+    .find({ clientId: { $in: ids } })
     .toArray();
 
   const coverageDocs = docs

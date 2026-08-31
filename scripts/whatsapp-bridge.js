@@ -33,6 +33,7 @@ function effectiveAlertResellerId(a) {
 function isExternalResellerAlert(a) {
   const id = effectiveAlertResellerId(a);
   if (!id || id === 'unknown') return false;
+  if (id === 'izzi' || id.startsWith('izzi-')) return false;
   return !INTERNAL_ALERT_CLIENT_IDS.has(id);
 }
 

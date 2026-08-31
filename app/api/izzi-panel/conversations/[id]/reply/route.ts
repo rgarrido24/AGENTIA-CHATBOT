@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isIzziPanelAuthenticated } from '@/lib/izzi-panel-auth';
+import { getIzziPanelClientId } from '@/lib/izzi-panel-auth';
 import {
   appendIzziMessages,
   getIzziConversationById,
@@ -14,7 +14,8 @@ export const dynamic = 'force-dynamic';
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(req: NextRequest, ctx: RouteCtx) {
-  if (!isIzziPanelAuthenticated(req)) {
+  const clientId = getIzziPanelClientId(req);
+  if (!clientId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     return NextResponse.json({ error: parsed.error }, { status: parsed.status });
   }
 
-  const conv = await getIzziConversationById(id);
+  const conv = await getIzziConversationById(clientId, id);
   if (!conv) {
     return NextResponse.json({ error: 'Conversación no encontrada' }, { status: 404 });
   }
@@ -36,17 +37,17 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     conv,
     parsed,
     {
-      sendText: sendIzziWhatsAppText,
-      sendMedia: sendIzziWhatsAppMedia,
+      sendText: (to, text) => sendIzziWhatsAppText(to, text, clientId),
+      sendMedia: (to, params) => sendIzziWhatsAppMedia(to, params, clientId),
     },
-    `panel-izzi/${conv.conversationId}`
+    `panel-izzi/${clientId}/${conv.conversationId}`
   );
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error, status: result.status }, { status: result.status });
   }
 
-  await appendIzziMessages({
+  await appendIzziMessages(clientId, {
     senderId: conv.senderId,
     senderName: conv.senderName,
     pageId: conv.pageId,
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     entries: [result.entry],
   });
 
-  const updated = await getIzziConversationById(id);
+  const updated = await getIzziConversationById(clientId, id);
   return NextResponse.json({
     ok: true,
     conversation: updated

@@ -7,6 +7,7 @@ import {
   izziPanelToken,
   matchIzziPanelCredentials,
 } from '@/lib/izzi-panel-auth';
+import { izziTenantClientIdFromUsername } from '@/lib/izzi-panel';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,11 @@ export async function POST(request: NextRequest) {
     maxAge: IZZI_PANEL_COOKIE_MAX_AGE,
     path: '/',
   });
-  return NextResponse.json({ ok: true, expiresInDays: 30 });
+  return NextResponse.json({
+    ok: true,
+    expiresInDays: 30,
+    clientId: izziTenantClientIdFromUsername(username),
+  });
 }
 
 export async function DELETE() {

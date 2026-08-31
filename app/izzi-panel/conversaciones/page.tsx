@@ -105,6 +105,7 @@ export default function IzziConversacionesPage() {
   const [exportTo, setExportTo] = useState('');
   const [exportTipo, setExportTipo] = useState<'all' | IzziConversationTipo>('all');
   const [exportEtapa, setExportEtapa] = useState('all');
+  const [tenantId, setTenantId] = useState('');
 
   useEffect(() => {
     const saved = loadIzziConversacionesSession();
@@ -129,6 +130,9 @@ export default function IzziConversacionesPage() {
         return;
       }
       const items = (data.conversations ?? []) as ConversationSummary[];
+      if (typeof data.clientId === 'string' && data.clientId.trim()) {
+        setTenantId(data.clientId.trim());
+      }
       setList(items);
       setSelectedId((prev) => {
         if (prev && !items.some((c) => c.id === prev)) {
@@ -414,6 +418,12 @@ export default function IzziConversacionesPage() {
               <MessageSquare className="h-5 w-5 text-pink-400" />
               Conversaciones WhatsApp
             </h1>
+            {tenantId ? (
+              <p className="text-xs text-pink-200/50 mt-1">
+                Cuenta <span className="text-pink-200/80 font-medium">{tenantId}</span>
+                {tenantId === 'izzi' ? ' · número original' : ''}
+              </p>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <button

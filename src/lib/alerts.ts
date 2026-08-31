@@ -1,4 +1,5 @@
 import { getMongoDb } from '../../lib/mongodb';
+import { isIzziClient } from '../../lib/izzi-panel';
 
 /** Texto al final de alertas WhatsApp a resellers (Luciano, etc.) para confirmar lectura. */
 export const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recepción';
@@ -61,6 +62,7 @@ export function isExternalResellerAlert(alert: {
 }): boolean {
   const id = effectiveAlertResellerId(alert);
   if (!id || id === 'unknown') return false;
+  if (isIzziClient(id)) return false;
   return !INTERNAL_ALERT_CLIENT_IDS.has(id);
 }
 

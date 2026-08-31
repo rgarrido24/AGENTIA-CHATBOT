@@ -1,6 +1,29 @@
 export const IZZI_CLIENT_ID = 'izzi';
 export const IZZI_PAGE_ID = 'whatsapp-bridge';
 
+/** `izzi` (original) o clones `izzi-2`, `izzi-norte`, … Misma info del bot, chats y QR separados. */
+export function isIzziClient(clientId: string | null | undefined): boolean {
+  const c = String(clientId || '').trim().toLowerCase();
+  if (!c) return false;
+  if (c === IZZI_CLIENT_ID || c.startsWith('izzi-')) return true;
+  const extra = String(process.env.IZZI_CLIENT_IDS || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return extra.includes(c);
+}
+
+/** Usuario del panel → clientId de WhatsApp. `izzi` es el original; el resto no mezcla esos chats. */
+export function izziTenantClientIdFromUsername(username: string): string {
+  const u = username.trim().toLowerCase();
+  if (!u) return IZZI_CLIENT_ID;
+  const adminUser = (process.env.ADMIN_USER || 'admin').trim().toLowerCase();
+  if (u === adminUser) return IZZI_CLIENT_ID;
+  if (isIzziClient(u)) return u;
+  const slug = u.replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+  return slug ? `izzi-${slug}` : IZZI_CLIENT_ID;
+}
+
 export type IzziConversationTipo = 'venta' | 'reclutamiento';
 
 export type IzziVentaEtapa =

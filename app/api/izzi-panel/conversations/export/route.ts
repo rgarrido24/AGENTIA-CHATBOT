@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-import { isIzziPanelAuthenticated } from '@/lib/izzi-panel-auth';
+import { getIzziPanelClientId } from '@/lib/izzi-panel-auth';
 import { listIzziConversationsForExport } from '@/lib/izzi-conversations';
 import {
   etapaLabel,
@@ -50,7 +50,8 @@ function fmtDateTime(d: Date): string {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isIzziPanelAuthenticated(req)) {
+  const clientId = getIzziPanelClientId(req);
+  if (!clientId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
   const tipo: IzziConversationTipo | 'all' = isIzziTipo(tipoRaw) ? tipoRaw : 'all';
   const etapa = typeof body?.etapa === 'string' ? body.etapa.trim() : '';
 
-  const rows = await listIzziConversationsForExport({
+  const rows = await listIzziConversationsForExport(clientId, {
     from: parseDay(body?.from, false),
     to: parseDay(body?.to, true),
     tipo,
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     status: 200,
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="izzi-conversaciones-${stamp}.xlsx"`,
+      'Content-Disposition': `attachment; filename="${clientId}-conversaciones-${stamp}.xlsx"`,
     },
   });
 }

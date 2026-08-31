@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isIzziPanelAuthenticated } from '@/lib/izzi-panel-auth';
+import { getIzziPanelClientId } from '@/lib/izzi-panel-auth';
 import {
   getIzziConversationById,
   setIzziConversationPaused,
 } from '@/lib/izzi-conversations';
-import { IZZI_CLIENT_ID } from '@/lib/izzi-panel';
 import { getMongoDb } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
@@ -12,12 +11,13 @@ export const dynamic = 'force-dynamic';
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(req: NextRequest, ctx: RouteCtx) {
-  if (!isIzziPanelAuthenticated(req)) {
+  const clientId = getIzziPanelClientId(req);
+  if (!clientId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
   const { id } = await ctx.params;
-  const conv = await getIzziConversationById(id);
+  const conv = await getIzziConversationById(clientId, id);
   if (!conv) {
     return NextResponse.json({ error: 'Conversación no encontrada' }, { status: 404 });
   }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
       $set: { bot_status: 'paused', updatedAt: now },
       $setOnInsert: {
         leadId: conv.conversationId,
-        clientId: IZZI_CLIENT_ID,
+        clientId,
         senderId: conv.senderId,
         pageId: conv.pageId,
         platform: conv.platform,
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     },
     { upsert: true }
   );
-  await setIzziConversationPaused(id, true);
+  await setIzziConversationPaused(clientId, id, true);
 
   return NextResponse.json({ ok: true, botPaused: true });
 }

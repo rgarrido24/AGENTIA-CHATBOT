@@ -1,4 +1,5 @@
 import { getMongoDb } from "../../lib/mongodb";
+import { isIzziClient } from "../../lib/izzi-panel";
 
 export const PIPELINE_STATUSES = [
   'nuevos',
@@ -173,7 +174,7 @@ export async function upsertLead(params: {
         .catch((e) => console.error('[leads] notifyPortalNewLeadAfterInsert:', e));
     }
 
-    if (params.clientId === 'izzi' && prevMessageCount === 0) {
+    if (isIzziClient(params.clientId) && prevMessageCount === 0) {
       const botActive =
         !existing ||
         (existing.bot_status !== 'paused' && !(existing.assignedTo && String(existing.assignedTo).trim()));
@@ -183,6 +184,7 @@ export async function upsertLead(params: {
             senderName: params.senderName,
             senderId: params.senderId,
             botActive,
+            clientId: params.clientId,
           })
         )
         .catch((e) => console.error('[leads] notifyIzziNewLeadWhatsApp:', e));

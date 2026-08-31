@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
+import { isIzziClient } from '@/lib/izzi-panel';
 
 type Doc = { _id: string; filename: string; uploadedAt?: string };
 
@@ -91,7 +92,7 @@ export default function KnowledgePage() {
           <p className="text-slate-400 mb-8 subtitle-tracking">
             Sube archivos .txt, .csv o .pdf por cliente. La IA usará este contenido como contexto.
           </p>
-          {clientId === 'izzi' && (
+          {isIzziClient(clientId) && (
             <div className="mb-6 p-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-sm text-[#CBD5E1]">
               <strong>Coberturas (izzi):</strong> Sube tu archivo de Excel exportado como CSV (columnas <code>d_codigo</code> o <code>CP</code>, y <code>tipo de plaza</code> para ON-NET/OFF-NET). También PDFs con precios, paquetes y promociones.
             </div>

@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb';
 import { getMongoDb } from './mongodb';
 import { makeLeadIdFromParams } from '@/src/lib/leads';
+import { isIzziClient } from '@/lib/izzi-panel';
 
 /** Canales soportados en el panel (extensible a Meta DMs). */
 export type PanelChannel = 'whatsapp' | 'facebook' | 'instagram';
@@ -239,7 +240,7 @@ async function upsertConversationBase(params: {
         messages: [],
         botPaused: false,
         createdAt: now,
-        ...(clientId === 'izzi'
+        ...(isIzziClient(clientId)
           ? { tipo: 'venta', etapa: 'nuevo_contacto', notas: '' }
           : {}),
       },
@@ -426,5 +427,5 @@ export async function updatePanelMessageDeliveryStatus(params: {
 /** Clientes que persisten en colección `conversations` para el panel. */
 export function usesPanelConversations(clientId: string): boolean {
   const c = clientId.trim().toLowerCase();
-  return c === 'cwf' || c === 'agentia-ventas' || c === 'izzi';
+  return c === 'cwf' || c === 'agentia-ventas' || isIzziClient(c);
 }

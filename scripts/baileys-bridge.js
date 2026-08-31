@@ -44,6 +44,11 @@ function isEnabled(envKey, defaultValue = false) {
   return defaultValue;
 }
 
+function isIzziFamily(clientId) {
+  const c = String(clientId || '').trim().toLowerCase();
+  return c === 'izzi' || c.startsWith('izzi-');
+}
+
 const API_URL = (getEnv('AGENTIA_CHATBOT_API_URL', '') || 'http://localhost:3010').replace(/\/$/, '');
 const CLIENT_IDS = String(getEnv('AGENTIA_WHATSAPP_CLIENT_IDS', '') || '')
   .split(',')
@@ -962,7 +967,7 @@ async function startClient(clientId, baileys) {
         const senderId = remoteJid;
         const senderName = msg.pushName || undefined;
 
-        if (id === 'izzi' && !hasMedia && trimmedBody) {
+        if (isIzziFamily(id) && !hasMedia && trimmedBody) {
           const shortInbound = [...trimmedBody].length < 5;
           if (shortInbound && (await isIzziInboundFromResellerLead(senderId))) {
             await sendText(sock, senderId, '✅ Recibido. ¡Mucha suerte con tu lead!');

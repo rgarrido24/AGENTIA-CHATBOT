@@ -33,8 +33,8 @@ type RawDoc = RawConversation & {
   recentMessages?: unknown[];
 };
 
-function asIzziConversation(doc: RawDoc): IzziConversation {
-  const base = normalizePanelConversation(doc, IZZI_CLIENT_ID);
+function asIzziConversation(doc: RawDoc, clientId: string): IzziConversation {
+  const base = normalizePanelConversation(doc, clientId);
   const tipo = normalizeIzziTipo(doc.tipo);
   return {
     ...base,
@@ -59,43 +59,50 @@ export function toIzziConversation(conv: PanelConversation, extra?: Partial<Pick
   };
 }
 
-export async function listIzziConversations(limit = 200): Promise<IzziConversation[]> {
-  await hydrateIzziConversationsFromExistingData().catch(() => {});
+export async function listIzziConversations(clientId: string, limit = 200): Promise<IzziConversation[]> {
+  if (clientId === IZZI_CLIENT_ID) {
+    await hydrateIzziConversationsFromExistingData().catch(() => {});
+  }
   const coll = await conversationsColl();
   const docs = await coll
-    .find({ clientId: IZZI_CLIENT_ID })
+    .find({ clientId })
     .sort({ lastMessageAt: -1, updatedAt: -1 })
     .limit(limit)
     .toArray();
-  return docs.map((d) => asIzziConversation(d as RawDoc));
+  return docs.map((d) => asIzziConversation(d as RawDoc, clientId));
 }
 
-export async function getIzziConversationById(id: string): Promise<IzziConversation | null> {
+export async function getIzziConversationById(clientId: string, id: string): Promise<IzziConversation | null> {
   const coll = await conversationsColl();
   let doc: RawDoc | null = null;
   if (ObjectId.isValid(id)) {
-    doc = (await coll.findOne({ _id: new ObjectId(id), clientId: IZZI_CLIENT_ID })) as RawDoc | null;
+    doc = (await coll.findOne({ _id: new ObjectId(id), clientId })) as RawDoc | null;
   }
   if (!doc) {
     doc = (await coll.findOne({
-      clientId: IZZI_CLIENT_ID,
+      clientId,
       $or: [{ conversationId: id }, { senderId: id }],
     })) as RawDoc | null;
   }
-  if (doc) return asIzziConversation(doc);
+  if (doc) return asIzziConversation(doc, clientId);
 
-  const fallback = await getPanelConversationById(IZZI_CLIENT_ID, id);
+  const fallback = await getPanelConversationById(clientId, id);
   return fallback ? toIzziConversation(fallback) : null;
 }
 
 export async function appendIzziMessages(
+  clientId: string,
   params: Omit<Parameters<typeof appendPanelMessages>[0], 'clientId'>
 ): Promise<void> {
-  await appendPanelMessages({ ...params, clientId: IZZI_CLIENT_ID });
+  await appendPanelMessages({ ...params, clientId });
 }
 
-export async function setIzziConversationPaused(conversationId: string, paused: boolean): Promise<boolean> {
-  return setPanelConversationPaused(IZZI_CLIENT_ID, conversationId, paused);
+export async function setIzziConversationPaused(
+  clientId: string,
+  conversationId: string,
+  paused: boolean
+): Promise<boolean> {
+  return setPanelConversationPaused(clientId, conversationId, paused);
 }
 
 export type IzziConversationMetaPatch = {
@@ -105,10 +112,11 @@ export type IzziConversationMetaPatch = {
 };
 
 export async function updateIzziConversationMeta(
+  clientId: string,
   id: string,
   patch: IzziConversationMetaPatch
 ): Promise<IzziConversation | null> {
-  const conv = await getIzziConversationById(id);
+  const conv = await getIzziConversationById(clientId, id);
   if (!conv) return null;
 
   const tipo = patch.tipo ? normalizeIzziTipo(patch.tipo) : conv.tipo;
@@ -117,7 +125,7 @@ export async function updateIzziConversationMeta(
   const notas = typeof patch.notas === 'string' ? patch.notas : conv.notas;
 
   const coll = await conversationsColl();
-  const filter: Record<string, unknown> = { clientId: IZZI_CLIENT_ID };
+  const filter: Record<string, unknown> = { clientId };
   if (conv._id) filter._id = conv._id;
   else filter.conversationId = conv.conversationId;
 
@@ -145,10 +153,15 @@ export type IzziExportFilters = {
   etapa?: string;
 };
 
-export async function listIzziConversationsForExport(filters: IzziExportFilters): Promise<IzziConversation[]> {
-  await hydrateIzziConversationsFromExistingData().catch(() => {});
+export async function listIzziConversationsForExport(
+  clientId: string,
+  filters: IzziExportFilters
+): Promise<IzziConversation[]> {
+  if (clientId === IZZI_CLIENT_ID) {
+    await hydrateIzziConversationsFromExistingData().catch(() => {});
+  }
   const coll = await conversationsColl();
-  const query: Record<string, unknown> = { clientId: IZZI_CLIENT_ID };
+  const query: Record<string, unknown> = { clientId };
 
   if (filters.tipo && filters.tipo !== 'all') {
     query.tipo = filters.tipo;
@@ -168,7 +181,7 @@ export async function listIzziConversationsForExport(filters: IzziExportFilters)
   }
 
   const docs = await coll.find(query).sort({ createdAt: -1 }).limit(5000).toArray();
-  let rows = docs.map((d) => asIzziConversation(d as RawDoc));
+  let rows = docs.map((d) => asIzziConversation(d as RawDoc, clientId));
 
   if (filters.from || filters.to) {
     rows = rows.filter((c) => {

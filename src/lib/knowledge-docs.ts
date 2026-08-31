@@ -1,4 +1,5 @@
 import { getMongoDb } from '../../lib/mongodb';
+import { isIzziClient } from '../../lib/izzi-panel';
 
 export type KnowledgeDoc = {
   _id?: unknown;
@@ -12,10 +13,11 @@ export async function getKnowledgeDocsForClient(clientId: string): Promise<strin
   const normalized = clientId.trim().toLowerCase();
   if (!normalized) return '';
 
+  const ids = isIzziClient(normalized) && normalized !== 'izzi' ? [normalized, 'izzi'] : [normalized];
   const db = await getMongoDb();
   const docs = await db
     .collection<KnowledgeDoc>('knowledge_docs')
-    .find({ clientId: normalized })
+    .find({ clientId: { $in: ids } })
     .sort({ uploadedAt: -1 })
     .toArray();
 

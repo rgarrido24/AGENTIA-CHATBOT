@@ -47,7 +47,10 @@ function IzziLoginForm() {
     >
       <p className="text-xs uppercase tracking-widest text-pink-400/80 font-semibold mb-1">izzi</p>
       <h1 className="text-xl font-bold text-white/95 mb-2">Panel de conversaciones</h1>
-      <p className="text-sm text-pink-200/60 mb-6">WhatsApp · ventas y reclutamiento · sesión 30 días</p>
+      <p className="text-sm text-pink-200/60 mb-6">
+        Cada cuenta entra con su usuario (<code className="text-pink-200/80">izzi</code>,{' '}
+        <code className="text-pink-200/80">izzi-2</code>…). Chats y QR no se mezclan.
+      </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="izzi-user" className="mb-1.5 block text-xs text-pink-100/70">

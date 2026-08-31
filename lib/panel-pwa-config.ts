@@ -1,3 +1,5 @@
+import { isIzziClient } from '@/lib/izzi-panel';
+
 export type PanelPushId = 'cwf' | 'agentia' | 'izzi';
 
 export type PanelPushConfig = {
@@ -64,6 +66,6 @@ export function clientIdToPanel(clientId: string): PanelPushId | null {
   const c = clientId.trim().toLowerCase();
   if (c === 'cwf') return 'cwf';
   if (c === 'agentia-ventas') return 'agentia';
-  if (c === 'izzi') return 'izzi';
+  if (isIzziClient(c)) return 'izzi';
   return null;
 }

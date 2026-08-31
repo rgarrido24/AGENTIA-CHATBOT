@@ -12,18 +12,20 @@ function digits(to: string): string {
  */
 export async function sendIzziWhatsAppText(
   to: string,
-  bodyText: string
+  bodyText: string,
+  clientId: string = IZZI_CLIENT_ID
 ): Promise<WhatsAppCloudSendResult> {
   const phone = digits(to);
   if (!phone) return { ok: false, status: 400, error: 'Número de destino inválido' };
   const text = bodyText.trim();
   if (!text) return { ok: false, status: 400, error: 'Mensaje vacío' };
+  const cid = clientId.trim().toLowerCase() || IZZI_CLIENT_ID;
 
   const db = await getMongoDb();
   await db.collection('outbound_messages').insertOne({
-    leadId: `${phone}_wa_${IZZI_CLIENT_ID}`,
+    leadId: `${phone}_wa_${cid}`,
     senderId: phone,
-    clientId: IZZI_CLIENT_ID,
+    clientId: cid,
     message: text,
     source: 'izzi-panel',
     createdAt: new Date(),
@@ -33,7 +35,8 @@ export async function sendIzziWhatsAppText(
 
 export async function sendIzziWhatsAppMedia(
   to: string,
-  params: { mediaType: 'image' | 'document'; link: string; caption?: string; fileName?: string }
+  params: { mediaType: 'image' | 'document'; link: string; caption?: string; fileName?: string },
+  clientId: string = IZZI_CLIENT_ID
 ): Promise<WhatsAppCloudSendResult> {
   const phone = digits(to);
   if (!phone) return { ok: false, status: 400, error: 'Número de destino inválido' };
@@ -41,11 +44,12 @@ export async function sendIzziWhatsAppMedia(
   if (!link) return { ok: false, status: 400, error: 'URL de media requerida' };
 
   const caption = params.caption?.trim() || '';
+  const cid = clientId.trim().toLowerCase() || IZZI_CLIENT_ID;
   const db = await getMongoDb();
   await db.collection('outbound_messages').insertOne({
-    leadId: `${phone}_wa_${IZZI_CLIENT_ID}`,
+    leadId: `${phone}_wa_${cid}`,
     senderId: phone,
-    clientId: IZZI_CLIENT_ID,
+    clientId: cid,
     message: caption,
     mediaUrl: link,
     mediaType: params.mediaType,

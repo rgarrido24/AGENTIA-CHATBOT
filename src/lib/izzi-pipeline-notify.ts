@@ -8,6 +8,7 @@ export async function notifyIzziNewLeadWhatsApp(params: {
   senderName?: string;
   senderId?: string;
   botActive: boolean;
+  clientId?: string;
 }): Promise<void> {
   const raw = (process.env.IZZI_PIPELINE_ALERT_WHATSAPP || '529844927769').replace(/\D/g, '');
   if (raw.length < 10) {
@@ -26,8 +27,10 @@ export async function notifyIzziNewLeadWhatsApp(params: {
     hour12: false,
   });
   const botLine = params.botActive ? 'Estado bot: Activo ✅' : 'Estado bot: Pausado ⏸';
+  const tenant = (params.clientId || 'izzi').trim().toLowerCase() || 'izzi';
   const message =
     `🔔 NUEVO LEAD IZZI\n` +
+    (tenant !== 'izzi' ? `CUENTA: ${tenant}\n` : '') +
     `NOMBRE: ${nombre}\n` +
     `WHATSAPP: ${wa}\n` +
     `HORA: ${hora}\n` +
@@ -35,7 +38,7 @@ export async function notifyIzziNewLeadWhatsApp(params: {
 
   await enqueueOutbound({
     senderId: senderJid,
-    clientId: 'izzi',
+    clientId: tenant,
     message,
     type: 'manual',
     delaySeconds: 8,

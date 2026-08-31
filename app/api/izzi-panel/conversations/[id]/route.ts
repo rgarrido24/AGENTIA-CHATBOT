@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isIzziPanelAuthenticated } from '@/lib/izzi-panel-auth';
+import { getIzziPanelClientId } from '@/lib/izzi-panel-auth';
 import { getIzziConversationById } from '@/lib/izzi-conversations';
 import { panelConversationPublicId } from '@/lib/panel-conversations';
 import { serializePanelMessages } from '@/lib/panel-message-dto';
@@ -9,12 +9,13 @@ export const dynamic = 'force-dynamic';
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function GET(req: NextRequest, ctx: RouteCtx) {
-  if (!isIzziPanelAuthenticated(req)) {
+  const clientId = getIzziPanelClientId(req);
+  if (!clientId) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
   const { id } = await ctx.params;
-  const conv = await getIzziConversationById(id);
+  const conv = await getIzziConversationById(clientId, id);
   if (!conv) {
     return NextResponse.json({ error: 'Conversación no encontrada' }, { status: 404 });
   }

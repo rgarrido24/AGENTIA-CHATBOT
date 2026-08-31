@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
+import { IZZI_CLIENT_ID, izziTenantClientIdFromUsername } from '@/lib/izzi-panel';
 
 export const IZZI_PANEL_COOKIE = 'izzi_panel_auth';
 export const IZZI_PANEL_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 días
@@ -70,6 +71,23 @@ export function isIzziPanelConfigured(): boolean {
 }
 
 /** Cookie propia del panel (30 días) o sesión admin/dashboard. */
+export function matchIzziPanelUser(req: NextRequest): IzziPanelCredentials | null {
+  const token = req.cookies.get(IZZI_PANEL_COOKIE)?.value;
+  if (!token) return null;
+  for (const c of listIzziPanelCredentials()) {
+    if (izziPanelToken(c.username, c.password) === token) return c;
+  }
+  return null;
+}
+
+/** Tenant del panel: cada usuario ve solo su WhatsApp. Admin/dashboard → izzi original. */
+export function getIzziPanelClientId(req: NextRequest): string | null {
+  if (!isIzziPanelAuthenticated(req)) return null;
+  const user = matchIzziPanelUser(req);
+  if (user) return izziTenantClientIdFromUsername(user.username);
+  return IZZI_CLIENT_ID;
+}
+
 export function isIzziPanelAuthenticated(req: NextRequest): boolean {
   if (!isIzziPanelConfigured()) return false;
   const izzi = req.cookies.get(IZZI_PANEL_COOKIE)?.value;
