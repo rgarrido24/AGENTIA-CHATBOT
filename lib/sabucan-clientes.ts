@@ -5,13 +5,16 @@ import { getTenant, tenantCashbackPct, type TenantId } from '@/lib/wallet-tenant
 
 export const SABUCAN_CLIENTES_COLLECTION = 'sabucan_clientes';
 
-export type SabucanHistorialTipo = 'compra' | 'canje';
+export type SabucanHistorialTipo = 'compra' | 'canje' | 'contacto_reactivacion';
 
 export type SabucanCompra = {
   fecha: string;
   monto: number;
   puntosGanados: number;
   tipo?: SabucanHistorialTipo;
+  /** Solo en contacto_reactivacion: qué plantilla usó el dueño. */
+  plantilla?: string;
+  nota?: string;
 };
 
 export type SabucanCliente = {
@@ -78,8 +81,9 @@ function resolveUltimaVisita(doc: SabucanClienteDoc): string | null {
   const direct = toIsoDate(doc.ultimaVisita ?? null);
   if (direct) return direct;
   const hist = Array.isArray(doc.historial) ? doc.historial : [];
-  if (hist[0]?.fecha) {
-    const fromHist = toIsoDate(hist[0].fecha);
+  const ultimaTransaccion = hist.find((h) => h.tipo !== 'contacto_reactivacion');
+  if (ultimaTransaccion?.fecha) {
+    const fromHist = toIsoDate(ultimaTransaccion.fecha);
     if (fromHist) return fromHist;
   }
   return toIsoDate(doc.updated_at ?? doc.created_at ?? null);
@@ -342,6 +346,51 @@ export async function canjearPuntosSabucan(
   puntosRaw: number,
 ): Promise<CanjearPuntosResult> {
   return canjearPuntos('sabucan', telefonoRaw, puntosRaw);
+}
+
+export type RegistrarContactoInput = {
+  telefono: string;
+  plantilla: string;
+  mensaje?: string;
+};
+
+/**
+ * Deja constancia de un contacto de reactivación por WhatsApp.
+ * No mueve puntos ni `ultimaVisita`: haber escrito al cliente no es una visita.
+ */
+export async function registrarContacto(
+  tenantId: TenantId | string,
+  input: RegistrarContactoInput,
+): Promise<SabucanCliente> {
+  const telefono = normalizeSabucanTelefono(input.telefono);
+  if (telefono.length < 10) {
+    throw new Error('Teléfono inválido (mínimo 10 dígitos)');
+  }
+  const plantilla = String(input.plantilla ?? '').trim();
+  if (!plantilla) throw new Error('Plantilla requerida');
+
+  const now = new Date().toISOString();
+  const registro: SabucanCompra = {
+    fecha: now,
+    monto: 0,
+    puntosGanados: 0,
+    tipo: 'contacto_reactivacion',
+    plantilla,
+    ...(input.mensaje ? { nota: String(input.mensaje).slice(0, 500) } : {}),
+  };
+
+  const coll = await collection(tenantId);
+  const result = await coll.findOneAndUpdate(
+    { telefono },
+    {
+      $push: { historial: { $each: [registro], $position: 0 } },
+      $set: { updated_at: now },
+    },
+    { returnDocument: 'after' },
+  );
+
+  if (!result?._id) throw new Error('Cliente no encontrado');
+  return docToCliente(result as SabucanClienteDoc & { _id: ObjectId });
 }
 
 export function diasInactividad(ultimaVisita: string | null | undefined): number {
