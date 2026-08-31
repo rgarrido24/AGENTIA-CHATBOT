@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { processBiovelaFollowups } from '@/lib/biovela-followup';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,22 +11,14 @@ function hasCronSecret(req: NextRequest): boolean {
 }
 
 /**
- * Cron horario: seguimiento automático Biovela (pregunton / interesado, 24–72h sin compra).
- * GET /api/cron/followup?secret=...
+ * Seguimiento automático Biovela — desactivado (cliente dado de baja).
+ * La ruta responde inerte por si un cron externo sigue llamándola.
  */
 export async function GET(req: NextRequest) {
   if (!hasCronSecret(req)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
-
-  try {
-    const result = await processBiovelaFollowups();
-    return NextResponse.json({ ok: true, clientId: 'biovela', ...result });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Error';
-    console.error('[cron/followup]', err);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
+  return NextResponse.json({ ok: true, disabled: true, clientId: 'biovela' });
 }
 
 export async function POST(req: NextRequest) {

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendBiovelaWeeklyReport } from '@/lib/biovela-weekly-report';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,38 +11,14 @@ function hasCronSecret(req: NextRequest): boolean {
 }
 
 /**
- * Reporte semanal Biovela — programar lunes 9:00 CDMX (15:00 UTC).
- * Cron: 0 15 * * 1
- * GET /api/cron/weekly-report?secret=...
+ * Reporte semanal Biovela — desactivado (cliente dado de baja).
+ * La ruta responde inerte por si un cron externo sigue llamándola.
  */
 export async function GET(req: NextRequest) {
   if (!hasCronSecret(req)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
-
-  try {
-    const { stats, message } = await sendBiovelaWeeklyReport();
-    return NextResponse.json({
-      ok: true,
-      clientId: 'biovela',
-      phone: process.env.BIOVELA_WEEKLY_REPORT_PHONE || '525560556287',
-      weekStart: stats.weekStart.toISOString(),
-      weekEnd: stats.weekEnd.toISOString(),
-      stats: {
-        conversations: stats.conversations,
-        ventasCerradas: stats.ventasCerradas,
-        pedidosEnviados: stats.pedidosEnviados,
-        entregasConfirmadas: stats.entregasConfirmadas,
-        avgResponseMin: stats.avgResponseMin,
-        topProducts: stats.topProducts,
-      },
-      messagePreview: message.slice(0, 200),
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Error';
-    console.error('[cron/weekly-report]', err);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
+  return NextResponse.json({ ok: true, disabled: true, clientId: 'biovela' });
 }
 
 export async function POST(req: NextRequest) {
