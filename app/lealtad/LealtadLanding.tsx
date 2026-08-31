@@ -31,9 +31,8 @@ const INK = '#14161A';
 const BRONZE = '#B8935A';
 const WA = '#25D366';
 
-/** Hero principal — sustituir cuando llegue la nueva URL de Cloudinary. */
 const IMG_WALLET =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788157349/captura-tarjeta-wallet_grbubg.jpg';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788197678/WhatsApp_Image_2026-08-31_at_11.19.45_AM_pkbm3z.jpg';
 const IMG_CAJA =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788157350/captura-caja-venta_fitq6s.jpg';
 
@@ -407,8 +406,8 @@ export function LealtadLanding() {
               <ShotFrame
                 src={IMG_WALLET}
                 alt="Tarjeta de lealtad de Café Luna en Google Wallet, con puntos, saldo y código QR"
-                width={919}
-                height={1294}
+                width={938}
+                height={1556}
                 priority
               />
             </div>
