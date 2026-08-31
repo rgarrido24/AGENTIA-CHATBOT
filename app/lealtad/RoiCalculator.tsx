@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { GlowButton } from '@/components/landing/GlowButton';
 import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
 
-const CYAN = '#00D4FF';
-const GOLD = '#FFD700';
+const BRONZE = '#B8935A';
+const INK = '#14161A';
+const WA = '#25D366';
 const PLAN = 499;
 
-const WA = agentiaWhatsAppUrl(
+const WA_ROI = agentiaWhatsAppUrl(
   'Hola Agentia, vi el simulador de /lealtad y quiero aumentar mis ventas con el sistema. ¿Me orientan?',
 );
 
@@ -40,9 +40,9 @@ export function RoiCalculator() {
   }, [clientes, ticket, recompra]);
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
+    <div className="overflow-hidden rounded-[1.75rem] bg-white ring-1 ring-[#14161A]/8">
       <div className="grid lg:grid-cols-2">
-        <div className="space-y-8 border-b border-white/10 p-6 sm:p-8 lg:border-b-0 lg:border-r">
+        <div className="space-y-8 border-b border-[#14161A]/8 p-6 sm:p-8 lg:border-b-0 lg:border-r">
           <SliderField
             label="Clientes al mes"
             value={clientes}
@@ -70,38 +70,33 @@ export function RoiCalculator() {
             display={`${recompra}%`}
             onChange={setRecompra}
           />
-          <p className="text-xs leading-relaxed text-white/40">
+          <p className="text-xs leading-relaxed text-[#14161A]/45">
             Estimación conservadora. No incluye referidos, ticket más alto por recompensas ni
             ahorro en publicidad.
           </p>
         </div>
 
-        <div className="relative flex flex-col justify-center bg-gradient-to-br from-[#00D4FF]/8 via-transparent to-[#FFD700]/6 p-6 sm:p-8">
-          <p className="font-[family-name:var(--font-space)] text-xs font-medium uppercase tracking-[0.14em] text-[#00D4FF]">
+        <div className="relative flex flex-col justify-center bg-[#F3F1EC] p-6 sm:p-8">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#B8935A]">
             Ingreso adicional estimado / mes
           </p>
           <motion.p
             key={ingresoExtra}
             initial={reduceMotion ? false : { opacity: 0.4, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-3 font-[family-name:var(--font-space)] text-4xl font-extrabold tracking-tight sm:text-5xl"
-            style={{
-              backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              color: 'transparent',
-            }}
+            className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl"
+            style={{ color: BRONZE }}
           >
             {formatMxn(ingresoExtra)}
           </motion.p>
 
-          <div className="mt-6 space-y-3 text-sm text-white/70">
+          <div className="mt-6 space-y-3 text-sm text-[#14161A]/70">
             <p>
               Si solo regresan{' '}
-              <strong className="text-white">{extraClientes} clientes más</strong> al mes con ticket
-              de {formatMxn(ticket)}…
+              <strong className="font-semibold text-[#14161A]">{extraClientes} clientes más</strong> al
+              mes con ticket de {formatMxn(ticket)}…
             </p>
-            <p className="rounded-2xl border border-[#25D366]/30 bg-[#25D366]/10 px-4 py-3 text-[#9AE6B4]">
+            <p className="rounded-2xl bg-white px-4 py-3 text-[#14161A] ring-1 ring-[#B8935A]/25">
               {sePagaSolo
                 ? `El plan de ${formatMxn(PLAN)} se paga solo ${vecesPlan >= 2 ? `casi ${Math.floor(vecesPlan)}×` : ''} — y el resto es ganancia.`
                 : `Con un poco más de recompra, el plan de ${formatMxn(PLAN)} se paga solo.`}
@@ -109,9 +104,15 @@ export function RoiCalculator() {
           </div>
 
           <div className="mt-8">
-            <GlowButton href={WA} external>
+            <a
+              href={WA_ROI}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-full px-6 py-3.5 text-sm font-semibold text-white transition-[transform] duration-150 hover:-translate-y-px active:scale-[0.97]"
+              style={{ background: WA }}
+            >
               Quiero esos ingresos extra
-            </GlowButton>
+            </a>
           </div>
         </div>
       </div>
@@ -139,8 +140,8 @@ function SliderField({
   return (
     <label className="block">
       <div className="mb-3 flex items-end justify-between gap-3">
-        <span className="text-sm text-white/55">{label}</span>
-        <span className="font-[family-name:var(--font-space)] text-lg font-bold text-white">
+        <span className="text-sm text-[#14161A]/55">{label}</span>
+        <span className="text-lg font-bold" style={{ color: INK }}>
           {display}
         </span>
       </div>
@@ -151,7 +152,8 @@ function SliderField({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[#00D4FF] [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#00D4FF] [&::-webkit-slider-thumb]:shadow-[0_0_16px_rgba(0,212,255,0.55)]"
+        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[#14161A]/10 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#B8935A]"
+        style={{ accentColor: BRONZE }}
       />
     </label>
   );
