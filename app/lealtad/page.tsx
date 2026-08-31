@@ -9,7 +9,7 @@ const schemaLealtad = {
   '@type': 'SoftwareApplication',
   name: 'Agentia Lealtad',
   description:
-    'Programa de recompra para negocios locales. Google Wallet, WhatsApp automático y panel de clientes. $399 MXN/mes.',
+    'Programa de recompra para negocios locales. Google Wallet, alertas de quién se está yendo y panel de clientes. $399 MXN/mes.',
   url: 'https://agentia.software/lealtad',
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web',
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Haz que tus clientes regresen una y otra vez — Agentia',
     description:
-      'Convierte visitas ocasionales en clientes frecuentes. WhatsApp automático cuando alguien se enfría. Simula cuánto podrías ganar.',
+      'Convierte visitas ocasionales en clientes frecuentes. Te avisa quién se está yendo — tú mandas el WhatsApp en un toque. Simula cuánto podrías ganar.',
     url: 'https://agentia.software/lealtad',
     siteName: 'Agentia',
     locale: 'es_MX',
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Haz que tus clientes regresen | Agentia',
     description:
-      'Más recompra, menos gasto en publicidad. El sistema recupera inactivos por ti.',
+      'Más recompra, menos gasto en publicidad. Tú decides a quién recuperar, el mensaje ya está listo.',
   },
 };
 

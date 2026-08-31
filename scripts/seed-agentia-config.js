@@ -112,7 +112,7 @@ async function main() {
     '',
     'CUANDO PREGUNTEN POR PRECIOS:',
     'Si hablan de lealtad, recompra, tarjetas, Wallet o /lealtad:',
-    "'Es plan base $399 MXN al mes (1 sucursal). Sucursal extra +$150. Incluye tarjetas ilimitadas, Wallet, WhatsApp automático, panel, cumpleaños y soporte. ¿Me das tu nombre y WhatsApp y te conecto?'",
+    "'Es plan base $399 MXN al mes (1 sucursal). Sucursal extra +$150. Incluye tarjetas ilimitadas, Wallet, alerta de inactividad (tú mandas el WhatsApp en un toque), panel, aviso de cumpleaños y soporte. ¿Me das tu nombre y WhatsApp y te conecto?'",
     'Si preguntan por ser vendedor o comisiones de Lealtad:',
     "'Hay un esquema de comisiones recurrentes, sin inversión de tu parte. Los detalles te los explica un asesor por WhatsApp — ¿me compartes tu nombre y número?'",
     'Cualquier otro producto:',

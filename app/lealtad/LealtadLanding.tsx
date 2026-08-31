@@ -24,6 +24,7 @@ import { trackEvent, useAnalytics } from '@/src/lib/analytics-client';
 import { RoiCalculator } from './RoiCalculator';
 import { CountUp } from './CountUp';
 import { SequenceReveal } from './SequenceReveal';
+import { TrafficLightDemo } from '@/components/TrafficLightDemo';
 
 const BG = '#FAFAF8';
 const INK = '#14161A';
@@ -35,8 +36,6 @@ const IMG_WALLET =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788157349/captura-tarjeta-wallet_grbubg.jpg';
 const IMG_CAJA =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788157350/captura-caja-venta_fitq6s.jpg';
-const IMG_CLIENTES =
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788157351/captura-clientes-semaforo_zbcqtw.jpg';
 
 const WA_GROWTH = agentiaWhatsAppUrl(
   'Hola Agentia, quiero aumentar mis ventas con el sistema de recompra. ¿Cómo arranco?',
@@ -63,10 +62,10 @@ const BADGES = [
 
 const BENEFITS = [
   { icon: Wallet, title: 'Pase siempre en su celular' },
-  { icon: MessageCircle, title: 'WhatsApp si dejan de venir', whatsapp: true },
-  { icon: Users, title: 'Ves quién se está yendo' },
+  { icon: MessageCircle, title: 'Te avisa quién se está yendo', whatsapp: true },
+  { icon: Users, title: 'Ves activos, en riesgo e inactivos' },
   { icon: TrendingUp, title: 'Más visitas, menos anuncios' },
-  { icon: Zap, title: 'Cumpleaños y recordatorios solos' },
+  { icon: Zap, title: 'Cumpleaños listos para que tú mandes' },
   { icon: Sparkles, title: 'Sellos, puntos o cashback' },
 ];
 
@@ -85,19 +84,19 @@ const GIROS = [
 ];
 
 const AUTOMATIONS = [
-  { t: 'Cumpleaños', d: 'Mensaje el día correcto' },
-  { t: 'Inactivos', d: 'Promo antes de que se vayan' },
-  { t: 'Promociones', d: 'Ofertas a quien ya te compra' },
-  { t: 'Clientes VIP', d: 'Premia a quien más gasta' },
+  { t: 'Cumpleaños', d: 'Te avisa el día. El mensaje ya está listo.' },
+  { t: 'Inactivos', d: 'Tú decides a quién recuperar, el mensaje ya está listo' },
+  { t: 'Promociones', d: 'Ofertas listas para quien ya te compra' },
+  { t: 'Clientes VIP', d: 'Ves quién más gasta — tú los premias' },
   { t: 'Referidos', d: 'Quien te recomienda, suma' },
-  { t: 'Recordatorios', d: 'Cortes, citas y membresías' },
+  { t: 'Recordatorios', d: 'Cortes, citas y membresías — tú das el toque' },
 ];
 
 const COMPARE = [
   { paper: 'Se pierde o se moja', agentia: 'Vive en el celular, siempre a la mano' },
   { paper: 'Nadie la trae la próxima vez', agentia: 'Se abre en Wallet en un toque' },
   { paper: 'No sabes quién dejó de venir', agentia: 'Ves activos, en riesgo y perdidos' },
-  { paper: 'Cero seguimiento', agentia: 'WhatsApp automático cuando se enfrían' },
+  { paper: 'Cero seguimiento', agentia: 'Te avisa quién se está yendo — mandas el WhatsApp en un toque' },
   { paper: 'No escala con tu negocio', agentia: 'Crece con sucursales y segmentos' },
 ];
 
@@ -135,7 +134,7 @@ const ECOSYSTEM = [
   'Chatbot IA',
   'WhatsApp',
   'Lealtad',
-  'Automatización',
+  'Alertas',
   'Google Reviews',
   'Más clientes',
 ];
@@ -151,7 +150,7 @@ const FAQS = [
   },
   {
     q: '¿Y si no sé de tecnología?',
-    a: 'El cliente muestra el QR, sumas la visita. El sistema hace el resto.',
+    a: 'El cliente muestra el QR, sumas la visita. El sistema te dice quién se está yendo; tú mandas el mensaje.',
   },
   {
     q: '¿Puedo cancelar?',
@@ -378,7 +377,7 @@ export function LealtadLanding() {
               transition={revealTransition(0.12, 0.4)}
               className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#14161A]/60 sm:text-lg"
             >
-              Recompensas en el celular. WhatsApp cuando dejan de venir.
+              Te avisa quién se está yendo. Tú mandas el WhatsApp en un toque.
             </motion.p>
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
@@ -494,23 +493,19 @@ export function LealtadLanding() {
             </ScrollReveal>
           </div>
 
-          <div className="mt-20 grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-            <ScrollReveal className="lg:order-2">
+          <div className="mt-20">
+            <ScrollReveal>
               <p className="text-sm font-medium" style={{ color: BRONZE }}>
                 Panel de clientes
               </p>
               <h3 className="mt-2 text-2xl font-bold sm:text-3xl">Semáforo de quién vuelve</h3>
-              <p className="mt-4 text-[#14161A]/60">Activo, en riesgo o inactivo. WhatsApp en un toque.</p>
+              <p className="mt-4 max-w-2xl text-[#14161A]/60">
+                Activo, en riesgo o inactivo. Tú decides a quién escribir — el mensaje ya está listo.
+              </p>
             </ScrollReveal>
-            <ScrollReveal delay={0.06} className="lg:order-1">
-              <ShotFrame
-                src={IMG_CLIENTES}
-                alt="Panel de clientes de Café Luna con semáforo de inactividad: activos, en riesgo e inactivos, y contacto por WhatsApp"
-                width={1079}
-                height={4012}
-                cropTop
-              />
-            </ScrollReveal>
+            <div className="mt-8">
+              <TrafficLightDemo />
+            </div>
           </div>
         </section>
 
@@ -529,7 +524,7 @@ export function LealtadLanding() {
         {/* 5. BENEFICIOS */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <h2 className="text-3xl font-bold sm:text-4xl">Crecimiento en automático</h2>
+            <h2 className="text-3xl font-bold sm:text-4xl">Ves quién se enfría. Tú escribes.</h2>
           </ScrollReveal>
           <StaggerReveal className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {BENEFITS.map((b) => (
@@ -567,7 +562,7 @@ export function LealtadLanding() {
         <section className="py-16 sm:py-20">
           <ScrollReveal>
             <h2 className="text-3xl font-bold sm:text-4xl">
-              Recupera clientes mientras atiendes
+              Te avisa a quién escribir
             </h2>
           </ScrollReveal>
           <div className="relative mt-12">
@@ -736,9 +731,9 @@ export function LealtadLanding() {
                   'Tarjetas ilimitadas',
                   'Sellos, puntos o cashback (el negocio elige)',
                   'Google Wallet + acceso PWA',
-                  'WhatsApp automático por inactividad',
+                  'Alerta de inactividad: tú mandas el WhatsApp en un toque',
                   'Panel de clientes con semáforo de reactivación',
-                  'Mensajes de cumpleaños automáticos',
+                  'Aviso de cumpleaños con el mensaje listo',
                   'Soporte por WhatsApp incluido',
                 ].map((t) => (
                   <li key={t} className="flex gap-2">
