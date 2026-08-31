@@ -456,7 +456,7 @@ function PhoneHero() {
                     transform: reduceMotion || cardIn ? 'translateY(0)' : 'translateY(62%)',
                   }}
                 >
-                  {/* Tarjeta negra mate + chrome */}
+                  {/* Pase Google Wallet: hero 1032×336 a sangre, sin padding blanco */}
                   <div
                     className="relative overflow-hidden rounded-2xl p-px"
                     style={{
@@ -466,94 +466,102 @@ function PhoneHero() {
                         '0 20px 40px -18px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.35)',
                     }}
                   >
-                    <div
-                      className="relative overflow-hidden rounded-[15px] px-4 py-4"
-                      style={{
-                        background:
-                          'linear-gradient(160deg, #2a2a2a 0%, #121212 42%, #0a0a0a 100%)',
-                      }}
-                    >
-                      {/* Glare — solo si visible y motion OK */}
-                      {!reduceMotion ? (
-                        <div
-                          className="pointer-events-none absolute inset-0 z-[2]"
-                          style={{
-                            background:
-                              'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.09) 48%, transparent 62%)',
-                            backgroundSize: '220% 100%',
-                            animation: inView
-                              ? 'lealtadHeroGlare 9s ease-in-out infinite'
-                              : 'none',
-                            animationPlayState: inView ? 'running' : 'paused',
-                          }}
-                          aria-hidden
+                    <div className="relative overflow-hidden rounded-[15px] bg-[#1B4332]">
+                      <div
+                        className="relative w-full overflow-hidden"
+                        style={{ aspectRatio: '1032 / 336' }}
+                      >
+                        <Image
+                          src="/images/wallet-hero/cafe.png"
+                          alt="Café Luna"
+                          fill
+                          sizes="280px"
+                          className="object-cover object-center"
+                          quality={95}
+                          priority
                         />
-                      ) : null}
+                      </div>
 
-                      <div className="relative z-[3]">
-                        <div className="flex items-center gap-3">
-                          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F5F0E8] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_0_0_1px_rgba(255,255,255,0.12)]">
-                            <Image
-                              src="/images/mockups/cafe-luna-logo.jpg"
-                              alt="Café Luna"
-                              width={56}
-                              height={56}
-                              className="h-[118%] w-[118%] max-w-none object-cover object-center"
-                              style={{ imageRendering: 'auto' }}
-                              quality={95}
-                              priority
-                            />
+                      <div className="relative px-4 pb-4 pt-3">
+                        {!reduceMotion ? (
+                          <div
+                            className="pointer-events-none absolute inset-0 z-[1]"
+                            style={{
+                              background:
+                                'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.07) 48%, transparent 62%)',
+                              backgroundSize: '220% 100%',
+                              animation: inView
+                                ? 'lealtadHeroGlare 9s ease-in-out infinite'
+                                : 'none',
+                              animationPlayState: inView ? 'running' : 'paused',
+                            }}
+                            aria-hidden
+                          />
+                        ) : null}
+
+                        <div className="relative z-[2]">
+                          <div className="flex items-center gap-3">
+                            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F5F0E8] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_0_0_1px_rgba(255,255,255,0.12)]">
+                              <Image
+                                src="/images/mockups/cafe-luna-logo.jpg"
+                                alt=""
+                                width={52}
+                                height={52}
+                                className="h-[118%] w-[118%] max-w-none object-cover object-center"
+                                quality={95}
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-[family-name:var(--font-space)] text-[15px] font-bold leading-tight text-white">
+                                Café Luna
+                              </p>
+                              <p className="text-[11px] text-white/60">Sofía Reyes</p>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <p className="font-[family-name:var(--font-space)] text-lg font-bold leading-tight text-white">
-                              Café Luna
+
+                          <div className="mt-3">
+                            <div className="mb-1.5 flex items-center justify-between text-[11px]">
+                              <span className="font-mono text-white/50">
+                                {visits} de 10 visitas
+                              </span>
+                              <span className="text-[#C9A24B]">
+                                {remaining === 1
+                                  ? 'Te falta 1'
+                                  : `Te faltan ${remaining}`}
+                              </span>
+                            </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-black/25">
+                              <div
+                                className="h-full rounded-full transition-[width] duration-700 ease-out"
+                                style={{
+                                  width: `${progressPct}%`,
+                                  background: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
+                                  transitionProperty: reduceMotion ? 'none' : 'width',
+                                  boxShadow: `0 0 12px ${CYAN}55`,
+                                }}
+                              />
+                            </div>
+                            <p className="mt-2.5 text-[12px] leading-snug text-white/80">
+                              {remaining <= 0
+                                ? '¡Ya alcanzaste tu recompensa!'
+                                : `Te faltan ${remaining} para tu próxima recompensa`}
                             </p>
-                            <p className="text-[12px] text-white/55">Sofía Reyes</p>
                           </div>
-                        </div>
 
-                        <div className="mt-4">
-                          <div className="mb-1.5 flex items-center justify-between text-[11px]">
-                            <span className="font-mono text-white/45">
-                              {visits} de 10 visitas
-                            </span>
-                            <span className="text-white/35">
-                              {remaining === 1
-                                ? 'Te falta 1 visita'
-                                : `Te faltan ${remaining} visitas`}
-                            </span>
+                          <div
+                            className="mt-3 rounded-xl border border-white/10 px-3 py-2.5"
+                            style={{
+                              background:
+                                'linear-gradient(135deg, rgba(201,162,75,0.18), rgba(0,0,0,0.18))',
+                            }}
+                          >
+                            <p className="font-[family-name:var(--font-space)] text-sm font-semibold text-white">
+                              🎁 Café gratis
+                            </p>
+                            <p className="mt-0.5 text-[10px] text-white/50">
+                              Recompensa al completar 10 visitas
+                            </p>
                           </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                            <div
-                              className="h-full rounded-full transition-[width] duration-700 ease-out"
-                              style={{
-                                width: `${progressPct}%`,
-                                background: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
-                                transitionProperty: reduceMotion ? 'none' : 'width',
-                                boxShadow: `0 0 12px ${CYAN}55`,
-                              }}
-                            />
-                          </div>
-                          <p className="mt-2 text-[12px] text-white/50">
-                            {stage >= 2
-                              ? 'Te falta 1 visita para tu recompensa'
-                              : 'Te faltan 2 visitas para tu recompensa'}
-                          </p>
-                        </div>
-
-                        <div
-                          className="mt-4 rounded-xl border border-white/10 px-3 py-2.5"
-                          style={{
-                            background:
-                              'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(0,212,255,0.08))',
-                          }}
-                        >
-                          <p className="font-[family-name:var(--font-space)] text-sm font-semibold text-white">
-                            🎁 Café gratis
-                          </p>
-                          <p className="mt-0.5 text-[10px] text-white/45">
-                            Recompensa al completar 10 visitas
-                          </p>
                         </div>
                       </div>
                     </div>
@@ -675,10 +683,10 @@ export function LealtadLanding() {
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={revealTransition(0, 0.35)}
-              className="mb-4 inline-flex items-center gap-2 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]"
+              className="mb-4 inline-flex flex-wrap items-center gap-2 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]"
             >
               <TrendingUp className="h-3.5 w-3.5" />
-              Para negocios locales que viven de clientes que vuelven
+              Plan único · $499 MXN/mes
             </motion.p>
             <motion.h1
               initial={reduceMotion ? false : { opacity: 0, y: 18 }}

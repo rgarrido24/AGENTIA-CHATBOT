@@ -110,6 +110,12 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = clientIP(request);
 
+  if (pathname === '/lealtad' || pathname.startsWith('/lealtad/')) {
+    const res = NextResponse.next();
+    res.headers.set('Cache-Control', 'no-store, max-age=0');
+    return res;
+  }
+
   // ── Disable caching for /brief (conversion flow) ───────────────────────────
   if (pathname === '/brief' || pathname.startsWith('/brief/')) {
     const res = NextResponse.next();

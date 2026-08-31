@@ -12,8 +12,9 @@ const CARDS = [
     customer: 'Sofía Reyes',
     progress: '7 de 10 visitas',
     reward: '🎁 Café gratis',
-    gradient: 'linear-gradient(160deg,#2a2a2a 0%,#121212 45%,#0a0a0a 100%)',
+    gradient: 'linear-gradient(180deg,#1B4332 0%,#0f261c 100%)',
     logoSrc: '/images/mockups/cafe-luna-logo.jpg',
+    heroSrc: '/images/wallet-hero/cafe.png',
     emoji: '☕',
   },
   {
@@ -99,45 +100,58 @@ export function IndustryPhoneCarousel() {
 
           <div
             key={card.id}
-            className="overflow-hidden rounded-2xl p-3.5 text-white transition-opacity duration-400"
+            className="overflow-hidden rounded-2xl text-white transition-opacity duration-400"
             style={{
               background: card.gradient,
               opacity: 1,
               transitionProperty: reduceMotion ? 'none' : 'opacity',
             }}
           >
-            <div className="flex items-center gap-2.5">
-              {'logoSrc' in card && card.logoSrc ? (
-                <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#F5F0E8]">
-                  <Image
-                    src={card.logoSrc}
-                    alt={card.brand}
-                    width={48}
-                    height={48}
-                    className="h-[118%] w-[118%] max-w-none object-cover object-center"
-                  />
-                </div>
-              ) : (
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">
-                  {card.emoji}
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="truncate font-[family-name:var(--font-space)] text-sm font-bold">
-                  {card.brand}
-                </p>
-                <p className="text-[10px] text-white/50">{card.customer}</p>
+            {'heroSrc' in card && card.heroSrc ? (
+              <div className="relative w-full overflow-hidden" style={{ aspectRatio: '1032 / 336' }}>
+                <Image
+                  src={card.heroSrc}
+                  alt=""
+                  fill
+                  sizes="220px"
+                  className="object-cover object-center"
+                />
               </div>
+            ) : null}
+            <div className="p-3.5">
+              <div className="flex items-center gap-2.5">
+                {'logoSrc' in card && card.logoSrc ? (
+                  <div className="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full bg-[#F5F0E8]">
+                    <Image
+                      src={card.logoSrc}
+                      alt={card.brand}
+                      width={48}
+                      height={48}
+                      className="h-[118%] w-[118%] max-w-none object-cover object-center"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">
+                    {card.emoji}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="truncate font-[family-name:var(--font-space)] text-sm font-bold">
+                    {card.brand}
+                  </p>
+                  <p className="text-[10px] text-white/50">{card.customer}</p>
+                </div>
+              </div>
+              <p className="mt-3 font-mono text-[9px] uppercase tracking-wider text-white/40">
+                {card.progress}
+              </p>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full w-[70%] rounded-full bg-gradient-to-r from-[#00D4FF] to-[#FFD700]" />
+              </div>
+              <p className="mt-3 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-semibold">
+                {card.reward}
+              </p>
             </div>
-            <p className="mt-3 font-mono text-[9px] uppercase tracking-wider text-white/40">
-              {card.progress}
-            </p>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full w-[70%] rounded-full bg-gradient-to-r from-[#00D4FF] to-[#FFD700]" />
-            </div>
-            <p className="mt-3 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs font-semibold">
-              {card.reward}
-            </p>
           </div>
 
           <div className="mt-3 flex justify-center gap-1.5">

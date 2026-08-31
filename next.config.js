@@ -104,6 +104,12 @@ const nextConfig = {
     return [
       // Prevent aggressive edge caching for conversion-critical flows
       {
+        source: '/lealtad',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+        ],
+      },
+      {
         source: '/brief',
         headers: [
           { key: 'Cache-Control', value: 'no-store, max-age=0' },
