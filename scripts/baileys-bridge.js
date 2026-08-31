@@ -178,6 +178,22 @@ async function saveQrToMongo(clientId, qr) {
   }
 }
 
+/**
+ * Borra las credenciales de un cliente. Tras un logout (401) las creds guardadas
+ * quedan inservibles: sin borrarlas, cada arranque reintenta con ellas y nunca se emite QR.
+ */
+async function clearSessionInMongo(clientId) {
+  try {
+    const db = await getDb();
+    const res = await db.collection('whatsapp_sessions').deleteMany({ clientId });
+    console.log(`[Baileys] (${clientId}) Sesión inválida borrada (${res.deletedCount} doc)`);
+    return true;
+  } catch (e) {
+    console.error(`[Baileys] (${clientId}) Error borrando whatsapp_sessions:`, e?.message || e);
+    return false;
+  }
+}
+
 async function setConnectedInMongo(clientId, connected) {
   try {
     const db = await getDb();
@@ -398,6 +414,9 @@ const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recep
 
 /** Resellers con alertas high_activity vía plantilla Graph API (no clientes internos). */
 const EXTERNAL_RESELLERS = ['luciano'];
+
+/** Tope de recuperaciones automáticas tras logout, para no reiniciar en bucle. */
+const MAX_LOGOUT_RECOVERIES = 3;
 
 /** Clientes dados de baja: sus alertas se descartan sin enviar. */
 const DISABLED_ALERT_CLIENT_IDS = new Set(['decohouse', 'biovela']);
@@ -836,7 +855,7 @@ async function startClient(clientId, baileys) {
 
   let state = clients.get(id);
   if (!state) {
-    state = { sock: null, ready: false, state: 'boot', reconnectAttempt: 0, starting: false, lastQr: null, qrTimer: null };
+    state = { sock: null, ready: false, state: 'boot', reconnectAttempt: 0, logoutRecoveries: 0, starting: false, lastQr: null, qrTimer: null };
     clients.set(id, state);
   }
   if (state.starting) {
@@ -919,6 +938,7 @@ async function startClient(clientId, baileys) {
       state.state = 'ready';
       state.ready = true;
       state.reconnectAttempt = 0;
+      state.logoutRecoveries = 0;
       state.lastQr = null;
       console.log(`[Baileys] (${id}) WhatsApp conectado.`);
       await setConnectedInMongo(id, true);
@@ -942,7 +962,22 @@ async function startClient(clientId, baileys) {
 
       if (loggedOut) {
         state.state = 'logged_out';
-        console.error(`[Baileys] (${id}) Sesión cerrada — re-escanear QR.`);
+        state.logoutRecoveries = (state.logoutRecoveries || 0) + 1;
+
+        if (state.logoutRecoveries > MAX_LOGOUT_RECOVERIES) {
+          console.error(
+            `[Baileys] (${id}) Sesión cerrada ${state.logoutRecoveries} veces seguidas — se detiene para no entrar en bucle. Reinicia el worker.`
+          );
+          return;
+        }
+
+        console.error(`[Baileys] (${id}) Sesión cerrada — borrando credenciales y pidiendo QR nuevo.`);
+        await clearSessionInMongo(id);
+        setTimeout(() => {
+          startClient(id, baileys).catch((e) => {
+            console.error(`[Baileys] (${id}) Error reiniciando tras logout:`, e?.message || e);
+          });
+        }, 3_000);
         return;
       }
 
