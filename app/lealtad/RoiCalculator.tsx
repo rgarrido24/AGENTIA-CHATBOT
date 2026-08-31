@@ -7,7 +7,7 @@ import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
 const BRONZE = '#B8935A';
 const INK = '#14161A';
 const WA = '#25D366';
-const PLAN = 499;
+const PLAN = 399;
 
 const WA_ROI = agentiaWhatsAppUrl(
   'Hola Agentia, vi el simulador de /lealtad y quiero aumentar mis ventas con el sistema. ¿Me orientan?',
@@ -71,8 +71,7 @@ export function RoiCalculator() {
             onChange={setRecompra}
           />
           <p className="text-xs leading-relaxed text-[#14161A]/45">
-            Estimación conservadora. No incluye referidos, ticket más alto por recompensas ni
-            ahorro en publicidad.
+            Estimación. Mueve los números de tu negocio.
           </p>
         </div>
 
@@ -92,14 +91,12 @@ export function RoiCalculator() {
 
           <div className="mt-6 space-y-3 text-sm text-[#14161A]/70">
             <p>
-              Si solo regresan{' '}
-              <strong className="font-semibold text-[#14161A]">{extraClientes} clientes más</strong> al
-              mes con ticket de {formatMxn(ticket)}…
+              Si vuelven {extraClientes} más al mes con ticket de {formatMxn(ticket)}…
             </p>
             <p className="rounded-2xl bg-white px-4 py-3 text-[#14161A] ring-1 ring-[#B8935A]/25">
               {sePagaSolo
-                ? `El plan de ${formatMxn(PLAN)} se paga solo ${vecesPlan >= 2 ? `casi ${Math.floor(vecesPlan)}×` : ''} — y el resto es ganancia.`
-                : `Con un poco más de recompra, el plan de ${formatMxn(PLAN)} se paga solo.`}
+                ? `El plan de ${formatMxn(PLAN)} se paga ${vecesPlan >= 2 ? `casi ${Math.floor(vecesPlan)}×` : 'solo'}.`
+                : `Con un poco más de recompra, el plan de ${formatMxn(PLAN)} se cubre.`}
             </p>
           </div>
 
@@ -111,7 +108,7 @@ export function RoiCalculator() {
               className="inline-flex items-center justify-center rounded-full px-6 py-3.5 text-sm font-semibold text-white transition-[transform] duration-150 hover:-translate-y-px active:scale-[0.97]"
               style={{ background: WA }}
             >
-              Quiero esos ingresos extra
+              Escríbenos
             </a>
           </div>
         </div>

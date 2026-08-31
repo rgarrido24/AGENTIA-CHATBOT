@@ -714,9 +714,9 @@ export async function handleChat(params: {
       finalSystemInstruction +=
         `\n\n## BASE_DE_CONOCIMIENTO_LEALTAD (producto /lealtad — no mezclar con planes de chatbot)\n` +
         `${KNOWLEDGE_BASE_LEALTAD}\n\n` +
-        `REGLA: Para Lealtad Agentia SÍ debes decir el precio: un solo plan $499 MXN/mes, todo incluido. ` +
-        `Eso anula cualquier instrucción genérica de "no dar precios" SOLO en este producto. ` +
-        `NUNCA menciones $299 ni plan Básico. ` +
+        `REGLA: Para Lealtad Agentia SÍ debes decir el precio: plan base $399 MXN/mes (1 sucursal). ` +
+        `Sucursal extra +$150 MXN/mes. Eso anula cualquier instrucción genérica de "no dar precios" SOLO en este producto. ` +
+        `NUNCA menciones $299 ni $499 ni plan Básico. ` +
         `Si preguntan por ser vendedor o comisión: idea general (comisiones recurrentes, sin inversión), ` +
         `SIN montos ni porcentajes, y remite a un asesor por WhatsApp.\n`;
     }

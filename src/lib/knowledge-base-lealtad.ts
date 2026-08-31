@@ -28,7 +28,7 @@ El dueño suma la visita con QR. El sistema hace el seguimiento (inactivos, cump
 
 Panel: semáforo de reactivación (activos / en riesgo / perdidos).
 WhatsApp automático cuando alguien deja de venir.
-Hasta 3 sucursales en el mismo plan.
+Hasta 1 sucursal en el plan base. Sucursales extra: +$150 MXN/mes cada una.
 
 ## FORMAS DE ACUMULAR
 El negocio elige una (o se adapta al giro):
@@ -38,18 +38,17 @@ El negocio elige una (o se adapta al giro):
 No inventes otras mecánicas. Si preguntan cuál les conviene, pregunta el giro y sugiere la más simple para ese negocio.
 
 ## PRECIO
-UN SOLO PLAN. No hay plan Básico. No hay Pro. No hay niveles. No compares planes.
-$499 MXN/mes — incluye todo:
+PLAN BASE $399 MXN/mes — 1 sucursal. Incluye:
 - Tarjetas ilimitadas
 - Sellos, puntos o cashback (el negocio elige)
 - Google Wallet + acceso PWA
 - WhatsApp automático por inactividad
 - Panel de clientes con semáforo de reactivación
-- Hasta 3 sucursales
 - Mensajes de cumpleaños automáticos
 - Soporte por WhatsApp incluido
-NUNCA menciones $299 ni "plan básico" ni "desde $299".
-Si preguntan por un plan más barato: no existe otro plan de Lealtad; este es el único y se paga solo si vuelven unos cuantos clientes.
+Sucursal extra: +$150 MXN/mes cada una.
+NUNCA menciones $299, $499, "plan básico" ni "desde $299".
+Si preguntan por un plan más barato: el plan base es $399. Extra sucursales van aparte.
 
 ## ONBOARDING
 Con el logo, el pase puede estar activo en unas 24 horas. Agentia conecta; el dueño no instala servidores ni aprende un software.
@@ -63,7 +62,7 @@ Si el giro no está en la lista pero hay recompra, igual aplica. Adapta sellos /
 ## OBJECIONES
 - "¿Descargan una app?": No. Wallet o navegador.
 - "No sé de tecnología": Pensado para dueños, no programadores.
-- "Es caro" / "¿se paga solo?": Si recupera unos cuantos al mes con su ticket promedio, el plan de $499 suele cubrirse solo. Invita a simular en https://agentia.software/lealtad#simulador
+- "Es caro" / "¿se paga solo?": Si recupera unos cuantos al mes con su ticket promedio, el plan de $399 suele cubrirse solo. Invita a simular en https://agentia.software/lealtad#simulador
 - "Lo voy a pensar": Ofrece ver la demo en la landing o mandar logo para arrancar.
 - "Ya tengo tarjeta de papel": Se pierde, no la traen, no sabes quién se fue. Aquí vive en el celular, ves inactivos y WhatsApp los recupera.
 

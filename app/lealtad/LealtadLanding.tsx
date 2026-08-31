@@ -38,11 +38,8 @@ const IMG_CLIENTES =
 const WA_GROWTH = agentiaWhatsAppUrl(
   'Hola Agentia, quiero aumentar mis ventas con el sistema de recompra. ¿Cómo arranco?',
 );
-const WA_DEMO = agentiaWhatsAppUrl(
-  'Hola Agentia, quiero ver una demostración del sistema para mi negocio.',
-);
 const WA_PLAN = agentiaWhatsAppUrl(
-  'Hola Agentia, me interesa el plan único de lealtad ($499 MXN/mes). ¿Cómo arranco?',
+  'Hola Agentia, me interesa el plan base de lealtad ($399 MXN/mes). ¿Cómo arranco?',
 );
 const WA_SELLER = agentiaWhatsAppUrl(
   'Hola, quiero información sobre ser vendedor de Agentia Lealtad',
@@ -55,25 +52,16 @@ function trackCta(cta: string) {
 }
 
 const BADGES = [
-  'Funciona en Android y iPhone',
-  'Sin descargar apps',
-  'Configuración rápida',
-  'Tus clientes lo usan en segundos',
+  'Android y iPhone',
+  'Sin app nueva',
+  'Listo en 24h',
+  'Se usa en segundos',
 ];
 
 const PROBLEM_STATS = [
-  {
-    value: '5×',
-    label: 'más caro conseguir un cliente nuevo que hacer regresar uno',
-  },
-  {
-    value: '60–70%',
-    label: 'de tus ventas suelen venir de clientes que ya te conocen',
-  },
-  {
-    value: '0',
-    label: 'seguimiento = dinero que se va por la puerta sin que lo notes',
-  },
+  { value: '5×', label: 'más caro atraer un cliente nuevo' },
+  { value: '60–70%', label: 'de ventas vienen de quien ya te conoce' },
+  { value: '0', label: 'seguimiento = clientes que se van' },
 ];
 
 const AFTER_STEPS = [
@@ -87,37 +75,12 @@ const AFTER_STEPS = [
 ];
 
 const BENEFITS = [
-  {
-    icon: Wallet,
-    title: 'Tus clientes nunca olvidan tu negocio',
-    desc: 'Su pase vive en el celular. Cada vez que abren la cartera, te ven. Sin app nueva, sin fricción.',
-  },
-  {
-    icon: MessageCircle,
-    title: 'Promociones directo al bolsillo',
-    desc: 'Cuando alguien deja de venir, el sistema le escribe por WhatsApp. Tú no persigues a nadie.',
-    whatsapp: true,
-  },
-  {
-    icon: Users,
-    title: 'Sabes quién compra y quién se fue',
-    desc: 'Mira activos, en riesgo y perdidos. Enfoca el esfuerzo donde recuperas dinero de verdad.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Más visitas sin gastar más en anuncios',
-    desc: 'La recompra baja tu costo de adquisición. Creces con la base que ya pagaste por atraer.',
-  },
-  {
-    icon: Zap,
-    title: 'Un empleado que nunca duerme',
-    desc: 'Cumpleaños, inactivos, VIP y recordatorios corren solos. Tú atiendes. El sistema recupera.',
-  },
-  {
-    icon: Sparkles,
-    title: 'Se siente justo — y vuelve',
-    desc: 'Sellos, puntos o cashback adaptados a tu giro. El cliente siente el premio; tú proteges el margen.',
-  },
+  { icon: Wallet, title: 'Pase siempre en su celular' },
+  { icon: MessageCircle, title: 'WhatsApp si dejan de venir', whatsapp: true },
+  { icon: Users, title: 'Ves quién se está yendo' },
+  { icon: TrendingUp, title: 'Más visitas, menos anuncios' },
+  { icon: Zap, title: 'Cumpleaños y recordatorios solos' },
+  { icon: Sparkles, title: 'Sellos, puntos o cashback' },
 ];
 
 type Industry = {
@@ -136,83 +99,65 @@ const INDUSTRIES: Industry[] = [
     icon: '☕',
     logoSrc: '/images/mockups/cafe-luna-logo.jpg',
     logoAlt: 'Café Luna',
-    example: 'Café #10 gratis → la rutina matutina se queda contigo.',
+    example: 'Café #10 de regalo',
   },
   {
     id: 'barber',
     label: 'Barberías',
     icon: '✂️',
-    example: 'Corte #10 por la casa + recordatorio a las 4 semanas.',
+    example: 'Corte #10 de regalo',
   },
   {
     id: 'resto',
     label: 'Restaurantes',
     icon: '🍽️',
-    example: 'Postre de la casa al volver — sin bajar el ticket con descuentos.',
+    example: 'Postre de la casa al volver',
   },
   {
     id: 'spa',
     label: 'Estéticas',
     icon: '🌿',
-    example: 'Sesión con puntos + WhatsApp cuando se pasa la cita.',
+    example: 'Puntos + WhatsApp si falta',
   },
   {
     id: 'vet',
     label: 'Veterinarias',
     icon: '🐾',
-    example: 'Vacunas y consultas que regresan a tiempo, no cuando duele.',
+    example: 'Vacunas que regresan a tiempo',
   },
   {
     id: 'gym',
     label: 'Gimnasios',
     icon: '💪',
-    example: 'Check-ins que empujan constancia y renuevan membresías.',
+    example: 'Check-in que renueva membresía',
   },
   {
     id: 'boutique',
     label: 'Boutiques',
     icon: '👗',
-    example: 'Cashback que trae la segunda compra sin liquidar margen.',
+    example: 'Cashback en la segunda compra',
   },
   {
     id: 'farmacia',
     label: 'Farmacias',
     icon: '💊',
-    example: 'Recompra de tratamientos recurrentes, no solo la urgencia.',
+    example: 'Recompra de tratamientos',
   },
   {
     id: 'papel',
     label: 'Papelerías',
     icon: '📎',
-    example: 'Sellos en temporada escolar y clientes que vuelven todo el año.',
+    example: 'Sellos en temporada escolar',
   },
 ];
 
 const AUTOMATIONS = [
-  {
-    t: 'Cumpleaños',
-    d: 'Un mensaje el día correcto. Se siente personal — y dispara una visita.',
-  },
-  {
-    t: 'Inactivos',
-    d: 'Detecta quién no ha venido y manda la promo antes de que prueben a otro.',
-  },
-  {
-    t: 'Promociones',
-    d: 'Lanza ofertas a quien ya te conoce. Menos desperdicio que un anuncio frío.',
-  },
-  {
-    t: 'Clientes VIP',
-    d: 'Premia a los que más gastan. Ellos traen el ticket alto y a sus amigos.',
-  },
-  {
-    t: 'Referidos',
-    d: 'Quien te recomienda suma. Creces con boca a boca medible.',
-  },
-  {
-    t: 'Recordatorios',
-    d: 'Cortes, sesiones, vacunas, membresías: el timing correcto sin agenda mental.',
-  },
+  { t: 'Cumpleaños', d: 'Mensaje el día correcto' },
+  { t: 'Inactivos', d: 'Promo antes de que se vayan' },
+  { t: 'Promociones', d: 'Ofertas a quien ya te compra' },
+  { t: 'Clientes VIP', d: 'Premia a quien más gasta' },
+  { t: 'Referidos', d: 'Quien te recomienda, suma' },
+  { t: 'Recordatorios', d: 'Cortes, citas y membresías' },
 ];
 
 const COMPARE = [
@@ -224,9 +169,9 @@ const COMPARE = [
 ];
 
 const METRICS = [
-  { value: '+28%', label: 'clientes recurrentes', note: 'negocios similares en recompra' },
-  { value: '+35%', label: 'visitas recuperadas', note: 'con seguimiento a inactivos' },
-  { value: '+18%', label: 'ticket promedio', note: 'cuando el premio protege margen' },
+  { value: '+28%', label: 'clientes recurrentes' },
+  { value: '+35%', label: 'visitas recuperadas' },
+  { value: '+18%', label: 'ticket promedio' },
 ];
 
 const NFC_ACTIONS = [
@@ -241,41 +186,16 @@ const NFC_ACTIONS = [
 ];
 
 const REVIEW_STEPS = [
-  {
-    n: '01',
-    title: 'Cliente termina su compra',
-    desc: 'Sale contento del local — el momento perfecto para pedir la reseña.',
-  },
-  {
-    n: '02',
-    title: 'Escanea o toca su tarjeta',
-    desc: 'QR de la tarjeta digital o toque NFC. Sin códigos impresos que nadie entiende.',
-  },
-  {
-    n: '03',
-    title: 'Se abre Google Reviews',
-    desc: 'Con las estrellas listas para calificar. Menos clics, más reseñas publicadas.',
-  },
-  {
-    n: '04',
-    title: 'Recibe su recompensa',
-    desc: 'Automático: sello, puntos o promo. La reseña deja de sentirse como un favor.',
-  },
+  { n: '01', title: 'Termina su compra' },
+  { n: '02', title: 'Escanea o toca' },
+  { n: '03', title: 'Se abre Google Reviews' },
+  { n: '04', title: 'Recibe su recompensa' },
 ];
 
 const REVIEW_METRICS = [
-  {
-    value: 'Más confianza',
-    label: 'Las estrellas en Maps deciden si te eligen o al de enfrente.',
-  },
-  {
-    value: 'Más llamadas',
-    label: 'Negocios con mejores reseñas reciben más contactos y visitas.',
-  },
-  {
-    value: 'Mejor en Maps',
-    label: 'Más reseñas recientes ayudan a aparecer cuando buscan cerca.',
-  },
+  { value: 'Más confianza', label: 'Más estrellas, más eligen' },
+  { value: 'Más llamadas', label: 'Mejores reseñas, más visitas' },
+  { value: 'Mejor en Maps', label: 'Apareces cuando buscan cerca' },
 ];
 
 const ECOSYSTEM = [
@@ -289,28 +209,28 @@ const ECOSYSTEM = [
 
 const FAQS = [
   {
-    q: '¿Mis clientes necesitan descargar una app?',
-    a: 'No. Guardan el pase en Google Wallet (o lo abren en el navegador). Cero fricción — ideal si tu cliente no quiere instalar nada.',
+    q: '¿Descargan una app?',
+    a: 'No. Guardan el pase en Google Wallet o lo abren en el navegador.',
   },
   {
-    q: '¿Cuánto tarda en estar listo?',
-    a: 'Con tu logo, en unas 24 horas puedes tener el pase activo. Nosotros conectamos; tú no instalas servidores ni “aprendes un software”.',
+    q: '¿Cuánto tarda?',
+    a: 'Con tu logo, el pase puede estar activo en 24 horas.',
   },
   {
-    q: '¿Y si no sé usar tecnología?',
-    a: 'Está pensado para dueños de negocio, no para programadores. El día a día es simple: el cliente muestra el QR, sumas la visita, y el sistema hace el resto.',
+    q: '¿Y si no sé de tecnología?',
+    a: 'El cliente muestra el QR, sumas la visita. El sistema hace el resto.',
   },
   {
-    q: '¿Puedo cancelar cuando quiera?',
-    a: 'Sí. Sin contratos eternos. Si no te está trayendo recompra, no tiene sentido obligarte a quedarte.',
+    q: '¿Puedo cancelar?',
+    a: 'Sí. Sin contratos eternos.',
   },
   {
-    q: '¿Esto se paga solo?',
-    a: 'Si recuperas unos cuantos clientes al mes con tu ticket promedio, el plan de $499 suele cubrirse solo. Usa el simulador de arriba con tus números reales.',
+    q: '¿Se paga solo?',
+    a: 'Si vuelven unos cuantos al mes, el plan de $399 suele cubrirse. Usa el simulador.',
   },
   {
     q: '¿Sirve para mi giro?',
-    a: 'Si vives de clientes que deberían volver (café, cortes, comida, estética, vet, gym, tienda local…), sí. Adaptamos sellos, puntos o cashback a cómo compra tu gente.',
+    a: 'Sí, si vives de clientes que deberían volver. Sellos, puntos o cashback según tu negocio.',
   },
 ];
 
@@ -493,7 +413,7 @@ export function LealtadLanding() {
             </a>
           </nav>
           <WaButton href={WA_GROWTH} onClick={() => trackCta('nav-whatsapp')}>
-            Quiero vender más
+            Escríbenos
           </WaButton>
         </header>
 
@@ -507,7 +427,7 @@ export function LealtadLanding() {
               className="mb-4 text-sm font-medium tracking-wide"
               style={{ color: BRONZE }}
             >
-              Plan único · $499 MXN/mes
+              Plan base · $399 MXN/mes
             </motion.p>
             <motion.h1
               initial={reduceMotion ? false : { opacity: 0, y: 18 }}
@@ -526,8 +446,7 @@ export function LealtadLanding() {
               transition={revealTransition(0.12, 0.4)}
               className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#14161A]/60 sm:text-lg"
             >
-              Convierte visitas ocasionales en clientes frecuentes. El sistema acumula recompensas,
-              detecta quién se enfría y los trae de vuelta — casi solo.
+              Recompensas en el celular. WhatsApp cuando dejan de venir.
             </motion.p>
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
@@ -536,7 +455,7 @@ export function LealtadLanding() {
               className="mt-8 flex flex-wrap justify-center gap-3"
             >
               <WaButton href={WA_GROWTH} onClick={() => trackCta('hero-ventas')}>
-                Quiero aumentar mis ventas
+                Empezar ahora
               </WaButton>
               <GhostButton href="#demo" onClick={() => trackCta('hero-demo')}>
                 Ver demostración
@@ -567,12 +486,8 @@ export function LealtadLanding() {
         <section className="py-20 sm:py-24">
           <ScrollReveal>
             <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
-              ¿Cuánto dinero estás perdiendo cada mes?
+              ¿Cuánto dinero se te va cada mes?
             </h2>
-            <p className="mt-4 max-w-2xl text-[#14161A]/55">
-              Traer un cliente nuevo es caro. Dejar ir a uno que ya te conoce es más caro todavía —
-              porque ya invertiste en que te encontrara.
-            </p>
           </ScrollReveal>
           <StaggerReveal className="mt-12 grid gap-4 md:grid-cols-3">
             {PROBLEM_STATS.map((s) => (
@@ -600,7 +515,7 @@ export function LealtadLanding() {
               <div className="h-full rounded-[1.5rem] bg-white p-7 ring-1 ring-[#14161A]/8">
                 <p className="text-xs font-semibold uppercase tracking-wider text-[#14161A]/40">Antes</p>
                 <ul className="mt-6 space-y-4">
-                  {['Cliente compra', 'Se va', 'Nunca vuelve', 'Tú pagas otra vez por atraer a alguien nuevo'].map(
+                  {['Compra', 'Se va', 'No vuelve', 'Pagas otra vez por atraer'].map(
                     (t, i) => (
                       <li key={t} className="flex items-center gap-3 text-[#14161A]/55">
                         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F3F1EC] text-xs font-medium text-[#14161A]/40">
@@ -638,9 +553,6 @@ export function LealtadLanding() {
                     </motion.span>
                   ))}
                 </div>
-                <p className="mt-6 text-sm text-[#14161A]/55">
-                  Menos publicidad. Más recompra. El crecimiento viene de la gente que ya te eligió.
-                </p>
               </div>
             </ScrollReveal>
           </div>
@@ -652,10 +564,6 @@ export function LealtadLanding() {
             <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
               Así funciona por dentro
             </h2>
-            <p className="mt-4 max-w-2xl text-[#14161A]/55">
-              No es un mockup. Es el sistema real: registras la venta, el cliente guarda su pase, y
-              ves quién está activo o se está enfriando.
-            </p>
           </ScrollReveal>
 
           <div className="mt-14 grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
@@ -664,10 +572,7 @@ export function LealtadLanding() {
                 Registrar venta
               </p>
               <h3 className="mt-2 text-2xl font-bold sm:text-3xl">Cobra, suma puntos, listo</h3>
-              <p className="mt-4 text-[#14161A]/60">
-                En caja registras el ticket. El sistema acredita puntos y deja el pase listo para
-                enviarlo al cliente por WhatsApp.
-              </p>
+              <p className="mt-4 text-[#14161A]/60">Cobra, suma puntos y envía el pase.</p>
             </ScrollReveal>
             <ScrollReveal delay={0.06}>
               <ShotFrame
@@ -686,10 +591,7 @@ export function LealtadLanding() {
                 Panel de clientes
               </p>
               <h3 className="mt-2 text-2xl font-bold sm:text-3xl">Semáforo de quién vuelve</h3>
-              <p className="mt-4 text-[#14161A]/60">
-                Activos, en riesgo e inactivos. Un toque y le escribes por WhatsApp a quien dejó de
-                venir, antes de que pruebe al de enfrente.
-              </p>
+              <p className="mt-4 text-[#14161A]/60">Activo, en riesgo o inactivo. WhatsApp en un toque.</p>
             </ScrollReveal>
             <ScrollReveal delay={0.06} className="lg:order-1">
               <ShotFrame
@@ -707,12 +609,8 @@ export function LealtadLanding() {
         <section id="simulador" className="py-20 sm:py-24">
           <ScrollReveal>
             <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
-              ¿Cuánto podrías ganar si solo un poco más de gente volviera?
+              ¿Cuánto ganas si vuelven un poco más?
             </h2>
-            <p className="mt-4 max-w-2xl text-[#14161A]/55">
-              Mueve los números de tu negocio. Si el ingreso extra cubre el plan, el sistema
-              prácticamente se paga solo.
-            </p>
           </ScrollReveal>
           <div className="mt-10">
             <RoiCalculator />
@@ -722,9 +620,7 @@ export function LealtadLanding() {
         {/* 5. BENEFICIOS */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <h2 className="text-3xl font-bold sm:text-4xl">
-              No es software. Es crecimiento en automático.
-            </h2>
+            <h2 className="text-3xl font-bold sm:text-4xl">Crecimiento en automático</h2>
           </ScrollReveal>
           <StaggerReveal className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {BENEFITS.map((b) => (
@@ -735,7 +631,6 @@ export function LealtadLanding() {
                     style={{ color: 'whatsapp' in b && b.whatsapp ? WA : BRONZE }}
                   />
                   <h3 className="mt-4 text-lg font-bold leading-snug">{b.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#14161A]/55">{b.desc}</p>
                 </div>
               </StaggerItem>
             ))}
@@ -745,9 +640,7 @@ export function LealtadLanding() {
         {/* 6. INDUSTRIAS */}
         <section id="giros" className="py-16 sm:py-20">
           <ScrollReveal>
-            <h2 className="text-3xl font-bold sm:text-4xl">
-              Hecho para el negocio de la esquina — y el que quiere crecer
-            </h2>
+            <h2 className="text-3xl font-bold sm:text-4xl">Hecho para tu giro</h2>
           </ScrollReveal>
           <div className="mt-8 flex flex-wrap gap-2">
             {INDUSTRIES.map((ind) => (
@@ -813,7 +706,7 @@ export function LealtadLanding() {
                 className="mt-6 inline-flex items-center gap-2 text-sm font-semibold"
                 style={{ color: WA }}
               >
-                Quiero esto para mi {industry.label.toLowerCase()}
+                Escríbenos
                 <ArrowRight className="h-4 w-4" />
               </a>
             </motion.div>
@@ -824,11 +717,8 @@ export function LealtadLanding() {
         <section className="py-16 sm:py-20">
           <ScrollReveal>
             <h2 className="text-3xl font-bold sm:text-4xl">
-              Un empleado que recupera clientes mientras tú atiendes
+              Recupera clientes mientras atiendes
             </h2>
-            <p className="mt-3 max-w-2xl text-[#14161A]/55">
-              No tienes que acordarte de quién falta. El sistema lo hace por ti.
-            </p>
           </ScrollReveal>
           <div className="relative mt-12">
             <div className="absolute bottom-2 left-[15px] top-2 w-px bg-[#14161A]/10 sm:left-[19px]" />
@@ -854,12 +744,9 @@ export function LealtadLanding() {
         <section className="py-16 sm:py-20">
           <ScrollReveal>
             <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
-              Convierte clientes satisfechos en promotores de tu negocio
+              Una tarjeta NFC, un toque, reseña o WhatsApp
             </h2>
-            <p className="mt-4 max-w-2xl text-[#14161A]/55">
-              La Tarjeta Inteligente NFC es un complemento físico: el cliente acerca el teléfono y se
-              abre exactamente lo que tú configuraste — sin apps nuevas ni explicar códigos.
-            </p>
+            <p className="mt-4 max-w-2xl text-[#14161A]/55">Complemento físico. Sin apps nuevas.</p>
             <div className="mt-6 flex flex-wrap gap-2">
               {NFC_ACTIONS.map((a) => (
                 <span
@@ -870,10 +757,6 @@ export function LealtadLanding() {
                 </span>
               ))}
             </div>
-            <p className="mt-6 text-sm text-[#14161A]/45">
-              Ideal en mostrador, mesa o paquete: un toque y el cliente ya está en Reviews, WhatsApp
-              o tu programa de lealtad.
-            </p>
           </ScrollReveal>
         </section>
 
@@ -881,12 +764,8 @@ export function LealtadLanding() {
         <section className="py-16 sm:py-20">
           <ScrollReveal>
             <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
-              Consigue más reseñas de Google sin pedir códigos QR
+              Más reseñas de Google, sin perseguir
             </h2>
-            <p className="mt-4 max-w-2xl text-[#14161A]/55">
-              El cliente termina, acerca el teléfono o abre su pase, califica y recibe recompensa. Tú
-              no persigues a nadie con un papelito.
-            </p>
           </ScrollReveal>
 
           <StaggerReveal className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -897,7 +776,6 @@ export function LealtadLanding() {
                     {s.n}
                   </span>
                   <h3 className="mt-3 text-base font-bold leading-snug">{s.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#14161A]/55">{s.desc}</p>
                 </div>
               </StaggerItem>
             ))}
@@ -911,8 +789,7 @@ export function LealtadLanding() {
                   <span className="text-sm font-semibold">4–5 estrellas</span>
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-[#14161A]/65">
-                  Lo mandamos directo a Google Reviews. Publicas lo que suma reputación y
-                  posicionamiento.
+                  Van a Google Reviews. Tú publicas lo que suma.
                 </p>
               </div>
             </ScrollReveal>
@@ -923,8 +800,7 @@ export function LealtadLanding() {
                   <span className="text-sm font-semibold">Menos de 4 estrellas</span>
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-[#14161A]/55">
-                  Se guarda en un formulario interno. Tú ves el feedback y puedes recuperarlo — sin que
-                  dañe tu reputación pública en Maps.
+                  Se queda interno. Tú ves el feedback, Maps no.
                 </p>
               </div>
             </ScrollReveal>
@@ -967,11 +843,7 @@ export function LealtadLanding() {
         {/* 9. MÉTRICAS */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <h2 className="text-3xl font-bold sm:text-4xl">No vendemos “bonito”. Vendemos números.</h2>
-            <p className="mt-3 max-w-2xl text-sm text-[#14161A]/45">
-              Rangos típicos en programas de recompra bien ejecutados en negocios locales. Tu resultado
-              depende de ticket, frecuencia y seguimiento.
-            </p>
+            <h2 className="text-3xl font-bold sm:text-4xl">Números, no “bonito”</h2>
           </ScrollReveal>
           <StaggerReveal className="mt-10 grid gap-4 md:grid-cols-3">
             {METRICS.map((m) => (
@@ -981,7 +853,6 @@ export function LealtadLanding() {
                     {m.value}
                   </p>
                   <p className="mt-3 text-lg font-semibold">{m.label}</p>
-                  <p className="mt-1 text-xs text-[#14161A]/40">{m.note}</p>
                 </div>
               </StaggerItem>
             ))}
@@ -992,12 +863,8 @@ export function LealtadLanding() {
         <section className="py-20 sm:py-24">
           <ScrollReveal>
             <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
-              Recuperando unos cuantos clientes al mes, el sistema puede pagarse solo.
+              Se paga solo si vuelven unos cuantos
             </h2>
-            <p className="mt-4 max-w-2xl text-[#14161A]/55">
-              No empieces por el precio. Empieza por cuánto dejas en la mesa cada vez que alguien no
-              vuelve. Un solo plan, todo incluido.
-            </p>
           </ScrollReveal>
 
           <ScrollReveal>
@@ -1005,19 +872,22 @@ export function LealtadLanding() {
               id="plan"
               className="relative mx-auto mt-10 max-w-lg rounded-[1.75rem] bg-white p-7 ring-1 ring-[#B8935A]/30 sm:p-8"
             >
-              <p className="text-xs font-semibold uppercase tracking-wider text-[#14161A]/40">Plan único</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#14161A]/40">Plan base</p>
               <p className="mt-2 text-4xl font-bold" style={{ color: BRONZE }}>
-                $499
+                $399
                 <span className="ml-1 text-sm font-medium text-[#14161A]/40">MXN/mes</span>
+              </p>
+              <p className="mt-2 text-sm text-[#14161A]/50">
+                ¿Más de una sucursal? +$150 MXN/mes por cada sucursal adicional
               </p>
               <ul className="mt-6 space-y-3 text-sm text-[#14161A]/70">
                 {[
+                  '1 sucursal',
                   'Tarjetas ilimitadas',
                   'Sellos, puntos o cashback (el negocio elige)',
                   'Google Wallet + acceso PWA',
                   'WhatsApp automático por inactividad',
                   'Panel de clientes con semáforo de reactivación',
-                  'Hasta 3 sucursales',
                   'Mensajes de cumpleaños automáticos',
                   'Soporte por WhatsApp incluido',
                 ].map((t) => (
@@ -1035,7 +905,7 @@ export function LealtadLanding() {
                 className="mt-7 inline-flex w-full items-center justify-center rounded-full py-3.5 text-sm font-semibold text-white transition hover:-translate-y-px active:scale-[0.97]"
                 style={{ background: WA }}
               >
-                Quiero este plan
+                Empezar ahora
               </a>
             </div>
           </ScrollReveal>
@@ -1047,13 +917,13 @@ export function LealtadLanding() {
             <ScrollReveal>
               <h2 className="text-3xl font-bold leading-tight sm:text-4xl">Buscamos vendedores</h2>
               <p className="mt-4 max-w-xl text-[#14161A]/55">
-                Gana comisiones recurrentes por cada negocio que traigas — sin inversión de tu parte.
+                Comisión recurrente por cada negocio que traigas. Sin inversión.
               </p>
               <ul className="mt-8 space-y-4 text-sm text-[#14161A]/70">
                 {[
                   'Sin cuota de entrada',
-                  'Esquema de pago diseñado para que ganes más entre más vendas',
-                  'Material de venta y demo listos desde el día uno',
+                  'Ganas más entre más vendas',
+                  'Demo y material desde el día uno',
                 ].map((t) => (
                   <li key={t} className="flex gap-3">
                     <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: BRONZE }} />
@@ -1063,7 +933,7 @@ export function LealtadLanding() {
               </ul>
               <div className="mt-8">
                 <WaButton href={WA_SELLER} onClick={() => trackCta('vendedores')}>
-                  Contáctanos para conocer el esquema completo
+                  Escríbenos
                 </WaButton>
               </div>
             </ScrollReveal>
@@ -1076,9 +946,6 @@ export function LealtadLanding() {
                   <br />
                   Tú sigues ganando.
                 </p>
-                <p className="mt-6 max-w-sm text-sm leading-relaxed text-[#14161A]/45">
-                  Tú presentas. El sistema trabaja. Si encaja, te lo explicamos al hablar.
-                </p>
               </div>
             </ScrollReveal>
           </div>
@@ -1087,7 +954,7 @@ export function LealtadLanding() {
         {/* 12. FAQ */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <h2 className="text-3xl font-bold sm:text-4xl">Objeciones, respondidas en claro</h2>
+            <h2 className="text-3xl font-bold sm:text-4xl">Preguntas</h2>
           </ScrollReveal>
           <div className="mx-auto mt-10 max-w-3xl">
             {FAQS.map((f) => (
@@ -1100,18 +967,12 @@ export function LealtadLanding() {
         <section className="py-16 text-center sm:py-20">
           <ScrollReveal>
             <h2 className="mx-auto max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
-              Si contratas esto, la meta es una sola:{' '}
-              <span style={{ color: BRONZE }}>vender más.</span>
+              La meta es una: <span style={{ color: BRONZE }}>vender más.</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-[#14161A]/55">
-              Mándanos tu logo. En 24h tienes el sistema listo para que tus clientes vuelvan.
-            </p>
+            <p className="mx-auto mt-4 max-w-lg text-[#14161A]/55">Mándanos tu logo. En 24h está listo.</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <WaButton href={WA_GROWTH} onClick={() => trackCta('cierre-ventas')}>
-                Quiero aumentar mis ventas
-              </WaButton>
-              <WaButton href={WA_DEMO} onClick={() => trackCta('cierre-demo')}>
-                Pedir demostración
+                Empezar ahora
               </WaButton>
             </div>
           </ScrollReveal>
@@ -1121,11 +982,8 @@ export function LealtadLanding() {
         <section className="py-16 sm:py-20">
           <ScrollReveal>
             <h2 className="mx-auto max-w-2xl text-center text-3xl font-bold sm:text-4xl">
-              De la primera conversación a más clientes en la puerta
+              Un solo sistema, más clientes en la puerta
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-center text-sm text-[#14161A]/50">
-              Un solo sistema: captura, recompra, recuperación, NFC y reseñas trabajando juntos.
-            </p>
           </ScrollReveal>
           <ol className="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-2">
             {ECOSYSTEM.map((node, i) => (
@@ -1162,11 +1020,12 @@ export function LealtadLanding() {
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => trackCta('whatsapp-flotante')}
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_8px_24px_rgba(37,211,102,0.35)] transition hover:scale-105 active:scale-95"
+        className="fixed bottom-5 right-5 z-[60] flex h-14 items-center gap-2 rounded-full pl-3.5 pr-4 text-white shadow-[0_8px_24px_rgba(37,211,102,0.35)] transition hover:scale-105 active:scale-95"
         style={{ background: WA }}
         aria-label="Escribir por WhatsApp"
       >
-        <MessageCircle className="h-7 w-7" />
+        <MessageCircle className="h-6 w-6" />
+        <span className="text-sm font-semibold">WhatsApp</span>
       </a>
     </main>
   );
