@@ -197,6 +197,13 @@ async function clearSessionInMongo(clientId) {
 async function setConnectedInMongo(clientId, connected) {
   try {
     const db = await getDb();
+    if (connected) {
+      const existing = await db.collection('whatsapp_qr').findOne({ _id: clientId });
+      if (existing?.resetRequestedAt) {
+        console.log(`[Baileys] (${clientId}) ignoro connected=true: el panel pidió un QR nuevo`);
+        return;
+      }
+    }
     const update = { connected, updatedAt: new Date() };
     if (connected) update.qr = null;
     await db.collection('whatsapp_qr').updateOne(
@@ -949,6 +956,10 @@ async function startClient(clientId, baileys) {
       if (state.qrTimer) { clearTimeout(state.qrTimer); state.qrTimer = null; }
       state.state = 'disconnected';
       state.ready = false;
+      if (state.ignoreDisconnectUntil && Date.now() < state.ignoreDisconnectUntil) {
+        console.log(`[Baileys] (${id}) Reset en curso — no se reusa la sesión anterior`);
+        return;
+      }
       await setConnectedInMongo(id, false);
       await postQrToApi(id, { connected: false });
 
@@ -1161,6 +1172,76 @@ async function main() {
     setTimeout(pollAndSendAlerts, 15_000);
     setInterval(pollAndSendAlerts, 20_000);
   }
+
+  const lastHandledResetAt = new Map();
+
+  async function forceResetBaileys(id) {
+    const state = clients.get(id) || {
+      sock: null,
+      ready: false,
+      state: 'boot',
+      reconnectAttempt: 0,
+      logoutRecoveries: 0,
+      starting: false,
+      lastQr: null,
+      qrTimer: null,
+    };
+    state.ignoreDisconnectUntil = Date.now() + 20_000;
+    state.ready = false;
+    state.state = 'resetting';
+    clients.set(id, state);
+    if (state.qrTimer) {
+      clearTimeout(state.qrTimer);
+      state.qrTimer = null;
+    }
+    try {
+      if (state.sock) {
+        try { await state.sock.logout(); } catch { /* ignore */ }
+        try { state.sock.end(undefined); } catch { /* ignore */ }
+      }
+    } catch {
+      /* ignore */
+    }
+    state.sock = null;
+    state.starting = false;
+    state.logoutRecoveries = 0;
+    state.reconnectAttempt = 0;
+    await clearSessionInMongo(id);
+    await startClient(id, baileys);
+  }
+
+  async function pollPanelResetRequests() {
+    try {
+      const db = await getDb();
+      for (const id of ACTIVE_CLIENT_IDS) {
+        const doc = await db.collection('whatsapp_qr').findOne({ _id: id });
+        const at = doc && doc.resetRequestedAt;
+        const ms = at instanceof Date ? at.getTime() : at ? Date.parse(String(at)) : 0;
+        if (!ms || Number.isNaN(ms)) continue;
+        if (ms <= (lastHandledResetAt.get(id) || 0)) continue;
+        lastHandledResetAt.set(id, ms);
+        console.log(`[Baileys] (${id}) Reset de sesión pedido desde el panel`);
+        await forceResetBaileys(id);
+        await db.collection('whatsapp_qr').updateOne(
+          { _id: id },
+          {
+            $unset: { resetRequestedAt: '', resetRequestedBy: '' },
+            $set: {
+              resetHandledAt: new Date(),
+              connected: false,
+              qr: null,
+              updatedAt: new Date(),
+            },
+          }
+        );
+      }
+    } catch (e) {
+      console.warn('[Baileys] Error en poll reset de panel:', e?.message || e);
+    }
+  }
+
+  setTimeout(pollPanelResetRequests, 2_000);
+  setInterval(pollPanelResetRequests, 4_000);
 }
 
 process.on('SIGTERM', () => {

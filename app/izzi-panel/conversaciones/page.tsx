@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Download, MessageSquare, Pause, Play, RefreshCw, Smartphone, User, Wifi, WifiOff, X } from 'lucide-react';
+import { IzziPanelLogoutButton } from '@/components/izzi-panel/IzziPanelLogoutButton';
 import { PanelMessageBubble } from '@/components/panel/PanelMessageBubble';
 import { PanelReplyComposer } from '@/components/panel/PanelReplyComposer';
 import {
@@ -60,6 +61,7 @@ type WhatsAppStatus = {
   qrDataUrl: string | null;
   source: 'bridge' | 'mongo' | 'activity' | 'none';
   lastMessageAt: string | null;
+  resetPending: boolean;
 };
 
 function fmtWhen(iso: string | null | undefined) {
@@ -206,6 +208,7 @@ export default function IzziConversacionesPage() {
         qrDataUrl: typeof data.qrDataUrl === 'string' ? data.qrDataUrl : null,
         source: data.source === 'activity' || data.source === 'mongo' || data.source === 'bridge' ? data.source : 'none',
         lastMessageAt: typeof data.lastMessageAt === 'string' ? data.lastMessageAt : null,
+        resetPending: !!data.resetPending,
       });
     } catch {
       /* el listado de chats sigue siendo usable */
@@ -535,14 +538,16 @@ export default function IzziConversacionesPage() {
                   <WifiOff className="h-3.5 w-3.5" />
                 )}
                 {waStatus.connected
-                  ? waStatus.source === 'activity'
-                    ? 'WhatsApp activo (el bot está contestando)'
-                    : waStatus.phone
-                      ? `WhatsApp conectado · ${waStatus.phone}`
-                      : 'WhatsApp conectado'
-                  : waStatus.hasQr
-                    ? 'Esperando que escanees el QR'
-                    : 'WhatsApp sin señal en el panel — si el bot ya responde, igual puedes pausar chats'}
+                  ? waStatus.phone
+                    ? `WhatsApp conectado · ${waStatus.phone}`
+                    : 'WhatsApp conectado'
+                  : waStatus.resetPending
+                    ? 'Generando QR nuevo…'
+                    : waStatus.hasQr
+                      ? 'Esperando que escanees el QR'
+                      : waStatus.source === 'activity'
+                        ? 'WhatsApp desvinculado — vuelve a escanear el QR'
+                        : 'WhatsApp desconectado — pulsa WhatsApp para cargar el QR'}
               </p>
             ) : null}
             </div>
@@ -578,6 +583,7 @@ export default function IzziConversacionesPage() {
               <RefreshCw className={`h-4 w-4 ${loadingList ? 'animate-spin' : ''}`} />
               Actualizar
             </button>
+            <IzziPanelLogoutButton borderColor={brand.border} />
           </div>
         </div>
       </header>

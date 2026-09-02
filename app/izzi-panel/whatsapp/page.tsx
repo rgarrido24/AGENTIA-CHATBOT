@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Loader2, RefreshCw, Smartphone } from 'lucide-react';
+import { IzziPanelLogoutButton } from '@/components/izzi-panel/IzziPanelLogoutButton';
 import { izziPanelBrand } from '@/lib/izzi-panel-brand';
 
 type WaStatus = {
@@ -14,6 +15,8 @@ type WaStatus = {
   bridgeSeen: boolean;
   source?: 'bridge' | 'mongo' | 'activity' | 'none';
   lastMessageAt?: string | null;
+  resetPending?: boolean;
+  hint?: string | null;
 };
 
 function fmtWhen(iso: string | null) {
@@ -45,14 +48,14 @@ export default function IzziWhatsappPage() {
 
   useEffect(() => {
     void load();
-    const t = setInterval(() => void load(), 10_000);
+    const t = setInterval(() => void load(), 3_000);
     return () => clearInterval(t);
   }, [load]);
 
   async function revincular() {
     if (
       !confirm(
-        'Se cerrará la sesión actual de WhatsApp y tendrás que escanear un QR nuevo. ¿Continuar?',
+        'Se desvincula WhatsApp de este panel y aparece un QR nuevo para escanear. ¿Continuar?',
       )
     ) {
       return;
@@ -70,6 +73,9 @@ export default function IzziWhatsappPage() {
       setReseting(false);
     }
   }
+
+  const showQr = Boolean(status && !status.connected && status.hasQr && status.qrDataUrl);
+  const waitingQr = Boolean(status && !status.connected && !status.hasQr);
 
   return (
     <main
@@ -103,15 +109,18 @@ export default function IzziWhatsappPage() {
               </p>
             ) : null}
           </div>
-          <button
-            type="button"
-            onClick={() => void load()}
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border px-3 py-2 text-sm text-pink-100/90 transition hover:bg-white/5"
-            style={{ borderColor: brand.border }}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Actualizar
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void load()}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border px-3 py-2 text-sm text-pink-100/90 transition hover:bg-white/5"
+              style={{ borderColor: brand.border }}
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Actualizar
+            </button>
+            <IzziPanelLogoutButton borderColor={brand.border} />
+          </div>
         </div>
       </header>
 
@@ -123,7 +132,8 @@ export default function IzziWhatsappPage() {
         ) : null}
 
         {loading && !status ? (
-          <div className="flex items-center justify-center gap-2 rounded-2xl border py-16 text-sm text-pink-200/60"
+          <div
+            className="flex items-center justify-center gap-2 rounded-2xl border py-16 text-sm text-pink-200/60"
             style={{ borderColor: brand.border }}
           >
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -137,18 +147,30 @@ export default function IzziWhatsappPage() {
             style={{ borderColor: 'rgba(34,197,94,0.35)', background: 'rgba(34,197,94,0.08)' }}
           >
             <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-400" />
-            <p className="mt-3 text-lg font-semibold text-emerald-200">
-              {status.source === 'activity' ? 'WhatsApp activo — el bot está contestando' : 'WhatsApp conectado'}
-            </p>
+            <p className="mt-3 text-lg font-semibold text-emerald-200">WhatsApp conectado</p>
             <p className="mt-1 text-sm text-emerald-200/60">
-              {status.source === 'activity'
-                ? 'El marcador de QR no se actualizó, pero hay mensajes recientes. Puedes pausar chats desde Conversaciones.'
-                : `Última señal: ${fmtWhen(status.updatedAt)}`}
+              Última señal: {fmtWhen(status.updatedAt)}
+            </p>
+            {status.hint ? (
+              <p className="mx-auto mt-3 max-w-md text-sm text-emerald-100/70">{status.hint}</p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {status && !status.connected && status.source === 'activity' && !showQr ? (
+          <div
+            className="mb-4 rounded-2xl border px-6 py-6 text-center"
+            style={{ borderColor: 'rgba(251,191,36,0.35)', background: 'rgba(251,191,36,0.08)' }}
+          >
+            <p className="text-lg font-semibold text-amber-100">WhatsApp no está vinculado ahora</p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-amber-100/70">
+              {status.hint ||
+                'Hubo chats recientes, pero el teléfono puede haberse desconectado. Vuelve a escanear el QR.'}
             </p>
           </div>
         ) : null}
 
-        {status && !status.connected && status.hasQr ? (
+        {showQr ? (
           <div
             className="rounded-2xl border px-6 py-8 text-center"
             style={{ borderColor: brand.border, background: 'rgba(255,255,255,0.04)' }}
@@ -158,7 +180,7 @@ export default function IzziWhatsappPage() {
             </p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={status.qrDataUrl ?? ''}
+              src={status?.qrDataUrl ?? ''}
               alt="Código QR para vincular WhatsApp"
               className="mx-auto my-5 h-64 w-64 rounded-xl bg-white p-2"
             />
@@ -169,24 +191,29 @@ export default function IzziWhatsappPage() {
               <li>4. Escanea este código con el escáner de WhatsApp</li>
             </ol>
             <p className="mt-4 text-xs text-pink-200/40">
-              El QR caduca en unos segundos; esta página se actualiza sola cada 10 s.
+              El QR caduca en unos segundos; esta página se actualiza sola cada pocos segundos.
             </p>
           </div>
         ) : null}
 
-        {status && !status.connected && !status.hasQr ? (
+        {waitingQr ? (
           <div
             className="rounded-2xl border px-6 py-10 text-center"
             style={{ borderColor: brand.border, background: 'rgba(255,255,255,0.04)' }}
           >
-            <p className="text-lg font-semibold text-pink-50">Sin QR disponible</p>
+            <p className="text-lg font-semibold text-pink-50">
+              {status?.resetPending ? 'Generando QR nuevo…' : 'Sin QR disponible'}
+            </p>
             <p className="mx-auto mt-2 max-w-md text-sm text-pink-200/60">
-              {status.bridgeSeen
-                ? 'El servicio de WhatsApp está desconectado y todavía no generó un código. Si no aparece en un par de minutos, fuerza una vinculación nueva.'
-                : 'El servicio de WhatsApp aún no ha reportado esta cuenta. Verifica que el bridge esté corriendo.'}
+              {status?.resetPending
+                ? 'El puente está borrando la sesión anterior. En unos segundos aparece el código. No hace falta recargar a mano.'
+                : status?.hint ||
+                  (status?.bridgeSeen
+                    ? 'El servicio está desconectado y todavía no generó un código. Pulsa Volver a conectar.'
+                    : 'El servicio de WhatsApp aún no ha reportado esta cuenta. Verifica que el bridge esté corriendo.')}
             </p>
             <p className="mt-2 text-xs text-pink-200/40">
-              Última señal: {fmtWhen(status.updatedAt)}
+              Última señal: {fmtWhen(status?.updatedAt ?? null)}
             </p>
           </div>
         ) : null}
@@ -197,19 +224,19 @@ export default function IzziWhatsappPage() {
               type="button"
               onClick={() => void revincular()}
               disabled={reseting}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold text-pink-100 transition hover:bg-white/5 disabled:opacity-40"
-              style={{ borderColor: brand.border }}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition disabled:opacity-40"
+              style={{ background: brand.accent }}
             >
               {reseting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <RefreshCw className="h-4 w-4" />
               )}
-              Forzar vinculación nueva
+              Volver a conectar (nuevo QR)
             </button>
             <p className="mx-auto mt-2 max-w-md text-xs text-pink-200/40">
-              Borra la sesión guardada de esta cuenta. Úsalo si el QR no aparece o si WhatsApp
-              cerró la sesión.
+              Úsalo si desvinculaste el teléfono, si el panel dice conectado y no lo está, o si el
+              QR no aparece. Esto no cierra tu sesión del panel, solo la de WhatsApp.
             </p>
           </div>
         ) : null}

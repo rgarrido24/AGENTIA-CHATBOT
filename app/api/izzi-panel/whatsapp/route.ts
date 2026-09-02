@@ -22,8 +22,9 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * POST — fuerza una vinculación nueva: borra la sesión guardada para que
- * el bridge deje de reintentar con credenciales muertas y emita un QR.
+ * POST — pide un QR nuevo. El worker (whatsapp-web.js o Baileys) borra la
+ * sesión en disco/Mongo y vuelve a emitir el código. No basta con apagar el
+ * flag `connected`: si el teléfono ya se desvinculó, hay que tirar LocalAuth.
  */
 export async function POST(req: NextRequest) {
   const clientId = getIzziPanelClientId(req);
@@ -33,21 +34,30 @@ export async function POST(req: NextRequest) {
 
   try {
     const db = await getMongoDb();
+    const now = new Date();
     const [sessions] = await Promise.all([
       db.collection('whatsapp_sessions').deleteMany({ clientId }),
-      db
-        .collection('whatsapp_qr')
-        .updateOne(
-          { _id: clientId as never },
-          { $set: { qr: null, connected: false, updatedAt: new Date(), clientId } },
-          { upsert: true },
-        ),
+      db.collection('whatsapp_qr').updateOne(
+        { _id: clientId as never },
+        {
+          $set: {
+            qr: null,
+            connected: false,
+            updatedAt: now,
+            clientId,
+            resetRequestedAt: now,
+            resetRequestedBy: 'izzi-panel',
+          },
+        },
+        { upsert: true }
+      ),
     ]);
 
     return NextResponse.json({
       ok: true,
       clientId,
       sessionsDeleted: sessions.deletedCount,
+      resetRequested: true,
     });
   } catch (err) {
     console.error('[izzi-panel/whatsapp] POST', err);

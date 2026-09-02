@@ -13,6 +13,8 @@ export type IzziWhatsAppStatus = {
   lastMessageAt: string | null;
   updatedAt: string | null;
   bridgeSeen: boolean;
+  resetPending: boolean;
+  hint: string | null;
 };
 
 export async function getIzziWhatsAppStatus(clientId: string): Promise<IzziWhatsAppStatus> {
@@ -29,6 +31,23 @@ export async function getIzziWhatsAppStatus(clientId: string): Promise<IzziWhats
     lastMessageAt && Date.now() - lastMessageAt.getTime() < ACTIVITY_WINDOW_MS ? lastMessageAt : null;
   const qrDataUrl = hasQr ? await qrDataUrlFor(tenant) : null;
 
+  if (mongoMeta.resetPending) {
+    return {
+      connected: false,
+      phone,
+      hasQr,
+      qrDataUrl,
+      source: hasQr ? 'mongo' : 'none',
+      lastMessageAt: lastMessageAt?.toISOString() ?? null,
+      updatedAt: mongoMeta.updatedAt,
+      bridgeSeen: mongoMeta.bridgeSeen,
+      resetPending: true,
+      hint: hasQr
+        ? 'Escanea el QR nuevo. El anterior ya no sirve.'
+        : 'El puente está generando un QR nuevo. Esta página se actualiza sola.',
+    };
+  }
+
   if (bridge.connected) {
     return {
       connected: true,
@@ -39,12 +58,14 @@ export async function getIzziWhatsAppStatus(clientId: string): Promise<IzziWhats
       lastMessageAt: lastMessageAt?.toISOString() ?? null,
       updatedAt: mongoMeta.updatedAt,
       bridgeSeen: mongoMeta.bridgeSeen,
+      resetPending: false,
+      hint: 'Si en el teléfono ya no aparece este dispositivo, pulsa Volver a conectar para cargar un QR nuevo.',
     };
   }
 
   if (recent) {
     return {
-      connected: true,
+      connected: false,
       phone,
       hasQr,
       qrDataUrl,
@@ -52,6 +73,8 @@ export async function getIzziWhatsAppStatus(clientId: string): Promise<IzziWhats
       lastMessageAt: recent.toISOString(),
       updatedAt: mongoMeta.updatedAt,
       bridgeSeen: mongoMeta.bridgeSeen,
+      resetPending: false,
+      hint: 'Hubo mensajes recientes, pero el teléfono puede estar desvinculado. Escanea el QR otra vez.',
     };
   }
 
@@ -64,6 +87,8 @@ export async function getIzziWhatsAppStatus(clientId: string): Promise<IzziWhats
     lastMessageAt: lastMessageAt?.toISOString() ?? null,
     updatedAt: mongoMeta.updatedAt,
     bridgeSeen: mongoMeta.bridgeSeen,
+    resetPending: false,
+    hint: null,
   };
 }
 
@@ -77,17 +102,21 @@ export async function getIzziWhatsAppQrDataUrl(clientId: string): Promise<string
   }
 }
 
-async function getMongoMeta(clientId: string): Promise<{ updatedAt: string | null; bridgeSeen: boolean }> {
+async function getMongoMeta(
+  clientId: string
+): Promise<{ updatedAt: string | null; bridgeSeen: boolean; resetPending: boolean }> {
   try {
     const db = await getMongoDb();
     const doc = await db.collection('whatsapp_qr').findOne({ _id: clientId as never });
-    const updatedAt = (doc as { updatedAt?: Date } | null)?.updatedAt;
+    const typed = doc as { updatedAt?: Date; resetRequestedAt?: Date } | null;
+    const updatedAt = typed?.updatedAt;
     return {
       bridgeSeen: !!doc,
       updatedAt: updatedAt instanceof Date ? updatedAt.toISOString() : null,
+      resetPending: Boolean(typed?.resetRequestedAt),
     };
   } catch {
-    return { updatedAt: null, bridgeSeen: false };
+    return { updatedAt: null, bridgeSeen: false, resetPending: false };
   }
 }
 
