@@ -35,6 +35,7 @@
     "app/**/*.tsx",
     "app/**/*.ts",
     "components/**/*.tsx",
+    "components/**/*.ts",
     "middleware.ts",
     ".next/types/**/*.ts"
   ],

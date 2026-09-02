@@ -1,5 +1,6 @@
 'use client';
 
+import '@/styles/agentia-brand.css';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
@@ -27,6 +28,9 @@ import { RoiCalculator } from './RoiCalculator';
 import { NfcTapSequence } from './NfcTapSequence';
 import { IndustryPhoneCarousel } from './IndustryPhoneCarousel';
 import { EcosystemFlow } from './EcosystemFlow';
+import Navbar from '@/components/shared/Navbar';
+import { AgentiaChatWidget } from '@/components/AgentiaChatWidget';
+import WhatsAppFloat from '@/components/shared/WhatsAppFloat';
 
 const CYAN = '#00D4FF';
 const GOLD = '#FFD700';
@@ -635,39 +639,18 @@ export function LealtadLanding() {
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-8">
-        {/* Nav */}
-        <header className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <Image
-              src="/logo-agentia-2026.png"
-              alt="Agentia"
-              width={44}
-              height={44}
-              className="rounded-lg"
-              priority
-            />
-            <span className="font-[family-name:var(--font-space)] text-lg font-bold">
-              Agentia
-              <span className="ml-1.5 text-[#00D4FF]">Crecimiento</span>
-            </span>
-          </Link>
-          <nav className="hidden items-center gap-6 text-sm text-white/55 md:flex">
-            <a href="#simulador" className="hover:text-[#00D4FF]">
-              Simulador
-            </a>
-            <a href="#giros" className="hover:text-[#00D4FF]">
-              Tu giro
-            </a>
-            <a href="#plan" className="hover:text-[#00D4FF]">
-              Plan
-            </a>
-          </nav>
-          <GlowButton href={WA_GROWTH} external onClick={() => trackCta('nav-whatsapp')}>
-            Quiero vender más
-          </GlowButton>
-        </header>
+      <Navbar
+        pageLinks={[
+          { href: '#simulador', label: 'Simulador' },
+          { href: '#giros', label: 'Tu giro' },
+          { href: '#plan', label: 'Plan' },
+        ]}
+        ctaHref={WA_GROWTH}
+        ctaLabel="Quiero vender más"
+        ctaExternal
+      />
 
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-28 sm:px-6 lg:px-8">
         {/* 1. HERO */}
         <section className="grid items-center gap-12 py-14 lg:min-h-[calc(100dvh-5rem)] lg:grid-cols-2 lg:gap-10 lg:py-10">
           <div>
@@ -1353,16 +1336,11 @@ export function LealtadLanding() {
         </footer>
       </div>
 
-      <a
-        href={WA_GROWTH}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => trackCta('whatsapp-flotante')}
-        className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-[#06130B] shadow-[0_8px_32px_rgba(37,211,102,0.45)] transition hover:scale-105 active:scale-95"
-        aria-label="Escribir por WhatsApp"
-      >
-        <MessageCircle className="h-7 w-7" />
-      </a>
+      <WhatsAppFloat
+        productLabel="Lealtad"
+        defaultMessage="Hola Agentia, quiero aumentar mis ventas con el sistema de recompra. ¿Cómo arranco?"
+      />
+      <AgentiaChatWidget />
     </main>
   );
 }

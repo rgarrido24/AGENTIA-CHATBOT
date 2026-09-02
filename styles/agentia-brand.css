@@ -1,0 +1,322 @@
+/* ============================================================
+   AGENTIA BRAND — tokens y utilidades compartidas
+   Replica el sistema visual de agentia.software/lealtad
+   Importar UNA vez por página: import '@/styles/agentia-brand.css'
+   Si ya existen estas variables en tu globals.css, borra el
+   bloque :root de aquí para no duplicar.
+   ============================================================ */
+
+:root {
+  --bg-0: #0a0e14;
+  --bg-1: #0f1620;
+  --bg-2: #131b27;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text-0: #f3f6f8;
+  --text-1: #aebac4;
+  --text-2: #6f7d89;
+
+  --verde: #25d366;
+  --verde-dim: #1a9e4d;
+  --cyan: #35c9f0;
+  --amber: #f0a93d;
+
+  --font-display: var(--font-space), "Space Grotesk", system-ui, sans-serif;
+  --font-body: var(--font-jakarta), var(--font-inter), system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ag-page {
+  background: var(--bg-0);
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(37, 211, 102, 0.08), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(53, 201, 240, 0.07), transparent 45%);
+  color: var(--text-0);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+.ag-container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.ag-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.ag-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--verde);
+  box-shadow: 0 0 8px 2px rgba(37, 211, 102, 0.6);
+}
+
+.ag-h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(32px, 5vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  color: var(--text-0);
+}
+
+.ag-h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(24px, 3.2vw, 34px);
+  line-height: 1.15;
+  color: var(--text-0);
+}
+
+.ag-lead {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-1);
+  max-width: 60ch;
+}
+
+/* Glassmorphism card — el elemento estructural principal */
+.ag-card {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 28px;
+  transition: border-color 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.ag-card:hover {
+  border-color: var(--line-strong);
+}
+
+.ag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-1);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.ag-badge--meta {
+  color: #7fd7ff;
+  border-color: rgba(53, 201, 240, 0.35);
+}
+
+/* Botones */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  color: #06210f;
+  background: var(--verde);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px 24px;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
+  text-decoration: none;
+}
+.btn-primary:hover {
+  background: #2ee474;
+  box-shadow: 0 8px 24px -8px rgba(37, 211, 102, 0.55);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--text-0);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 13px 23px;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+  text-decoration: none;
+}
+.btn-ghost:hover {
+  border-color: var(--cyan);
+  background: rgba(53, 201, 240, 0.06);
+}
+
+/* Navbar */
+.ag-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(10, 14, 20, 0.72);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.ag-navbar-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ag-logo {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--text-0);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ag-logo span {
+  color: var(--verde);
+}
+.ag-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.ag-nav-link {
+  font-size: 14px;
+  color: var(--text-1);
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+.ag-nav-link:hover {
+  color: var(--text-0);
+  background: rgba(255, 255, 255, 0.05);
+}
+.ag-nav-link--active {
+  color: var(--verde);
+}
+
+/* WhatsApp float button */
+.ag-wa-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ag-wa-button {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--verde);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px -6px rgba(37, 211, 102, 0.6);
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s var(--ease);
+}
+.ag-wa-button:hover {
+  transform: scale(1.06);
+}
+.ag-wa-panel {
+  position: absolute;
+  bottom: 72px;
+  right: 0;
+  width: 280px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Simple entrance animation — un solo momento orquestado en el hero */
+@media (prefers-reduced-motion: no-preference) {
+  .ag-hero-in {
+    animation: ag-rise 0.7s var(--ease) both;
+  }
+  .ag-hero-in-delay-1 { animation-delay: 0.08s; }
+  .ag-hero-in-delay-2 { animation-delay: 0.16s; }
+  .ag-hero-in-delay-3 { animation-delay: 0.24s; }
+}
+@keyframes ag-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ag-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.ag-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+@media (max-width: 860px) {
+  .ag-grid-2, .ag-grid-3 { grid-template-columns: 1fr; }
+}
+
+.ag-section {
+  padding: 88px 0;
+  border-top: 1px solid var(--line);
+}
+
+input.ag-input, select.ag-input, textarea.ag-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text-0);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input.ag-input:focus, select.ag-input:focus, textarea.ag-input:focus {
+  border-color: var(--cyan);
+}
+label.ag-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-1);
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Visible focus para accesibilidad */
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}

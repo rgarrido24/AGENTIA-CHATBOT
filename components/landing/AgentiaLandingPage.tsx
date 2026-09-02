@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, Check, Shield, X } from 'lucide-react';
+import { ArrowRight, Check, Globe, LayoutDashboard, MapPin, MessageCircle, ShoppingBag, Wallet, X } from 'lucide-react';
+import Navbar from '@/components/shared/Navbar';
 import { AutomationSimulator } from '@/components/landing/AutomationSimulator';
 import { CaseStudyMock } from '@/components/landing/CaseStudyMock';
 import { GlowButton } from '@/components/landing/GlowButton';
@@ -26,6 +26,21 @@ import {
 const CYAN = '#00D4FF';
 const GOLD = '#FFD700';
 const BG = '#0a0a0a';
+
+const HOME_PRODUCTS = [
+  {
+    href: '/chatbot',
+    title: 'Chatbot WhatsApp',
+    desc: 'IA 24/7 con panel CRM',
+    icon: MessageCircle,
+    featured: true,
+  },
+  { href: '/crm', title: 'CRM de ventas', desc: 'Para equipos y agencias', icon: LayoutDashboard, featured: false },
+  { href: '/ecommerce', title: 'Tienda online', desc: 'Con pasarela de pago', icon: ShoppingBag, featured: false },
+  { href: '/lealtad', title: 'Tarjeta de lealtad', desc: 'Puntos, sellos o cashback', icon: Wallet, featured: false },
+  { href: '/paginas-web', title: 'Páginas web', desc: 'Alta conversión con chatbot', icon: Globe, featured: false },
+  { href: '/rastreo', title: 'Rastreo de campo', desc: 'GPS para equipos en campo', icon: MapPin, featured: false },
+] as const;
 
 const PAIN_POINTS = [
   '¿Tu equipo pasa horas copiando datos entre WhatsApp, Excel y tu CRM?',
@@ -259,39 +274,9 @@ export function AgentiaLandingPage() {
         aria-hidden
       />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-        {/* Nav */}
-        <header className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <Image src="/logo-agentia-2026.png" alt="Agentia" width={44} height={44} className="rounded-lg" priority />
-            <span className="hidden font-[family-name:var(--font-space)] text-lg font-bold sm:block">Agentia</span>
-          </Link>
-          <nav className="hidden items-center gap-6 text-sm text-white/60 md:flex">
-            {[
-              ['#transformacion', 'Transformación'],
-              ['#tecnologias', 'Tech'],
-              ['#gratis', 'Gratis'],
-              ['#simulador', 'Simulador'],
-              ['#demos', 'Demos'],
-              ['#meta', 'Meta'],
-              ['#casos', 'Casos'],
-              ['#integraciones', 'Stack'],
-            ].map(([href, label]) => (
-              <a
-                key={href}
-                href={href}
-                className="relative transition-colors duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-[#00D4FF] after:transition-[width] after:duration-[200ms] after:ease-[cubic-bezier(0.23,1,0.32,1)] hover:text-[#00D4FF] hover:after:w-full"
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2 rounded-full border border-[#00D4FF]/25 bg-[#00D4FF]/5 px-3 py-1.5 text-[11px] text-[#00D4FF]">
-            <Shield className="h-3.5 w-3.5" />
-            Partner oficial Meta
-          </div>
-        </header>
+      <Navbar ctaHref="#simulador" ctaLabel="Simulador" ctaExternal={false} />
 
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
         {/* Hero */}
         <section className="relative grid min-h-[calc(100dvh-5rem)] items-center gap-12 py-12 lg:grid-cols-2">
           <CodeRain />
@@ -476,6 +461,34 @@ export function AgentiaLandingPage() {
                 </span>
               </StaggerItem>
             ))}
+          </StaggerReveal>
+        </section>
+
+        <section id="productos" className="scroll-mt-28 py-16">
+          <SectionHeader
+            title="Un sistema por cada parte de tu negocio"
+            subtitle="Elige el producto. El diagnóstico te dice por dónde empezar."
+          />
+          <StaggerReveal className="mt-8 grid gap-3 sm:grid-cols-2">
+            {HOME_PRODUCTS.map((p) => {
+              const Icon = p.icon;
+              return (
+                <StaggerItem key={p.href}>
+                  <Link
+                    href={p.href}
+                    className="group flex h-full flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] transition-[transform,border-color,box-shadow] duration-[220ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:border-[#00D4FF]/35 hover:shadow-[0_0_36px_rgba(0,212,255,0.1)]"
+                  >
+                    <Icon className="h-5 w-5 text-[#00D4FF]" strokeWidth={1.5} />
+                    <p className="mt-4 font-[family-name:var(--font-space)] text-lg font-semibold">{p.title}</p>
+                    <p className="mt-1 text-sm text-white/55">{p.desc}</p>
+                    <span className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-[#00D4FF]">
+                      Ver producto
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform duration-[160ms] group-hover:translate-x-0.5" />
+                    </span>
+                  </Link>
+                </StaggerItem>
+              );
+            })}
           </StaggerReveal>
         </section>
 
