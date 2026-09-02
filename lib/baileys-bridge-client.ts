@@ -54,33 +54,63 @@ export async function bridgeSendMessage(clientId: string, phone: string, message
 }
 
 export async function bridgeGetStatus(clientId: string) {
+  const mongo = await getMongoWhatsAppDoc(clientId);
   const base = bridgeBase();
   if (base) {
-    const res = await bridgeFetch(`/status?clientId=${encodeURIComponent(clientId)}`);
-    return res.json().catch(() => ({}));
+    try {
+      const res = await bridgeFetch(`/status?clientId=${encodeURIComponent(clientId)}`);
+      const data = (await res.json().catch(() => ({}))) as {
+        connected?: boolean;
+        phone?: string | null;
+        hasQr?: boolean;
+      };
+      if (data?.connected) {
+        return {
+          connected: true,
+          phone: data.phone || mongo.phone,
+          hasQr: !!data.hasQr || mongo.hasQr,
+        };
+      }
+    } catch {
+      /* Baileys no es el bridge de todos los tenants (izzi usa whatsapp-web.js). */
+    }
   }
 
-  const db = await getMongoDb();
-  const doc = await db.collection('whatsapp_qr').findOne({ _id: clientId as never });
   return {
-    connected: !!(doc as { connected?: boolean } | null)?.connected,
-    phone: (doc as { phone?: string } | null)?.phone || null,
-    hasQr: !!(doc as { qr?: string } | null)?.qr,
+    connected: mongo.connected,
+    phone: mongo.phone,
+    hasQr: mongo.hasQr,
   };
 }
 
 export async function bridgeGetQrRaw(clientId: string): Promise<string | null> {
   const base = bridgeBase();
   if (base) {
-    const res = await bridgeFetch(`/qr?clientId=${encodeURIComponent(clientId)}&format=raw`);
-    if (!res.ok) return null;
-    const text = await res.text();
-    return text.trim() || null;
+    try {
+      const res = await bridgeFetch(`/qr?clientId=${encodeURIComponent(clientId)}&format=raw`);
+      if (res.ok) {
+        const text = (await res.text()).trim();
+        if (text) return text;
+      }
+    } catch {
+      /* fall through to Mongo */
+    }
   }
 
+  const mongo = await getMongoWhatsAppDoc(clientId);
+  return mongo.qr;
+}
+
+async function getMongoWhatsAppDoc(clientId: string) {
   const db = await getMongoDb();
   const doc = await db.collection('whatsapp_qr').findOne({ _id: clientId as never });
-  return (doc as { qr?: string } | null)?.qr || null;
+  const typed = doc as { connected?: boolean; phone?: string; qr?: string } | null;
+  return {
+    connected: !!typed?.connected,
+    phone: typed?.phone || null,
+    hasQr: !!typed?.qr,
+    qr: typed?.qr || null,
+  };
 }
 
 export async function bridgePausePhone(clientId: string, phone: string) {

@@ -80,6 +80,11 @@ function handleClientPanelAuth(request: NextRequest): NextResponse | null {
   const clientId = (panelPage?.[1] || panelApi?.[1] || '').toLowerCase();
   if (!clientId) return null;
 
+  // izzi / izzi-2 usan /izzi-panel (conversaciones, pausar, tomar control).
+  if (panelPage && (clientId === 'izzi' || clientId.startsWith('izzi-'))) {
+    return NextResponse.next();
+  }
+
   const expected = getExpectedClientPanelToken(clientId);
   if (!expected) {
     if (panelApi) {
@@ -109,6 +114,12 @@ function handleClientPanelAuth(request: NextRequest): NextResponse | null {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const ip = clientIP(request);
+
+  if (pathname === '/lealtad' || pathname.startsWith('/lealtad/')) {
+    const res = NextResponse.next();
+    res.headers.set('Cache-Control', 'no-store, max-age=0');
+    return res;
+  }
 
   // ── Disable caching for /brief (conversion flow) ───────────────────────────
   if (pathname === '/brief' || pathname.startsWith('/brief/')) {
@@ -148,8 +159,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === '/api/izzi-panel/auth/login') {
-    if (request.method === 'POST') {
+  if (
+    pathname === '/api/izzi-panel/auth/login' ||
+    pathname === '/api/izzi-panel/auth/from-panel-token'
+  ) {
+    if (request.method === 'POST' || pathname.endsWith('/from-panel-token')) {
       const allowed = edgeRateLimit(`izzi-login:${ip}`, 10, 5 * 60 * 1000);
       if (!allowed) {
         return NextResponse.json(
@@ -224,7 +238,9 @@ export async function middleware(request: NextRequest) {
   const isIzziPanelPage =
     pathname.startsWith('/izzi-panel') && !pathname.startsWith('/izzi-panel/login');
   const isIzziPanelApi =
-    pathname.startsWith('/api/izzi-panel') && pathname !== '/api/izzi-panel/auth/login';
+    pathname.startsWith('/api/izzi-panel') &&
+    pathname !== '/api/izzi-panel/auth/login' &&
+    pathname !== '/api/izzi-panel/auth/from-panel-token';
 
   if (
     isDashboardPage ||
@@ -238,7 +254,15 @@ export async function middleware(request: NextRequest) {
   ) {
     const adminUser = process.env.ADMIN_USER || 'admin';
     const adminPass = process.env.ADMIN_PASSWORD;
-    const izziOnly = (isIzziPanelPage || isIzziPanelApi) && !!(process.env.IZZI_PANEL_PASSWORD || process.env.IZZI_PANEL_USERS);
+    const izziOnly =
+      (isIzziPanelPage || isIzziPanelApi) &&
+      !!(
+        process.env.IZZI_PANEL_PASSWORD ||
+        process.env.IZZI_PANEL_USERS ||
+        process.env.TOKEN_IZZI ||
+        process.env.TOKEN_IZZI_2 ||
+        process.env.TOKEN_IZZI_3
+      );
     if (!adminPass && !izziOnly) {
       if (isDashboardApi || isCwfPanelApi || isAgentiaPanelApi || isIzziPanelApi) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
@@ -278,6 +302,26 @@ export async function middleware(request: NextRequest) {
     if (!okIzzi && izziToken && adminPass) {
       const adminAsIzzi = await sha256Hex(`${adminUser}:${adminPass}:agentia_izzi_panel_v1`);
       if (izziToken === adminAsIzzi) okIzzi = true;
+    }
+    // TOKEN_IZZI / TOKEN_IZZI_2 (panel genérico) → cookie del panel real.
+    if (!okIzzi && izziToken) {
+      const bridgePairs: Array<[string, string | undefined]> = [
+        ['izzi', process.env.TOKEN_IZZI],
+        ['izzi-2', process.env.TOKEN_IZZI_2],
+        ['izzi-3', process.env.TOKEN_IZZI_3],
+      ];
+      for (const [cid, panelToken] of bridgePairs) {
+        if (!panelToken) continue;
+        const expected = await sha256Hex(`bridge:${cid}:${panelToken}:agentia_izzi_panel_v1`);
+        if (izziToken === expected) {
+          okIzzi = true;
+          break;
+        }
+      }
+    }
+    // AuthGuard / APIs (Node) validan el tenant; aquí solo dejamos pasar cookies SHA-256.
+    if (!okIzzi && izziToken && /^[a-f0-9]{64}$/i.test(izziToken)) {
+      okIzzi = true;
     }
 
     if (!okDashboard && !okAdmin && !(isIzziPanelPage || isIzziPanelApi ? okIzzi : false)) {

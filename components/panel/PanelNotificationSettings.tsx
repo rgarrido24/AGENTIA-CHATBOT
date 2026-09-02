@@ -19,6 +19,7 @@ type PanelNotificationSettingsProps = {
   clientSlug?: string;
   pushStatus?: PortalPushSubscribeResult | null;
   onRetryPush?: () => void | Promise<void>;
+  accent?: string;
 };
 
 const BRAND = {
@@ -59,8 +60,12 @@ export function PanelNotificationSettings({
   clientSlug,
   pushStatus,
   onRetryPush,
+  accent,
 }: PanelNotificationSettingsProps) {
-  const theme = BRAND[panel];
+  const theme = {
+    ...BRAND[panel],
+    ...(accent ? { accent } : {}),
+  };
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<PanelNotificationPrefs>(DEFAULT_PANEL_NOTIFICATION_PREFS);
   const [testingPush, setTestingPush] = useState(false);

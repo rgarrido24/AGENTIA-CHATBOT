@@ -316,6 +316,24 @@ export function LoyaltyBuscarPage({ tenantId }: { tenantId: TenantId }) {
               <ul className="space-y-2">
                 {ultimas.map((h, i) => {
                   const esCanje = h.tipo === 'canje';
+                  const esContacto = h.tipo === 'contacto_reactivacion';
+                  if (esContacto) {
+                    return (
+                      <li
+                        key={`${h.fecha}-${i}`}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/25 px-4 py-3"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            Contacto de reactivación
+                            {h.plantilla ? ` · ${h.plantilla}` : ''}
+                          </p>
+                          <p className="text-xs text-white/40">{formatFecha(h.fecha)}</p>
+                        </div>
+                        <span className="shrink-0 text-xs text-white/40">WhatsApp</span>
+                      </li>
+                    );
+                  }
                   return (
                     <li
                       key={`${h.fecha}-${i}`}

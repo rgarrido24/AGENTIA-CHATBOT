@@ -17,7 +17,8 @@ export type LoyaltyClienteUi = {
     fecha: string;
     monto: number;
     puntosGanados: number;
-    tipo?: 'compra' | 'canje';
+    tipo?: 'compra' | 'canje' | 'contacto_reactivacion';
+    plantilla?: string;
   }[];
 };
 

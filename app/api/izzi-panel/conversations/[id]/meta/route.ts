@@ -17,10 +17,11 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
   const { id } = await ctx.params;
   const body = await req.json().catch(() => ({}));
 
-  const patch: { tipo?: IzziConversationTipo; etapa?: string; notas?: string } = {};
+  const patch: { tipo?: IzziConversationTipo; etapa?: string; notas?: string; atendidoPor?: string } = {};
   if (isIzziTipo(body?.tipo)) patch.tipo = body.tipo;
   if (typeof body?.etapa === 'string') patch.etapa = body.etapa;
   if (typeof body?.notas === 'string') patch.notas = body.notas.slice(0, 4000);
+  if (typeof body?.atendidoPor === 'string') patch.atendidoPor = body.atendidoPor;
 
   if (!Object.keys(patch).length) {
     return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
@@ -38,6 +39,7 @@ export async function PATCH(req: NextRequest, ctx: RouteCtx) {
       tipo: conv.tipo,
       etapa: conv.etapa,
       notas: conv.notas,
+      atendidoPor: conv.atendidoPor,
     },
   });
 }

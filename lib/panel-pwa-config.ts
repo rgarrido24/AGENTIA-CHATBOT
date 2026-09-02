@@ -1,4 +1,5 @@
 import { isIzziClient } from '@/lib/izzi-panel';
+import { izziPanelBrand } from '@/lib/izzi-panel-brand';
 
 export type PanelPushId = 'cwf' | 'agentia' | 'izzi';
 
@@ -61,6 +62,20 @@ export const IZZI_PANEL_PWA: PanelPushConfig = {
   subscribeApi: '/api/izzi-panel/push/subscribe',
   iconBase: '/pwa/izzi',
 };
+
+export function izziPanelPwaForClient(clientId: string | null | undefined): PanelPushConfig {
+  const brand = izziPanelBrand(clientId);
+  return {
+    ...IZZI_PANEL_PWA,
+    name: brand.pwaName,
+    shortName: brand.shortName,
+    description: brand.pwaDescription,
+    themeColor: brand.bg,
+    backgroundColor: brand.bg,
+    manifestPath: brand.manifestPath,
+    iconBase: brand.iconBase,
+  };
+}
 
 export function clientIdToPanel(clientId: string): PanelPushId | null {
   const c = clientId.trim().toLowerCase();

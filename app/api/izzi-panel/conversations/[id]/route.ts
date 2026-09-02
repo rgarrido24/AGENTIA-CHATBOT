@@ -34,6 +34,7 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
       tipo: conv.tipo,
       etapa: conv.etapa,
       notas: conv.notas,
+      atendidoPor: conv.atendidoPor,
       messages: serializePanelMessages(conv),
     },
   });

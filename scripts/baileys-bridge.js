@@ -178,9 +178,32 @@ async function saveQrToMongo(clientId, qr) {
   }
 }
 
+/**
+ * Borra las credenciales de un cliente. Tras un logout (401) las creds guardadas
+ * quedan inservibles: sin borrarlas, cada arranque reintenta con ellas y nunca se emite QR.
+ */
+async function clearSessionInMongo(clientId) {
+  try {
+    const db = await getDb();
+    const res = await db.collection('whatsapp_sessions').deleteMany({ clientId });
+    console.log(`[Baileys] (${clientId}) Sesión inválida borrada (${res.deletedCount} doc)`);
+    return true;
+  } catch (e) {
+    console.error(`[Baileys] (${clientId}) Error borrando whatsapp_sessions:`, e?.message || e);
+    return false;
+  }
+}
+
 async function setConnectedInMongo(clientId, connected) {
   try {
     const db = await getDb();
+    if (connected) {
+      const existing = await db.collection('whatsapp_qr').findOne({ _id: clientId });
+      if (existing?.resetRequestedAt) {
+        console.log(`[Baileys] (${clientId}) ignoro connected=true: el panel pidió un QR nuevo`);
+        return;
+      }
+    }
     const update = { connected, updatedAt: new Date() };
     if (connected) update.qr = null;
     await db.collection('whatsapp_qr').updateOne(
@@ -398,6 +421,19 @@ const RESELLER_ALERT_RECEIPT_SUFFIX = '\n\nResponde con ✅ para confirmar recep
 
 /** Resellers con alertas high_activity vía plantilla Graph API (no clientes internos). */
 const EXTERNAL_RESELLERS = ['luciano'];
+
+/** Tope de recuperaciones automáticas tras logout, para no reiniciar en bucle. */
+const MAX_LOGOUT_RECOVERIES = 3;
+
+/** Clientes dados de baja: sus alertas se descartan sin enviar. */
+const DISABLED_ALERT_CLIENT_IDS = new Set(['decohouse', 'biovela']);
+
+function isDisabledAlertClient(a) {
+  const id = String(a.resellerId || a.clientId || '')
+    .trim()
+    .toLowerCase();
+  return DISABLED_ALERT_CLIENT_IDS.has(id) || a.reason === 'decohouse_lead';
+}
 
 function shouldAppendResellerReceiptSuffix(resellerId) {
   const s = String(resellerId ?? '')
@@ -711,7 +747,7 @@ async function pollAndSendAlerts() {
   }
   const defaultAlertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER || '';
   if (!defaultAlertNumber) {
-    console.warn('[Baileys] ALERT_WHATSAPP_NUMBER vacío — solo alertas con DECOHOUSE/notify.');
+    console.warn('[Baileys] ALERT_WHATSAPP_NUMBER vacío — solo alertas con notifyWhatsappTo propio.');
   }
   const apiBase = getApiBase();
   const secret = getEnv('CRON_SECRET', '') || process.env.CRON_SECRET;
@@ -743,6 +779,12 @@ async function pollAndSendAlerts() {
           continue;
         }
 
+        // Se reclama primero para que la alerta no vuelva en cada poll.
+        if (isDisabledAlertClient(a)) {
+          console.log('[Baileys] Cliente dado de baja — alerta descartada:', a.reason, a.id);
+          continue;
+        }
+
         if (isResellerGraphHighActivityAlert(a)) {
           const alertDoc = { ...a, resellerId: effectiveResellerId(a) };
           await sendResellerHighActivityWithOg(null, null, alertDoc);
@@ -751,13 +793,7 @@ async function pollAndSendAlerts() {
         }
 
         const fromDoc = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
-        const fromDecoEnv =
-          a.reason === 'decohouse_lead'
-            ? String(getEnv('DECOHOUSE_ALERT_NUMBER', '') || process.env.DECOHOUSE_ALERT_NUMBER || '')
-                .trim()
-                .replace(/\D/g, '')
-            : '';
-        const targetRaw = fromDoc || fromDecoEnv || defaultAlertNumber;
+        const targetRaw = fromDoc || defaultAlertNumber;
         if (!targetRaw) {
           console.warn('[Baileys] Alerta sin destino WA (omitir):', a.reason, a.id);
           continue;
@@ -785,9 +821,6 @@ async function pollAndSendAlerts() {
             msg = `⚠️ ATENCION⚠️\n¡Tenes un NUEVO LEAD en tu panel!\nNo dejes que se enfríe y contactalo rápidamente📲\nDale click al enlace para gestionarlo👇\n${portalLink}`;
             break;
           }
-          case 'decohouse_lead':
-            msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
-            break;
           default:
             msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
         }
@@ -829,7 +862,7 @@ async function startClient(clientId, baileys) {
 
   let state = clients.get(id);
   if (!state) {
-    state = { sock: null, ready: false, state: 'boot', reconnectAttempt: 0, starting: false, lastQr: null, qrTimer: null };
+    state = { sock: null, ready: false, state: 'boot', reconnectAttempt: 0, logoutRecoveries: 0, starting: false, lastQr: null, qrTimer: null };
     clients.set(id, state);
   }
   if (state.starting) {
@@ -912,6 +945,7 @@ async function startClient(clientId, baileys) {
       state.state = 'ready';
       state.ready = true;
       state.reconnectAttempt = 0;
+      state.logoutRecoveries = 0;
       state.lastQr = null;
       console.log(`[Baileys] (${id}) WhatsApp conectado.`);
       await setConnectedInMongo(id, true);
@@ -922,6 +956,10 @@ async function startClient(clientId, baileys) {
       if (state.qrTimer) { clearTimeout(state.qrTimer); state.qrTimer = null; }
       state.state = 'disconnected';
       state.ready = false;
+      if (state.ignoreDisconnectUntil && Date.now() < state.ignoreDisconnectUntil) {
+        console.log(`[Baileys] (${id}) Reset en curso — no se reusa la sesión anterior`);
+        return;
+      }
       await setConnectedInMongo(id, false);
       await postQrToApi(id, { connected: false });
 
@@ -935,7 +973,22 @@ async function startClient(clientId, baileys) {
 
       if (loggedOut) {
         state.state = 'logged_out';
-        console.error(`[Baileys] (${id}) Sesión cerrada — re-escanear QR.`);
+        state.logoutRecoveries = (state.logoutRecoveries || 0) + 1;
+
+        if (state.logoutRecoveries > MAX_LOGOUT_RECOVERIES) {
+          console.error(
+            `[Baileys] (${id}) Sesión cerrada ${state.logoutRecoveries} veces seguidas — se detiene para no entrar en bucle. Reinicia el worker.`
+          );
+          return;
+        }
+
+        console.error(`[Baileys] (${id}) Sesión cerrada — borrando credenciales y pidiendo QR nuevo.`);
+        await clearSessionInMongo(id);
+        setTimeout(() => {
+          startClient(id, baileys).catch((e) => {
+            console.error(`[Baileys] (${id}) Error reiniciando tras logout:`, e?.message || e);
+          });
+        }, 3_000);
         return;
       }
 
@@ -1119,6 +1172,76 @@ async function main() {
     setTimeout(pollAndSendAlerts, 15_000);
     setInterval(pollAndSendAlerts, 20_000);
   }
+
+  const lastHandledResetAt = new Map();
+
+  async function forceResetBaileys(id) {
+    const state = clients.get(id) || {
+      sock: null,
+      ready: false,
+      state: 'boot',
+      reconnectAttempt: 0,
+      logoutRecoveries: 0,
+      starting: false,
+      lastQr: null,
+      qrTimer: null,
+    };
+    state.ignoreDisconnectUntil = Date.now() + 20_000;
+    state.ready = false;
+    state.state = 'resetting';
+    clients.set(id, state);
+    if (state.qrTimer) {
+      clearTimeout(state.qrTimer);
+      state.qrTimer = null;
+    }
+    try {
+      if (state.sock) {
+        try { await state.sock.logout(); } catch { /* ignore */ }
+        try { state.sock.end(undefined); } catch { /* ignore */ }
+      }
+    } catch {
+      /* ignore */
+    }
+    state.sock = null;
+    state.starting = false;
+    state.logoutRecoveries = 0;
+    state.reconnectAttempt = 0;
+    await clearSessionInMongo(id);
+    await startClient(id, baileys);
+  }
+
+  async function pollPanelResetRequests() {
+    try {
+      const db = await getDb();
+      for (const id of ACTIVE_CLIENT_IDS) {
+        const doc = await db.collection('whatsapp_qr').findOne({ _id: id });
+        const at = doc && doc.resetRequestedAt;
+        const ms = at instanceof Date ? at.getTime() : at ? Date.parse(String(at)) : 0;
+        if (!ms || Number.isNaN(ms)) continue;
+        if (ms <= (lastHandledResetAt.get(id) || 0)) continue;
+        lastHandledResetAt.set(id, ms);
+        console.log(`[Baileys] (${id}) Reset de sesión pedido desde el panel`);
+        await forceResetBaileys(id);
+        await db.collection('whatsapp_qr').updateOne(
+          { _id: id },
+          {
+            $unset: { resetRequestedAt: '', resetRequestedBy: '' },
+            $set: {
+              resetHandledAt: new Date(),
+              connected: false,
+              qr: null,
+              updatedAt: new Date(),
+            },
+          }
+        );
+      }
+    } catch (e) {
+      console.warn('[Baileys] Error en poll reset de panel:', e?.message || e);
+    }
+  }
+
+  setTimeout(pollPanelResetRequests, 2_000);
+  setInterval(pollPanelResetRequests, 4_000);
 }
 
 process.on('SIGTERM', () => {

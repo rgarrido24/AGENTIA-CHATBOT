@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, MessageCircle, RefreshCw, RotateCcw, Users } from 'lucide-react';
 import { getTenant, sabucanWaDigits, type TenantId } from '@/lib/wallet-tenant';
+import { RecuperacionAsistida } from '@/components/RecuperacionAsistida';
 import { formatFechaCorta, formatPuntos, type LoyaltyClienteUi } from './_ui';
 
 type Semaforo = 'verde' | 'amarillo' | 'rojo';
@@ -269,15 +270,27 @@ export function LoyaltyClientesPage({ tenantId }: { tenantId: TenantId }) {
                       </div>
                     </dl>
                   </div>
-                  <a
-                    href={waUrl(cliente.telefono, nombre, cliente.puntos, negocioNombre)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-[#0a0a0a] transition-opacity hover:opacity-90"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    Contactar por WhatsApp
-                  </a>
+                  {sem === 'verde' ? (
+                    <a
+                      href={waUrl(cliente.telefono, nombre, cliente.puntos, negocioNombre)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-bold text-[#0a0a0a] transition-opacity hover:opacity-90"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Contactar por WhatsApp
+                    </a>
+                  ) : (
+                    <RecuperacionAsistida
+                      nombre={nombre}
+                      telefono={cliente.telefono}
+                      negocio={negocioNombre}
+                      diasSinVisitar={dias}
+                      puntos={cliente.puntos}
+                      registroBase={apiBase}
+                      accent={accent}
+                    />
+                  )}
                 </div>
               </li>
             );

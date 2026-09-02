@@ -4,10 +4,8 @@ import {
   IZZI_PANEL_COOKIE,
   IZZI_PANEL_COOKIE_MAX_AGE,
   isIzziPanelConfigured,
-  izziPanelToken,
-  matchIzziPanelCredentials,
+  mintIzziPanelSession,
 } from '@/lib/izzi-panel-auth';
-import { izziTenantClientIdFromUsername } from '@/lib/izzi-panel';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,13 +17,13 @@ export async function POST(request: NextRequest) {
   const username = typeof body?.username === 'string' ? body.username.trim() : '';
   const password = typeof body?.password === 'string' ? body.password : '';
 
-  if (!matchIzziPanelCredentials(username, password)) {
+  const session = mintIzziPanelSession(username, password);
+  if (!session) {
     return NextResponse.json({ error: 'Usuario o contraseña incorrectos' }, { status: 401 });
   }
 
-  const token = izziPanelToken(username, password);
   const cookieStore = await cookies();
-  cookieStore.set(IZZI_PANEL_COOKIE, token, {
+  cookieStore.set(IZZI_PANEL_COOKIE, session.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -35,7 +33,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     expiresInDays: 30,
-    clientId: izziTenantClientIdFromUsername(username),
+    clientId: session.clientId,
   });
 }
 

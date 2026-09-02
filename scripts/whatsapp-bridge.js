@@ -21,13 +21,27 @@ const qrcode = require('qrcode');
 const http = require('http');
 const { execFile } = require('child_process');
 
-/** Clientes internos — resellers externos (Luciano) los procesa solo baileys-bridge. */
+/**
+ * Clientes internos — resellers externos (Luciano) los procesa solo baileys-bridge.
+ * decohouse y biovela siguen aquí para que no se clasifiquen como reseller externo;
+ * sus alertas se descartan antes de enviarse (ver DISABLED_ALERT_CLIENT_IDS).
+ */
 const INTERNAL_ALERT_CLIENT_IDS = new Set(['izzi', 'decohouse', 'cwf', 'biovela', 'agentia-ventas']);
+
+/** Clientes dados de baja: sus alertas se descartan sin enviar. */
+const DISABLED_ALERT_CLIENT_IDS = new Set(['decohouse', 'biovela']);
 
 function effectiveAlertResellerId(a) {
   return String(a.resellerId || a.clientId || '')
     .trim()
     .toLowerCase();
+}
+
+function isDisabledAlertClient(a) {
+  return (
+    DISABLED_ALERT_CLIENT_IDS.has(effectiveAlertResellerId(a)) ||
+    a.reason === 'decohouse_lead'
+  );
 }
 
 function isExternalResellerAlert(a) {
@@ -173,6 +187,23 @@ const ENABLE_REACTIVATION = isEnabled('AGENTIA_ENABLE_REACTIVATION', false);
 const ENABLE_CONFIRMATIONS = isEnabled('AGENTIA_ENABLE_CONFIRMATIONS', false);
 const ENABLE_REVIEWS = isEnabled('AGENTIA_ENABLE_REVIEWS', false);
 const ENABLE_AGENTIA_FOLLOWUP = isEnabled('AGENTIA_ENABLE_AGENTIA_FOLLOWUP', false);
+
+function wwebjsSessionDir(clientId) {
+  const id = String(clientId || '').trim().toLowerCase() || 'agentia';
+  return path.join(__dirname, '..', `.wwebjs_auth_${id}`);
+}
+
+function wipeWwebjsSession(clientId) {
+  const dir = wwebjsSessionDir(clientId);
+  try {
+    if (fs.existsSync(dir)) {
+      fs.rmSync(dir, { recursive: true, force: true });
+      console.log(`[Agentia] (${clientId}) Sesión LocalAuth eliminada`);
+    }
+  } catch (e) {
+    console.warn(`[Agentia] (${clientId}) No se pudo borrar la sesión:`, e?.message || e);
+  }
+}
 
 function getApiBase() {
   // Si el worker tiene CHATBOT_WEBHOOK_URL pero AGENTIA_CHATBOT_API_URL está mal,
@@ -459,7 +490,7 @@ async function main() {
     const defaultAlertNumber = getEnv('ALERT_WHATSAPP_NUMBER', '') || process.env.ALERT_WHATSAPP_NUMBER || '';
     if (!defaultAlertNumber) {
       console.warn(
-        '[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas sin destino por defecto (Deco House puede usar DECOHOUSE_ALERT_NUMBER en documento o env).'
+        '[Agentia] ALERT_WHATSAPP_NUMBER no configurado — alertas sin destino por defecto (se usará notifyWhatsappTo del documento).'
       );
     }
     try {
@@ -493,14 +524,14 @@ async function main() {
             continue;
           }
 
+          // Se reclama primero para que la alerta no vuelva en cada poll.
+          if (isDisabledAlertClient(a)) {
+            console.log('[Agentia] Cliente dado de baja — alerta descartada:', a.reason, a.id);
+            continue;
+          }
+
           const fromDoc = a.notifyWhatsappTo && String(a.notifyWhatsappTo).trim();
-          const fromDecoEnv =
-            a.reason === 'decohouse_lead'
-              ? String(getEnv('DECOHOUSE_ALERT_NUMBER', '') || process.env.DECOHOUSE_ALERT_NUMBER || '')
-                  .trim()
-                  .replace(/\D/g, '')
-              : '';
-          const targetRaw = fromDoc || fromDecoEnv || defaultAlertNumber;
+          const targetRaw = fromDoc || defaultAlertNumber;
           if (!targetRaw) {
             console.warn('[Agentia] Alerta sin destino WA (omitir):', a.reason, a.id);
             continue;
@@ -521,9 +552,6 @@ async function main() {
               break;
             case 'high_activity':
               msg = await buildHighActivityAlertMessage(a);
-              break;
-            case 'decohouse_lead':
-              msg = `🪟 *DECO HOUSE — Lead / cotización*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
               break;
             default:
               msg = `📣 *ALERTA – ${(a.reason || '').toUpperCase()}*\n👤 ${a.senderName || 'Sin nombre'}\n${senderLine}\n\n${a.lastMessage || ''}\n\n🔗 ${API_URL}/dashboard/leads`;
@@ -856,10 +884,83 @@ async function main() {
     return next;
   }
 
+  const lastHandledResetAt = new Map();
+
+  async function forceResetClient(id) {
+    const sessionDir = wwebjsSessionDir(id);
+    const profileDir = path.join(sessionDir, 'session');
+    const state = clients.get(id) || {
+      client: null,
+      ready: false,
+      state: 'boot',
+      reconnectAttempt: 0,
+      initInFlight: false,
+      lastInitAt: 0,
+    };
+    state.ignoreDisconnectUntil = Date.now() + 20_000;
+    state.ready = false;
+    state.state = 'resetting';
+    clients.set(id, state);
+    lastQrByClient.set(id, { qr: null, dataUrl: null });
+
+    try {
+      if (state.client) {
+        if (typeof state.client.logout === 'function') {
+          await Promise.race([state.client.logout().catch(() => {}), sleep(8000)]);
+        }
+        if (typeof state.client.destroy === 'function') {
+          await Promise.race([state.client.destroy().catch(() => {}), sleep(5000)]);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    state.client = null;
+    state.initInFlight = false;
+    state.lastInitAt = 0;
+    await killOrphanChromeUsingProfile(profileDir);
+    wipeWwebjsSession(id);
+    await sleep(400);
+    state.reconnectAttempt = 0;
+    initClientFor(id);
+  }
+
+  async function pollPanelResetRequests() {
+    const db = await getLeadsMongoDb();
+    if (!db) return;
+    for (const id of ACTIVE_CLIENT_IDS) {
+      try {
+        const doc = await db.collection('whatsapp_qr').findOne({ _id: id });
+        const at = doc && doc.resetRequestedAt;
+        const ms =
+          at instanceof Date ? at.getTime() : at ? Date.parse(String(at)) : 0;
+        if (!ms || Number.isNaN(ms)) continue;
+        if (ms <= (lastHandledResetAt.get(id) || 0)) continue;
+        lastHandledResetAt.set(id, ms);
+        console.log(`[Agentia] (${id}) Reset de sesión pedido desde el panel`);
+        await forceResetClient(id);
+        await db.collection('whatsapp_qr').updateOne(
+          { _id: id },
+          {
+            $unset: { resetRequestedAt: '', resetRequestedBy: '' },
+            $set: {
+              resetHandledAt: new Date(),
+              connected: false,
+              qr: null,
+              updatedAt: new Date(),
+            },
+          }
+        );
+      } catch (e) {
+        console.warn(`[Agentia] (${id}) Error en reset de panel:`, e?.message || e);
+      }
+    }
+  }
+
   function initClientFor(clientId) {
     const id = String(clientId || '').trim().toLowerCase() || 'agentia';
     const apiBase = getApiBase();
-    const sessionDir = path.join(__dirname, '..', `.wwebjs_auth_${id}`);
+    const sessionDir = wwebjsSessionDir(id);
     const profileDir = path.join(sessionDir, 'session');
 
     const state = clients.get(id) || { client: null, ready: false, state: 'boot', reconnectAttempt: 0, initInFlight: false, lastInitAt: 0 };
@@ -955,6 +1056,10 @@ async function main() {
       state.ready = false;
       state.initInFlight = false;
       console.warn(`[Agentia] (${id}) WhatsApp desconectado:`, reason);
+      if (state.ignoreDisconnectUntil && Date.now() < state.ignoreDisconnectUntil) {
+        console.log(`[Agentia] (${id}) Reset en curso — no se reusa la sesión anterior`);
+        return;
+      }
       const qrSecret = getEnv('WHATSAPP_QR_SECRET', '') || process.env.WHATSAPP_QR_SECRET;
       fetch(`${apiBase}/api/whatsapp/qr-store`, {
         method: 'POST',
@@ -1059,6 +1164,9 @@ async function main() {
   }
 
   for (const id of ACTIVE_CLIENT_IDS) initClientFor(id);
+
+  setTimeout(pollPanelResetRequests, 2_000);
+  setInterval(pollPanelResetRequests, 4_000);
 
   // Registrar intervalos UNA SOLA VEZ — fuera de initClient para evitar duplicados en cada reconexión
   if (ENABLE_ALERTS) {

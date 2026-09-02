@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Download, MessageSquare, Pause, Play, RefreshCw, User, X } from 'lucide-react';
+import { ArrowLeft, Download, MessageSquare, Pause, Play, RefreshCw, Smartphone, User, Wifi, WifiOff, X } from 'lucide-react';
+import { IzziPanelLogoutButton } from '@/components/izzi-panel/IzziPanelLogoutButton';
 import { PanelMessageBubble } from '@/components/panel/PanelMessageBubble';
 import { PanelReplyComposer } from '@/components/panel/PanelReplyComposer';
 import {
@@ -10,10 +12,14 @@ import {
 } from '@/lib/izzi-panel-session';
 import {
   etapasForTipo,
+  IZZI_ATENDIDO_OTRO,
+  IZZI_ATENDIDO_POR,
   IZZI_TIPOS,
+  isPresetAtendidoPor,
   tipoLabel,
   type IzziConversationTipo,
 } from '@/lib/izzi-panel';
+import { izziPanelBrand } from '@/lib/izzi-panel-brand';
 
 type ConversationSummary = {
   id: string;
@@ -29,6 +35,7 @@ type ConversationSummary = {
   tipo: IzziConversationTipo;
   etapa: string;
   notas: string;
+  atendidoPor: string;
 };
 
 type ConversationMessage = {
@@ -47,12 +54,15 @@ type ConversationDetail = ConversationSummary & {
   messages: ConversationMessage[];
 };
 
-const BRAND = {
-  bg: '#140810',
-  card: 'rgba(255,255,255,0.04)',
-  border: 'rgba(236, 0, 140, 0.22)',
-  accent: '#EC008C',
-} as const;
+type WhatsAppStatus = {
+  connected: boolean;
+  phone: string | null;
+  hasQr: boolean;
+  qrDataUrl: string | null;
+  source: 'bridge' | 'mongo' | 'activity' | 'none';
+  lastMessageAt: string | null;
+  resetPending: boolean;
+};
 
 function fmtWhen(iso: string | null | undefined) {
   if (!iso) return '—';
@@ -97,15 +107,23 @@ export default function IzziConversacionesPage() {
 
   const [filterTipo, setFilterTipo] = useState<'all' | IzziConversationTipo>('all');
   const [filterEtapa, setFilterEtapa] = useState('all');
+  const [filterAtendido, setFilterAtendido] = useState('all');
   const [search, setSearch] = useState('');
   const [notesDraft, setNotesDraft] = useState('');
+  const notesEditingRef = useRef(false);
+  const notesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [atendidoCustom, setAtendidoCustom] = useState('');
+  const [atendidoOtro, setAtendidoOtro] = useState(false);
+  const atendidoEditingRef = useRef(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportFrom, setExportFrom] = useState('');
   const [exportTo, setExportTo] = useState('');
   const [exportTipo, setExportTipo] = useState<'all' | IzziConversationTipo>('all');
   const [exportEtapa, setExportEtapa] = useState('all');
+  const [exportAtendido, setExportAtendido] = useState('all');
   const [tenantId, setTenantId] = useState('');
+  const [waStatus, setWaStatus] = useState<WhatsAppStatus | null>(null);
 
   useEffect(() => {
     const saved = loadIzziConversacionesSession();
@@ -163,7 +181,13 @@ export default function IzziConversacionesPage() {
       }
       const conv = data.conversation as ConversationDetail;
       setDetail(conv);
-      setNotesDraft(conv.notas || '');
+      if (!notesEditingRef.current) {
+        setNotesDraft(conv.notas || '');
+      }
+      if (!atendidoEditingRef.current) {
+        const name = conv.atendidoPor || '';
+        setAtendidoCustom(isPresetAtendidoPor(name) ? '' : name);
+      }
     } catch {
       setError('Error al cargar historial');
       setDetail(null);
@@ -172,13 +196,51 @@ export default function IzziConversacionesPage() {
     }
   }, []);
 
+  const loadWaStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/izzi-panel/whatsapp', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+      setWaStatus({
+        connected: !!data.connected,
+        phone: typeof data.phone === 'string' ? data.phone : null,
+        hasQr: !!data.hasQr,
+        qrDataUrl: typeof data.qrDataUrl === 'string' ? data.qrDataUrl : null,
+        source: data.source === 'activity' || data.source === 'mongo' || data.source === 'bridge' ? data.source : 'none',
+        lastMessageAt: typeof data.lastMessageAt === 'string' ? data.lastMessageAt : null,
+        resetPending: !!data.resetPending,
+      });
+    } catch {
+      /* el listado de chats sigue siendo usable */
+    }
+  }, []);
+
   useEffect(() => {
     void loadList();
   }, [loadList]);
 
   useEffect(() => {
+    void loadWaStatus();
+    const t = window.setInterval(() => {
+      void loadWaStatus();
+    }, 15000);
+    return () => window.clearInterval(t);
+  }, [loadWaStatus]);
+
+  useEffect(() => {
+    notesEditingRef.current = false;
+    atendidoEditingRef.current = false;
+    setAtendidoOtro(false);
+    if (notesTimerRef.current) {
+      clearTimeout(notesTimerRef.current);
+      notesTimerRef.current = null;
+    }
     if (selectedId) void loadDetail(selectedId);
-    else setDetail(null);
+    else {
+      setDetail(null);
+      setNotesDraft('');
+      setAtendidoCustom('');
+    }
   }, [selectedId, loadDetail]);
 
   useEffect(() => {
@@ -201,22 +263,37 @@ export default function IzziConversacionesPage() {
   const botPaused = detail?.botPaused ?? selectedSummary?.botPaused ?? false;
   const currentTipo = detail?.tipo ?? selectedSummary?.tipo ?? 'venta';
   const currentEtapa = detail?.etapa ?? selectedSummary?.etapa ?? 'nuevo_contacto';
+  const currentAtendido = detail?.atendidoPor ?? selectedSummary?.atendidoPor ?? '';
+  const atendidoSelectValue =
+    atendidoOtro || (currentAtendido && !isPresetAtendidoPor(currentAtendido))
+      ? IZZI_ATENDIDO_OTRO
+      : currentAtendido;
 
   const filteredList = useMemo(() => {
     const q = search.trim().toLowerCase();
     return list.filter((c) => {
       if (filterTipo !== 'all' && c.tipo !== filterTipo) return false;
       if (filterEtapa !== 'all' && c.etapa !== filterEtapa) return false;
+      if (filterAtendido === 'sin_asignar' && (c.atendidoPor || '').trim()) return false;
+      if (
+        filterAtendido !== 'all' &&
+        filterAtendido !== 'sin_asignar' &&
+        (c.atendidoPor || '').toLowerCase() !== filterAtendido.toLowerCase()
+      ) {
+        return false;
+      }
       if (!q) return true;
       return (
         c.senderName.toLowerCase().includes(q) ||
         c.senderId.toLowerCase().includes(q) ||
-        (c.notas || '').toLowerCase().includes(q)
+        (c.notas || '').toLowerCase().includes(q) ||
+        (c.atendidoPor || '').toLowerCase().includes(q)
       );
     });
-  }, [list, filterTipo, filterEtapa, search]);
+  }, [list, filterTipo, filterEtapa, filterAtendido, search]);
 
   const etapaOptions = etapasForTipo(filterTipo === 'all' ? 'venta' : filterTipo);
+  const brand = izziPanelBrand(tenantId);
 
   const closeChat = () => {
     setSelectedId(null);
@@ -225,7 +302,12 @@ export default function IzziConversacionesPage() {
     saveIzziConversacionesSession({ selectedId: null, replyText: '' });
   };
 
-  const patchMeta = async (patch: { tipo?: IzziConversationTipo; etapa?: string; notas?: string }) => {
+  const patchMeta = async (patch: {
+    tipo?: IzziConversationTipo;
+    etapa?: string;
+    notas?: string;
+    atendidoPor?: string;
+  }) => {
     if (!selectedId) return;
     setError('');
     const res = await fetch(`/api/izzi-panel/conversations/${encodeURIComponent(selectedId)}/meta`, {
@@ -241,13 +323,21 @@ export default function IzziConversacionesPage() {
     const nextTipo = (data.conversation?.tipo as IzziConversationTipo) ?? currentTipo;
     const nextEtapa = (data.conversation?.etapa as string) ?? currentEtapa;
     const nextNotas = (data.conversation?.notas as string) ?? notesDraft;
+    const nextAtendido =
+      typeof data.conversation?.atendidoPor === 'string'
+        ? data.conversation.atendidoPor
+        : currentAtendido;
     setList((prev) =>
       prev.map((c) =>
-        c.id === selectedId ? { ...c, tipo: nextTipo, etapa: nextEtapa, notas: nextNotas } : c
+        c.id === selectedId
+          ? { ...c, tipo: nextTipo, etapa: nextEtapa, notas: nextNotas, atendidoPor: nextAtendido }
+          : c
       )
     );
     setDetail((prev) =>
-      prev ? { ...prev, tipo: nextTipo, etapa: nextEtapa, notas: nextNotas } : prev
+      prev
+        ? { ...prev, tipo: nextTipo, etapa: nextEtapa, notas: nextNotas, atendidoPor: nextAtendido }
+        : prev
     );
   };
 
@@ -375,6 +465,7 @@ export default function IzziConversacionesPage() {
           to: exportTo || undefined,
           tipo: exportTipo,
           etapa: exportEtapa,
+          atendidoPor: exportAtendido,
         }),
       });
       if (!res.ok) {
@@ -399,38 +490,82 @@ export default function IzziConversacionesPage() {
     }
   };
 
-  const selectClass =
-    'rounded-lg border bg-stone-950/70 px-2.5 py-2 text-xs text-pink-50 min-h-[40px] focus:outline-none focus:ring-2 focus:ring-pink-600';
+  const selectClass = brand.selectClass;
 
   return (
     <main
       className="min-h-[100dvh] text-stone-100 flex flex-col"
-      style={{ background: `linear-gradient(160deg, ${BRAND.bg} 0%, #2a0a1c 50%, #140810 100%)` }}
+      style={{ background: `linear-gradient(160deg, ${brand.bg} 0%, ${brand.bgMid} 50%, ${brand.bg} 100%)` }}
     >
       <header
         className={`border-b px-4 py-4 space-y-3 ${chatOpen ? 'hidden lg:block' : ''}`}
-        style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.25)' }}
+        style={{ borderColor: brand.border, background: 'rgba(0,0,0,0.25)' }}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-pink-400/80 font-semibold">izzi</p>
-            <h1 className="text-xl font-bold text-pink-50 flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-pink-400" />
-              Conversaciones WhatsApp
-            </h1>
-            {tenantId ? (
-              <p className="text-xs text-pink-200/50 mt-1">
-                Cuenta <span className="text-pink-200/80 font-medium">{tenantId}</span>
-                {tenantId === 'izzi' ? ' · número original' : ''}
+          <div className="flex items-center gap-3">
+            {brand.logoSrc ? (
+              <img
+                src={brand.logoSrc}
+                alt={brand.name}
+                className="h-11 w-11 rounded-xl shrink-0"
+              />
+            ) : null}
+            <div>
+              <p
+                className={`text-xs uppercase tracking-[0.22em] font-semibold ${brand.label}`}
+              >
+                {brand.name}
+              </p>
+              <h1 className={`text-xl font-bold flex items-center gap-2 ${brand.heading}`}>
+                <MessageSquare className={`h-5 w-5 ${brand.avatarFg}`} />
+                Conversaciones WhatsApp
+              </h1>
+              {tenantId ? (
+                <p className={`text-xs mt-1 ${brand.muted}`}>
+                  Cuenta <span className="font-medium opacity-90">{tenantId}</span>
+                  {tenantId === 'izzi' ? ' · número original' : ''}
+                </p>
+              ) : null}
+            {waStatus ? (
+              <p
+                className={`mt-1.5 inline-flex items-center gap-1.5 text-xs ${
+                  waStatus.connected ? 'text-emerald-300' : 'text-amber-200'
+                }`}
+              >
+                {waStatus.connected ? (
+                  <Wifi className="h-3.5 w-3.5" />
+                ) : (
+                  <WifiOff className="h-3.5 w-3.5" />
+                )}
+                {waStatus.connected
+                  ? waStatus.phone
+                    ? `WhatsApp conectado · ${waStatus.phone}`
+                    : 'WhatsApp conectado'
+                  : waStatus.resetPending
+                    ? 'Generando QR nuevo…'
+                    : waStatus.hasQr
+                      ? 'Esperando que escanees el QR'
+                      : waStatus.source === 'activity'
+                        ? 'WhatsApp desvinculado — vuelve a escanear el QR'
+                        : 'WhatsApp desconectado — pulsa WhatsApp para cargar el QR'}
               </p>
             ) : null}
+            </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/izzi-panel/whatsapp"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-pink-100/90 hover:bg-white/5 transition min-h-[40px]"
+              style={{ borderColor: brand.border }}
+            >
+              <Smartphone className="h-4 w-4" />
+              WhatsApp
+            </Link>
             <button
               type="button"
               onClick={() => setExportOpen(true)}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-pink-100/90 hover:bg-white/5 transition min-h-[40px]"
-              style={{ borderColor: BRAND.border }}
+              style={{ borderColor: brand.border }}
             >
               <Download className="h-4 w-4" />
               Exportar
@@ -439,14 +574,16 @@ export default function IzziConversacionesPage() {
               type="button"
               onClick={() => {
                 void loadList();
+                void loadWaStatus();
                 if (selectedId) void loadDetail(selectedId);
               }}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-pink-100/90 hover:bg-white/5 transition min-h-[40px]"
-              style={{ borderColor: BRAND.border }}
+              style={{ borderColor: brand.border }}
             >
               <RefreshCw className={`h-4 w-4 ${loadingList ? 'animate-spin' : ''}`} />
               Actualizar
             </button>
+            <IzziPanelLogoutButton borderColor={brand.border} />
           </div>
         </div>
       </header>
@@ -462,11 +599,11 @@ export default function IzziConversacionesPage() {
           className={`${
             chatOpen ? 'hidden lg:flex' : 'flex'
           } flex-col w-full lg:w-[26rem] border-b lg:border-b-0 lg:border-r overflow-y-auto shrink-0 min-h-0 flex-1 lg:flex-none`}
-          style={{ borderColor: BRAND.border, background: BRAND.card }}
+          style={{ borderColor: brand.border, background: brand.card }}
         >
           <div
             className="p-3 space-y-2 sticky top-0 z-10 backdrop-blur-sm"
-            style={{ background: BRAND.card }}
+            style={{ background: brand.card }}
           >
             <div className="text-xs text-stone-500 uppercase tracking-wide">
               Activas · {filteredList.length}
@@ -477,7 +614,7 @@ export default function IzziConversacionesPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar nombre, teléfono o notas"
               className="w-full rounded-lg border bg-stone-950/70 px-3 py-2 text-sm text-pink-50 placeholder-stone-600 min-h-[40px]"
-              style={{ borderColor: BRAND.border }}
+              style={{ borderColor: brand.border }}
             />
             <div className="grid grid-cols-2 gap-2">
               <select
@@ -487,7 +624,7 @@ export default function IzziConversacionesPage() {
                   setFilterEtapa('all');
                 }}
                 className={selectClass}
-                style={{ borderColor: BRAND.border }}
+                style={{ borderColor: brand.border }}
                 aria-label="Filtrar por tipo"
               >
                 <option value="all">Todos los tipos</option>
@@ -501,7 +638,7 @@ export default function IzziConversacionesPage() {
                 value={filterEtapa}
                 onChange={(e) => setFilterEtapa(e.target.value)}
                 className={selectClass}
-                style={{ borderColor: BRAND.border }}
+                style={{ borderColor: brand.border }}
                 aria-label="Filtrar por estado"
               >
                 <option value="all">Todos los estados</option>
@@ -515,6 +652,21 @@ export default function IzziConversacionesPage() {
                 ))}
               </select>
             </div>
+            <select
+              value={filterAtendido}
+              onChange={(e) => setFilterAtendido(e.target.value)}
+              className={`${selectClass} w-full`}
+              style={{ borderColor: brand.border }}
+              aria-label="Filtrar por quién atiende"
+            >
+              <option value="all">Todos los que atienden</option>
+              <option value="sin_asignar">Sin asignar</option>
+              {IZZI_ATENDIDO_POR.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
           </div>
           {loadingList && list.length === 0 ? (
             <p className="p-4 text-sm text-stone-500">Cargando...</p>
@@ -530,9 +682,9 @@ export default function IzziConversacionesPage() {
                       type="button"
                       onClick={() => setSelectedId(c.id)}
                       className={`w-full text-left px-4 py-3.5 border-b transition ${
-                        active ? 'bg-pink-900/25' : 'hover:bg-white/5 active:bg-white/10'
+                        active ? brand.activeRow : 'hover:bg-white/5 active:bg-white/10'
                       }`}
-                      style={{ borderColor: BRAND.border }}
+                      style={{ borderColor: brand.border }}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
@@ -556,6 +708,11 @@ export default function IzziConversacionesPage() {
                         <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 text-stone-300">
                           {etapaText(c.tipo, c.etapa)}
                         </span>
+                        {c.atendidoPor ? (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full border border-sky-500/30 text-sky-200/90">
+                            {c.atendidoPor}
+                          </span>
+                        ) : null}
                       </div>
                       <p className="text-sm text-stone-400 mt-1 line-clamp-2">{c.lastMessage || '—'}</p>
                       <p className="text-[11px] text-stone-600 mt-1">{fmtWhen(c.lastMessageAt)}</p>
@@ -571,7 +728,7 @@ export default function IzziConversacionesPage() {
           className={`${
             chatOpen ? 'flex' : 'hidden lg:flex'
           } flex-1 flex-col min-h-0 min-w-0 ${chatOpen ? 'fixed inset-0 z-40 lg:static lg:z-auto' : ''}`}
-          style={chatOpen ? { background: BRAND.bg } : undefined}
+          style={chatOpen ? { background: brand.bg } : undefined}
         >
           {!selectedId ? (
             <div className="flex-1 flex items-center justify-center text-stone-500 text-sm px-6 text-center">
@@ -581,7 +738,7 @@ export default function IzziConversacionesPage() {
             <>
               <div
                 className="px-3 sm:px-4 py-3 border-b flex items-center gap-2 sm:gap-3 shrink-0"
-                style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.35)' }}
+                style={{ borderColor: brand.border, background: 'rgba(0,0,0,0.35)' }}
               >
                 <button
                   type="button"
@@ -591,8 +748,8 @@ export default function IzziConversacionesPage() {
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <div className="h-10 w-10 rounded-full bg-pink-900/40 flex items-center justify-center shrink-0">
-                  <User className="h-5 w-5 text-pink-400" />
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${brand.avatarBg}`}>
+                  <User className={`h-5 w-5 ${brand.avatarFg}`} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-pink-50 truncate text-[15px]">
@@ -608,7 +765,7 @@ export default function IzziConversacionesPage() {
                       type="button"
                       disabled={actionLoading}
                       onClick={() => void takeControl()}
-                      className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg bg-[#EC008C] hover:bg-pink-500 text-white text-xs sm:text-sm font-medium disabled:opacity-50 min-h-[40px]"
+                      className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg ${brand.sendClass} text-white text-xs sm:text-sm font-medium disabled:opacity-50 min-h-[40px]`}
                     >
                       <Pause className="h-4 w-4" />
                       <span className="hidden sm:inline">Tomar control</span>
@@ -629,7 +786,7 @@ export default function IzziConversacionesPage() {
 
               <div
                 className="px-3 sm:px-4 py-3 border-b shrink-0 space-y-2"
-                style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.22)' }}
+                style={{ borderColor: brand.border, background: 'rgba(0,0,0,0.22)' }}
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <label className="block">
@@ -638,7 +795,7 @@ export default function IzziConversacionesPage() {
                       value={currentTipo}
                       onChange={(e) => void patchMeta({ tipo: e.target.value as IzziConversationTipo })}
                       className={`${selectClass} w-full`}
-                      style={{ borderColor: BRAND.border }}
+                      style={{ borderColor: brand.border }}
                     >
                       {IZZI_TIPOS.map((t) => (
                         <option key={t.id} value={t.id}>
@@ -653,7 +810,7 @@ export default function IzziConversacionesPage() {
                       value={currentEtapa}
                       onChange={(e) => void patchMeta({ etapa: e.target.value })}
                       className={`${selectClass} w-full`}
-                      style={{ borderColor: BRAND.border }}
+                      style={{ borderColor: brand.border }}
                     >
                       {etapasForTipo(currentTipo).map((e) => (
                         <option key={e.id} value={e.id}>
@@ -664,17 +821,82 @@ export default function IzziConversacionesPage() {
                   </label>
                 </div>
                 <label className="block">
+                  <span className="mb-1 block text-[11px] text-stone-400">Quién atiende</span>
+                  <select
+                    value={atendidoSelectValue}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === IZZI_ATENDIDO_OTRO) {
+                        atendidoEditingRef.current = true;
+                        setAtendidoOtro(true);
+                        setAtendidoCustom(isPresetAtendidoPor(currentAtendido) ? '' : currentAtendido);
+                        return;
+                      }
+                      atendidoEditingRef.current = false;
+                      setAtendidoOtro(false);
+                      setAtendidoCustom('');
+                      void patchMeta({ atendidoPor: v });
+                    }}
+                    className={`${selectClass} w-full`}
+                    style={{ borderColor: brand.border }}
+                  >
+                    <option value="">Sin asignar</option>
+                    {IZZI_ATENDIDO_POR.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                    <option value={IZZI_ATENDIDO_OTRO}>Otro (escribir nombre)</option>
+                  </select>
+                </label>
+                {atendidoSelectValue === IZZI_ATENDIDO_OTRO ? (
+                  <input
+                    type="text"
+                    value={atendidoCustom}
+                    onFocus={() => {
+                      atendidoEditingRef.current = true;
+                    }}
+                    onChange={(e) => setAtendidoCustom(e.target.value)}
+                    onBlur={() => {
+                      atendidoEditingRef.current = false;
+                      const name = atendidoCustom.trim();
+                      if (name !== currentAtendido) void patchMeta({ atendidoPor: name });
+                      if (!name) setAtendidoOtro(false);
+                    }}
+                    placeholder="Nombre de quien atiende"
+                    maxLength={80}
+                    className="w-full rounded-lg border bg-stone-950/70 px-3 py-2 text-sm text-pink-50 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px]"
+                    style={{ borderColor: brand.border }}
+                  />
+                ) : null}
+                <label className="block">
                   <span className="mb-1 block text-[11px] text-stone-400">Notas</span>
                   <textarea
                     value={notesDraft}
-                    onChange={(e) => setNotesDraft(e.target.value)}
+                    onFocus={() => {
+                      notesEditingRef.current = true;
+                    }}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      notesEditingRef.current = true;
+                      setNotesDraft(value);
+                      if (notesTimerRef.current) clearTimeout(notesTimerRef.current);
+                      notesTimerRef.current = setTimeout(() => {
+                        void patchMeta({ notas: value });
+                      }, 1200);
+                    }}
                     onBlur={() => {
+                      notesEditingRef.current = false;
+                      if (notesTimerRef.current) {
+                        clearTimeout(notesTimerRef.current);
+                        notesTimerRef.current = null;
+                      }
                       if (notesDraft !== (detail?.notas ?? '')) void patchMeta({ notas: notesDraft });
                     }}
                     rows={2}
                     placeholder="Notas libres de esta conversación"
                     className="w-full resize-none rounded-lg border bg-stone-950/70 px-3 py-2 text-sm text-pink-50 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-pink-600"
-                    style={{ borderColor: BRAND.border }}
+                    style={{ borderColor: brand.border }}
                   />
                 </label>
               </div>
@@ -694,7 +916,11 @@ export default function IzziConversacionesPage() {
                       roleLabel={roleLabel(m.role)}
                       fmtWhen={fmtWhen}
                       userBubbleClass="rounded-tl-sm bg-stone-800/80 text-stone-100"
-                      agentBubbleClass="rounded-tr-sm bg-pink-800/50 text-pink-50 border border-pink-600/30"
+                      agentBubbleClass={
+                        brand.id === 'rgo'
+                          ? 'rounded-tr-sm bg-blue-800/50 text-blue-50 border border-blue-500/30'
+                          : 'rounded-tr-sm bg-pink-800/50 text-pink-50 border border-pink-600/30'
+                      }
                       botBubbleClass="rounded-tr-sm bg-stone-700/60 text-stone-200 border border-stone-600/30"
                     />
                   ))
@@ -704,10 +930,10 @@ export default function IzziConversacionesPage() {
 
               <div
                 className="p-3 sm:p-4 border-t shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-                style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.35)' }}
+                style={{ borderColor: brand.border, background: 'rgba(0,0,0,0.35)' }}
               >
                 {!botPaused && (
-                  <p className="text-xs text-pink-400/80 mb-2">
+                  <p className={`text-xs mb-2 ${brand.label}`}>
                     Usa &quot;Tomar control&quot; para pausar el bot y responder o adjuntar archivos.
                   </p>
                 )}
@@ -729,9 +955,9 @@ export default function IzziConversacionesPage() {
                       ? 'Escribe tu respuesta por WhatsApp...'
                       : 'Toma control primero para responder...'
                   }
-                  accentSendClass="bg-[#EC008C] hover:bg-pink-500"
-                  attachButtonClass="border-pink-500/50 bg-pink-600/25 text-pink-100 hover:bg-pink-600/40"
-                  textareaClass="flex-1 min-w-0 resize-none rounded-xl px-4 py-3 bg-stone-900/80 border border-pink-900/40 text-stone-100 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-pink-600 disabled:opacity-50 text-sm min-h-[44px]"
+                  accentSendClass={brand.sendClass}
+                  attachButtonClass={brand.attachClass}
+                  textareaClass={brand.textareaClass}
                 />
               </div>
             </>
@@ -743,7 +969,7 @@ export default function IzziConversacionesPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60">
           <div
             className="w-full max-w-md rounded-t-2xl sm:rounded-2xl border p-5 shadow-2xl"
-            style={{ background: '#1a0a14', borderColor: BRAND.border }}
+            style={{ background: brand.bgMid, borderColor: brand.border }}
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-pink-50">Exportar a Excel</h2>
@@ -765,7 +991,7 @@ export default function IzziConversacionesPage() {
                     value={exportFrom}
                     onChange={(e) => setExportFrom(e.target.value)}
                     className={`${selectClass} w-full`}
-                    style={{ borderColor: BRAND.border }}
+                    style={{ borderColor: brand.border }}
                   />
                 </label>
                 <label className="block">
@@ -775,7 +1001,7 @@ export default function IzziConversacionesPage() {
                     value={exportTo}
                     onChange={(e) => setExportTo(e.target.value)}
                     className={`${selectClass} w-full`}
-                    style={{ borderColor: BRAND.border }}
+                    style={{ borderColor: brand.border }}
                   />
                 </label>
               </div>
@@ -788,7 +1014,7 @@ export default function IzziConversacionesPage() {
                     setExportEtapa('all');
                   }}
                   className={`${selectClass} w-full`}
-                  style={{ borderColor: BRAND.border }}
+                  style={{ borderColor: brand.border }}
                 >
                   <option value="all">Todos</option>
                   {IZZI_TIPOS.map((t) => (
@@ -804,7 +1030,7 @@ export default function IzziConversacionesPage() {
                   value={exportEtapa}
                   onChange={(e) => setExportEtapa(e.target.value)}
                   className={`${selectClass} w-full`}
-                  style={{ borderColor: BRAND.border }}
+                  style={{ borderColor: brand.border }}
                 >
                   <option value="all">Todos</option>
                   {(exportTipo === 'all'
@@ -825,11 +1051,28 @@ export default function IzziConversacionesPage() {
                   </p>
                 ) : null}
               </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] text-stone-400">Quién atiende</span>
+                <select
+                  value={exportAtendido}
+                  onChange={(e) => setExportAtendido(e.target.value)}
+                  className={`${selectClass} w-full`}
+                  style={{ borderColor: brand.border }}
+                >
+                  <option value="all">Todos</option>
+                  <option value="sin_asignar">Sin asignar</option>
+                  {IZZI_ATENDIDO_POR.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 type="button"
                 disabled={exporting}
                 onClick={() => void downloadExport()}
-                className="w-full py-3 rounded-xl bg-[#EC008C] hover:bg-pink-500 text-white font-semibold disabled:opacity-50 min-h-[44px]"
+                className={`w-full py-3 rounded-xl ${brand.sendClass} text-white font-semibold disabled:opacity-50 min-h-[44px]`}
               >
                 {exporting ? 'Generando...' : 'Descargar .xlsx'}
               </button>

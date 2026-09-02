@@ -33,19 +33,37 @@ export async function POST(request: NextRequest) {
       db = await getMongoDb();
     }
 
+    const existing = await db.collection('whatsapp_qr').findOne({ _id: clientId as never });
+    const resetPending = !!(existing as { resetRequestedAt?: Date } | null)?.resetRequestedAt;
+
+    // Un worker con sesión vieja no debe volver a marcar "conectado" mientras
+    // el panel pidió un QR nuevo (el teléfono ya se desvinculó).
+    if (resetPending && connected === true && qr === undefined) {
+      return Response.json({ ok: true, ignored: 'reset_pending' });
+    }
+
     const update: Record<string, unknown> = { updatedAt: new Date() };
+    const unset: Record<string, string> = {};
     if (qr !== undefined) {
       update.qr = qr;
       update.connected = false; // QR present means not yet connected
+      unset.resetRequestedAt = '';
+      unset.resetRequestedBy = '';
     }
     if (connected !== undefined) {
       update.connected = connected;
       if (connected) update.qr = null; // Clear QR once connected
     }
 
+    const mongoUpdate: Record<string, unknown> = {
+      $set: update,
+      $setOnInsert: { clientId },
+    };
+    if (Object.keys(unset).length) mongoUpdate.$unset = unset;
+
     await db.collection('whatsapp_qr').updateOne(
       { _id: clientId as any },
-      { $set: update, $setOnInsert: { clientId } },
+      mongoUpdate as any,
       { upsert: true }
     );
 

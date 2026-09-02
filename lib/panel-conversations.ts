@@ -241,7 +241,7 @@ async function upsertConversationBase(params: {
         botPaused: false,
         createdAt: now,
         ...(isIzziClient(clientId)
-          ? { tipo: 'venta', etapa: 'nuevo_contacto', notas: '' }
+          ? { tipo: 'venta', etapa: 'nuevo_contacto', notas: '', atendidoPor: '' }
           : {}),
       },
       $set: {

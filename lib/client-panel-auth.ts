@@ -5,7 +5,12 @@ export function clientTokenEnvKey(clientId: string): string {
 }
 
 export function getExpectedClientPanelToken(clientId: string): string | undefined {
-  return process.env[clientTokenEnvKey(clientId)];
+  const fromKey = process.env[clientTokenEnvKey(clientId)];
+  if (fromKey) return fromKey;
+  if (clientId === 'izzi') return process.env.TOKEN_IZZI;
+  if (clientId === 'izzi-2') return process.env.TOKEN_IZZI_2;
+  if (clientId === 'izzi-3') return process.env.TOKEN_IZZI_3;
+  return undefined;
 }
 
 export function extractClientPanelToken(request: NextRequest): string | null {

@@ -17,7 +17,8 @@ export type SabucanClienteUi = {
     fecha: string;
     monto: number;
     puntosGanados: number;
-    tipo?: 'compra' | 'canje';
+    tipo?: 'compra' | 'canje' | 'contacto_reactivacion';
+    plantilla?: string;
   }[];
 };
 

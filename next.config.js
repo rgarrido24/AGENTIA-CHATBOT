@@ -88,6 +88,13 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 86400,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+    ],
   },
 
   async rewrites() {
@@ -103,6 +110,12 @@ const nextConfig = {
   async headers() {
     return [
       // Prevent aggressive edge caching for conversion-critical flows
+      {
+        source: '/lealtad',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+        ],
+      },
       {
         source: '/brief',
         headers: [
@@ -271,7 +284,7 @@ const nextConfig = {
         ],
       },
       {
-        source: '/izzi-panel/manifest.webmanifest',
+        source: '/izzi-panel/rgo.webmanifest',
         headers: [
           { key: 'Content-Type', value: 'application/manifest+json; charset=utf-8' },
         ],

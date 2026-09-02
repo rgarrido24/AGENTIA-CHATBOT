@@ -93,6 +93,9 @@ export type ChatRequestBody = {
 
 const CHANNELS_MEDIA_URL = 'https://i.imgur.com/K2N4o04.jpeg';
 
+/** Clientes dados de baja: no se procesa ningún mensaje entrante. */
+const DISCONTINUED_CLIENT_IDS = new Set(['decohouse', 'biovela']);
+
 function isChannelsIntent(message: string): boolean {
   const m = (message || '').toLowerCase().trim();
   return (
@@ -342,6 +345,12 @@ export async function handleChat(params: {
   const effectiveMessage = userMessage || '[imagen/documento adjunto]';
 
   const leadId = senderId && pageId ? makeLeadIdFromParams(senderId, pageId, clientId) : '';
+
+  // Clientes dados de baja: el bot no responde por ningún canal.
+  if (DISCONTINUED_CLIENT_IDS.has(clientId)) {
+    console.log('[chat-handler] Cliente dado de baja - bot inactivo para clientId:', clientId);
+    return { status: 200, json: { clientId, reply: '', botPaused: true } };
+  }
 
   // KILL SWITCH (Cadenero) - Bloqueo infalible: si el bot está pausado, NO procesar NADA
   const globalPaused = await getBotGlobalPaused(clientId);
@@ -714,9 +723,9 @@ export async function handleChat(params: {
       finalSystemInstruction +=
         `\n\n## BASE_DE_CONOCIMIENTO_LEALTAD (producto /lealtad — no mezclar con planes de chatbot)\n` +
         `${KNOWLEDGE_BASE_LEALTAD}\n\n` +
-        `REGLA: Para Lealtad Agentia SÍ debes decir el precio: un solo plan $499 MXN/mes, todo incluido. ` +
-        `Eso anula cualquier instrucción genérica de "no dar precios" SOLO en este producto. ` +
-        `NUNCA menciones $299 ni plan Básico. ` +
+        `REGLA: Para Lealtad Agentia SÍ debes decir el precio: plan base $399 MXN/mes (1 sucursal). ` +
+        `Sucursal extra +$150 MXN/mes. Eso anula cualquier instrucción genérica de "no dar precios" SOLO en este producto. ` +
+        `NUNCA menciones $299 ni $499 ni plan Básico. ` +
         `Si preguntan por ser vendedor o comisión: idea general (comisiones recurrentes, sin inversión), ` +
         `SIN montos ni porcentajes, y remite a un asesor por WhatsApp.\n`;
     }
