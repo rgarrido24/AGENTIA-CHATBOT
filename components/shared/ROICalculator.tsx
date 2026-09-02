@@ -40,18 +40,18 @@ export default function ROICalculator({
   }, [values, result, onResultChange]);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] sm:p-8">
-      <h3 className="font-[family-name:var(--font-space)] text-xl font-bold sm:text-2xl">{title}</h3>
+    <div className="rounded-2xl border border-[#14161A]/8 bg-white p-6 shadow-[0_8px_24px_rgba(20,22,26,0.04)] sm:p-8">
+      <h3 className="text-xl font-bold sm:text-2xl">{title}</h3>
 
       <div className="mt-6 flex flex-col gap-5">
         {fields.map((f) => (
           <div key={f.key}>
-            <label className="mb-2 flex justify-between gap-3 font-mono text-[12px] text-white/55">
+            <label className="mb-2 flex justify-between gap-3 text-[12px] text-[#14161A]/55">
               <span>
                 {f.label}
                 {f.suffix ? ` (${f.suffix})` : ''}
               </span>
-              <span className="tabular-nums text-white">{values[f.key]}</span>
+              <span className="tabular-nums text-[#14161A]">{values[f.key]}</span>
             </label>
             <input
               type="range"
@@ -62,20 +62,20 @@ export default function ROICalculator({
               onChange={(e) =>
                 setValues((v) => ({ ...v, [f.key]: Number(e.target.value) }))
               }
-              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-[#00D4FF]"
+              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#14161A]/10 accent-[#B8935A]"
             />
           </div>
         ))}
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 border-t border-white/10 pt-5">
+      <div className="mt-6 flex flex-col gap-3 border-t border-[#14161A]/10 pt-5">
         {result.map((r) => (
           <div key={r.label} className="flex items-baseline justify-between gap-4">
-            <span className="text-sm text-white/55">{r.label}</span>
+            <span className="text-sm text-[#14161A]/55">{r.label}</span>
             <span
               className={
-                'font-mono tabular-nums ' +
-                (r.highlight ? 'text-2xl font-bold text-[#00D4FF]' : 'text-[15px] text-white')
+                'tabular-nums ' +
+                (r.highlight ? 'text-2xl font-bold text-[#B8935A]' : 'text-[15px] text-[#14161A]')
               }
             >
               {r.value}

@@ -10,6 +10,7 @@ import { PRODUCT_NAV } from '@/components/shared/product-nav';
 type PageLink = { href: string; label: string };
 
 type NavbarProps = {
+  theme?: 'light' | 'dark';
   pageLinks?: PageLink[];
   ctaHref?: string;
   ctaLabel?: string;
@@ -17,6 +18,7 @@ type NavbarProps = {
 };
 
 export default function Navbar({
+  theme = 'light',
   pageLinks,
   ctaHref,
   ctaLabel = 'WhatsApp',
@@ -24,6 +26,7 @@ export default function Navbar({
 }: NavbarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const light = theme === 'light';
 
   useEffect(() => {
     setOpen(false);
@@ -40,14 +43,52 @@ export default function Navbar({
 
   const cta = ctaHref ?? agentiaWhatsAppUrl('Hola Agentia, quiero información de sus sistemas.');
 
+  const bar = light
+    ? {
+        background: 'rgba(250,250,248,0.82)',
+        border: '1px solid rgba(20,22,26,0.08)',
+      }
+    : {
+        background: 'rgba(10,10,10,0.62)',
+        border: '1px solid rgba(255,255,255,0.10)',
+      };
+
+  const linkIdle = light
+    ? 'text-[#14161A]/55 hover:bg-[#14161A]/[0.05] hover:text-[#14161A]'
+    : 'text-white/55 hover:bg-white/[0.06] hover:text-white';
+  const linkActive = light ? 'bg-[#14161A]/[0.07] text-[#B8935A]' : 'bg-white/10 text-[#00D4FF]';
+  const ctaClass = light
+    ? 'hidden rounded-full bg-[#14161A] px-4 py-2 text-[13px] font-bold text-[#FAFAF8] transition-transform duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-px active:scale-[0.97] sm:inline-flex'
+    : 'hidden rounded-full bg-[#00D4FF] px-4 py-2 text-[13px] font-bold text-[#0a0a0a] transition-transform duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-px active:scale-[0.97] sm:inline-flex';
+  const burgerBorder = light ? 'border-[#14161A]/10' : 'border-white/10';
+  const burgerLine = light ? 'bg-[#14161A]' : 'bg-white';
+  const overlayBg = light ? 'rgba(250,250,248,0.96)' : 'rgba(8,8,10,0.88)';
+  const overlayLink = light ? 'text-[#14161A]' : 'text-white';
+  const overlayActive = light ? 'text-[#B8935A]' : 'text-[#00D4FF]';
+  const overlaySub = light ? 'text-[#14161A]/55' : 'text-white/60';
+  const overlayCta = light
+    ? 'mt-auto inline-flex items-center justify-center rounded-full bg-[#14161A] px-6 py-3.5 text-sm font-bold text-[#FAFAF8] active:scale-[0.97]'
+    : 'mt-auto inline-flex items-center justify-center rounded-full bg-[#00D4FF] px-6 py-3.5 text-sm font-bold text-[#0a0a0a] active:scale-[0.97]';
+
+  const CtaTag = (className: string, extra?: { onClick?: () => void }) =>
+    ctaExternal ? (
+      <a href={cta} target="_blank" rel="noopener noreferrer" className={className}>
+        {ctaLabel}
+      </a>
+    ) : (
+      <a href={cta} className={className} onClick={extra?.onClick}>
+        {ctaLabel}
+      </a>
+    );
+
   return (
     <header className="sticky top-3 z-50 px-3 sm:px-4">
       <div
-        className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 rounded-full border border-white/10 px-3 pl-3 pr-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:h-16 sm:px-4"
+        className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 rounded-full px-3 pr-2 shadow-[0_8px_30px_rgba(20,22,26,0.06)] sm:h-16 sm:px-4"
         style={{
-          background: 'rgba(10,10,10,0.62)',
-          backdropFilter: 'blur(22px) saturate(160%)',
-          WebkitBackdropFilter: 'blur(22px) saturate(160%)',
+          ...bar,
+          backdropFilter: 'blur(18px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(140%)',
         }}
       >
         <Link href="/" className="flex shrink-0 items-center gap-2.5" onClick={() => setOpen(false)}>
@@ -59,7 +100,12 @@ export default function Navbar({
             className="rounded-lg"
             priority
           />
-          <span className="hidden font-[family-name:var(--font-space)] text-[15px] font-bold sm:block">
+          <span
+            className={
+              'hidden text-[15px] font-bold sm:block ' +
+              (light ? 'text-[#14161A]' : 'font-[family-name:var(--font-space)]')
+            }
+          >
             Agentia
           </span>
         </Link>
@@ -73,9 +119,7 @@ export default function Navbar({
                 href={p.href}
                 className={
                   'rounded-full px-3 py-1.5 text-[13px] transition-[color,background-color] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] ' +
-                  (active
-                    ? 'bg-white/10 text-[#00D4FF]'
-                    : 'text-white/55 hover:bg-white/[0.06] hover:text-white')
+                  (active ? linkActive : linkIdle)
                 }
               >
                 {p.label}
@@ -85,40 +129,23 @@ export default function Navbar({
         </nav>
 
         <div className="flex items-center gap-2">
-          {ctaExternal ? (
-            <a
-              href={cta}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden rounded-full bg-[#00D4FF] px-4 py-2 text-[13px] font-bold text-[#0a0a0a] transition-[transform,box-shadow] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-px hover:shadow-[0_0_24px_rgba(0,212,255,0.45)] active:scale-[0.97] sm:inline-flex"
-            >
-              {ctaLabel}
-            </a>
-          ) : (
-            <a
-              href={cta}
-              className="hidden rounded-full bg-[#00D4FF] px-4 py-2 text-[13px] font-bold text-[#0a0a0a] transition-[transform,box-shadow] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-px hover:shadow-[0_0_24px_rgba(0,212,255,0.45)] active:scale-[0.97] sm:inline-flex"
-            >
-              {ctaLabel}
-            </a>
-          )}
-
+          {CtaTag(ctaClass)}
           <button
             type="button"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 lg:hidden"
+            className={`relative flex h-10 w-10 items-center justify-center rounded-full border lg:hidden ${burgerBorder}`}
             aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
             <span
               className={
-                'absolute h-[1.5px] w-4 bg-white transition-transform duration-[200ms] ease-[cubic-bezier(0.32,0.72,0,1)] ' +
+                `absolute h-[1.5px] w-4 ${burgerLine} transition-transform duration-[200ms] ease-[cubic-bezier(0.32,0.72,0,1)] ` +
                 (open ? 'translate-y-0 rotate-45' : '-translate-y-[3.5px]')
               }
             />
             <span
               className={
-                'absolute h-[1.5px] w-4 bg-white transition-transform duration-[200ms] ease-[cubic-bezier(0.32,0.72,0,1)] ' +
+                `absolute h-[1.5px] w-4 ${burgerLine} transition-transform duration-[200ms] ease-[cubic-bezier(0.32,0.72,0,1)] ` +
                 (open ? 'translate-y-0 -rotate-45' : 'translate-y-[3.5px]')
               }
             />
@@ -130,9 +157,9 @@ export default function Navbar({
         <div
           className="fixed inset-0 z-40 lg:hidden"
           style={{
-            background: 'rgba(8,8,10,0.88)',
-            backdropFilter: 'blur(28px)',
-            WebkitBackdropFilter: 'blur(28px)',
+            background: overlayBg,
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
           }}
         >
           <div className="flex h-full flex-col px-6 pb-10 pt-24">
@@ -144,8 +171,8 @@ export default function Navbar({
                     key={p.href}
                     href={p.href}
                     className={
-                      'translate-y-3 rounded-2xl px-4 py-3 font-[family-name:var(--font-space)] text-2xl font-bold opacity-0 transition-[color] duration-[160ms] ' +
-                      (active ? 'text-[#00D4FF]' : 'text-white')
+                      'translate-y-3 rounded-2xl px-4 py-3 text-2xl font-bold opacity-0 ' +
+                      (active ? overlayActive : overlayLink)
                     }
                     style={{
                       animation: 'ag-nav-in 420ms cubic-bezier(0.23,1,0.32,1) forwards',
@@ -160,7 +187,7 @@ export default function Navbar({
                 <a
                   key={l.href}
                   href={l.href}
-                  className="translate-y-3 rounded-2xl px-4 py-3 text-lg text-white/60 opacity-0"
+                  className={`translate-y-3 rounded-2xl px-4 py-3 text-lg opacity-0 ${overlaySub}`}
                   style={{
                     animation: 'ag-nav-in 420ms cubic-bezier(0.23,1,0.32,1) forwards',
                     animationDelay: `${80 + (PRODUCT_NAV.length + i) * 45}ms`,
@@ -171,24 +198,7 @@ export default function Navbar({
                 </a>
               ))}
             </nav>
-            {ctaExternal ? (
-              <a
-                href={cta}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-auto inline-flex items-center justify-center rounded-full bg-[#00D4FF] px-6 py-3.5 text-sm font-bold text-[#0a0a0a] active:scale-[0.97]"
-              >
-                {ctaLabel}
-              </a>
-            ) : (
-              <a
-                href={cta}
-                className="mt-auto inline-flex items-center justify-center rounded-full bg-[#00D4FF] px-6 py-3.5 text-sm font-bold text-[#0a0a0a] active:scale-[0.97]"
-                onClick={() => setOpen(false)}
-              >
-                {ctaLabel}
-              </a>
-            )}
+            {CtaTag(overlayCta, { onClick: () => setOpen(false) })}
           </div>
         </div>
       ) : null}

@@ -1,9 +1,8 @@
 'use client';
 
-import '@/styles/agentia-brand.css';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
@@ -18,32 +17,31 @@ import {
   Wallet,
   Zap,
 } from 'lucide-react';
-import { GlowButton } from '@/components/landing/GlowButton';
-import { ParticleField } from '@/components/landing/ParticleField';
 import { ScrollReveal, StaggerItem, StaggerReveal } from '@/components/landing/ScrollReveal';
 import { revealTransition } from '@/components/landing/motion';
 import { agentiaWhatsAppUrl } from '@/lib/agentia-contact';
 import { trackEvent, useAnalytics } from '@/src/lib/analytics-client';
 import { RoiCalculator } from './RoiCalculator';
-import { NfcTapSequence } from './NfcTapSequence';
-import { IndustryPhoneCarousel } from './IndustryPhoneCarousel';
-import { EcosystemFlow } from './EcosystemFlow';
+import { CountUp } from './CountUp';
+import { SequenceReveal } from './SequenceReveal';
+import { TrafficLightDemo } from '@/components/TrafficLightDemo';
 import Navbar from '@/components/shared/Navbar';
-import { AgentiaChatWidget } from '@/components/AgentiaChatWidget';
-import WhatsAppFloat from '@/components/shared/WhatsAppFloat';
 
-const CYAN = '#00D4FF';
-const GOLD = '#FFD700';
-const BG = '#0a0a0a';
+const BG = '#FAFAF8';
+const INK = '#14161A';
+const BRONZE = '#B8935A';
+const WA = '#25D366';
+
+const IMG_WALLET =
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788197678/WhatsApp_Image_2026-08-31_at_11.19.45_AM_pkbm3z.jpg';
+const IMG_CAJA =
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788157350/captura-caja-venta_fitq6s.jpg';
 
 const WA_GROWTH = agentiaWhatsAppUrl(
   'Hola Agentia, quiero aumentar mis ventas con el sistema de recompra. ¿Cómo arranco?',
 );
-const WA_DEMO = agentiaWhatsAppUrl(
-  'Hola Agentia, quiero ver una demostración del sistema para mi negocio.',
-);
 const WA_PLAN = agentiaWhatsAppUrl(
-  'Hola Agentia, me interesa el plan único de lealtad ($499 MXN/mes). ¿Cómo arranco?',
+  'Hola Agentia, me interesa el plan base de lealtad ($399 MXN/mes). ¿Cómo arranco?',
 );
 const WA_SELLER = agentiaWhatsAppUrl(
   'Hola, quiero información sobre ser vendedor de Agentia Lealtad',
@@ -56,187 +54,56 @@ function trackCta(cta: string) {
 }
 
 const BADGES = [
-  'Funciona en Android y iPhone',
-  'Sin descargar apps',
-  'Configuración rápida',
-  'Tus clientes lo usan en segundos',
-];
-
-const PROBLEM_STATS = [
-  {
-    value: '5×',
-    label: 'más caro conseguir un cliente nuevo que hacer regresar uno',
-  },
-  {
-    value: '60–70%',
-    label: 'de tus ventas suelen venir de clientes que ya te conocen',
-  },
-  {
-    value: '0',
-    label: 'seguimiento = dinero que se va por la puerta sin que lo notes',
-  },
-];
-
-const AFTER_STEPS = [
-  'Compra',
-  'Guarda su pase',
-  'Acumula',
-  'Recibe promo',
-  'Regresa',
-  'Compra otra vez',
-  'Trae amigos',
+  'Android y iPhone',
+  'Sin app nueva',
+  'Listo en 24h',
+  'Se usa en segundos',
 ];
 
 const BENEFITS = [
-  {
-    icon: Wallet,
-    title: 'Tus clientes nunca olvidan tu negocio',
-    desc: 'Su pase vive en el celular. Cada vez que abren la cartera, te ven. Sin app nueva, sin fricción.',
-  },
-  {
-    icon: MessageCircle,
-    title: 'Promociones directo al bolsillo',
-    desc: 'Cuando alguien deja de venir, el sistema le escribe por WhatsApp. Tú no persigues a nadie.',
-  },
-  {
-    icon: Users,
-    title: 'Sabes quién compra y quién se fue',
-    desc: 'Mira activos, en riesgo y perdidos. Enfoca el esfuerzo donde recuperas dinero de verdad.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Más visitas sin gastar más en anuncios',
-    desc: 'La recompra baja tu costo de adquisición. Creces con la base que ya pagaste por atraer.',
-  },
-  {
-    icon: Zap,
-    title: 'Un empleado que nunca duerme',
-    desc: 'Cumpleaños, inactivos, VIP y recordatorios corren solos. Tú atiendes. El sistema recupera.',
-  },
-  {
-    icon: Sparkles,
-    title: 'Se siente justo — y vuelve',
-    desc: 'Sellos, puntos o cashback adaptados a tu giro. El cliente siente el premio; tú proteges el margen.',
-  },
+  { icon: Wallet, title: 'Pase siempre en su celular' },
+  { icon: MessageCircle, title: 'Te avisa quién se está yendo', whatsapp: true },
+  { icon: Users, title: 'Ves activos, en riesgo e inactivos' },
+  { icon: TrendingUp, title: 'Más visitas, menos anuncios' },
+  { icon: Zap, title: 'Cumpleaños listos para que tú mandes' },
+  { icon: Sparkles, title: 'Sellos, puntos o cashback' },
 ];
 
-type Industry = {
-  id: string;
-  label: string;
-  icon: string;
-  example: string;
-  color: string;
-  logoSrc?: string;
-  logoAlt?: string;
-};
-
-const INDUSTRIES: Industry[] = [
-  {
-    id: 'cafe',
-    label: 'Cafeterías',
-    icon: '☕',
-    logoSrc: '/images/mockups/cafe-luna-logo.jpg',
-    logoAlt: 'Café Luna',
-    example: 'Café #10 gratis → la rutina matutina se queda contigo.',
-    color: 'from-[#4A2C1A] to-[#1A0E08]',
-  },
-  {
-    id: 'barber',
-    label: 'Barberías',
-    icon: '✂️',
-    example: 'Corte #10 por la casa + recordatorio a las 4 semanas.',
-    color: 'from-[#1E293B] to-[#020617]',
-  },
-  {
-    id: 'resto',
-    label: 'Restaurantes',
-    icon: '🍽️',
-    example: 'Postre de la casa al volver — sin bajar el ticket con descuentos.',
-    color: 'from-[#611F30] to-[#1a0a10]',
-  },
-  {
-    id: 'spa',
-    label: 'Estéticas',
-    icon: '🌿',
-    example: 'Sesión con puntos + WhatsApp cuando se pasa la cita.',
-    color: 'from-[#064E3B] to-[#011611]',
-  },
-  {
-    id: 'vet',
-    label: 'Veterinarias',
-    icon: '🐾',
-    example: 'Vacunas y consultas que regresan a tiempo, no cuando duele.',
-    color: 'from-[#1e3a5f] to-[#0b1220]',
-  },
-  {
-    id: 'gym',
-    label: 'Gimnasios',
-    icon: '💪',
-    example: 'Check-ins que empujan constancia y renuevan membresías.',
-    color: 'from-[#3b1d4a] to-[#12081a]',
-  },
-  {
-    id: 'boutique',
-    label: 'Boutiques',
-    icon: '👗',
-    example: 'Cashback que trae la segunda compra sin liquidar margen.',
-    color: 'from-[#4c1d3d] to-[#1a0a14]',
-  },
-  {
-    id: 'farmacia',
-    label: 'Farmacias',
-    icon: '💊',
-    example: 'Recompra de tratamientos recurrentes, no solo la urgencia.',
-    color: 'from-[#134e4a] to-[#042f2e]',
-  },
-  {
-    id: 'papel',
-    label: 'Papelerías',
-    icon: '📎',
-    example: 'Sellos en temporada escolar y clientes que vuelven todo el año.',
-    color: 'from-[#1e3a8a] to-[#0f172a]',
-  },
+const GIROS = [
+  'Cafeterías',
+  'Barberías',
+  'Restaurantes',
+  'Estéticas',
+  'Veterinarias',
+  'Gimnasios',
+  'Boutiques',
+  'Farmacias',
+  'Papelerías',
+  'Abarrotes',
+  'Tacos / comida rápida',
 ];
 
 const AUTOMATIONS = [
-  {
-    t: 'Cumpleaños',
-    d: 'Un mensaje el día correcto. Se siente personal — y dispara una visita.',
-  },
-  {
-    t: 'Inactivos',
-    d: 'Detecta quién no ha venido y manda la promo antes de que prueben a otro.',
-  },
-  {
-    t: 'Promociones',
-    d: 'Lanza ofertas a quien ya te conoce. Menos desperdicio que un anuncio frío.',
-  },
-  {
-    t: 'Clientes VIP',
-    d: 'Premia a los que más gastan. Ellos traen el ticket alto y a sus amigos.',
-  },
-  {
-    t: 'Referidos',
-    d: 'Quien te recomienda suma. Creces con boca a boca medible.',
-  },
-  {
-    t: 'Recordatorios',
-    d: 'Cortes, sesiones, vacunas, membresías: el timing correcto sin agenda mental.',
-  },
+  { t: 'Cumpleaños', d: 'Te avisa el día. El mensaje ya está listo.' },
+  { t: 'Inactivos', d: 'Tú decides a quién recuperar, el mensaje ya está listo' },
+  { t: 'Promociones', d: 'Ofertas listas para quien ya te compra' },
+  { t: 'Clientes VIP', d: 'Ves quién más gasta — tú los premias' },
+  { t: 'Referidos', d: 'Quien te recomienda, suma' },
+  { t: 'Recordatorios', d: 'Cortes, citas y membresías — tú das el toque' },
 ];
 
 const COMPARE = [
   { paper: 'Se pierde o se moja', agentia: 'Vive en el celular, siempre a la mano' },
   { paper: 'Nadie la trae la próxima vez', agentia: 'Se abre en Wallet en un toque' },
   { paper: 'No sabes quién dejó de venir', agentia: 'Ves activos, en riesgo y perdidos' },
-  { paper: 'Cero seguimiento', agentia: 'WhatsApp automático cuando se enfrían' },
+  { paper: 'Cero seguimiento', agentia: 'Te avisa quién se está yendo — mandas el WhatsApp en un toque' },
   { paper: 'No escala con tu negocio', agentia: 'Crece con sucursales y segmentos' },
 ];
 
 const METRICS = [
-  { value: '+28%', label: 'clientes recurrentes', note: 'negocios similares en recompra' },
-  { value: '+35%', label: 'visitas recuperadas', note: 'con seguimiento a inactivos' },
-  { value: '+18%', label: 'ticket promedio', note: 'cuando el premio protege margen' },
+  { end: 28, label: 'clientes recurrentes' },
+  { end: 35, label: 'visitas recuperadas' },
+  { end: 18, label: 'ticket promedio' },
 ];
 
 const NFC_ACTIONS = [
@@ -251,337 +118,159 @@ const NFC_ACTIONS = [
 ];
 
 const REVIEW_STEPS = [
-  {
-    n: '01',
-    title: 'Cliente termina su compra',
-    desc: 'Sale contento del local — el momento perfecto para pedir la reseña.',
-  },
-  {
-    n: '02',
-    title: 'Escanea o toca su tarjeta',
-    desc: 'QR de la tarjeta digital o toque NFC. Sin códigos impresos que nadie entiende.',
-  },
-  {
-    n: '03',
-    title: 'Se abre Google Reviews',
-    desc: 'Con las estrellas listas para calificar. Menos clics, más reseñas publicadas.',
-  },
-  {
-    n: '04',
-    title: 'Recibe su recompensa',
-    desc: 'Automático: sello, puntos o promo. La reseña deja de sentirse como un favor.',
-  },
+  { n: '01', title: 'Termina su compra' },
+  { n: '02', title: 'Escanea o toca' },
+  { n: '03', title: 'Se abre Google Reviews' },
+  { n: '04', title: 'Recibe su recompensa' },
 ];
 
 const REVIEW_METRICS = [
-  {
-    value: 'Más confianza',
-    label: 'Las estrellas en Maps deciden si te eligen o al de enfrente.',
-  },
-  {
-    value: 'Más llamadas',
-    label: 'Negocios con mejores reseñas reciben más contactos y visitas.',
-  },
-  {
-    value: 'Mejor en Maps',
-    label: 'Más reseñas recientes ayudan a aparecer cuando buscan cerca.',
-  },
+  { value: 'Más confianza', label: 'Más estrellas, más eligen' },
+  { value: 'Más llamadas', label: 'Mejores reseñas, más visitas' },
+  { value: 'Mejor en Maps', label: 'Apareces cuando buscan cerca' },
+];
+
+const ECOSYSTEM = [
+  'Chatbot IA',
+  'WhatsApp',
+  'Lealtad',
+  'Alertas',
+  'Google Reviews',
+  'Más clientes',
 ];
 
 const FAQS = [
   {
-    q: '¿Mis clientes necesitan descargar una app?',
-    a: 'No. Guardan el pase en Google Wallet (o lo abren en el navegador). Cero fricción — ideal si tu cliente no quiere instalar nada.',
+    q: '¿Descargan una app?',
+    a: 'No. Guardan el pase en Google Wallet o lo abren en el navegador.',
   },
   {
-    q: '¿Cuánto tarda en estar listo?',
-    a: 'Con tu logo, en unas 24 horas puedes tener el pase activo. Nosotros conectamos; tú no instalas servidores ni “aprendes un software”.',
+    q: '¿Cuánto tarda?',
+    a: 'Con tu logo, el pase puede estar activo en 24 horas.',
   },
   {
-    q: '¿Y si no sé usar tecnología?',
-    a: 'Está pensado para dueños de negocio, no para programadores. El día a día es simple: el cliente muestra el QR, sumas la visita, y el sistema hace el resto.',
+    q: '¿Y si no sé de tecnología?',
+    a: 'El cliente muestra el QR, sumas la visita. El sistema te dice quién se está yendo; tú mandas el mensaje.',
   },
   {
-    q: '¿Puedo cancelar cuando quiera?',
-    a: 'Sí. Sin contratos eternos. Si no te está trayendo recompra, no tiene sentido obligarte a quedarte.',
+    q: '¿Puedo cancelar?',
+    a: 'Sí. Sin contratos eternos.',
   },
   {
-    q: '¿Esto se paga solo?',
-    a: 'Si recuperas unos cuantos clientes al mes con tu ticket promedio, el plan de $499 suele cubrirse solo. Usa el simulador de arriba con tus números reales.',
+    q: '¿Se paga solo?',
+    a: 'Si vuelven unos cuantos al mes, el plan de $399 suele cubrirse. Usa el simulador.',
   },
   {
     q: '¿Sirve para mi giro?',
-    a: 'Si vives de clientes que deberían volver (café, cortes, comida, estética, vet, gym, tienda local…), sí. Adaptamos sellos, puntos o cashback a cómo compra tu gente.',
+    a: 'Sí, si vives de clientes que deberían volver. Sellos, puntos o cashback según tu negocio.',
   },
 ];
 
-function PhoneHero() {
-  const reduceMotion = useReducedMotion();
-  const trackRef = useRef<HTMLDivElement>(null);
-  const s1 = useRef<HTMLDivElement>(null);
-  const s2 = useRef<HTMLDivElement>(null);
-  const s3 = useRef<HTMLDivElement>(null);
-  /** 0 = tarjeta fuera · 1 = en wallet · 2 = +1 visita · 3 = notificación */
-  const [stage, setStage] = useState(reduceMotion ? 3 : 0);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    if (reduceMotion) {
-      setStage(3);
-      return;
-    }
-
-    const track = trackRef.current;
-    if (!track) return;
-
-    const viewObs = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
-      { threshold: 0.15 },
-    );
-    viewObs.observe(track);
-
-    const stepObs = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const step = Number((entry.target as HTMLElement).dataset.step);
-          if (!Number.isFinite(step)) continue;
-          setStage((prev) => Math.max(prev, step));
-        }
-      },
-      { root: null, rootMargin: '-40% 0px -40% 0px', threshold: 0 },
-    );
-
-    for (const ref of [s1, s2, s3]) {
-      if (ref.current) stepObs.observe(ref.current);
-    }
-
-    return () => {
-      viewObs.disconnect();
-      stepObs.disconnect();
-    };
-  }, [reduceMotion]);
-
-  const visits = stage >= 2 ? 8 : 7;
-  const remaining = 10 - visits;
-  const cardIn = stage >= 1;
-  const showNotif = stage >= 3;
-  const progressPct = (visits / 10) * 100;
-
+function WaButton({
+  href,
+  children,
+  onClick,
+  className = '',
+}: {
+  href: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+}) {
   return (
-    <div ref={trackRef} className="relative mx-auto w-full max-w-[320px] lg:min-h-[118vh]">
-      {/* Marcadores de scroll — Intersection Observer */}
-      <div
-        ref={s1}
-        data-step={1}
-        className="pointer-events-none absolute left-0 top-[18%] h-px w-px opacity-0"
-        aria-hidden
-      />
-      <div
-        ref={s2}
-        data-step={2}
-        className="pointer-events-none absolute left-0 top-[48%] h-px w-px opacity-0"
-        aria-hidden
-      />
-      <div
-        ref={s3}
-        data-step={3}
-        className="pointer-events-none absolute left-0 top-[78%] h-px w-px opacity-0"
-        aria-hidden
-      />
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-white transition-[transform] duration-150 hover:-translate-y-px active:scale-[0.97] ${className}`}
+      style={{ background: WA }}
+    >
+      {children}
+    </a>
+  );
+}
 
-      <div className="lg:sticky lg:top-24">
-        <div
-          className="relative mx-auto w-full max-w-[300px]"
-          style={{ transform: 'rotate(12deg)' }}
-        >
-          <div
-            className="pointer-events-none absolute -inset-10 rounded-[3rem] opacity-60 blur-3xl"
-            style={{
-              background: `radial-gradient(circle at 30% 20%, ${CYAN}40, transparent 55%), radial-gradient(circle at 80% 70%, ${GOLD}22, transparent 50%)`,
-            }}
-            aria-hidden
+function GhostButton({
+  href,
+  children,
+  onClick,
+  className = '',
+}: {
+  href: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+}) {
+  const inner = (
+    <span
+      className={`inline-flex items-center justify-center rounded-full px-6 py-3.5 text-sm font-semibold ring-1 ring-[#14161A]/15 transition-[transform,background-color] duration-150 hover:-translate-y-px hover:bg-white active:scale-[0.97] ${className}`}
+      style={{ color: INK }}
+    >
+      {children}
+    </span>
+  );
+  if (href.startsWith('#')) {
+    return (
+      <a href={href} onClick={onClick}>
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" onClick={onClick}>
+      {inner}
+    </a>
+  );
+}
+
+function ShotFrame({
+  src,
+  alt,
+  width,
+  height,
+  priority,
+  cropTop,
+  className = '',
+}: {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  priority?: boolean;
+  cropTop?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={`rounded-[1.75rem] bg-[#EFEDE6] p-1.5 ring-1 ring-[#14161A]/8 ${className}`}>
+      <div
+        className={`relative overflow-hidden rounded-[1.35rem] bg-white ${
+          cropTop ? 'h-[min(72vh,620px)]' : ''
+        }`}
+      >
+        {cropTop ? (
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            sizes="(max-width: 768px) 100vw, 480px"
+            className="object-cover object-top"
+            quality={90}
+            priority={priority}
           />
-
-          {/* Teléfono */}
-          <div className="relative rounded-[2.15rem] border border-white/20 bg-[#0e0e0e] p-[10px] shadow-[0_40px_90px_-30px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.06)]">
-            <div className="relative overflow-hidden rounded-[1.65rem] bg-[#050505]">
-              {/* Status */}
-              <div className="relative z-20 flex items-center justify-between px-5 pb-1 pt-3 text-[10px] font-semibold text-white/70">
-                <span>9:41</span>
-                <div className="absolute left-1/2 top-2 h-[22px] w-[88px] -translate-x-1/2 rounded-full bg-black" />
-                <span className="opacity-60">●●●</span>
-              </div>
-
-              <div className="relative z-10 px-4 pt-2">
-                <p className="text-[11px] tracking-wide text-white/40">Google Wallet</p>
-                <p className="font-[family-name:var(--font-space)] text-base font-bold text-white">
-                  Pases
-                </p>
-              </div>
-
-              {/* Notificación push */}
-              <div
-                className={`relative z-30 mx-3 mt-2 overflow-hidden transition-all duration-500 ease-out ${
-                  showNotif
-                    ? 'max-h-24 translate-y-0 opacity-100'
-                    : 'max-h-0 -translate-y-2 opacity-0'
-                }`}
-                style={{
-                  transitionProperty: reduceMotion ? 'none' : 'opacity, transform, max-height',
-                }}
-              >
-                <div className="rounded-2xl border border-white/15 bg-[#1c1c1e]/95 px-3 py-2.5 shadow-lg backdrop-blur-md">
-                  <div className="flex items-start gap-2.5">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#25D366]/20 text-sm">
-                      🎉
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold text-white/50">Café Luna</p>
-                      <p className="text-[12px] font-medium leading-snug text-white">
-                        🎉 ¡Felicidades! Has desbloqueado tu recompensa
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Wallet slot + tarjeta */}
-              <div className="relative z-10 mt-2 min-h-[280px] overflow-hidden px-3 pb-5">
-                <div
-                  className="absolute inset-x-3 top-0 h-8 rounded-t-xl border border-b-0 border-white/10 bg-gradient-to-b from-white/10 to-transparent"
-                  aria-hidden
-                />
-
-                <div
-                  className="relative pt-3 transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]"
-                  style={{
-                    transitionProperty: reduceMotion ? 'none' : 'transform',
-                    transform: reduceMotion || cardIn ? 'translateY(0)' : 'translateY(62%)',
-                  }}
-                >
-                  {/* Tarjeta negra mate + chrome */}
-                  <div
-                    className="relative overflow-hidden rounded-2xl p-px"
-                    style={{
-                      background:
-                        'linear-gradient(135deg, #e8e8e8 0%, #6a6a6a 28%, #f2f2f2 48%, #3a3a3a 72%, #c8c8c8 100%)',
-                      boxShadow:
-                        '0 20px 40px -18px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.35)',
-                    }}
-                  >
-                    <div
-                      className="relative overflow-hidden rounded-[15px] px-4 py-4"
-                      style={{
-                        background:
-                          'linear-gradient(160deg, #2a2a2a 0%, #121212 42%, #0a0a0a 100%)',
-                      }}
-                    >
-                      {/* Glare — solo si visible y motion OK */}
-                      {!reduceMotion ? (
-                        <div
-                          className="pointer-events-none absolute inset-0 z-[2]"
-                          style={{
-                            background:
-                              'linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.09) 48%, transparent 62%)',
-                            backgroundSize: '220% 100%',
-                            animation: inView
-                              ? 'lealtadHeroGlare 9s ease-in-out infinite'
-                              : 'none',
-                            animationPlayState: inView ? 'running' : 'paused',
-                          }}
-                          aria-hidden
-                        />
-                      ) : null}
-
-                      <div className="relative z-[3]">
-                        <div className="flex items-center gap-3">
-                          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#F5F0E8] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),0_0_0_1px_rgba(255,255,255,0.12)]">
-                            <Image
-                              src="/images/mockups/cafe-luna-logo.jpg"
-                              alt="Café Luna"
-                              width={56}
-                              height={56}
-                              className="h-[118%] w-[118%] max-w-none object-cover object-center"
-                              style={{ imageRendering: 'auto' }}
-                              quality={95}
-                              priority
-                            />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-[family-name:var(--font-space)] text-lg font-bold leading-tight text-white">
-                              Café Luna
-                            </p>
-                            <p className="text-[12px] text-white/55">Sofía Reyes</p>
-                          </div>
-                        </div>
-
-                        <div className="mt-4">
-                          <div className="mb-1.5 flex items-center justify-between text-[11px]">
-                            <span className="font-mono text-white/45">
-                              {visits} de 10 visitas
-                            </span>
-                            <span className="text-white/35">
-                              {remaining === 1
-                                ? 'Te falta 1 visita'
-                                : `Te faltan ${remaining} visitas`}
-                            </span>
-                          </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                            <div
-                              className="h-full rounded-full transition-[width] duration-700 ease-out"
-                              style={{
-                                width: `${progressPct}%`,
-                                background: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
-                                transitionProperty: reduceMotion ? 'none' : 'width',
-                                boxShadow: `0 0 12px ${CYAN}55`,
-                              }}
-                            />
-                          </div>
-                          <p className="mt-2 text-[12px] text-white/50">
-                            {stage >= 2
-                              ? 'Te falta 1 visita para tu recompensa'
-                              : 'Te faltan 2 visitas para tu recompensa'}
-                          </p>
-                        </div>
-
-                        <div
-                          className="mt-4 rounded-xl border border-white/10 px-3 py-2.5"
-                          style={{
-                            background:
-                              'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(0,212,255,0.08))',
-                          }}
-                        >
-                          <p className="font-[family-name:var(--font-space)] text-sm font-semibold text-white">
-                            🎁 Café gratis
-                          </p>
-                          <p className="mt-0.5 text-[10px] text-white/45">
-                            Recompensa al completar 10 visitas
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <p className="relative z-10 pb-4 text-center text-[10px] text-white/30">
-                Apple Wallet · <span className="text-white/20">próximamente</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <p className="mt-8 text-center text-[12px] text-white/40 lg:mt-10">
-          Haz scroll — la tarjeta entra al Wallet, suma visita y desbloquea la recompensa.
-        </p>
+        ) : (
+          <Image
+            src={src}
+            alt={alt}
+            width={width}
+            height={height}
+            className="h-auto w-full"
+            quality={90}
+            priority={priority}
+            sizes="(max-width: 768px) 92vw, 440px"
+          />
+        )}
       </div>
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `@keyframes lealtadHeroGlare{0%{background-position:120% 0}100%{background-position:-40% 0}}`,
-        }}
-      />
     </div>
   );
 }
@@ -589,17 +278,17 @@ function PhoneHero() {
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b border-white/10">
+    <div className="border-b border-[#14161A]/10">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between gap-4 py-5 text-left"
       >
-        <span className="font-[family-name:var(--font-space)] text-[15px] font-semibold text-white sm:text-base">
+        <span className="text-[15px] font-semibold sm:text-base" style={{ color: INK }}>
           {q}
         </span>
         <ChevronDown
-          className={`h-5 w-5 shrink-0 text-white/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`h-5 w-5 shrink-0 text-[#14161A]/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         />
       </button>
       <AnimatePresence initial={false}>
@@ -611,7 +300,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
             transition={{ duration: 0.22 }}
             className="overflow-hidden"
           >
-            <p className="pb-5 pr-8 text-sm leading-relaxed text-white/55">{a}</p>
+            <p className="pb-5 pr-8 text-sm leading-relaxed text-[#14161A]/60">{a}</p>
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -621,209 +310,188 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export function LealtadLanding() {
   const reduceMotion = useReducedMotion();
-  const [industry, setIndustry] = useState<Industry>(INDUSTRIES[0]);
   useAnalytics(LEALTAD_ANALYTICS);
 
   return (
-    <main
-      className="relative min-h-screen overflow-hidden font-[family-name:var(--font-jakarta)] text-white"
-      style={{ background: BG }}
-    >
-      <ParticleField />
-      <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-45"
-        style={{
-          background:
-            'radial-gradient(ellipse 70% 45% at 15% -5%, rgba(0,212,255,0.12), transparent 55%), radial-gradient(ellipse 50% 35% at 90% 10%, rgba(255,215,0,0.08), transparent 50%)',
-        }}
-        aria-hidden
-      />
-
+    <main className="relative min-h-[100dvh] overflow-x-hidden" style={{ background: BG, color: INK }}>
       <Navbar
+        theme="light"
+        ctaHref={WA_GROWTH}
+        ctaLabel="Escríbenos"
         pageLinks={[
           { href: '#simulador', label: 'Simulador' },
           { href: '#giros', label: 'Tu giro' },
           { href: '#plan', label: 'Plan' },
         ]}
-        ctaHref={WA_GROWTH}
-        ctaLabel="Quiero vender más"
-        ctaExternal
       />
-
-      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-28 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-8">
         {/* 1. HERO */}
-        <section className="grid items-center gap-12 py-14 lg:min-h-[calc(100dvh-5rem)] lg:grid-cols-2 lg:gap-10 lg:py-10">
-          <div>
+        <section className="py-12 sm:py-16">
+          <div className="mx-auto max-w-3xl text-center">
             <motion.p
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={revealTransition(0, 0.35)}
-              className="mb-4 inline-flex items-center gap-2 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]"
+              className="mb-4 text-sm font-medium tracking-wide"
+              style={{ color: BRONZE }}
             >
-              <TrendingUp className="h-3.5 w-3.5" />
-              Para negocios locales que viven de clientes que vuelven
+              Plan base · $399 MXN/mes
             </motion.p>
             <motion.h1
               initial={reduceMotion ? false : { opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={revealTransition(0.06, 0.45)}
-              className="font-[family-name:var(--font-space)] text-[2rem] font-extrabold leading-[1.08] tracking-tight sm:text-4xl lg:text-[2.85rem]"
+              className="text-[2rem] font-bold leading-[1.1] tracking-tight sm:text-4xl lg:text-[2.85rem]"
             >
               Haz que tus clientes{' '}
-              <span
-                className="bg-clip-text text-transparent"
-                style={{ backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
-              >
+              <em className="not-italic font-bold" style={{ color: BRONZE }}>
                 regresen una y otra vez.
-              </span>
+              </em>
             </motion.h1>
             <motion.p
               initial={reduceMotion ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={revealTransition(0.12, 0.4)}
-              className="mt-5 max-w-xl text-base leading-relaxed text-white/60 sm:text-lg"
+              className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#14161A]/60 sm:text-lg"
             >
-              Convierte visitas ocasionales en clientes frecuentes. El sistema acumula recompensas,
-              detecta quién se enfría y los trae de vuelta — casi solo.
+              Te avisa quién se está yendo. Tú mandas el WhatsApp en un toque.
             </motion.p>
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={revealTransition(0.18, 0.35)}
-              className="mt-8 flex flex-wrap gap-3"
+              className="mt-8 flex flex-wrap justify-center gap-3"
             >
-              <GlowButton href={WA_GROWTH} external onClick={() => trackCta('hero-ventas')}>
-                Quiero aumentar mis ventas
-              </GlowButton>
-              <GlowButton href="#demo" variant="secondary" onClick={() => trackCta('hero-demo')}>
+              <WaButton href={WA_GROWTH} onClick={() => trackCta('hero-ventas')}>
+                Empezar ahora
+              </WaButton>
+              <GhostButton href="#demo" onClick={() => trackCta('hero-demo')}>
                 Ver demostración
-              </GlowButton>
+              </GhostButton>
             </motion.div>
-            <motion.ul
-              initial={reduceMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={revealTransition(0.28, 0.4)}
-              className="mt-8 grid gap-2 sm:grid-cols-2"
-            >
+            <ul className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-[#14161A]/55">
               {BADGES.map((b) => (
-                <li key={b} className="flex items-center gap-2 text-sm text-white/55">
-                  <Check className="h-4 w-4 shrink-0 text-[#00D4FF]" />
+                <li key={b} className="inline-flex items-center gap-2">
+                  <Check className="h-4 w-4 shrink-0" style={{ color: BRONZE }} />
                   {b}
                 </li>
               ))}
-            </motion.ul>
+            </ul>
           </div>
-          <div id="demo">
-            <PhoneHero />
+
+          <div id="demo" className="mx-auto mt-12 max-w-[440px]">
+            <div className="lealtad-hero-shot">
+              <ShotFrame
+                src={IMG_WALLET}
+                alt="Tarjeta de lealtad de Café Luna en Google Wallet, con puntos, saldo y código QR"
+                width={938}
+                height={1556}
+                priority
+              />
+            </div>
           </div>
         </section>
 
         {/* 2. PROBLEMA */}
         <section className="py-20 sm:py-24">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
-              El costo invisible
-            </p>
-            <h2 className="max-w-3xl font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
-              ¿Cuánto dinero estás perdiendo cada mes?
+            <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
+              ¿Cuánto dinero se te va cada mes?
             </h2>
-            <p className="mt-4 max-w-2xl text-white/55">
-              Traer un cliente nuevo es caro. Dejar ir a uno que ya te conoce es más caro todavía —
-              porque ya invertiste en que te encontrara.
-            </p>
           </ScrollReveal>
           <StaggerReveal className="mt-12 grid gap-4 md:grid-cols-3">
-            {PROBLEM_STATS.map((s) => (
-              <StaggerItem key={s.value}>
-                <div className="h-full rounded-3xl border border-white/10 bg-white/[0.03] p-7 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[#00D4FF]/30">
-                  <p
-                    className="font-[family-name:var(--font-space)] text-4xl font-extrabold"
-                    style={{
-                      backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
-                      WebkitBackgroundClip: 'text',
-                      backgroundClip: 'text',
-                      color: 'transparent',
-                    }}
-                  >
-                    {s.value}
-                  </p>
-                  <p className="mt-3 text-sm leading-relaxed text-white/55">{s.label}</p>
-                </div>
-              </StaggerItem>
-            ))}
+            <StaggerItem>
+              <div className="h-full rounded-[1.5rem] bg-white p-7 ring-1 ring-[#14161A]/8">
+                <p className="text-4xl font-bold" style={{ color: BRONZE }}>
+                  <CountUp end={5} suffix="×" />
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-[#14161A]/55">
+                  más caro atraer un cliente nuevo
+                </p>
+              </div>
+            </StaggerItem>
+            <StaggerItem>
+              <div className="h-full rounded-[1.5rem] bg-white p-7 ring-1 ring-[#14161A]/8">
+                <p className="text-4xl font-bold" style={{ color: BRONZE }}>
+                  <CountUp end={60} />–<CountUp end={70} suffix="%" />
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-[#14161A]/55">
+                  de ventas vienen de quien ya te conoce
+                </p>
+              </div>
+            </StaggerItem>
+            <StaggerItem>
+              <div className="h-full rounded-[1.5rem] bg-white p-7 ring-1 ring-[#14161A]/8">
+                <p className="text-4xl font-bold" style={{ color: BRONZE }}>
+                  0
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-[#14161A]/55">
+                  seguimiento = clientes que se van
+                </p>
+              </div>
+            </StaggerItem>
           </StaggerReveal>
         </section>
 
         {/* 3. ANTES VS DESPUÉS */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Antes vs después
-            </p>
-            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
+            <h2 className="text-3xl font-bold sm:text-4xl">
               Del “gracias, adiós” al cliente que vuelve solo
             </h2>
           </ScrollReveal>
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+          <SequenceReveal />
+        </section>
+
+        {/* Así funciona por dentro */}
+        <section className="py-20 sm:py-24">
+          <ScrollReveal>
+            <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
+              Así funciona por dentro
+            </h2>
+          </ScrollReveal>
+
+          <div className="mt-14 grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <ScrollReveal>
-              <div className="h-full rounded-3xl border border-white/10 bg-white/[0.02] p-7 opacity-90">
-                <p className="font-mono text-xs uppercase tracking-wider text-[#FF6B5E]">Antes</p>
-                <ul className="mt-6 space-y-4">
-                  {['Cliente compra', 'Se va', 'Nunca vuelve', 'Tú pagas otra vez por atraer a alguien nuevo'].map(
-                    (t, i) => (
-                      <li key={t} className="flex items-center gap-3 text-white/50">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 font-mono text-xs text-white/30">
-                          {i + 1}
-                        </span>
-                        {t}
-                      </li>
-                    ),
-                  )}
-                </ul>
-              </div>
+              <p className="text-sm font-medium" style={{ color: BRONZE }}>
+                Registrar venta
+              </p>
+              <h3 className="mt-2 text-2xl font-bold sm:text-3xl">Cobra, suma puntos, listo</h3>
+              <p className="mt-4 text-[#14161A]/60">Cobra, suma puntos y envía el pase.</p>
             </ScrollReveal>
-            <ScrollReveal delay={0.08}>
-              <div className="h-full rounded-3xl border border-[#00D4FF]/35 bg-[#00D4FF]/[0.04] p-7 shadow-[0_0_40px_rgba(0,212,255,0.08)]">
-                <p className="font-mono text-xs uppercase tracking-wider text-[#00D4FF]">Después</p>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {AFTER_STEPS.map((t, i) => (
-                    <motion.span
-                      key={t}
-                      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: i * 0.05 }}
-                      className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-white/85"
-                    >
-                      <span className="font-mono text-[10px] text-[#00D4FF]">{i + 1}</span>
-                      {t}
-                      {i < AFTER_STEPS.length - 1 ? (
-                        <ArrowRight className="hidden h-3 w-3 text-white/25 sm:inline" />
-                      ) : null}
-                    </motion.span>
-                  ))}
-                </div>
-                <p className="mt-6 text-sm text-white/55">
-                  Menos publicidad. Más recompra. El crecimiento viene de la gente que ya te eligió.
-                </p>
-              </div>
+            <ScrollReveal delay={0.06}>
+              <ShotFrame
+                src={IMG_CAJA}
+                alt="Pantalla de caja de Café Luna: venta registrada, puntos ganados y botón para enviar la tarjeta por WhatsApp"
+                width={1079}
+                height={2132}
+                cropTop
+              />
             </ScrollReveal>
+          </div>
+
+          <div className="mt-20">
+            <ScrollReveal>
+              <p className="text-sm font-medium" style={{ color: BRONZE }}>
+                Panel de clientes
+              </p>
+              <h3 className="mt-2 text-2xl font-bold sm:text-3xl">Semáforo de quién vuelve</h3>
+              <p className="mt-4 max-w-2xl text-[#14161A]/60">
+                Activo, en riesgo o inactivo. Tú decides a quién escribir — el mensaje ya está listo.
+              </p>
+            </ScrollReveal>
+            <div className="mt-8">
+              <TrafficLightDemo />
+            </div>
           </div>
         </section>
 
         {/* 4. SIMULADOR */}
         <section id="simulador" className="py-20 sm:py-24">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
-              Simulador de ganancias
-            </p>
-            <h2 className="max-w-3xl font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
-              ¿Cuánto podrías ganar si solo un poco más de gente volviera?
+            <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
+              ¿Cuánto ganas si vuelven un poco más?
             </h2>
-            <p className="mt-4 max-w-2xl text-white/55">
-              Mueve los números de tu negocio. Si el ingreso extra cubre el plan, el sistema
-              prácticamente se paga solo.
-            </p>
           </ScrollReveal>
           <div className="mt-10">
             <RoiCalculator />
@@ -833,22 +501,17 @@ export function LealtadLanding() {
         {/* 5. BENEFICIOS */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Lo que ganas
-            </p>
-            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              No es software. Es crecimiento en automático.
-            </h2>
+            <h2 className="text-3xl font-bold sm:text-4xl">Ves quién se enfría. Tú escribes.</h2>
           </ScrollReveal>
           <StaggerReveal className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {BENEFITS.map((b) => (
               <StaggerItem key={b.title}>
-                <div className="h-full rounded-3xl border border-white/10 bg-white/[0.03] p-6 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[#00D4FF]/30">
-                  <b.icon className="h-5 w-5 text-[#00D4FF]" />
-                  <h3 className="mt-4 font-[family-name:var(--font-space)] text-lg font-bold leading-snug">
-                    {b.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/50">{b.desc}</p>
+                <div className="h-full rounded-[1.5rem] bg-white p-6 ring-1 ring-[#14161A]/8">
+                  <b.icon
+                    className="h-5 w-5"
+                    style={{ color: 'whatsapp' in b && b.whatsapp ? WA : BRONZE }}
+                  />
+                  <h3 className="mt-4 text-lg font-bold leading-snug">{b.title}</h3>
                 </div>
               </StaggerItem>
             ))}
@@ -858,112 +521,39 @@ export function LealtadLanding() {
         {/* 6. INDUSTRIAS */}
         <section id="giros" className="py-16 sm:py-20">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Tu giro
-            </p>
-            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              Hecho para el negocio de la esquina — y el que quiere crecer
-            </h2>
+            <h2 className="text-3xl font-bold sm:text-4xl">Hecho para tu giro</h2>
           </ScrollReveal>
-          <IndustryPhoneCarousel />
           <div className="mt-8 flex flex-wrap gap-2">
-            {INDUSTRIES.map((ind) => (
-              <button
-                key={ind.id}
-                type="button"
-                onClick={() => setIndustry(ind)}
-                className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold transition-[transform,border-color,background-color,color] duration-150 active:scale-[0.97] ${
-                  industry.id === ind.id
-                    ? 'border-[#00D4FF] bg-[#00D4FF]/12 text-[#00D4FF]'
-                    : 'border-white/12 bg-white/[0.03] text-white/55 hover:border-white/25 hover:text-white'
-                }`}
+            {GIROS.map((giro) => (
+              <span
+                key={giro}
+                className="rounded-full bg-white px-3.5 py-2 text-sm font-medium text-[#14161A]/75 ring-1 ring-[#14161A]/10"
               >
-                {ind.logoSrc ? (
-                  <span className="relative inline-flex h-5 w-5 shrink-0 overflow-hidden rounded-full bg-[#F5F0E8]">
-                    <Image
-                      src={ind.logoSrc}
-                      alt=""
-                      width={24}
-                      height={24}
-                      className="h-[118%] w-[118%] max-w-none object-cover object-center"
-                    />
-                  </span>
-                ) : (
-                  <span aria-hidden>{ind.icon}</span>
-                )}
-                {ind.label}
-              </button>
+                {giro}
+              </span>
             ))}
           </div>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={industry.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.25 }}
-              className={`mt-8 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br ${industry.color} p-8 sm:p-10`}
-            >
-              {industry.logoSrc ? (
-                <div className="relative flex h-16 w-16 overflow-hidden rounded-full bg-[#F5F0E8] shadow-[0_8px_24px_rgba(0,0,0,0.35)] sm:h-20 sm:w-20">
-                  <Image
-                    src={industry.logoSrc}
-                    alt={industry.logoAlt || industry.label}
-                    width={96}
-                    height={96}
-                    className="h-[118%] w-[118%] max-w-none object-cover object-center"
-                    quality={95}
-                  />
-                </div>
-              ) : (
-                <p className="text-4xl">{industry.icon}</p>
-              )}
-              <h3 className="mt-4 font-[family-name:var(--font-space)] text-2xl font-bold">
-                {industry.label}
-              </h3>
-              <p className="mt-3 max-w-xl text-base text-white/75">{industry.example}</p>
-              <a
-                href={agentiaWhatsAppUrl(
-                  `Hola Agentia, tengo un negocio de ${industry.label.toLowerCase()} y quiero más clientes frecuentes.`,
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#00D4FF] hover:text-[#FFD700]"
-              >
-                Quiero esto para mi {industry.label.toLowerCase()}
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </motion.div>
-          </AnimatePresence>
         </section>
 
         {/* 7. AUTOMATIZACIONES */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
-              Automatizaciones
-            </p>
-            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              Un empleado que recupera clientes mientras tú atiendes
+            <h2 className="text-3xl font-bold sm:text-4xl">
+              Te avisa a quién escribir
             </h2>
-            <p className="mt-3 max-w-2xl text-white/55">
-              No tienes que acordarte de quién falta. El sistema lo hace por ti.
-            </p>
           </ScrollReveal>
           <div className="relative mt-12">
-            <div className="absolute left-[15px] top-2 bottom-2 w-px bg-gradient-to-b from-[#00D4FF]/50 via-white/15 to-transparent sm:left-[19px]" />
+            <div className="absolute bottom-2 left-[15px] top-2 w-px bg-[#14161A]/10 sm:left-[19px]" />
             <ul className="space-y-6">
               {AUTOMATIONS.map((a, i) => (
                 <ScrollReveal key={a.t} delay={i * 0.04}>
                   <li className="relative flex gap-5 pl-1">
-                    <span className="relative z-[1] mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#00D4FF]/40 bg-[#0a0a0a] font-mono text-[11px] text-[#00D4FF] sm:h-10 sm:w-10">
+                    <span className="relative z-[1] mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[11px] font-semibold ring-1 ring-[#14161A]/10 sm:h-10 sm:w-10">
                       {String(i + 1).padStart(2, '0')}
                     </span>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
-                      <h3 className="font-[family-name:var(--font-space)] text-lg font-bold">
-                        {a.t}
-                      </h3>
-                      <p className="mt-1 text-sm text-white/50">{a.d}</p>
+                    <div className="rounded-2xl bg-white px-5 py-4 ring-1 ring-[#14161A]/8">
+                      <h3 className="text-lg font-bold">{a.t}</h3>
+                      <p className="mt-1 text-sm text-[#14161A]/55">{a.d}</p>
                     </div>
                   </li>
                 </ScrollReveal>
@@ -972,65 +562,42 @@ export function LealtadLanding() {
           </div>
         </section>
 
-        {/* NFC — upsell físico */}
+        {/* NFC */}
         <section className="py-16 sm:py-20">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <ScrollReveal>
-              <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
-                Upsell opcional
-              </p>
-              <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
-                Convierte clientes satisfechos en promotores de tu negocio
-              </h2>
-              <p className="mt-4 text-white/55">
-                La Tarjeta Inteligente NFC es un complemento físico: el cliente acerca el teléfono y
-                se abre exactamente lo que tú configuraste — sin apps nuevas ni explicar códigos.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {NFC_ACTIONS.map((a) => (
-                  <span
-                    key={a}
-                    className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-white/70"
-                  >
-                    {a}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-6 text-sm text-white/40">
-                Ideal en mostrador, mesa o paquete: un toque y el cliente ya está en Reviews,
-                WhatsApp o tu programa de lealtad.
-              </p>
-            </ScrollReveal>
-            <ScrollReveal delay={0.08}>
-              <NfcTapSequence />
-            </ScrollReveal>
-          </div>
+          <ScrollReveal>
+            <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
+              Una tarjeta NFC, un toque, reseña o WhatsApp
+            </h2>
+            <p className="mt-4 max-w-2xl text-[#14161A]/55">Complemento físico. Sin apps nuevas.</p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {NFC_ACTIONS.map((a) => (
+                <span
+                  key={a}
+                  className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#14161A]/70 ring-1 ring-[#14161A]/10"
+                >
+                  {a}
+                </span>
+              ))}
+            </div>
+          </ScrollReveal>
         </section>
 
         {/* Reseñas Google */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Reputación
-            </p>
-            <h2 className="max-w-3xl font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
-              Consigue más reseñas de Google sin pedir códigos QR
+            <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
+              Más reseñas de Google, sin perseguir
             </h2>
-            <p className="mt-4 max-w-2xl text-white/55">
-              El cliente termina, acerca el teléfono o abre su pase, califica y recibe recompensa.
-              Tú no persigues a nadie con un papelito.
-            </p>
           </ScrollReveal>
 
           <StaggerReveal className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {REVIEW_STEPS.map((s) => (
               <StaggerItem key={s.n}>
-                <div className="h-full rounded-3xl border border-white/10 bg-white/[0.03] p-5 transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[#00D4FF]/30">
-                  <span className="font-mono text-xs text-[#00D4FF]">{s.n}</span>
-                  <h3 className="mt-3 font-[family-name:var(--font-space)] text-base font-bold leading-snug">
-                    {s.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/50">{s.desc}</p>
+                <div className="h-full rounded-[1.5rem] bg-white p-5 ring-1 ring-[#14161A]/8">
+                  <span className="text-xs font-semibold" style={{ color: BRONZE }}>
+                    {s.n}
+                  </span>
+                  <h3 className="mt-3 text-base font-bold leading-snug">{s.title}</h3>
                 </div>
               </StaggerItem>
             ))}
@@ -1038,30 +605,24 @@ export function LealtadLanding() {
 
           <div className="mt-8 grid gap-4 lg:grid-cols-2">
             <ScrollReveal>
-              <div className="h-full rounded-3xl border border-[#25D366]/30 bg-[#25D366]/[0.06] p-6">
-                <div className="flex items-center gap-2 text-[#25D366]">
-                  <Star className="h-4 w-4 fill-[#25D366]" />
-                  <span className="font-[family-name:var(--font-space)] text-sm font-semibold">
-                    4–5 estrellas
-                  </span>
+              <div className="h-full rounded-[1.5rem] bg-white p-6 ring-1 ring-[#B8935A]/25">
+                <div className="flex items-center gap-2" style={{ color: BRONZE }}>
+                  <Star className="h-4 w-4 fill-[#B8935A]" />
+                  <span className="text-sm font-semibold">4–5 estrellas</span>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-white/70">
-                  Lo mandamos directo a Google Reviews. Publicas lo que suma reputación y
-                  posicionamiento.
+                <p className="mt-3 text-sm leading-relaxed text-[#14161A]/65">
+                  Van a Google Reviews. Tú publicas lo que suma.
                 </p>
               </div>
             </ScrollReveal>
             <ScrollReveal delay={0.06}>
-              <div className="h-full rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-                <div className="flex items-center gap-2 text-[#FFD700]">
+              <div className="h-full rounded-[1.5rem] bg-white p-6 ring-1 ring-[#14161A]/8">
+                <div className="flex items-center gap-2 text-[#14161A]">
                   <Shield className="h-4 w-4" />
-                  <span className="font-[family-name:var(--font-space)] text-sm font-semibold">
-                    Menos de 4 estrellas
-                  </span>
+                  <span className="text-sm font-semibold">Menos de 4 estrellas</span>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-white/55">
-                  Se guarda en un formulario interno. Tú ves el feedback y puedes recuperarlo —
-                  sin que dañe tu reputación pública en Maps.
+                <p className="mt-3 text-sm leading-relaxed text-[#14161A]/55">
+                  Se queda interno. Tú ves el feedback, Maps no.
                 </p>
               </div>
             </ScrollReveal>
@@ -1070,19 +631,9 @@ export function LealtadLanding() {
           <StaggerReveal className="mt-8 grid gap-4 md:grid-cols-3">
             {REVIEW_METRICS.map((m) => (
               <StaggerItem key={m.value}>
-                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center">
-                  <p
-                    className="font-[family-name:var(--font-space)] text-lg font-bold"
-                    style={{
-                      backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
-                      WebkitBackgroundClip: 'text',
-                      backgroundClip: 'text',
-                      color: 'transparent',
-                    }}
-                  >
-                    {m.value}
-                  </p>
-                  <p className="mt-2 text-sm text-white/50">{m.label}</p>
+                <div className="rounded-[1.5rem] bg-white p-6 text-center ring-1 ring-[#14161A]/8">
+                  <p className="text-lg font-bold">{m.value}</p>
+                  <p className="mt-2 text-sm text-[#14161A]/50">{m.label}</p>
                 </div>
               </StaggerItem>
             ))}
@@ -1092,25 +643,20 @@ export function LealtadLanding() {
         {/* 8. COMPARATIVA */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Comparativa
-            </p>
-            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              Tarjeta de papel vs Agentia
-            </h2>
+            <h2 className="text-3xl font-bold sm:text-4xl">Tarjeta de papel vs Agentia</h2>
           </ScrollReveal>
-          <div className="mt-10 overflow-hidden rounded-3xl border border-white/10">
-            <div className="grid grid-cols-2 bg-white/[0.04] px-4 py-3 text-xs font-semibold uppercase tracking-wider sm:px-6 sm:text-sm">
-              <span className="text-[#FF6B5E]/90">Tarjeta de papel</span>
-              <span className="text-[#00D4FF]">Agentia</span>
+          <div className="mt-10 overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-[#14161A]/8">
+            <div className="grid grid-cols-2 bg-[#F3F1EC] px-4 py-3 text-xs font-semibold uppercase tracking-wider sm:px-6 sm:text-sm">
+              <span className="text-[#14161A]/45">Tarjeta de papel</span>
+              <span style={{ color: BRONZE }}>Agentia</span>
             </div>
             {COMPARE.map((row) => (
               <div
                 key={row.paper}
-                className="grid grid-cols-1 gap-3 border-t border-white/10 px-4 py-4 sm:grid-cols-2 sm:gap-6 sm:px-6"
+                className="grid grid-cols-1 gap-3 border-t border-[#14161A]/8 px-4 py-4 sm:grid-cols-2 sm:gap-6 sm:px-6"
               >
-                <p className="text-sm text-white/45 line-through decoration-white/20">{row.paper}</p>
-                <p className="text-sm font-medium text-white/90">{row.agentia}</p>
+                <p className="text-sm text-[#14161A]/40 line-through decoration-[#14161A]/15">{row.paper}</p>
+                <p className="text-sm font-medium text-[#14161A]">{row.agentia}</p>
               </div>
             ))}
           </div>
@@ -1119,80 +665,56 @@ export function LealtadLanding() {
         {/* 9. MÉTRICAS */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
-              Resultados que importan
-            </p>
-            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              No vendemos “bonito”. Vendemos números.
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm text-white/45">
-              Rangos típicos en programas de recompra bien ejecutados en negocios locales. Tu
-              resultado depende de ticket, frecuencia y seguimiento.
-            </p>
+            <h2 className="text-3xl font-bold sm:text-4xl">Números, no “bonito”</h2>
           </ScrollReveal>
           <StaggerReveal className="mt-10 grid gap-4 md:grid-cols-3">
             {METRICS.map((m) => (
               <StaggerItem key={m.label}>
-                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center">
-                  <p
-                    className="font-[family-name:var(--font-space)] text-5xl font-extrabold"
-                    style={{
-                      backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})`,
-                      WebkitBackgroundClip: 'text',
-                      backgroundClip: 'text',
-                      color: 'transparent',
-                    }}
-                  >
-                    {m.value}
+                <div className="rounded-[1.5rem] bg-white p-8 text-center ring-1 ring-[#14161A]/8">
+                  <p className="text-5xl font-bold" style={{ color: BRONZE }}>
+                    <CountUp end={m.end} prefix="+" suffix="%" />
                   </p>
-                  <p className="mt-3 font-[family-name:var(--font-space)] text-lg font-semibold">
-                    {m.label}
-                  </p>
-                  <p className="mt-1 text-xs text-white/40">{m.note}</p>
+                  <p className="mt-3 text-lg font-semibold">{m.label}</p>
                 </div>
               </StaggerItem>
             ))}
           </StaggerReveal>
         </section>
 
-        {/* 10. PLAN + ROI */}
+        {/* 10. PLAN */}
         <section className="py-20 sm:py-24">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Inversión
-            </p>
-            <h2 className="max-w-3xl font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
-              Recuperando unos cuantos clientes al mes, el sistema puede pagarse solo.
+            <h2 className="max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">
+              Se paga solo si vuelven unos cuantos
             </h2>
-            <p className="mt-4 max-w-2xl text-white/55">
-              No empieces por el precio. Empieza por cuánto dejas en la mesa cada vez que alguien no
-              vuelve. Un solo plan, todo incluido.
-            </p>
           </ScrollReveal>
 
           <ScrollReveal>
             <div
               id="plan"
-              className="relative mx-auto mt-10 max-w-lg rounded-3xl border border-[#00D4FF]/40 bg-white/[0.04] p-7 shadow-[0_0_40px_rgba(0,212,255,0.1)] sm:p-8"
+              className="relative mx-auto mt-10 max-w-lg rounded-[1.75rem] bg-white p-7 ring-1 ring-[#B8935A]/30 sm:p-8"
             >
-              <p className="font-mono text-xs uppercase tracking-wider text-white/40">Plan único</p>
-              <p className="mt-2 font-[family-name:var(--font-space)] text-4xl font-bold">
-                $499
-                <span className="ml-1 text-sm font-medium text-white/40">MXN/mes</span>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#14161A]/40">Plan base</p>
+              <p className="mt-2 text-4xl font-bold" style={{ color: BRONZE }}>
+                $399
+                <span className="ml-1 text-sm font-medium text-[#14161A]/40">MXN/mes</span>
               </p>
-              <ul className="mt-6 space-y-3 text-sm text-white/70">
+              <p className="mt-2 text-sm text-[#14161A]/50">
+                ¿Más de una sucursal? +$150 MXN/mes por cada sucursal adicional
+              </p>
+              <ul className="mt-6 space-y-3 text-sm text-[#14161A]/70">
                 {[
+                  '1 sucursal',
                   'Tarjetas ilimitadas',
                   'Sellos, puntos o cashback (el negocio elige)',
                   'Google Wallet + acceso PWA',
-                  'WhatsApp automático por inactividad',
+                  'Alerta de inactividad: tú mandas el WhatsApp en un toque',
                   'Panel de clientes con semáforo de reactivación',
-                  'Hasta 3 sucursales',
-                  'Mensajes de cumpleaños automáticos',
+                  'Aviso de cumpleaños con el mensaje listo',
                   'Soporte por WhatsApp incluido',
                 ].map((t) => (
                   <li key={t} className="flex gap-2">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00D4FF]" />
+                    <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: BRONZE }} />
                     {t}
                   </li>
                 ))}
@@ -1202,10 +724,10 @@ export function LealtadLanding() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackCta('plan-499')}
-                className="mt-7 inline-flex w-full items-center justify-center rounded-xl py-3.5 text-sm font-bold text-[#0a0a0a] shadow-[0_0_32px_rgba(0,212,255,0.35)] transition hover:-translate-y-px active:scale-[0.97]"
-                style={{ background: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
+                className="mt-7 inline-flex w-full items-center justify-center rounded-full py-3.5 text-sm font-semibold text-white transition hover:-translate-y-px active:scale-[0.97]"
+                style={{ background: WA }}
               >
-                Quiero este plan
+                Empezar ahora
               </a>
             </div>
           </ScrollReveal>
@@ -1215,53 +737,36 @@ export function LealtadLanding() {
         <section id="vendedores" className="py-20 sm:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <ScrollReveal>
-              <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#FFD700]">
-                Alianzas
+              <h2 className="text-3xl font-bold leading-tight sm:text-4xl">Buscamos vendedores</h2>
+              <p className="mt-4 max-w-xl text-[#14161A]/55">
+                Comisión recurrente por cada negocio que traigas. Sin inversión.
               </p>
-              <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
-                Buscamos vendedores
-              </h2>
-              <p className="mt-4 max-w-xl text-white/55">
-                Gana comisiones recurrentes por cada negocio que traigas — sin inversión de tu parte.
-              </p>
-              <ul className="mt-8 space-y-4 text-sm text-white/70">
+              <ul className="mt-8 space-y-4 text-sm text-[#14161A]/70">
                 {[
                   'Sin cuota de entrada',
-                  'Esquema de pago diseñado para que ganes más entre más vendas',
-                  'Material de venta y demo listos desde el día uno',
+                  'Ganas más entre más vendas',
+                  'Demo y material desde el día uno',
                 ].map((t) => (
                   <li key={t} className="flex gap-3">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00D4FF]" />
+                    <Check className="mt-0.5 h-4 w-4 shrink-0" style={{ color: BRONZE }} />
                     {t}
                   </li>
                 ))}
               </ul>
               <div className="mt-8">
-                <GlowButton href={WA_SELLER} external onClick={() => trackCta('vendedores')}>
-                  Contáctanos para conocer el esquema completo
-                </GlowButton>
+                <WaButton href={WA_SELLER} onClick={() => trackCta('vendedores')}>
+                  Escríbenos
+                </WaButton>
               </div>
             </ScrollReveal>
             <ScrollReveal delay={0.08}>
               <div className="relative isolate overflow-hidden py-6 lg:py-10">
-                <div
-                  className="pointer-events-none absolute -left-8 top-0 h-full w-px bg-gradient-to-b from-[#00D4FF] via-[#00D4FF]/40 to-[#FFD700]"
-                  aria-hidden
-                />
-                <p className="font-[family-name:var(--font-space)] text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl">
+                <p className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
                   Traes el negocio.
                   <br />
-                  <span
-                    className="bg-clip-text text-transparent"
-                    style={{ backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
-                  >
-                    Ellos se quedan.
-                  </span>
+                  <span style={{ color: BRONZE }}>Ellos se quedan.</span>
                   <br />
                   Tú sigues ganando.
-                </p>
-                <p className="mt-6 max-w-sm text-sm leading-relaxed text-white/45">
-                  Tú presentas. El sistema trabaja. Si encaja, te lo explicamos al hablar.
                 </p>
               </div>
             </ScrollReveal>
@@ -1271,12 +776,7 @@ export function LealtadLanding() {
         {/* 12. FAQ */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <p className="mb-3 font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              Preguntas
-            </p>
-            <h2 className="font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              Objeciones, respondidas en claro
-            </h2>
+            <h2 className="text-3xl font-bold sm:text-4xl">Preguntas</h2>
           </ScrollReveal>
           <div className="mx-auto mt-10 max-w-3xl">
             {FAQS.map((f) => (
@@ -1288,47 +788,48 @@ export function LealtadLanding() {
         {/* CTA final */}
         <section className="py-16 text-center sm:py-20">
           <ScrollReveal>
-            <h2 className="mx-auto max-w-2xl font-[family-name:var(--font-space)] text-3xl font-bold leading-tight sm:text-4xl">
-              Si contratas esto, la meta es una sola:{' '}
-              <span
-                className="bg-clip-text text-transparent"
-                style={{ backgroundImage: `linear-gradient(90deg, ${CYAN}, ${GOLD})` }}
-              >
-                vender más.
-              </span>
+            <h2 className="mx-auto max-w-2xl text-3xl font-bold leading-tight sm:text-4xl">
+              La meta es una: <span style={{ color: BRONZE }}>vender más.</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-lg text-white/55">
-              Mándanos tu logo. En 24h tienes el sistema listo para que tus clientes vuelvan.
-            </p>
+            <p className="mx-auto mt-4 max-w-lg text-[#14161A]/55">Mándanos tu logo. En 24h está listo.</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <GlowButton href={WA_GROWTH} external onClick={() => trackCta('cierre-ventas')}>
-                Quiero aumentar mis ventas
-              </GlowButton>
-              <GlowButton href={WA_DEMO} external variant="secondary" onClick={() => trackCta('cierre-demo')}>
-                Pedir demostración
-              </GlowButton>
+              <WaButton href={WA_GROWTH} onClick={() => trackCta('cierre-ventas')}>
+                Empezar ahora
+              </WaButton>
             </div>
           </ScrollReveal>
         </section>
 
-        {/* Ecosistema — diagrama visual */}
+        {/* Ecosistema */}
         <section className="py-16 sm:py-20">
           <ScrollReveal>
-            <p className="mb-3 text-center font-[family-name:var(--font-space)] text-sm font-medium tracking-wide text-[#00D4FF]">
-              El ecosistema
-            </p>
-            <h2 className="mx-auto max-w-2xl text-center font-[family-name:var(--font-space)] text-3xl font-bold sm:text-4xl">
-              De la primera conversación a más clientes en la puerta
+            <h2 className="mx-auto max-w-2xl text-center text-3xl font-bold sm:text-4xl">
+              Un solo sistema, más clientes en la puerta
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-center text-sm text-white/50">
-              Un solo sistema: captura, recompra, recuperación, NFC y reseñas trabajando juntos.
-            </p>
           </ScrollReveal>
-          <EcosystemFlow />
+          <ol className="mx-auto mt-10 flex max-w-4xl flex-wrap items-center justify-center gap-2">
+            {ECOSYSTEM.map((node, i) => (
+              <li key={node} className="flex items-center gap-2">
+                <span
+                  className={`rounded-full px-3.5 py-2 text-xs font-semibold sm:text-sm ${
+                    node === 'WhatsApp'
+                      ? 'text-white'
+                      : 'bg-white text-[#14161A] ring-1 ring-[#14161A]/10'
+                  }`}
+                  style={node === 'WhatsApp' ? { background: WA } : undefined}
+                >
+                  {node}
+                </span>
+                {i < ECOSYSTEM.length - 1 ? (
+                  <ArrowRight className="hidden h-3.5 w-3.5 text-[#14161A]/25 sm:block" />
+                ) : null}
+              </li>
+            ))}
+          </ol>
         </section>
 
-        <footer className="border-t border-white/10 pt-8 text-center text-sm text-white/40">
-          <Link href="/" className="text-white/60 hover:text-[#00D4FF]">
+        <footer className="border-t border-[#14161A]/10 pt-8 text-center text-sm text-[#14161A]/40">
+          <Link href="/" className="text-[#14161A]/60 hover:text-[#14161A]">
             agentia.software
           </Link>
           {' · '}
@@ -1336,11 +837,18 @@ export function LealtadLanding() {
         </footer>
       </div>
 
-      <WhatsAppFloat
-        productLabel="Lealtad"
-        defaultMessage="Hola Agentia, quiero aumentar mis ventas con el sistema de recompra. ¿Cómo arranco?"
-      />
-      <AgentiaChatWidget />
+      <a
+        href={WA_GROWTH}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => trackCta('whatsapp-flotante')}
+        className="fixed bottom-5 right-5 z-[60] flex h-14 items-center gap-2 rounded-full pl-3.5 pr-4 text-white shadow-[0_8px_24px_rgba(37,211,102,0.35)] transition hover:scale-105 active:scale-95"
+        style={{ background: WA }}
+        aria-label="Escribir por WhatsApp"
+      >
+        <MessageCircle className="h-6 w-6" />
+        <span className="text-sm font-semibold">WhatsApp</span>
+      </a>
     </main>
   );
 }

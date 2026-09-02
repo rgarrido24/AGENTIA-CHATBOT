@@ -47,11 +47,14 @@ export default function LeadForm({
     }
   }
 
+  const fieldClass =
+    'w-full rounded-[10px] border border-[#14161A]/12 bg-[#FAFAF8] px-3.5 py-3 text-sm text-[#14161A] outline-none transition-[border-color] duration-[160ms] placeholder:text-[#14161A]/30 focus:border-[#B8935A]';
+
   if (status === 'sent') {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] sm:p-8">
-        <p className="font-[family-name:var(--font-space)] text-xl font-bold">Listo, ya lo recibimos</p>
-        <p className="mt-2 text-white/55">Te contactamos por WhatsApp en las próximas horas.</p>
+      <div className="rounded-2xl border border-[#14161A]/8 bg-white p-6 text-center shadow-[0_8px_24px_rgba(20,22,26,0.04)] sm:p-8">
+        <p className="text-xl font-bold">Listo, ya lo recibimos</p>
+        <p className="mt-2 text-[#14161A]/55">Te contactamos por WhatsApp en las próximas horas.</p>
       </div>
     );
   }
@@ -59,19 +62,19 @@ export default function LeadForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative rounded-2xl border border-white/10 bg-white/[0.04] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] sm:p-8"
+      className="relative rounded-2xl border border-[#14161A]/8 bg-white p-6 shadow-[0_8px_24px_rgba(20,22,26,0.04)] sm:p-8"
     >
-      <p className="font-[family-name:var(--font-space)] text-xl font-bold">Diagnóstico gratis</p>
-      <p className="mt-1 text-sm text-white/50">Sin compromiso. Te decimos qué automatizar primero.</p>
+      <p className="text-xl font-bold">Diagnóstico gratis</p>
+      <p className="mt-1 text-sm text-[#14161A]/50">Sin compromiso. Te decimos qué automatizar primero.</p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1.5 block font-mono text-[12px] text-white/55" htmlFor={`nombre-${product}`}>
+          <label className="mb-1.5 block text-[12px] text-[#14161A]/55" htmlFor={`nombre-${product}`}>
             Nombre
           </label>
           <input
             id={`nombre-${product}`}
-            className="w-full rounded-[10px] border border-white/10 bg-white/[0.04] px-3.5 py-3 text-sm text-white outline-none transition-[border-color] duration-[160ms] placeholder:text-white/30 focus:border-[#00D4FF]"
+            className={fieldClass}
             required
             autoComplete="name"
             value={values.nombre}
@@ -79,12 +82,12 @@ export default function LeadForm({
           />
         </div>
         <div>
-          <label className="mb-1.5 block font-mono text-[12px] text-white/55" htmlFor={`negocio-${product}`}>
+          <label className="mb-1.5 block text-[12px] text-[#14161A]/55" htmlFor={`negocio-${product}`}>
             Nombre del negocio
           </label>
           <input
             id={`negocio-${product}`}
-            className="w-full rounded-[10px] border border-white/10 bg-white/[0.04] px-3.5 py-3 text-sm text-white outline-none transition-[border-color] duration-[160ms] placeholder:text-white/30 focus:border-[#00D4FF]"
+            className={fieldClass}
             required
             autoComplete="organization"
             value={values.negocio}
@@ -92,12 +95,12 @@ export default function LeadForm({
           />
         </div>
         <div>
-          <label className="mb-1.5 block font-mono text-[12px] text-white/55" htmlFor={`whatsapp-${product}`}>
+          <label className="mb-1.5 block text-[12px] text-[#14161A]/55" htmlFor={`whatsapp-${product}`}>
             WhatsApp
           </label>
           <input
             id={`whatsapp-${product}`}
-            className="w-full rounded-[10px] border border-white/10 bg-white/[0.04] px-3.5 py-3 text-sm text-white outline-none transition-[border-color] duration-[160ms] placeholder:text-white/30 focus:border-[#00D4FF]"
+            className={fieldClass}
             type="tel"
             required
             autoComplete="tel"
@@ -107,12 +110,12 @@ export default function LeadForm({
           />
         </div>
         <div>
-          <label className="mb-1.5 block font-mono text-[12px] text-white/55" htmlFor={`email-${product}`}>
+          <label className="mb-1.5 block text-[12px] text-[#14161A]/55" htmlFor={`email-${product}`}>
             Correo (opcional)
           </label>
           <input
             id={`email-${product}`}
-            className="w-full rounded-[10px] border border-white/10 bg-white/[0.04] px-3.5 py-3 text-sm text-white outline-none transition-[border-color] duration-[160ms] placeholder:text-white/30 focus:border-[#00D4FF]"
+            className={fieldClass}
             type="email"
             autoComplete="email"
             value={values.email}
@@ -134,13 +137,13 @@ export default function LeadForm({
 
       <button
         type="submit"
-        className="mt-6 w-full rounded-full bg-[#00D4FF] px-6 py-3.5 text-sm font-bold text-[#0a0a0a] transition-[transform,box-shadow] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-px hover:shadow-[0_0_28px_rgba(0,212,255,0.4)] active:scale-[0.97] disabled:opacity-60"
+        className="mt-6 w-full rounded-full bg-[#14161A] px-6 py-3.5 text-sm font-semibold text-[#FAFAF8] transition-transform duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-px active:scale-[0.97] disabled:opacity-60"
         disabled={status === 'sending'}
       >
         {status === 'sending' ? 'Enviando...' : 'Quiero mi diagnóstico gratis'}
       </button>
       {status === 'error' ? (
-        <p className="mt-2.5 text-[13px] text-red-300">
+        <p className="mt-2.5 text-[13px] text-red-700">
           No se pudo enviar. Intenta de nuevo o escríbenos por WhatsApp.
         </p>
       ) : null}

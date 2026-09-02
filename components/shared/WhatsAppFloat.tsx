@@ -19,15 +19,8 @@ export default function WhatsAppFloat({
   return (
     <div className="fixed bottom-5 left-4 z-50 flex items-end gap-2.5 sm:bottom-6 sm:left-6">
       {open ? (
-        <div
-          className="mb-1 w-[min(280px,calc(100vw-5.5rem))] rounded-2xl border border-white/10 p-4 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.6)]"
-          style={{
-            background: 'rgba(15,18,22,0.92)',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)',
-          }}
-        >
-          <p className="mb-3 text-sm text-white/60">Escríbenos y te respondemos en minutos.</p>
+        <div className="mb-1 w-[min(280px,calc(100vw-5.5rem))] rounded-2xl border border-[#14161A]/10 bg-white p-4 shadow-[0_16px_40px_rgba(20,22,26,0.12)]">
+          <p className="mb-3 text-sm text-[#14161A]/60">Escríbenos y te respondemos en minutos.</p>
           <a
             href={waLink}
             target="_blank"

@@ -1,6 +1,6 @@
-import { geist } from './geist';
+import { geist } from '@/app/lealtad/geist';
 
-export default function LealtadLayout({ children }: { children: React.ReactNode }) {
+export default function MarketingShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={`${geist.className} ${geist.variable} bg-[#FAFAF8] text-[#14161A] antialiased`}>
       {children}

@@ -9,10 +9,10 @@ export default function Footer() {
   const waUrl = agentiaWhatsAppUrl('Hola Agentia, quiero información de sus sistemas.');
 
   return (
-    <footer className="border-t border-white/8 px-4 pb-28 pt-12 text-sm text-white/40 sm:pb-16">
+    <footer className="border-t border-[#14161A]/10 px-4 pb-28 pt-12 text-sm text-[#14161A]/40 sm:pb-16">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="font-[family-name:var(--font-space)] text-base text-white/80">Agentia</p>
+          <p className="text-base font-semibold text-[#14161A]">Agentia</p>
           <p className="mt-2 max-w-sm text-[13px] leading-relaxed">
             Automatizamos negocios que quieren crecer sin contratar más gente. Partner Meta WhatsApp
             Business API.
@@ -20,7 +20,7 @@ export default function Footer() {
         </div>
         <nav className="flex flex-wrap gap-x-4 gap-y-2 text-[13px]" aria-label="Productos">
           {PRODUCT_NAV.map((p) => (
-            <Link key={p.href} href={p.href} className="hover:text-[#00D4FF]">
+            <Link key={p.href} href={p.href} className="hover:text-[#B8935A]">
               {p.label}
             </Link>
           ))}
@@ -28,19 +28,19 @@ export default function Footer() {
       </div>
       <div className="mx-auto mt-8 max-w-6xl text-[13px]">
         <p>
-          <a href={waUrl} className="hover:text-[#00D4FF]">
+          <a href={waUrl} className="hover:text-[#B8935A]">
             WhatsApp {AGENTIA_WHATSAPP_DISPLAY}
           </a>
           {' · '}
-          <a href="mailto:contacto@agentia.software" className="hover:text-[#00D4FF]">
+          <a href="mailto:contacto@agentia.software" className="hover:text-[#B8935A]">
             contacto@agentia.software
           </a>
         </p>
         <div className="mt-4 flex flex-wrap gap-4 text-xs">
-          <Link href="/legal/terminos" className="hover:text-white/70">
+          <Link href="/legal/terminos" className="hover:text-[#14161A]/70">
             Términos
           </Link>
-          <Link href="/legal/privacidad" className="hover:text-white/70">
+          <Link href="/legal/privacidad" className="hover:text-[#14161A]/70">
             Privacidad
           </Link>
         </div>

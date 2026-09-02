@@ -11,9 +11,6 @@ import { IzziWhiteLogo } from '@/components/landing/IzziWhiteLogo';
 import { LiveDemosSection } from '@/components/landing/LiveDemosSection';
 import { MetaEcosystemSection } from '@/components/landing/MetaEcosystemSection';
 import { ModernChatPreview, type ChatLine } from '@/components/landing/ModernChatPreview';
-import { ParticleField } from '@/components/landing/ParticleField';
-import { CircuitField } from '@/components/landing/CircuitField';
-import { CodeRain } from '@/components/landing/CodeRain';
 import { TypewriterHeadline } from '@/components/landing/TypewriterHeadline';
 import { ScrollReveal, SectionHeader, StaggerItem, StaggerReveal } from '@/components/landing/ScrollReveal';
 import { SectionBridge } from '@/components/landing/SectionBridge';
@@ -262,9 +259,6 @@ export function AgentiaLandingPage() {
       className="relative min-h-screen overflow-hidden font-[family-name:var(--font-jakarta)] text-white"
       style={{ background: BG }}
     >
-      <ParticleField />
-      <CircuitField />
-
       <div
         className="agentia-gradient-motion pointer-events-none fixed inset-0 z-0 opacity-50"
         style={{
@@ -274,12 +268,11 @@ export function AgentiaLandingPage() {
         aria-hidden
       />
 
-      <Navbar ctaHref="#simulador" ctaLabel="Simulador" ctaExternal={false} />
+      <Navbar theme="dark" ctaHref="#simulador" ctaLabel="Simulador" ctaExternal={false} />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
         {/* Hero */}
         <section className="relative grid min-h-[calc(100dvh-5rem)] items-center gap-12 py-12 lg:grid-cols-2">
-          <CodeRain />
           <div className="relative z-10">
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 20 }}
