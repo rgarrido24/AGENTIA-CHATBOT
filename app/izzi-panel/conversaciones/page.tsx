@@ -11,7 +11,10 @@ import {
 } from '@/lib/izzi-panel-session';
 import {
   etapasForTipo,
+  IZZI_ATENDIDO_OTRO,
+  IZZI_ATENDIDO_POR,
   IZZI_TIPOS,
+  isPresetAtendidoPor,
   tipoLabel,
   type IzziConversationTipo,
 } from '@/lib/izzi-panel';
@@ -31,6 +34,7 @@ type ConversationSummary = {
   tipo: IzziConversationTipo;
   etapa: string;
   notas: string;
+  atendidoPor: string;
 };
 
 type ConversationMessage = {
@@ -101,14 +105,21 @@ export default function IzziConversacionesPage() {
 
   const [filterTipo, setFilterTipo] = useState<'all' | IzziConversationTipo>('all');
   const [filterEtapa, setFilterEtapa] = useState('all');
+  const [filterAtendido, setFilterAtendido] = useState('all');
   const [search, setSearch] = useState('');
   const [notesDraft, setNotesDraft] = useState('');
+  const notesEditingRef = useRef(false);
+  const notesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [atendidoCustom, setAtendidoCustom] = useState('');
+  const [atendidoOtro, setAtendidoOtro] = useState(false);
+  const atendidoEditingRef = useRef(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportFrom, setExportFrom] = useState('');
   const [exportTo, setExportTo] = useState('');
   const [exportTipo, setExportTipo] = useState<'all' | IzziConversationTipo>('all');
   const [exportEtapa, setExportEtapa] = useState('all');
+  const [exportAtendido, setExportAtendido] = useState('all');
   const [tenantId, setTenantId] = useState('');
   const [waStatus, setWaStatus] = useState<WhatsAppStatus | null>(null);
 
@@ -168,7 +179,13 @@ export default function IzziConversacionesPage() {
       }
       const conv = data.conversation as ConversationDetail;
       setDetail(conv);
-      setNotesDraft(conv.notas || '');
+      if (!notesEditingRef.current) {
+        setNotesDraft(conv.notas || '');
+      }
+      if (!atendidoEditingRef.current) {
+        const name = conv.atendidoPor || '';
+        setAtendidoCustom(isPresetAtendidoPor(name) ? '' : name);
+      }
     } catch {
       setError('Error al cargar historial');
       setDetail(null);
@@ -208,8 +225,19 @@ export default function IzziConversacionesPage() {
   }, [loadWaStatus]);
 
   useEffect(() => {
+    notesEditingRef.current = false;
+    atendidoEditingRef.current = false;
+    setAtendidoOtro(false);
+    if (notesTimerRef.current) {
+      clearTimeout(notesTimerRef.current);
+      notesTimerRef.current = null;
+    }
     if (selectedId) void loadDetail(selectedId);
-    else setDetail(null);
+    else {
+      setDetail(null);
+      setNotesDraft('');
+      setAtendidoCustom('');
+    }
   }, [selectedId, loadDetail]);
 
   useEffect(() => {
@@ -232,20 +260,34 @@ export default function IzziConversacionesPage() {
   const botPaused = detail?.botPaused ?? selectedSummary?.botPaused ?? false;
   const currentTipo = detail?.tipo ?? selectedSummary?.tipo ?? 'venta';
   const currentEtapa = detail?.etapa ?? selectedSummary?.etapa ?? 'nuevo_contacto';
+  const currentAtendido = detail?.atendidoPor ?? selectedSummary?.atendidoPor ?? '';
+  const atendidoSelectValue =
+    atendidoOtro || (currentAtendido && !isPresetAtendidoPor(currentAtendido))
+      ? IZZI_ATENDIDO_OTRO
+      : currentAtendido;
 
   const filteredList = useMemo(() => {
     const q = search.trim().toLowerCase();
     return list.filter((c) => {
       if (filterTipo !== 'all' && c.tipo !== filterTipo) return false;
       if (filterEtapa !== 'all' && c.etapa !== filterEtapa) return false;
+      if (filterAtendido === 'sin_asignar' && (c.atendidoPor || '').trim()) return false;
+      if (
+        filterAtendido !== 'all' &&
+        filterAtendido !== 'sin_asignar' &&
+        (c.atendidoPor || '').toLowerCase() !== filterAtendido.toLowerCase()
+      ) {
+        return false;
+      }
       if (!q) return true;
       return (
         c.senderName.toLowerCase().includes(q) ||
         c.senderId.toLowerCase().includes(q) ||
-        (c.notas || '').toLowerCase().includes(q)
+        (c.notas || '').toLowerCase().includes(q) ||
+        (c.atendidoPor || '').toLowerCase().includes(q)
       );
     });
-  }, [list, filterTipo, filterEtapa, search]);
+  }, [list, filterTipo, filterEtapa, filterAtendido, search]);
 
   const etapaOptions = etapasForTipo(filterTipo === 'all' ? 'venta' : filterTipo);
   const brand = izziPanelBrand(tenantId);
@@ -257,7 +299,12 @@ export default function IzziConversacionesPage() {
     saveIzziConversacionesSession({ selectedId: null, replyText: '' });
   };
 
-  const patchMeta = async (patch: { tipo?: IzziConversationTipo; etapa?: string; notas?: string }) => {
+  const patchMeta = async (patch: {
+    tipo?: IzziConversationTipo;
+    etapa?: string;
+    notas?: string;
+    atendidoPor?: string;
+  }) => {
     if (!selectedId) return;
     setError('');
     const res = await fetch(`/api/izzi-panel/conversations/${encodeURIComponent(selectedId)}/meta`, {
@@ -273,13 +320,21 @@ export default function IzziConversacionesPage() {
     const nextTipo = (data.conversation?.tipo as IzziConversationTipo) ?? currentTipo;
     const nextEtapa = (data.conversation?.etapa as string) ?? currentEtapa;
     const nextNotas = (data.conversation?.notas as string) ?? notesDraft;
+    const nextAtendido =
+      typeof data.conversation?.atendidoPor === 'string'
+        ? data.conversation.atendidoPor
+        : currentAtendido;
     setList((prev) =>
       prev.map((c) =>
-        c.id === selectedId ? { ...c, tipo: nextTipo, etapa: nextEtapa, notas: nextNotas } : c
+        c.id === selectedId
+          ? { ...c, tipo: nextTipo, etapa: nextEtapa, notas: nextNotas, atendidoPor: nextAtendido }
+          : c
       )
     );
     setDetail((prev) =>
-      prev ? { ...prev, tipo: nextTipo, etapa: nextEtapa, notas: nextNotas } : prev
+      prev
+        ? { ...prev, tipo: nextTipo, etapa: nextEtapa, notas: nextNotas, atendidoPor: nextAtendido }
+        : prev
     );
   };
 
@@ -407,6 +462,7 @@ export default function IzziConversacionesPage() {
           to: exportTo || undefined,
           tipo: exportTipo,
           etapa: exportEtapa,
+          atendidoPor: exportAtendido,
         }),
       });
       if (!res.ok) {
@@ -590,6 +646,21 @@ export default function IzziConversacionesPage() {
                 ))}
               </select>
             </div>
+            <select
+              value={filterAtendido}
+              onChange={(e) => setFilterAtendido(e.target.value)}
+              className={`${selectClass} w-full`}
+              style={{ borderColor: brand.border }}
+              aria-label="Filtrar por quién atiende"
+            >
+              <option value="all">Todos los que atienden</option>
+              <option value="sin_asignar">Sin asignar</option>
+              {IZZI_ATENDIDO_POR.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
           </div>
           {loadingList && list.length === 0 ? (
             <p className="p-4 text-sm text-stone-500">Cargando...</p>
@@ -631,6 +702,11 @@ export default function IzziConversacionesPage() {
                         <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 text-stone-300">
                           {etapaText(c.tipo, c.etapa)}
                         </span>
+                        {c.atendidoPor ? (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full border border-sky-500/30 text-sky-200/90">
+                            {c.atendidoPor}
+                          </span>
+                        ) : null}
                       </div>
                       <p className="text-sm text-stone-400 mt-1 line-clamp-2">{c.lastMessage || '—'}</p>
                       <p className="text-[11px] text-stone-600 mt-1">{fmtWhen(c.lastMessageAt)}</p>
@@ -739,11 +815,76 @@ export default function IzziConversacionesPage() {
                   </label>
                 </div>
                 <label className="block">
+                  <span className="mb-1 block text-[11px] text-stone-400">Quién atiende</span>
+                  <select
+                    value={atendidoSelectValue}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === IZZI_ATENDIDO_OTRO) {
+                        atendidoEditingRef.current = true;
+                        setAtendidoOtro(true);
+                        setAtendidoCustom(isPresetAtendidoPor(currentAtendido) ? '' : currentAtendido);
+                        return;
+                      }
+                      atendidoEditingRef.current = false;
+                      setAtendidoOtro(false);
+                      setAtendidoCustom('');
+                      void patchMeta({ atendidoPor: v });
+                    }}
+                    className={`${selectClass} w-full`}
+                    style={{ borderColor: brand.border }}
+                  >
+                    <option value="">Sin asignar</option>
+                    {IZZI_ATENDIDO_POR.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                    <option value={IZZI_ATENDIDO_OTRO}>Otro (escribir nombre)</option>
+                  </select>
+                </label>
+                {atendidoSelectValue === IZZI_ATENDIDO_OTRO ? (
+                  <input
+                    type="text"
+                    value={atendidoCustom}
+                    onFocus={() => {
+                      atendidoEditingRef.current = true;
+                    }}
+                    onChange={(e) => setAtendidoCustom(e.target.value)}
+                    onBlur={() => {
+                      atendidoEditingRef.current = false;
+                      const name = atendidoCustom.trim();
+                      if (name !== currentAtendido) void patchMeta({ atendidoPor: name });
+                      if (!name) setAtendidoOtro(false);
+                    }}
+                    placeholder="Nombre de quien atiende"
+                    maxLength={80}
+                    className="w-full rounded-lg border bg-stone-950/70 px-3 py-2 text-sm text-pink-50 placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[40px]"
+                    style={{ borderColor: brand.border }}
+                  />
+                ) : null}
+                <label className="block">
                   <span className="mb-1 block text-[11px] text-stone-400">Notas</span>
                   <textarea
                     value={notesDraft}
-                    onChange={(e) => setNotesDraft(e.target.value)}
+                    onFocus={() => {
+                      notesEditingRef.current = true;
+                    }}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      notesEditingRef.current = true;
+                      setNotesDraft(value);
+                      if (notesTimerRef.current) clearTimeout(notesTimerRef.current);
+                      notesTimerRef.current = setTimeout(() => {
+                        void patchMeta({ notas: value });
+                      }, 1200);
+                    }}
                     onBlur={() => {
+                      notesEditingRef.current = false;
+                      if (notesTimerRef.current) {
+                        clearTimeout(notesTimerRef.current);
+                        notesTimerRef.current = null;
+                      }
                       if (notesDraft !== (detail?.notas ?? '')) void patchMeta({ notas: notesDraft });
                     }}
                     rows={2}
@@ -903,6 +1044,23 @@ export default function IzziConversacionesPage() {
                     Elige un tipo para ver solo sus estados. Con &quot;Todos&quot; aparecen etapas de venta y de reclutamiento.
                   </p>
                 ) : null}
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] text-stone-400">Quién atiende</span>
+                <select
+                  value={exportAtendido}
+                  onChange={(e) => setExportAtendido(e.target.value)}
+                  className={`${selectClass} w-full`}
+                  style={{ borderColor: brand.border }}
+                >
+                  <option value="all">Todos</option>
+                  <option value="sin_asignar">Sin asignar</option>
+                  {IZZI_ATENDIDO_POR.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
               </label>
               <button
                 type="button"

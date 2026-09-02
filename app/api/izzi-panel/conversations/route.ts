@@ -28,6 +28,7 @@ export async function GET(req: NextRequest) {
       tipo: c.tipo,
       etapa: c.etapa,
       notas: c.notas,
+      atendidoPor: c.atendidoPor,
     })),
   });
 }

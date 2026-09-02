@@ -59,12 +59,14 @@ export async function POST(req: NextRequest) {
   const tipoRaw = body?.tipo;
   const tipo: IzziConversationTipo | 'all' = isIzziTipo(tipoRaw) ? tipoRaw : 'all';
   const etapa = typeof body?.etapa === 'string' ? body.etapa.trim() : '';
+  const atendidoPor = typeof body?.atendidoPor === 'string' ? body.atendidoPor.trim() : '';
 
   const rows = await listIzziConversationsForExport(clientId, {
     from: parseDay(body?.from, false),
     to: parseDay(body?.to, true),
     tipo,
     etapa: etapa && etapa !== 'all' ? etapa : undefined,
+    atendidoPor: atendidoPor && atendidoPor !== 'all' ? atendidoPor : undefined,
   });
 
   const sheetRows = rows.map((c) => ({
@@ -74,6 +76,7 @@ export async function POST(req: NextRequest) {
     Teléfono: phoneFromSenderId(c.senderId),
     Tipo: tipoLabel(c.tipo).replace(/^[^\wÁÉÍÓÚáéíóúñÑ]+\s*/, ''),
     'Estado del embudo': etapaLabel(c.tipo, c.etapa).replace(/^[✅❌]\s*/, ''),
+    'Quién atiende': c.atendidoPor || '',
     Notas: c.notas || '',
     'Última actividad': fmtDateTime(c.lastMessageAt),
   }));
@@ -87,6 +90,7 @@ export async function POST(req: NextRequest) {
     { wch: 16 },
     { wch: 16 },
     { wch: 22 },
+    { wch: 18 },
     { wch: 40 },
     { wch: 20 },
   ];

@@ -105,3 +105,19 @@ export function phoneFromSenderId(senderId: string): string {
   const digits = String(senderId || '').replace(/\D/g, '');
   return digits || senderId;
 }
+
+export const IZZI_ATENDIDO_POR = ['Edurne', 'Fernando', 'Guadalupe'] as const;
+export const IZZI_ATENDIDO_OTRO = '__otro__';
+export const IZZI_ATENDIDO_MAX = 80;
+
+export function normalizeAtendidoPor(raw: unknown): string {
+  const name = typeof raw === 'string' ? raw.trim().replace(/\s+/g, ' ') : '';
+  if (!name || name === IZZI_ATENDIDO_OTRO) return '';
+  return name.slice(0, IZZI_ATENDIDO_MAX);
+}
+
+export function isPresetAtendidoPor(name: string): boolean {
+  return (IZZI_ATENDIDO_POR as readonly string[]).some(
+    (n) => n.toLowerCase() === name.trim().toLowerCase()
+  );
+}

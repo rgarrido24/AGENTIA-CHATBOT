@@ -18,6 +18,7 @@ import {
   isIzziClient,
   normalizeIzziEtapa,
   normalizeIzziTipo,
+  normalizeAtendidoPor,
   type IzziConversationTipo,
 } from './izzi-panel';
 
@@ -25,12 +26,14 @@ export type IzziConversation = PanelConversation & {
   tipo: IzziConversationTipo;
   etapa: string;
   notas: string;
+  atendidoPor: string;
 };
 
 type RawDoc = RawConversation & {
   tipo?: unknown;
   etapa?: unknown;
   notas?: unknown;
+  atendidoPor?: unknown;
   recentMessages?: unknown[];
 };
 
@@ -42,6 +45,7 @@ function asIzziConversation(doc: RawDoc, clientId: string): IzziConversation {
     tipo,
     etapa: normalizeIzziEtapa(tipo, doc.etapa),
     notas: typeof doc.notas === 'string' ? doc.notas : '',
+    atendidoPor: normalizeAtendidoPor(doc.atendidoPor),
   };
 }
 
@@ -50,13 +54,14 @@ async function conversationsColl() {
   return db.collection('conversations');
 }
 
-export function toIzziConversation(conv: PanelConversation, extra?: Partial<Pick<IzziConversation, 'tipo' | 'etapa' | 'notas'>>): IzziConversation {
+export function toIzziConversation(conv: PanelConversation, extra?: Partial<Pick<IzziConversation, 'tipo' | 'etapa' | 'notas' | 'atendidoPor'>>): IzziConversation {
   const tipo = normalizeIzziTipo(extra?.tipo ?? (conv as IzziConversation).tipo);
   return {
     ...conv,
     tipo,
     etapa: normalizeIzziEtapa(tipo, extra?.etapa ?? (conv as IzziConversation).etapa),
     notas: extra?.notas ?? (conv as IzziConversation).notas ?? '',
+    atendidoPor: normalizeAtendidoPor(extra?.atendidoPor ?? (conv as IzziConversation).atendidoPor),
   };
 }
 
@@ -110,6 +115,7 @@ export type IzziConversationMetaPatch = {
   tipo?: IzziConversationTipo;
   etapa?: string;
   notas?: string;
+  atendidoPor?: string;
 };
 
 export async function updateIzziConversationMeta(
@@ -124,6 +130,8 @@ export async function updateIzziConversationMeta(
   let etapa = typeof patch.etapa === 'string' ? patch.etapa.trim() : conv.etapa;
   if (!isEtapaForTipo(tipo, etapa)) etapa = IZZI_DEFAULT_ETAPA;
   const notas = typeof patch.notas === 'string' ? patch.notas : conv.notas;
+  const atendidoPor =
+    typeof patch.atendidoPor === 'string' ? normalizeAtendidoPor(patch.atendidoPor) : conv.atendidoPor;
 
   const coll = await conversationsColl();
   const filter: Record<string, unknown> = { clientId };
@@ -135,6 +143,7 @@ export async function updateIzziConversationMeta(
       tipo,
       etapa,
       notas,
+      atendidoPor,
       updatedAt: new Date(),
     },
   });
@@ -144,6 +153,7 @@ export async function updateIzziConversationMeta(
     tipo,
     etapa,
     notas,
+    atendidoPor,
   };
 }
 
@@ -152,6 +162,7 @@ export type IzziExportFilters = {
   to?: Date;
   tipo?: IzziConversationTipo | 'all';
   etapa?: string;
+  atendidoPor?: string;
 };
 
 export async function listIzziConversationsForExport(
@@ -169,6 +180,22 @@ export async function listIzziConversationsForExport(
   }
   if (filters.etapa && filters.etapa !== 'all' && filters.etapa.trim()) {
     query.etapa = filters.etapa.trim();
+  }
+  if (filters.atendidoPor && filters.atendidoPor !== 'all') {
+    if (filters.atendidoPor === 'sin_asignar') {
+      query.$and = [
+        ...(Array.isArray(query.$and) ? query.$and : []),
+        {
+          $or: [
+            { atendidoPor: { $exists: false } },
+            { atendidoPor: '' },
+            { atendidoPor: null },
+          ],
+        },
+      ];
+    } else {
+      query.atendidoPor = filters.atendidoPor;
+    }
   }
 
   const dateRange: Record<string, Date> = {};
@@ -300,6 +327,7 @@ export async function hydrateIzziConversationsFromExistingData(
             tipo: IZZI_DEFAULT_TIPO,
             etapa: IZZI_DEFAULT_ETAPA,
             notas: '',
+            atendidoPor: '',
             createdAt: params.createdAt,
             updatedAt: now,
           },
