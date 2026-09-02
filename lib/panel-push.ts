@@ -7,6 +7,7 @@ import {
   IZZI_PANEL_PWA,
   type PanelPushId,
 } from '@/lib/panel-pwa-config';
+import { izziPanelBrand } from '@/lib/izzi-panel-brand';
 
 export type PushSubscriptionKeys = {
   p256dh: string;
@@ -163,7 +164,7 @@ export async function sendPushNotification(params: {
     title: `${name} — nuevo mensaje`,
     body,
     url: cfg.startUrl,
-    icon: `${cfg.iconBase}/icon-192.png`,
+    icon: `${izziPanelBrand(params.clientId).iconBase}/icon-192.png`,
     tag: `panel-${panel}-${params.senderId}`,
   };
 

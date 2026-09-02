@@ -2,11 +2,12 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import crypto from 'crypto';
 import { PanelPwaProvider } from '@/components/panel/PanelPwaProvider';
-import { IZZI_PANEL_PWA } from '@/lib/panel-pwa-config';
+import { izziPanelPwaForClient } from '@/lib/panel-pwa-config';
 import {
   isIzziPanelConfigured,
   isIzziPanelCookieValid,
   IZZI_PANEL_COOKIE,
+  resolveIzziPanelClientIdFromCookie,
 } from '@/lib/izzi-panel-auth';
 
 const DASHBOARD_COOKIE_NAME = 'dashboard_auth';
@@ -43,11 +44,12 @@ export default async function IzziAuthGuard({
   if (!izziOk && !dashOk && !adminOk) {
     redirect('/izzi-panel/login');
   }
+  const tenantId = resolveIzziPanelClientIdFromCookie(izziToken);
   return (
     <>
       {children}
       <PanelPwaProvider
-        config={IZZI_PANEL_PWA}
+        config={izziPanelPwaForClient(tenantId)}
         vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY}
       />
     </>

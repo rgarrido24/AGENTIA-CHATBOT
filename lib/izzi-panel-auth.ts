@@ -128,12 +128,22 @@ export function isIzziPanelConfigured(): boolean {
 
 /** Cookie propia del panel (30 días) o sesión admin/dashboard. */
 export function matchIzziPanelUser(req: NextRequest): IzziPanelCredentials | null {
-  const token = req.cookies.get(IZZI_PANEL_COOKIE)?.value;
+  return matchIzziPanelUserFromToken(req.cookies.get(IZZI_PANEL_COOKIE)?.value);
+}
+
+export function matchIzziPanelUserFromToken(token: string | undefined): IzziPanelCredentials | null {
   if (!token) return null;
   for (const c of listIzziPanelCredentials()) {
     if (izziPanelToken(c.username, c.password) === token) return c;
   }
   return null;
+}
+
+/** Cookie del panel → tenant, sin pedir NextRequest (layout / generateMetadata). */
+export function resolveIzziPanelClientIdFromCookie(token: string | undefined): string | null {
+  const user = matchIzziPanelUserFromToken(token);
+  if (user) return izziTenantClientIdFromUsername(user.username);
+  return matchIzziPanelBridgeClientId(token);
 }
 
 /** Tenant del panel: cada usuario ve solo su WhatsApp. Admin/dashboard → izzi original. */

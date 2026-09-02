@@ -3,12 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Loader2, RefreshCw, Smartphone } from 'lucide-react';
-
-const BRAND = {
-  bg: '#140810',
-  border: 'rgba(236, 0, 140, 0.22)',
-  accent: '#EC008C',
-} as const;
+import { izziPanelBrand } from '@/lib/izzi-panel-brand';
 
 type WaStatus = {
   clientId: string;
@@ -32,6 +27,7 @@ export default function IzziWhatsappPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reseting, setReseting] = useState(false);
+  const brand = izziPanelBrand(status?.clientId);
 
   const load = useCallback(async () => {
     try {
@@ -78,28 +74,32 @@ export default function IzziWhatsappPage() {
   return (
     <main
       className="min-h-[100dvh] text-stone-100"
-      style={{ background: `linear-gradient(160deg, ${BRAND.bg} 0%, #2a0a1c 50%, #140810 100%)` }}
+      style={{ background: `linear-gradient(160deg, ${brand.bg} 0%, ${brand.bgMid} 50%, ${brand.bg} 100%)` }}
     >
       <header
         className="border-b px-4 py-4"
-        style={{ borderColor: BRAND.border, background: 'rgba(0,0,0,0.25)' }}
+        style={{ borderColor: brand.border, background: 'rgba(0,0,0,0.25)' }}
       >
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
           <div>
             <Link
               href="/izzi-panel/conversaciones"
-              className="inline-flex items-center gap-1.5 text-xs text-pink-200/60 hover:text-pink-100"
+              className={`inline-flex items-center gap-1.5 text-xs hover:opacity-90 ${brand.muted}`}
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               Conversaciones
             </Link>
-            <h1 className="mt-1 flex items-center gap-2 text-xl font-bold text-pink-50">
-              <Smartphone className="h-5 w-5 text-pink-400" />
+            <h1 className={`mt-1 flex items-center gap-2 text-xl font-bold ${brand.heading}`}>
+              {brand.logoSrc ? (
+                <img src={brand.logoSrc} alt="" className="h-8 w-8 rounded-lg" />
+              ) : (
+                <Smartphone className={`h-5 w-5 ${brand.avatarFg}`} />
+              )}
               Vincular WhatsApp
             </h1>
             {status?.clientId ? (
-              <p className="mt-1 text-xs text-pink-200/50">
-                Cuenta <span className="font-medium text-pink-200/80">{status.clientId}</span>
+              <p className={`mt-1 text-xs ${brand.muted}`}>
+                Cuenta <span className="font-medium opacity-90">{status.clientId}</span>
               </p>
             ) : null}
           </div>
@@ -107,7 +107,7 @@ export default function IzziWhatsappPage() {
             type="button"
             onClick={() => void load()}
             className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border px-3 py-2 text-sm text-pink-100/90 transition hover:bg-white/5"
-            style={{ borderColor: BRAND.border }}
+            style={{ borderColor: brand.border }}
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Actualizar
@@ -124,7 +124,7 @@ export default function IzziWhatsappPage() {
 
         {loading && !status ? (
           <div className="flex items-center justify-center gap-2 rounded-2xl border py-16 text-sm text-pink-200/60"
-            style={{ borderColor: BRAND.border }}
+            style={{ borderColor: brand.border }}
           >
             <Loader2 className="h-4 w-4 animate-spin" />
             Consultando estado…
@@ -151,7 +151,7 @@ export default function IzziWhatsappPage() {
         {status && !status.connected && status.hasQr ? (
           <div
             className="rounded-2xl border px-6 py-8 text-center"
-            style={{ borderColor: BRAND.border, background: 'rgba(255,255,255,0.04)' }}
+            style={{ borderColor: brand.border, background: 'rgba(255,255,255,0.04)' }}
           >
             <p className="text-sm text-pink-200/70">
               Escanea este código desde WhatsApp en el teléfono de esta cuenta.
@@ -177,7 +177,7 @@ export default function IzziWhatsappPage() {
         {status && !status.connected && !status.hasQr ? (
           <div
             className="rounded-2xl border px-6 py-10 text-center"
-            style={{ borderColor: BRAND.border, background: 'rgba(255,255,255,0.04)' }}
+            style={{ borderColor: brand.border, background: 'rgba(255,255,255,0.04)' }}
           >
             <p className="text-lg font-semibold text-pink-50">Sin QR disponible</p>
             <p className="mx-auto mt-2 max-w-md text-sm text-pink-200/60">
@@ -198,7 +198,7 @@ export default function IzziWhatsappPage() {
               onClick={() => void revincular()}
               disabled={reseting}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold text-pink-100 transition hover:bg-white/5 disabled:opacity-40"
-              style={{ borderColor: BRAND.border }}
+              style={{ borderColor: brand.border }}
             >
               {reseting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

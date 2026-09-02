@@ -284,7 +284,7 @@ const nextConfig = {
         ],
       },
       {
-        source: '/izzi-panel/manifest.webmanifest',
+        source: '/izzi-panel/rgo.webmanifest',
         headers: [
           { key: 'Content-Type', value: 'application/manifest+json; charset=utf-8' },
         ],
