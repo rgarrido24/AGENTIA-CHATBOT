@@ -4,8 +4,8 @@ import crypto from 'crypto';
 import { PanelPwaProvider } from '@/components/panel/PanelPwaProvider';
 import { IZZI_PANEL_PWA } from '@/lib/panel-pwa-config';
 import {
-  expectedIzziPanelTokens,
   isIzziPanelConfigured,
+  isIzziPanelCookieValid,
   IZZI_PANEL_COOKIE,
 } from '@/lib/izzi-panel-auth';
 
@@ -37,7 +37,7 @@ export default async function IzziAuthGuard({
   const izziToken = cookieStore.get(IZZI_PANEL_COOKIE)?.value;
   const dashboardToken = cookieStore.get(DASHBOARD_COOKIE_NAME)?.value;
   const adminToken = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
-  const izziOk = !!izziToken && expectedIzziPanelTokens().has(izziToken);
+  const izziOk = isIzziPanelCookieValid(izziToken);
   const dashOk = !!dashboardToken && dashboardToken === getDashboardToken();
   const adminOk = !!adminToken && adminToken === getAdminToken();
   if (!izziOk && !dashOk && !adminOk) {

@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
-import { IZZI_CLIENT_ID, izziTenantClientIdFromUsername } from '@/lib/izzi-panel';
+import { getExpectedClientPanelToken } from '@/lib/client-panel-auth';
+import { IZZI_CLIENT_ID, isIzziClient, izziTenantClientIdFromUsername } from '@/lib/izzi-panel';
 
 export const IZZI_PANEL_COOKIE = 'izzi_panel_auth';
 export const IZZI_PANEL_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 días
@@ -61,13 +62,68 @@ export function expectedIzziPanelTokens(): Set<string> {
   return new Set(listIzziPanelCredentials().map((c) => izziPanelToken(c.username, c.password)));
 }
 
+/** Token del panel genérico (`TOKEN_IZZI_2`, etc.) → misma cookie del panel izzi. */
+export function izziPanelBridgeToken(clientId: string, panelToken: string): string {
+  return crypto
+    .createHash('sha256')
+    .update(`bridge:${clientId}:${panelToken}:${IZZI_AUTH_SALT}`)
+    .digest('hex');
+}
+
+export function listIzziBridgePanelTokens(): { clientId: string; token: string }[] {
+  const out: { clientId: string; token: string }[] = [];
+  const seen = new Set<string>();
+  const add = (clientId: string, token: string | undefined) => {
+    const id = clientId.trim().toLowerCase();
+    if (!token || !isIzziClient(id) || seen.has(id)) return;
+    seen.add(id);
+    out.push({ clientId: id, token });
+  };
+  add('izzi', process.env.TOKEN_IZZI);
+  add('izzi-2', process.env.TOKEN_IZZI_2);
+  add('izzi-3', process.env.TOKEN_IZZI_3);
+  for (const [key, value] of Object.entries(process.env)) {
+    if (!key.startsWith('TOKEN_') || !value) continue;
+    add(key.slice('TOKEN_'.length).toLowerCase().replace(/_/g, '-'), value);
+  }
+  return out;
+}
+
+export function matchIzziPanelBridgeClientId(cookie: string | undefined | null): string | null {
+  if (!cookie) return null;
+  for (const { clientId, token } of listIzziBridgePanelTokens()) {
+    if (izziPanelBridgeToken(clientId, token) === cookie) return clientId;
+  }
+  return null;
+}
+
+export function isIzziPanelCookieValid(token: string | undefined | null): boolean {
+  if (!token) return false;
+  if (expectedIzziPanelTokens().has(token)) return true;
+  return matchIzziPanelBridgeClientId(token) !== null;
+}
+
+export function mintIzziPanelSession(username: string, password: string): { token: string; clientId: string } | null {
+  if (matchIzziPanelCredentials(username, password)) {
+    return {
+      token: izziPanelToken(username, password),
+      clientId: izziTenantClientIdFromUsername(username),
+    };
+  }
+  const user = username.trim().toLowerCase();
+  if (!isIzziClient(user)) return null;
+  const expected = getExpectedClientPanelToken(user);
+  if (!expected || password !== expected) return null;
+  return { token: izziPanelBridgeToken(user, expected), clientId: user };
+}
+
 export function matchIzziPanelCredentials(username: string, password: string): boolean {
   const user = username.trim();
   return listIzziPanelCredentials().some((c) => c.username === user && c.password === password);
 }
 
 export function isIzziPanelConfigured(): boolean {
-  return listIzziPanelCredentials().length > 0;
+  return listIzziPanelCredentials().length > 0 || listIzziBridgePanelTokens().length > 0;
 }
 
 /** Cookie propia del panel (30 días) o sesión admin/dashboard. */
@@ -85,13 +141,15 @@ export function getIzziPanelClientId(req: NextRequest): string | null {
   if (!isIzziPanelAuthenticated(req)) return null;
   const user = matchIzziPanelUser(req);
   if (user) return izziTenantClientIdFromUsername(user.username);
+  const bridged = matchIzziPanelBridgeClientId(req.cookies.get(IZZI_PANEL_COOKIE)?.value);
+  if (bridged) return bridged;
   return IZZI_CLIENT_ID;
 }
 
 export function isIzziPanelAuthenticated(req: NextRequest): boolean {
   if (!isIzziPanelConfigured()) return false;
   const izzi = req.cookies.get(IZZI_PANEL_COOKIE)?.value;
-  if (izzi && expectedIzziPanelTokens().has(izzi)) return true;
+  if (isIzziPanelCookieValid(izzi)) return true;
 
   if (process.env.ADMIN_PASSWORD) {
     const dash = req.cookies.get(DASHBOARD_COOKIE)?.value;

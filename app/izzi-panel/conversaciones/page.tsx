@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Download, MessageSquare, Pause, Play, RefreshCw, Smartphone, User, X } from 'lucide-react';
+import { ArrowLeft, Download, MessageSquare, Pause, Play, RefreshCw, Smartphone, User, Wifi, WifiOff, X } from 'lucide-react';
 import { PanelMessageBubble } from '@/components/panel/PanelMessageBubble';
 import { PanelReplyComposer } from '@/components/panel/PanelReplyComposer';
 import {
@@ -46,6 +46,15 @@ type ConversationMessage = {
 type ConversationDetail = ConversationSummary & {
   pageId: string;
   messages: ConversationMessage[];
+};
+
+type WhatsAppStatus = {
+  connected: boolean;
+  phone: string | null;
+  hasQr: boolean;
+  qrDataUrl: string | null;
+  source: 'bridge' | 'mongo' | 'activity' | 'none';
+  lastMessageAt: string | null;
 };
 
 const BRAND = {
@@ -107,6 +116,7 @@ export default function IzziConversacionesPage() {
   const [exportTipo, setExportTipo] = useState<'all' | IzziConversationTipo>('all');
   const [exportEtapa, setExportEtapa] = useState('all');
   const [tenantId, setTenantId] = useState('');
+  const [waStatus, setWaStatus] = useState<WhatsAppStatus | null>(null);
 
   useEffect(() => {
     const saved = loadIzziConversacionesSession();
@@ -173,9 +183,35 @@ export default function IzziConversacionesPage() {
     }
   }, []);
 
+  const loadWaStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/izzi-panel/whatsapp', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+      setWaStatus({
+        connected: !!data.connected,
+        phone: typeof data.phone === 'string' ? data.phone : null,
+        hasQr: !!data.hasQr,
+        qrDataUrl: typeof data.qrDataUrl === 'string' ? data.qrDataUrl : null,
+        source: data.source === 'activity' || data.source === 'mongo' || data.source === 'bridge' ? data.source : 'none',
+        lastMessageAt: typeof data.lastMessageAt === 'string' ? data.lastMessageAt : null,
+      });
+    } catch {
+      /* el listado de chats sigue siendo usable */
+    }
+  }, []);
+
   useEffect(() => {
     void loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    void loadWaStatus();
+    const t = window.setInterval(() => {
+      void loadWaStatus();
+    }, 15000);
+    return () => window.clearInterval(t);
+  }, [loadWaStatus]);
 
   useEffect(() => {
     if (selectedId) void loadDetail(selectedId);
@@ -425,6 +461,28 @@ export default function IzziConversacionesPage() {
                 {tenantId === 'izzi' ? ' · número original' : ''}
               </p>
             ) : null}
+            {waStatus ? (
+              <p
+                className={`mt-1.5 inline-flex items-center gap-1.5 text-xs ${
+                  waStatus.connected ? 'text-emerald-300' : 'text-amber-200'
+                }`}
+              >
+                {waStatus.connected ? (
+                  <Wifi className="h-3.5 w-3.5" />
+                ) : (
+                  <WifiOff className="h-3.5 w-3.5" />
+                )}
+                {waStatus.connected
+                  ? waStatus.source === 'activity'
+                    ? 'WhatsApp activo (el bot está contestando)'
+                    : waStatus.phone
+                      ? `WhatsApp conectado · ${waStatus.phone}`
+                      : 'WhatsApp conectado'
+                  : waStatus.hasQr
+                    ? 'Esperando que escanees el QR'
+                    : 'WhatsApp sin señal en el panel — si el bot ya responde, igual puedes pausar chats'}
+              </p>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <Link
@@ -448,6 +506,7 @@ export default function IzziConversacionesPage() {
               type="button"
               onClick={() => {
                 void loadList();
+                void loadWaStatus();
                 if (selectedId) void loadDetail(selectedId);
               }}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-pink-100/90 hover:bg-white/5 transition min-h-[40px]"

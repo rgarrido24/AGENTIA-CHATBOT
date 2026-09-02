@@ -17,6 +17,8 @@ type WaStatus = {
   qrDataUrl: string | null;
   updatedAt: string | null;
   bridgeSeen: boolean;
+  source?: 'bridge' | 'mongo' | 'activity' | 'none';
+  lastMessageAt?: string | null;
 };
 
 function fmtWhen(iso: string | null) {
@@ -135,9 +137,13 @@ export default function IzziWhatsappPage() {
             style={{ borderColor: 'rgba(34,197,94,0.35)', background: 'rgba(34,197,94,0.08)' }}
           >
             <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-400" />
-            <p className="mt-3 text-lg font-semibold text-emerald-200">WhatsApp conectado</p>
+            <p className="mt-3 text-lg font-semibold text-emerald-200">
+              {status.source === 'activity' ? 'WhatsApp activo — el bot está contestando' : 'WhatsApp conectado'}
+            </p>
             <p className="mt-1 text-sm text-emerald-200/60">
-              Última señal: {fmtWhen(status.updatedAt)}
+              {status.source === 'activity'
+                ? 'El marcador de QR no se actualizó, pero hay mensajes recientes. Puedes pausar chats desde Conversaciones.'
+                : `Última señal: ${fmtWhen(status.updatedAt)}`}
             </p>
           </div>
         ) : null}

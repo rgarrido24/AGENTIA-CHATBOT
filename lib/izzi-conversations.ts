@@ -15,6 +15,7 @@ import {
   IZZI_DEFAULT_TIPO,
   IZZI_PAGE_ID,
   isEtapaForTipo,
+  isIzziClient,
   normalizeIzziEtapa,
   normalizeIzziTipo,
   type IzziConversationTipo,
@@ -60,8 +61,8 @@ export function toIzziConversation(conv: PanelConversation, extra?: Partial<Pick
 }
 
 export async function listIzziConversations(clientId: string, limit = 200): Promise<IzziConversation[]> {
-  if (clientId === IZZI_CLIENT_ID) {
-    await hydrateIzziConversationsFromExistingData().catch(() => {});
+  if (isIzziClient(clientId)) {
+    await hydrateIzziConversationsFromExistingData(clientId).catch(() => {});
   }
   const coll = await conversationsColl();
   const docs = await coll
@@ -157,8 +158,8 @@ export async function listIzziConversationsForExport(
   clientId: string,
   filters: IzziExportFilters
 ): Promise<IzziConversation[]> {
-  if (clientId === IZZI_CLIENT_ID) {
-    await hydrateIzziConversationsFromExistingData().catch(() => {});
+  if (isIzziClient(clientId)) {
+    await hydrateIzziConversationsFromExistingData(clientId).catch(() => {});
   }
   const coll = await conversationsColl();
   const query: Record<string, unknown> = { clientId };
@@ -229,11 +230,14 @@ function asRecord(doc: unknown): Record<string, unknown> {
  * Trae chats históricos de `leads` + `chat_sessions` a `conversations`
  * para que el panel muestre lo que ya existía antes de este módulo.
  */
-export async function hydrateIzziConversationsFromExistingData(): Promise<void> {
+export async function hydrateIzziConversationsFromExistingData(
+  clientId: string = IZZI_CLIENT_ID
+): Promise<void> {
+  const tenant = clientId.trim().toLowerCase() || IZZI_CLIENT_ID;
   const db = await getMongoDb();
   const convColl = db.collection('conversations');
   const existing = await convColl
-    .find({ clientId: IZZI_CLIENT_ID })
+    .find({ clientId: tenant })
     .project({ conversationId: 1, senderId: 1 })
     .toArray();
   const existingIds = new Set(
@@ -242,14 +246,14 @@ export async function hydrateIzziConversationsFromExistingData(): Promise<void> 
 
   const leads = await db
     .collection('leads')
-    .find({ clientId: IZZI_CLIENT_ID, deleted: { $ne: true } })
+    .find({ clientId: tenant, deleted: { $ne: true } })
     .sort({ lastMessageAt: -1 })
     .limit(400)
     .toArray();
 
   const sessions = await db
     .collection('chat_sessions')
-    .find({ clientId: IZZI_CLIENT_ID })
+    .find({ clientId: tenant })
     .sort({ lastMessageAt: -1 })
     .limit(400)
     .toArray();
@@ -279,10 +283,10 @@ export async function hydrateIzziConversationsFromExistingData(): Promise<void> 
     existingIds.add(params.senderId);
     ops.push({
       updateOne: {
-        filter: { clientId: IZZI_CLIENT_ID, conversationId: params.conversationId },
+        filter: { clientId: tenant, conversationId: params.conversationId },
         update: {
           $setOnInsert: {
-            clientId: IZZI_CLIENT_ID,
+            clientId: tenant,
             conversationId: params.conversationId,
             senderId: params.senderId,
             senderName: params.senderName,

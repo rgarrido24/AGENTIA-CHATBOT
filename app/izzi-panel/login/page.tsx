@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 function IzziLoginForm() {
@@ -11,6 +11,14 @@ function IzziLoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const token = searchParams.get('token');
+    const clientId = searchParams.get('clientId');
+    if (!token || !clientId) return;
+    const q = new URLSearchParams({ clientId, token });
+    window.location.replace(`/api/izzi-panel/auth/from-panel-token?${q.toString()}`);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +57,8 @@ function IzziLoginForm() {
       <h1 className="text-xl font-bold text-white/95 mb-2">Panel de conversaciones</h1>
       <p className="text-sm text-pink-200/60 mb-6">
         Cada cuenta entra con su usuario (<code className="text-pink-200/80">izzi</code>,{' '}
-        <code className="text-pink-200/80">izzi-2</code>…). Chats y QR no se mezclan.
+        <code className="text-pink-200/80">izzi-2</code>…). Chats y QR no se mezclan. Si te
+        compartieron un enlace con token, úsalo; también puedes poner ese token como contraseña.
       </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>

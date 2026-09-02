@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import QRCode from 'qrcode';
 import { getIzziPanelClientId } from '@/lib/izzi-panel-auth';
 import { getMongoDb } from '@/lib/mongodb';
+import { getIzziWhatsAppStatus } from '@/lib/izzi-whatsapp-status';
 
 export const dynamic = 'force-dynamic';
-
-type QrDoc = {
-  _id: string;
-  qr?: string | null;
-  connected?: boolean;
-  updatedAt?: Date;
-};
 
 /** GET — estado de vinculación y QR vigente del tenant de este usuario. */
 export async function GET(req: NextRequest) {
@@ -20,29 +13,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const db = await getMongoDb();
-    const doc = await db
-      .collection<QrDoc>('whatsapp_qr')
-      .findOne({ _id: clientId as never });
-
-    const rawQr = typeof doc?.qr === 'string' && doc.qr.length > 0 ? doc.qr : null;
-    let qrDataUrl: string | null = null;
-    if (rawQr) {
-      try {
-        qrDataUrl = await QRCode.toDataURL(rawQr, { width: 300, margin: 2 });
-      } catch {
-        qrDataUrl = null;
-      }
-    }
-
-    return NextResponse.json({
-      clientId,
-      connected: doc?.connected ?? false,
-      hasQr: !!qrDataUrl,
-      qrDataUrl,
-      updatedAt: doc?.updatedAt ?? null,
-      bridgeSeen: !!doc,
-    });
+    const status = await getIzziWhatsAppStatus(clientId);
+    return NextResponse.json({ clientId, ...status });
   } catch (err) {
     console.error('[izzi-panel/whatsapp]', err);
     return NextResponse.json({ error: 'Error al consultar el estado' }, { status: 500 });

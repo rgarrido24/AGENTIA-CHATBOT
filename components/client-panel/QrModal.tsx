@@ -37,7 +37,9 @@ export function QrModal({ brand, clientId, open, onClose, onConnected }: Props) 
     });
 
     es.addEventListener('error', () => {
-      setError('No se pudo cargar el código QR');
+      if (es.readyState === EventSource.CLOSED) {
+        setError('No se pudo cargar el código QR');
+      }
     });
 
     const statusPoll = setInterval(async () => {
