@@ -199,7 +199,12 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
       'Maximino Ávila Camacho 33, Cd. de los Deportes, Benito Juárez, 03710 CDMX',
     ),
     horario: pick(process.env.NEXT_PUBLIC_CARNITAS_HORARIO, '9:30 am a 5:30 pm'),
-    ubicacion: parseLatLng(process.env.NEXT_PUBLIC_CARNITAS_LATLNG),
+    // Maximino Ávila Camacho 33, Cd. de los Deportes, Benito Juárez, 03710 CDMX.
+    // Geocodificado contra el predio 32 de la misma calle (19.384069, -99.177268).
+    ubicacion: parseLatLng(process.env.NEXT_PUBLIC_CARNITAS_LATLNG) ?? {
+      lat: 19.38407,
+      lng: -99.17727,
+    },
     heroImageUrl: pick(process.env.NEXT_PUBLIC_CARNITAS_HERO_URL, CARNITAS_HERO),
     linkModuleData: extraLinkFromEnv(
       process.env.NEXT_PUBLIC_CARNITAS_LINK_URL,
