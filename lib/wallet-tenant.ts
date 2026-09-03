@@ -98,7 +98,7 @@ const SABUCAN_LOGO =
 
 const CARNITAS_LOGO =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL?.trim()) ||
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406968/carnitas-mascot-transparent_v1yzbs.png';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png';
 
 const CARNITAS_HERO =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_HERO_URL?.trim()) ||

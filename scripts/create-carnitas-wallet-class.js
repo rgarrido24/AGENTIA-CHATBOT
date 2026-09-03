@@ -21,7 +21,7 @@ const TENANT = {
   nombre: 'Carnitas Granada',
   logoUrl:
     (process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL || '').trim() ||
-    'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg',
+    'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png',
   colorPrimario: '#E3231D',
   classId: `${ISSUER_ID}.carnitas_granada_lealtad`,
 };

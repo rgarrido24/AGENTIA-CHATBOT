@@ -46,7 +46,7 @@ export function LoyaltyShell({ tenantId, children }: Props) {
           <Link href={`${basePath}/caja`} className="flex min-w-0 items-center gap-2.5">
             {isCarnitas ? (
               <span
-                className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden"
+                className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden"
                 aria-hidden
               >
                 {logoOk ? (

@@ -53,7 +53,7 @@ const DEMO_LOGOS = {
     color: '#E3231D',
     logoUrl:
       (process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL || '').trim() ||
-      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406968/carnitas-mascot-transparent_v1yzbs.png',
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png',
     heroUrl:
       (process.env.NEXT_PUBLIC_CARNITAS_HERO_URL || '').trim() ||
       'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406946/carnitas-granada-hero-wallet_1_qdykdr.png',

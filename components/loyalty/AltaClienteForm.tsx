@@ -15,6 +15,8 @@ export function AltaClienteForm({ tenantId }: { tenantId: TenantId }) {
   const accent = tenant?.colorAcento ?? '#F2691F';
   const negocioNombre = tenant?.nombre ?? 'nuestro negocio';
   const primary = tenant?.colorPrimario ?? '#1E2340';
+  const logoUrl = tenant?.logoUrl;
+  const [logoOk, setLogoOk] = useState(true);
 
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [telefono, setTelefono] = useState('');
@@ -99,7 +101,19 @@ export function AltaClienteForm({ tenantId }: { tenantId: TenantId }) {
         } as Record<string, string>),
       } as CSSProperties & Record<string, string>}
     >
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
       <div className="mb-6">
+        {logoUrl && logoOk ? (
+          <div className="mb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoUrl}
+              alt={negocioNombre}
+              className="h-28 w-auto object-contain sm:h-32"
+              onError={() => setLogoOk(false)}
+            />
+          </div>
+        ) : null}
         <p
           className="font-[family-name:var(--font-space)] text-xs font-medium uppercase tracking-[0.2em]"
           style={{ color: accent }}
@@ -107,7 +121,7 @@ export function AltaClienteForm({ tenantId }: { tenantId: TenantId }) {
           Auto-registro
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-space)] text-3xl font-bold tracking-tight">
-          {negocioNombre} · Tarjeta de lealtad
+          {logoUrl && logoOk ? 'Tarjeta de lealtad' : `${negocioNombre} · Tarjeta de lealtad`}
         </h1>
         <p className="mt-2 text-sm text-white/50">
           Registra tus datos y guarda tu tarjeta en tu celular.
@@ -223,6 +237,7 @@ export function AltaClienteForm({ tenantId }: { tenantId: TenantId }) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

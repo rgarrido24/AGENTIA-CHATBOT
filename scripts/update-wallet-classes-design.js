@@ -41,7 +41,7 @@ const SABUCAN_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787945953/sabucan-logo-transparente_kywnjn.png';
 const CARNITAS_LOGO =
   env('NEXT_PUBLIC_CARNITAS_LOGO_URL') ||
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406968/carnitas-mascot-transparent_v1yzbs.png';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png';
 const CARNITAS_HERO =
   env('NEXT_PUBLIC_CARNITAS_HERO_URL') ||
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406946/carnitas-granada-hero-wallet_1_qdykdr.png';

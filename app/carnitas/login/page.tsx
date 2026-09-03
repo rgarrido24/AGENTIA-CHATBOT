@@ -14,6 +14,7 @@ function CarnitasLoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [logoOk, setLogoOk] = useState(true);
 
   const accent = TENANT.colorAcento;
 
@@ -53,12 +54,24 @@ function CarnitasLoginForm() {
         border: `1px solid ${accent}33`,
       }}
     >
-      <p
-        className="font-[family-name:var(--font-space)] text-[10px] font-medium uppercase tracking-[0.25em]"
-        style={{ color: accent }}
-      >
-        {TENANT.nombre}
-      </p>
+      {logoOk ? (
+        <div className="mb-5 flex justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={TENANT.logoUrl}
+            alt={TENANT.nombre}
+            className="h-28 w-auto object-contain"
+            onError={() => setLogoOk(false)}
+          />
+        </div>
+      ) : (
+        <p
+          className="font-[family-name:var(--font-space)] text-[10px] font-medium uppercase tracking-[0.25em]"
+          style={{ color: accent }}
+        >
+          {TENANT.nombre}
+        </p>
+      )}
       <h1 className="mt-2 font-[family-name:var(--font-space)] text-xl font-bold text-white/95">
         Acceso a caja
       </h1>
