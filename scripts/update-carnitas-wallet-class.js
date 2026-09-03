@@ -66,7 +66,7 @@ function buildPatch() {
   const patch = {
     id: CLASS_ID,
     issuerName: NOMBRE,
-    programName: `Lealtad ${NOMBRE}`,
+    programName: 'Lealtad',
     hexBackgroundColor: '#E3231D',
     // La API rechaza el PATCH si se reenvía "APPROVED"; hay que mandar UNDER_REVIEW.
     reviewStatus: 'UNDER_REVIEW',

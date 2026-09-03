@@ -51,12 +51,18 @@ const DEMO_LOGOS = {
     nombre: 'Carnitas Granada',
     classSuffix: 'carnitas_granada_lealtad',
     color: '#E3231D',
-    logoUrl:
+    logoUrl: flattenOnBrand(
+      (process.env.NEXT_PUBLIC_CARNITAS_WALLET_LOGO_URL || '').trim() ||
+        'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788472062/carnitas-granada-logo-cuadrado_y5dcyn.png',
+      '#E3231D',
+    ),
+    lockupUrl:
       (process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL || '').trim() ||
       'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png',
-    // Lockup vertical: no wideProgramLogo (plasta roja) ni el hero partido.
+    // Lockup vertical: no wideProgramLogo (plasta) ni el hero partido.
     omitWide: true,
     heroFromLockup: true,
+    programName: 'Lealtad',
   },
   cafe: {
     nombre: 'Café Luna',
@@ -103,6 +109,16 @@ function fitBanner(url, fitW, fitH, padW, padH, hex) {
   );
 }
 
+/** Aplana PNG transparente sobre el color de marca (Wallet rellena alpha de blanco). */
+function flattenOnBrand(url, hex) {
+  if (!url || !url.includes('/upload/')) return url;
+  const bg = String(hex).replace('#', '').toLowerCase();
+  return url.replace(
+    '/upload/',
+    `/upload/c_fit,w_500,h_500/c_pad,w_660,h_660,b_rgb:${bg},f_jpg/`,
+  );
+}
+
 async function getAccessToken() {
   const raw = (process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON || '').trim();
   if (!raw) throw new Error('Falta GOOGLE_WALLET_SERVICE_ACCOUNT_JSON');
@@ -134,6 +150,7 @@ async function patchLogo(token, key, sinHero) {
   const cfg = DEMO_LOGOS[key];
   const classId = `${ISSUER_ID}.${cfg.classSuffix}`;
   const url = `${CLASS_URL}/${encodeURIComponent(classId)}`;
+  const heroSource = cfg.lockupUrl || cfg.logoUrl;
   const envHero = (process.env.NEXT_PUBLIC_CARNITAS_HERO_URL || '').trim();
   const heroUrl = sinHero
     ? null
@@ -141,7 +158,7 @@ async function patchLogo(token, key, sinHero) {
       (cfg.heroFromLockup
         ? (envHero && !envHero.includes('carnitas-granada-hero-wallet_1')
             ? envHero
-            : fitBanner(cfg.logoUrl, 520, 240, 1032, 336, cfg.color))
+            : fitBanner(heroSource, 520, 240, 1032, 336, cfg.color))
         : banner(cfg.logoUrl, 1032, 336, cfg.color));
   const omitWide = Boolean(cfg.omitWide);
   const wideUrl = omitWide ? null : banner(cfg.logoUrl, 660, 220, cfg.color);
@@ -163,6 +180,7 @@ async function patchLogo(token, key, sinHero) {
   };
   if (heroUrl) body.heroImage = imagen(heroUrl, `${cfg.nombre} — bienvenida`);
   if (wideUrl) body.wideProgramLogo = imagen(wideUrl, `Logo ${cfg.nombre}`);
+  if (cfg.programName) body.programName = cfg.programName;
 
   if (sinHero || omitWide) {
     const actual = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -178,6 +196,7 @@ async function patchLogo(token, key, sinHero) {
       ...clase,
       reviewStatus: 'UNDER_REVIEW',
       programLogo: imagen(cfg.logoUrl, `Logo ${cfg.nombre}`),
+      ...(cfg.programName ? { programName: cfg.programName } : {}),
     };
     if (heroUrl) body.heroImage = imagen(heroUrl, `${cfg.nombre} — bienvenida`);
     else delete body.heroImage;

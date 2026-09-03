@@ -20,8 +20,8 @@ const CASHBACK_PCT =
 const TENANT = {
   nombre: 'Carnitas Granada',
   logoUrl:
-    (process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL || '').trim() ||
-    'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png',
+    (process.env.NEXT_PUBLIC_CARNITAS_WALLET_LOGO_URL || '').trim() ||
+    'https://res.cloudinary.com/dcy5a39tm/image/upload/c_fit,w_500,h_500/c_pad,w_660,h_660,b_rgb:e3231d,f_jpg/v1788472062/carnitas-granada-logo-cuadrado_y5dcyn.png',
   colorPrimario: '#E3231D',
   classId: `${ISSUER_ID}.carnitas_granada_lealtad`,
 };
@@ -87,7 +87,7 @@ async function main() {
   const body = {
     id: TENANT.classId,
     issuerName: TENANT.nombre,
-    programName: `Lealtad ${TENANT.nombre}`,
+    programName: 'Lealtad',
     programLogo: {
       sourceUri: { uri: TENANT.logoUrl },
       contentDescription: {

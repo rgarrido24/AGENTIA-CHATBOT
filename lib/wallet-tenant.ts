@@ -28,6 +28,8 @@ export type TenantConfig = {
   cashbackPct: number;
   /** Logo horizontal para la vista de lista de Wallet. */
   wideLogoUrl?: string;
+  /** Logo cuadrado aplanado para programLogo de Google Wallet. */
+  walletLogoUrl?: string;
   /** Teléfono del negocio para el botón de WhatsApp del pase. */
   waNumber?: string;
   /** URL de Google Maps del local. */
@@ -99,6 +101,19 @@ function cloudinaryFitBanner(
   );
 }
 
+/** Aplana un PNG transparente sobre el color de marca (Wallet rellena alpha de blanco). */
+function flattenSquareOnBrand(
+  url: string | undefined,
+  hexBg: string,
+): string | undefined {
+  if (!url || !url.includes('/upload/')) return url;
+  const bg = hexBg.replace('#', '').toLowerCase();
+  return url.replace(
+    '/upload/',
+    `/upload/c_fit,w_500,h_500/c_pad,w_660,h_660,b_rgb:${bg},f_jpg/`,
+  );
+}
+
 function parseLatLng(raw: string | undefined): { lat: number; lng: number } | undefined {
   if (!raw) return undefined;
   const [latRaw, lngRaw] = raw.split(',');
@@ -119,6 +134,11 @@ const SABUCAN_LOGO =
 const CARNITAS_LOGO =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL?.trim()) ||
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png';
+
+/** Cuadrado 700×700 para programLogo (el círculo de Wallet). */
+const CARNITAS_WALLET_LOGO =
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_WALLET_LOGO_URL?.trim()) ||
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788472062/carnitas-granada-logo-cuadrado_y5dcyn.png';
 
 const CARNITAS_HERO =
   (() => {
@@ -210,6 +230,7 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/carnitas',
     isDemo: false,
     cashbackPct: carnitasCashbackPct(),
+    walletLogoUrl: flattenSquareOnBrand(CARNITAS_WALLET_LOGO, '#E3231D'),
     // El lockup es vertical: un wideProgramLogo con c_pad rojo se ve como
     // plasta. Wallet usa programLogo (PNG transparente) si este campo falta.
     wideLogoUrl: pick(process.env.NEXT_PUBLIC_CARNITAS_WIDE_LOGO_URL),

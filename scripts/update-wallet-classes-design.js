@@ -42,6 +42,11 @@ const SABUCAN_LOGO =
 const CARNITAS_LOGO =
   env('NEXT_PUBLIC_CARNITAS_LOGO_URL') ||
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png';
+const CARNITAS_WALLET_LOGO = flattenOnBrand(
+  env('NEXT_PUBLIC_CARNITAS_WALLET_LOGO_URL') ||
+    'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788472062/carnitas-granada-logo-cuadrado_y5dcyn.png',
+  '#E3231D',
+);
 const CARNITAS_HERO = (() => {
   const fromEnv = env('NEXT_PUBLIC_CARNITAS_HERO_URL');
   if (fromEnv && !fromEnv.includes('carnitas-granada-hero-wallet_1')) return fromEnv;
@@ -71,6 +76,16 @@ function fitBanner(url, fitW, fitH, padW, padH, hex) {
   );
 }
 
+/** Aplana PNG transparente sobre el color de marca (Wallet rellena alpha de blanco). */
+function flattenOnBrand(url, hex) {
+  if (!url || !url.includes('/upload/')) return url;
+  const bg = String(hex).replace('#', '').toLowerCase();
+  return url.replace(
+    '/upload/',
+    `/upload/c_fit,w_500,h_500/c_pad,w_660,h_660,b_rgb:${bg},f_jpg/`,
+  );
+}
+
 const CARNITAS_PCT =
   Number(env('NEXT_PUBLIC_CARNITAS_CASHBACK_PCT') || env('CARNITAS_CASHBACK_PCT')) || 5;
 
@@ -95,7 +110,7 @@ const TENANTS = {
     nombre: 'Carnitas Granada',
     classSuffix: 'carnitas_granada_lealtad',
     color: '#E3231D',
-    logo: CARNITAS_LOGO,
+    logo: CARNITAS_WALLET_LOGO,
     comoAcumular: `${CARNITAS_PCT}% de cada compra se te regresa como saldo a favor (1 punto = $1 MXN).`,
     wa: env('NEXT_PUBLIC_CARNITAS_WA_NUMBER') || '+525657008418',
     maps: env('NEXT_PUBLIC_CARNITAS_MAPS_URL') || 'https://maps.app.goo.gl/h82G3F5Udy7PDTKTA',
@@ -106,6 +121,7 @@ const TENANTS = {
     latlng: env('NEXT_PUBLIC_CARNITAS_LATLNG'),
     hero: CARNITAS_HERO,
     omitWide: true,
+    programName: 'Lealtad',
     extraLink: env('NEXT_PUBLIC_CARNITAS_LINK_URL'),
     extraLinkLabel: env('NEXT_PUBLIC_CARNITAS_LINK_LABEL') || 'Más info',
   },
@@ -179,7 +195,7 @@ function buildPatch(cfg) {
   const patch = {
     id: classId,
     issuerName: cfg.nombre,
-    programName: `Lealtad ${cfg.nombre}`,
+    programName: cfg.programName || `Lealtad ${cfg.nombre}`,
     programLogo: image(cfg.logo, `Logo ${cfg.nombre}`),
     hexBackgroundColor: cfg.color,
     reviewStatus: 'UNDER_REVIEW',
