@@ -280,6 +280,77 @@ export async function registrarVentaSabucan(
   return registrarVenta('sabucan', input);
 }
 
+export type AltaClienteInput = {
+  telefono: string;
+  nombreCompleto: string;
+  fechaNacimiento: string;
+};
+
+export type AltaClienteResult = {
+  cliente: SabucanCliente;
+  esNuevo: boolean;
+};
+
+/**
+ * Auto-registro público para cualquier tenant:
+ * - Si el teléfono ya existe, NO crea duplicado y devuelve su saldo actual.
+ * - Si no existe, crea el cliente con saldo inicial en 0 puntos.
+ */
+export async function altaCliente(
+  tenantId: TenantId | string,
+  input: AltaClienteInput,
+): Promise<AltaClienteResult> {
+  const telefono = normalizeSabucanTelefono(input.telefono);
+  if (telefono.length < 10) {
+    throw new Error('Teléfono inválido (mínimo 10 dígitos)');
+  }
+
+  const nombreCompleto = String(input.nombreCompleto ?? '').trim();
+  if (!nombreCompleto) {
+    throw new Error('Nombre completo requerido');
+  }
+
+  const fechaNacimiento = parseFechaNacimiento(input.fechaNacimiento);
+
+  const coll = await collection(tenantId);
+  const existing = await coll.findOne({ telefono });
+  if (existing?._id) {
+    return { cliente: docToCliente(existing as SabucanClienteDoc & { _id: ObjectId }), esNuevo: false };
+  }
+
+  const now = new Date().toISOString();
+  const doc: SabucanClienteDoc = {
+    telefono,
+    nombre: nombreCompleto,
+    nombreCompleto,
+    fechaNacimiento,
+    ultimaVisita: now,
+    puntos: 0,
+    historial: [],
+    created_at: now,
+    updated_at: now,
+  };
+
+  try {
+    const { insertedId } = await coll.insertOne(doc);
+    return {
+      cliente: docToCliente({ ...(doc as SabucanClienteDoc), _id: insertedId }),
+      esNuevo: true,
+    };
+  } catch (e) {
+    // En caso de concurrencia, el unique index por `telefono` puede fallar.
+    // Recuperamos el documento existente y devolvemos su saldo.
+    const msg = e instanceof Error ? e.message : String(e ?? '');
+    if (/E11000|duplicate key/i.test(msg)) {
+      const again = await coll.findOne({ telefono });
+      if (again?._id) {
+        return { cliente: docToCliente(again as SabucanClienteDoc & { _id: ObjectId }), esNuevo: false };
+      }
+    }
+    throw e;
+  }
+}
+
 export type CanjearPuntosResult = {
   cliente: SabucanCliente;
   puntosCanjeados: number;

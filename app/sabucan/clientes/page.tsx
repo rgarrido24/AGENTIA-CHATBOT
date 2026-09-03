@@ -8,6 +8,7 @@ import {
   type SabucanClienteUi,
 } from '../_components';
 import { RecuperacionAsistida } from '@/components/RecuperacionAsistida';
+import { DownloadAltaQrButton } from '@/components/loyalty/DownloadAltaQrButton';
 
 type Semaforo = 'verde' | 'amarillo' | 'rojo';
 
@@ -114,15 +115,22 @@ export default function SabucanClientesPage() {
             Semáforo de inactividad · contacta primero a los rojos
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-xs font-medium text-white/70 hover:border-white/30 hover:text-white disabled:opacity-40"
-        >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          Actualizar
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <DownloadAltaQrButton tenantId="sabucan" />
+          <button
+            type="button"
+            onClick={() => void load()}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-xs font-medium text-white/70 hover:border-white/30 hover:text-white disabled:opacity-40"
+          >
+            {loading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
+            Actualizar
+          </button>
+        </div>
       </div>
 
       <div className="mb-6 grid grid-cols-3 gap-2 sm:gap-3">

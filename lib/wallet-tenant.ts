@@ -318,8 +318,27 @@ export function isDemoNegocio(raw: string): raw is DemoNegocio {
 }
 
 export function getTenant(tenantId: string): TenantConfig | null {
+  // Alias público pedido en el brief:
+  // - `/api/wallet/carnitas` debe funcionar aunque el tenant real sea `carnitas_granada`.
+  if (tenantId === 'carnitas') return TENANTS.carnitas_granada;
   if (!isTenantId(tenantId)) return null;
   return TENANTS[tenantId];
+}
+
+/**
+ * Resuelve el tenant a partir del slug público de ruta (1 segmento).
+ * Ejemplos:
+ * - slug `carnitas` -> `TENANTS.carnitas_granada` (basePath `/carnitas`)
+ * - slug `sabucan`  -> `TENANTS.sabucan` (basePath `/sabucan`)
+ *
+ * Nota: hoy asumimos basePath de 1 segmento (lo que cubre Carnitas Granada + SABUCAN
+ * y futuros tenants no-demo con basePath `/${slug}`).
+ */
+export function getTenantByPublicSlug(slug: string): TenantConfig | null {
+  const safe = String(slug ?? '').trim().replace(/^\/+/, '');
+  if (!safe) return null;
+  const target = `/${safe}`;
+  return Object.values(TENANTS).find((t) => t.basePath === target) ?? null;
 }
 
 export function tenantClassId(tenant: TenantConfig): string {

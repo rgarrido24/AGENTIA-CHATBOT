@@ -5,6 +5,7 @@ import { Loader2, MessageCircle, RefreshCw, RotateCcw, Users } from 'lucide-reac
 import { getTenant, sabucanWaDigits, type TenantId } from '@/lib/wallet-tenant';
 import { RecuperacionAsistida } from '@/components/RecuperacionAsistida';
 import { formatFechaCorta, formatPuntos, type LoyaltyClienteUi } from './_ui';
+import { DownloadAltaQrButton } from './DownloadAltaQrButton';
 
 type Semaforo = 'verde' | 'amarillo' | 'rojo';
 
@@ -159,6 +160,7 @@ export function LoyaltyClientesPage({ tenantId }: { tenantId: TenantId }) {
               Reiniciar demo
             </button>
           ) : null}
+          {!isDemo ? <DownloadAltaQrButton tenantId={tenantId} /> : null}
           <button
             type="button"
             onClick={() => void load()}
