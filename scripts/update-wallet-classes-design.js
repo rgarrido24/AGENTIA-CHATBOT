@@ -42,9 +42,11 @@ const SABUCAN_LOGO =
 const CARNITAS_LOGO =
   env('NEXT_PUBLIC_CARNITAS_LOGO_URL') ||
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png';
-const CARNITAS_HERO =
-  env('NEXT_PUBLIC_CARNITAS_HERO_URL') ||
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406946/carnitas-granada-hero-wallet_1_qdykdr.png';
+const CARNITAS_HERO = (() => {
+  const fromEnv = env('NEXT_PUBLIC_CARNITAS_HERO_URL');
+  if (fromEnv && !fromEnv.includes('carnitas-granada-hero-wallet_1')) return fromEnv;
+  return fitBanner(CARNITAS_LOGO, 520, 240, 1032, 336, '#E3231D');
+})();
 const CAFE_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787942156/cafe-luna-logo-transparente_xskmgn.png';
 const BARBERIA_LOGO =
@@ -57,6 +59,16 @@ function banner(url, w, h, hex) {
   if (!url || !url.includes('/upload/')) return url;
   const bg = String(hex).replace('#', '').toLowerCase();
   return url.replace('/upload/', `/upload/c_pad,w_${w},h_${h},b_rgb:${bg},f_jpg/`);
+}
+
+/** Encaja un lockup alto entero en el hero 1032×336, con margen anti-recorte. */
+function fitBanner(url, fitW, fitH, padW, padH, hex) {
+  if (!url || !url.includes('/upload/')) return url;
+  const bg = String(hex).replace('#', '').toLowerCase();
+  return url.replace(
+    '/upload/',
+    `/upload/c_fit,w_${fitW},h_${fitH}/c_pad,w_${padW},h_${padH},b_rgb:${bg},f_jpg/`,
+  );
 }
 
 const CARNITAS_PCT =
@@ -93,6 +105,7 @@ const TENANTS = {
     horario: env('NEXT_PUBLIC_CARNITAS_HORARIO') || '9:30 am a 5:30 pm',
     latlng: env('NEXT_PUBLIC_CARNITAS_LATLNG'),
     hero: CARNITAS_HERO,
+    omitWide: true,
     extraLink: env('NEXT_PUBLIC_CARNITAS_LINK_URL'),
     extraLinkLabel: env('NEXT_PUBLIC_CARNITAS_LINK_LABEL') || 'Más info',
   },
@@ -172,7 +185,6 @@ function buildPatch(cfg) {
     reviewStatus: 'UNDER_REVIEW',
     accountNameLabel: 'Cliente',
     accountIdLabel: 'Teléfono',
-    wideProgramLogo: image(banner(cfg.logo, 660, 220, cfg.color), `Logo ${cfg.nombre}`),
     textModulesData: [
       { header: 'Cómo acumular', body: cfg.comoAcumular },
       {
@@ -183,6 +195,9 @@ function buildPatch(cfg) {
   };
 
   if (cfg.hero) patch.heroImage = image(cfg.hero, `${cfg.nombre} — bienvenida`);
+  if (!cfg.omitWide) {
+    patch.wideProgramLogo = image(banner(cfg.logo, 660, 220, cfg.color), `Logo ${cfg.nombre}`);
+  }
 
   const uris = [];
   if (cfg.wa) {
@@ -264,7 +279,7 @@ async function updateOne(token, key) {
   const ok =
     verify.ok &&
     json.id === classId &&
-    Boolean(json.wideProgramLogo) &&
+    (!cfg.omitWide ? Boolean(json.wideProgramLogo) : true) &&
     (!patch.heroImage || Boolean(json.heroImage)) &&
     (!patch.linksModuleData || Boolean(json.linksModuleData)) &&
     (!patch.infoModuleData || Boolean(json.infoModuleData));

@@ -79,6 +79,26 @@ function cloudinaryBanner(
   );
 }
 
+/**
+ * Encaja un lockup alto (mascota + texto) entero dentro del hero 1032×336,
+ * con margen para que Wallet no recorte bordes.
+ */
+function cloudinaryFitBanner(
+  url: string | undefined,
+  fitW: number,
+  fitH: number,
+  padW: number,
+  padH: number,
+  hexBg: string,
+): string | undefined {
+  if (!url || !url.includes('/upload/')) return url;
+  const bg = hexBg.replace('#', '').toLowerCase();
+  return url.replace(
+    '/upload/',
+    `/upload/c_fit,w_${fitW},h_${fitH}/c_pad,w_${padW},h_${padH},b_rgb:${bg},f_jpg/`,
+  );
+}
+
 function parseLatLng(raw: string | undefined): { lat: number; lng: number } | undefined {
   if (!raw) return undefined;
   const [latRaw, lngRaw] = raw.split(',');
@@ -101,8 +121,13 @@ const CARNITAS_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png';
 
 const CARNITAS_HERO =
-  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_HERO_URL?.trim()) ||
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406946/carnitas-granada-hero-wallet_1_qdykdr.png';
+  (() => {
+    const fromEnv =
+      typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_HERO_URL?.trim();
+    // El banner partido (texto izq / mascota der) se recorta en Wallet.
+    if (fromEnv && !fromEnv.includes('carnitas-granada-hero-wallet_1')) return fromEnv;
+    return cloudinaryFitBanner(CARNITAS_LOGO, 520, 240, 1032, 336, '#E3231D');
+  })();
 
 const CAFE_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787942156/cafe-luna-logo-transparente_xskmgn.png';
@@ -185,10 +210,9 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     basePath: '/carnitas',
     isDemo: false,
     cashbackPct: carnitasCashbackPct(),
-    wideLogoUrl: pick(
-      process.env.NEXT_PUBLIC_CARNITAS_WIDE_LOGO_URL,
-      cloudinaryBanner(CARNITAS_LOGO, 660, 220, '#E3231D'),
-    ),
+    // El lockup es vertical: un wideProgramLogo con c_pad rojo se ve como
+    // plasta. Wallet usa programLogo (PNG transparente) si este campo falta.
+    wideLogoUrl: pick(process.env.NEXT_PUBLIC_CARNITAS_WIDE_LOGO_URL),
     waNumber: pick(process.env.NEXT_PUBLIC_CARNITAS_WA_NUMBER, '+525657008418'),
     mapsUrl: pick(
       process.env.NEXT_PUBLIC_CARNITAS_MAPS_URL,

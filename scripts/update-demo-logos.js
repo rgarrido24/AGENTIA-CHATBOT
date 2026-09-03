@@ -54,9 +54,9 @@ const DEMO_LOGOS = {
     logoUrl:
       (process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL || '').trim() ||
       'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788468955/carnitas-granada-logo-completo-transparente_acvzhj.png',
-    heroUrl:
-      (process.env.NEXT_PUBLIC_CARNITAS_HERO_URL || '').trim() ||
-      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406946/carnitas-granada-hero-wallet_1_qdykdr.png',
+    // Lockup vertical: no wideProgramLogo (plasta roja) ni el hero partido.
+    omitWide: true,
+    heroFromLockup: true,
   },
   cafe: {
     nombre: 'Café Luna',
@@ -93,6 +93,16 @@ function banner(url, w, h, hex) {
   return url.replace('/upload/', `/upload/c_pad,w_${w},h_${h},b_rgb:${bg},f_jpg/`);
 }
 
+/** Encaja un lockup alto entero en el hero 1032×336, con margen anti-recorte. */
+function fitBanner(url, fitW, fitH, padW, padH, hex) {
+  if (!url || !url.includes('/upload/')) return url;
+  const bg = String(hex).replace('#', '').toLowerCase();
+  return url.replace(
+    '/upload/',
+    `/upload/c_fit,w_${fitW},h_${fitH}/c_pad,w_${padW},h_${padH},b_rgb:${bg},f_jpg/`,
+  );
+}
+
 async function getAccessToken() {
   const raw = (process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON || '').trim();
   if (!raw) throw new Error('Falta GOOGLE_WALLET_SERVICE_ACCOUNT_JSON');
@@ -124,42 +134,55 @@ async function patchLogo(token, key, sinHero) {
   const cfg = DEMO_LOGOS[key];
   const classId = `${ISSUER_ID}.${cfg.classSuffix}`;
   const url = `${CLASS_URL}/${encodeURIComponent(classId)}`;
-  const heroUrl = cfg.heroUrl || banner(cfg.logoUrl, 1032, 336, cfg.color);
-  const wideUrl = banner(cfg.logoUrl, 660, 220, cfg.color);
+  const envHero = (process.env.NEXT_PUBLIC_CARNITAS_HERO_URL || '').trim();
+  const heroUrl = sinHero
+    ? null
+    : cfg.heroUrl ||
+      (cfg.heroFromLockup
+        ? (envHero && !envHero.includes('carnitas-granada-hero-wallet_1')
+            ? envHero
+            : fitBanner(cfg.logoUrl, 520, 240, 1032, 336, cfg.color))
+        : banner(cfg.logoUrl, 1032, 336, cfg.color));
+  const omitWide = Boolean(cfg.omitWide);
+  const wideUrl = omitWide ? null : banner(cfg.logoUrl, 660, 220, cfg.color);
 
   console.log(`\n========== ${key.toUpperCase()} ==========`);
   console.log('classId:', classId);
   console.log('programLogo:', cfg.logoUrl);
-  console.log('heroImage  :', sinHero ? '(se elimina)' : heroUrl);
-  console.log('wideLogo   :', wideUrl);
+  console.log('heroImage  :', heroUrl || '(se elimina)');
+  console.log('wideLogo   :', wideUrl || '(se elimina)');
 
   // PATCH hace merge y no puede borrar campos (ni con null ni con {}), así que
-  // para quitar el hero hay que reemplazar la clase completa con PUT.
+  // para quitar hero o wide hay que reemplazar la clase completa con PUT.
   let metodo = 'PATCH';
   let body = {
     id: classId,
     // La API rechaza el envío de "APPROVED"; hay que mandar UNDER_REVIEW.
     reviewStatus: 'UNDER_REVIEW',
     programLogo: imagen(cfg.logoUrl, `Logo ${cfg.nombre}`),
-    wideProgramLogo: imagen(wideUrl, `Logo ${cfg.nombre}`),
-    heroImage: imagen(heroUrl, `${cfg.nombre} — bienvenida`),
   };
+  if (heroUrl) body.heroImage = imagen(heroUrl, `${cfg.nombre} — bienvenida`);
+  if (wideUrl) body.wideProgramLogo = imagen(wideUrl, `Logo ${cfg.nombre}`);
 
-  if (sinHero) {
+  if (sinHero || omitWide) {
     const actual = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!actual.ok) {
       console.log('GET previo falló:', actual.status);
       return { key, status: 'get_previo_failed', http: actual.status, classId };
     }
     const clase = await actual.json();
-    delete clase.heroImage;
+    if (sinHero) delete clase.heroImage;
+    if (omitWide) delete clase.wideProgramLogo;
     metodo = 'PUT';
     body = {
       ...clase,
       reviewStatus: 'UNDER_REVIEW',
       programLogo: imagen(cfg.logoUrl, `Logo ${cfg.nombre}`),
-      wideProgramLogo: imagen(wideUrl, `Logo ${cfg.nombre}`),
     };
+    if (heroUrl) body.heroImage = imagen(heroUrl, `${cfg.nombre} — bienvenida`);
+    else delete body.heroImage;
+    if (wideUrl) body.wideProgramLogo = imagen(wideUrl, `Logo ${cfg.nombre}`);
+    else delete body.wideProgramLogo;
   }
 
   const res = await fetch(url, {
@@ -184,13 +207,14 @@ async function patchLogo(token, key, sinHero) {
   const wideGuardado = json?.wideProgramLogo?.sourceUri?.uri;
 
   const heroOk = sinHero ? !heroGuardado : heroGuardado === heroUrl;
-  const ok = verify.ok && logoGuardado === cfg.logoUrl && heroOk && wideGuardado === wideUrl;
+  const wideOk = omitWide ? !wideGuardado : wideGuardado === wideUrl;
+  const ok = verify.ok && logoGuardado === cfg.logoUrl && heroOk && wideOk;
 
   console.log('\n--- GET de verificación inmediata ---');
   console.log('status:', verify.status);
   console.log('programLogo    :', logoGuardado);
   console.log('heroImage      :', heroGuardado ?? '(sin hero)');
-  console.log('wideProgramLogo:', wideGuardado);
+  console.log('wideProgramLogo:', wideGuardado ?? '(sin wide)');
   console.log('todo correcto  :', ok);
 
   return {
@@ -199,6 +223,7 @@ async function patchLogo(token, key, sinHero) {
     classId,
     logoGuardado,
     heroGuardado: heroGuardado ?? null,
+    wideGuardado: wideGuardado ?? null,
   };
 }
 
