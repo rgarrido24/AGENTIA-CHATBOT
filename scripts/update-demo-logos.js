@@ -53,7 +53,10 @@ const DEMO_LOGOS = {
     color: '#E3231D',
     logoUrl:
       (process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL || '').trim() ||
-      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg',
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406968/carnitas-mascot-transparent_v1yzbs.png',
+    heroUrl:
+      (process.env.NEXT_PUBLIC_CARNITAS_HERO_URL || '').trim() ||
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406946/carnitas-granada-hero-wallet_1_qdykdr.png',
   },
   cafe: {
     nombre: 'Café Luna',
@@ -61,6 +64,8 @@ const DEMO_LOGOS = {
     color: '#1B4332',
     logoUrl:
       'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787942156/cafe-luna-logo-transparente_xskmgn.png',
+    heroUrl:
+      'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788155757/cafe-luna-hero-wallet_dqnc9p.png',
   },
   barberia: {
     nombre: 'Barbería El Patrón',
@@ -119,7 +124,7 @@ async function patchLogo(token, key, sinHero) {
   const cfg = DEMO_LOGOS[key];
   const classId = `${ISSUER_ID}.${cfg.classSuffix}`;
   const url = `${CLASS_URL}/${encodeURIComponent(classId)}`;
-  const heroUrl = banner(cfg.logoUrl, 1032, 336, cfg.color);
+  const heroUrl = cfg.heroUrl || banner(cfg.logoUrl, 1032, 336, cfg.color);
   const wideUrl = banner(cfg.logoUrl, 660, 220, cfg.color);
 
   console.log(`\n========== ${key.toUpperCase()} ==========`);

@@ -41,7 +41,10 @@ const SABUCAN_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787945953/sabucan-logo-transparente_kywnjn.png';
 const CARNITAS_LOGO =
   env('NEXT_PUBLIC_CARNITAS_LOGO_URL') ||
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406968/carnitas-mascot-transparent_v1yzbs.png';
+const CARNITAS_HERO =
+  env('NEXT_PUBLIC_CARNITAS_HERO_URL') ||
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406946/carnitas-granada-hero-wallet_1_qdykdr.png';
 const CAFE_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787942156/cafe-luna-logo-transparente_xskmgn.png';
 const BARBERIA_LOGO =
@@ -53,7 +56,7 @@ const ABARROTES_LOGO =
 function banner(url, w, h, hex) {
   if (!url || !url.includes('/upload/')) return url;
   const bg = String(hex).replace('#', '').toLowerCase();
-  return url.replace('/upload/', `/upload/c_pad,w_${w},h_${h},b_rgb:${bg}/`);
+  return url.replace('/upload/', `/upload/c_pad,w_${w},h_${h},b_rgb:${bg},f_jpg/`);
 }
 
 const CARNITAS_PCT =
@@ -89,7 +92,7 @@ const TENANTS = {
       'Maximino Ávila Camacho 33, Cd. de los Deportes, Benito Juárez, 03710 CDMX',
     horario: env('NEXT_PUBLIC_CARNITAS_HORARIO') || '9:30 am a 5:30 pm',
     latlng: env('NEXT_PUBLIC_CARNITAS_LATLNG'),
-    hero: env('NEXT_PUBLIC_CARNITAS_HERO_URL'),
+    hero: CARNITAS_HERO,
     extraLink: env('NEXT_PUBLIC_CARNITAS_LINK_URL'),
     extraLinkLabel: env('NEXT_PUBLIC_CARNITAS_LINK_LABEL') || 'Más info',
   },

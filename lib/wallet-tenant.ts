@@ -75,7 +75,7 @@ function cloudinaryBanner(
   const bg = hexBg.replace('#', '').toLowerCase();
   return url.replace(
     '/upload/',
-    `/upload/c_pad,w_${width},h_${height},b_rgb:${bg}/`,
+    `/upload/c_pad,w_${width},h_${height},b_rgb:${bg},f_jpg/`,
   );
 }
 
@@ -98,7 +98,11 @@ const SABUCAN_LOGO =
 
 const CARNITAS_LOGO =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_LOGO_URL?.trim()) ||
-  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787786595/FB_IMG_1787786585040_kenlnk.jpg';
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406968/carnitas-mascot-transparent_v1yzbs.png';
+
+const CARNITAS_HERO =
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_CARNITAS_HERO_URL?.trim()) ||
+  'https://res.cloudinary.com/dcy5a39tm/image/upload/v1788406946/carnitas-granada-hero-wallet_1_qdykdr.png';
 
 const CAFE_LOGO =
   'https://res.cloudinary.com/dcy5a39tm/image/upload/v1787942156/cafe-luna-logo-transparente_xskmgn.png';
@@ -196,7 +200,7 @@ export const TENANTS: Record<TenantId, TenantConfig> = {
     ),
     horario: pick(process.env.NEXT_PUBLIC_CARNITAS_HORARIO, '9:30 am a 5:30 pm'),
     ubicacion: parseLatLng(process.env.NEXT_PUBLIC_CARNITAS_LATLNG),
-    heroImageUrl: pick(process.env.NEXT_PUBLIC_CARNITAS_HERO_URL),
+    heroImageUrl: pick(process.env.NEXT_PUBLIC_CARNITAS_HERO_URL, CARNITAS_HERO),
     linkModuleData: extraLinkFromEnv(
       process.env.NEXT_PUBLIC_CARNITAS_LINK_URL,
       process.env.NEXT_PUBLIC_CARNITAS_LINK_LABEL,
