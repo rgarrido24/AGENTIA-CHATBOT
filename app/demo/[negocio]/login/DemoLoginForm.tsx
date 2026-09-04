@@ -3,10 +3,10 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { getTenant, type DemoNegocio } from '@/lib/wallet-tenant';
+import { useLoyaltyTenant } from '@/components/loyalty/tenant-context';
 
-function Form({ negocio }: { negocio: DemoNegocio }) {
-  const tenant = getTenant(negocio);
+function Form({ negocio }: { negocio: string }) {
+  const tenant = useLoyaltyTenant(negocio);
   const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get('from') || `/demo/${negocio}/caja`;
@@ -133,7 +133,7 @@ function Form({ negocio }: { negocio: DemoNegocio }) {
   );
 }
 
-export function DemoLoginForm({ negocio }: { negocio: DemoNegocio }) {
+export function DemoLoginForm({ negocio }: { negocio: string }) {
   return (
     <div className="flex min-h-[70vh] items-center justify-center py-8">
       <Suspense

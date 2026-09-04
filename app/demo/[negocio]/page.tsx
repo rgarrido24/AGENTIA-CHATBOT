@@ -1,9 +1,12 @@
-import { notFound, redirect } from 'next/navigation';
-import { isDemoNegocio } from '@/lib/wallet-tenant';
+import { redirect, notFound } from 'next/navigation';
+import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
+
+export const dynamic = 'force-dynamic';
 
 type Props = { params: { negocio: string } };
 
-export default function DemoNegocioPage({ params }: Props) {
-  if (!isDemoNegocio(params.negocio)) notFound();
-  redirect(`/demo/${params.negocio}/caja`);
+export default async function DemoNegocioPage({ params }: Props) {
+  const tenant = await getLoyaltyTenant(params.negocio);
+  if (!tenant) notFound();
+  redirect(`${tenant.basePath}/caja`);
 }

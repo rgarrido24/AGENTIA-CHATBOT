@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Loader2, MessageCircle, Wallet } from 'lucide-react';
 import { formatPuntos } from '@/lib/wallet-sabucan-points';
-import { getTenant, sabucanWaDigits, type TenantId } from '@/lib/wallet-tenant';
+import { sabucanWaDigits } from '@/lib/wallet-tenant';
+import { useLoyaltyTenant } from './tenant-context';
 
 export type LoyaltyClienteUi = {
   id: string;
@@ -68,11 +69,11 @@ export function WalletButton({
   tenantId,
 }: {
   cliente: LoyaltyClienteUi;
-  tenantId: TenantId;
+  tenantId: string;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const tenant = getTenant(tenantId);
+  const tenant = useLoyaltyTenant(tenantId);
   const accent = tenant?.colorAcento ?? '#F2691F';
 
   async function handleClick() {
@@ -130,11 +131,11 @@ export function SendPassWhatsAppButton({
   tenantId,
 }: {
   cliente: LoyaltyClienteUi;
-  tenantId: TenantId;
+  tenantId: string;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const tenant = getTenant(tenantId);
+  const tenant = useLoyaltyTenant(tenantId);
   const nombreNegocio = tenant?.nombre ?? 'lealtad';
 
   async function handleClick() {

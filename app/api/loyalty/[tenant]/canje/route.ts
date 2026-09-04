@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { canjearPuntos } from '@/lib/sabucan-clientes';
 import { syncWalletPuntosByObjectId } from '@/lib/wallet-sabucan';
 import { formatPuntos } from '@/lib/wallet-sabucan-points';
-import { getTenant, tenantObjectId } from '@/lib/wallet-tenant';
+import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
+import { tenantObjectId } from '@/lib/wallet-tenant';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,7 @@ type Ctx = { params: Promise<{ tenant: string }> };
 export async function POST(req: Request, ctx: Ctx) {
   try {
     const { tenant } = await ctx.params;
-    const cfg = getTenant(tenant);
+    const cfg = await getLoyaltyTenant(tenant);
     if (!cfg) return NextResponse.json({ error: 'Tenant inválido' }, { status: 404 });
 
     const body = (await req.json()) as {

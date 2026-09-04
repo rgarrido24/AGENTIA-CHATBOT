@@ -1,7 +1,8 @@
 import { ObjectId, type Collection } from 'mongodb';
 import { getMongoDb } from '@/lib/mongodb';
 import { calcularPuntosCashback, roundPuntos } from '@/lib/wallet-sabucan-points';
-import { getTenant, tenantCashbackPct, type TenantId } from '@/lib/wallet-tenant';
+import { tenantCashbackPct, type TenantId } from '@/lib/wallet-tenant';
+import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
 
 export const SABUCAN_CLIENTES_COLLECTION = 'sabucan_clientes';
 
@@ -103,15 +104,15 @@ function docToCliente(doc: SabucanClienteDoc & { _id: ObjectId }): SabucanClient
   };
 }
 
-function resolveCollectionName(tenantId?: TenantId | string): string {
+async function resolveCollectionName(tenantId?: TenantId | string): Promise<string> {
   if (!tenantId || tenantId === 'sabucan') return SABUCAN_CLIENTES_COLLECTION;
-  const t = getTenant(tenantId);
+  const t = await getLoyaltyTenant(tenantId);
   if (!t) throw new Error(`Tenant inválido: ${tenantId}`);
   return t.collection;
 }
 
 async function collection(tenantId?: TenantId | string): Promise<Collection<SabucanClienteDoc>> {
-  const name = resolveCollectionName(tenantId);
+  const name = await resolveCollectionName(tenantId);
   const db = await getMongoDb();
   const coll = db.collection<SabucanClienteDoc>(name);
   if (!indexReadyByCollection.has(name)) {
@@ -175,7 +176,7 @@ export async function listSabucanClientes(): Promise<SabucanCliente[]> {
 }
 
 export async function resetClientesCollection(tenantId: TenantId | string): Promise<number> {
-  const t = getTenant(tenantId);
+  const t = await getLoyaltyTenant(tenantId);
   if (!t?.isDemo) {
     throw new Error('Solo se pueden reiniciar colecciones de demo');
   }
@@ -211,7 +212,7 @@ export async function registrarVenta(
     throw new Error('Monto inválido');
   }
 
-  const tenantCfg = getTenant(tenantId);
+  const tenantCfg = await getLoyaltyTenant(tenantId);
   if (!tenantCfg) throw new Error(`Tenant inválido: ${tenantId}`);
   const puntosGanados = calcularPuntosCashback(monto, tenantCashbackPct(tenantCfg));
   const now = new Date().toISOString();

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type CSSProperties } from 'react';
 import { CheckCircle2, Loader2, Wallet } from 'lucide-react';
-import { getTenant, type TenantId } from '@/lib/wallet-tenant';
+import { getTenant, type TenantConfig } from '@/lib/wallet-tenant';
 import {
   formatPuntos,
   loyaltyInputClass,
@@ -10,8 +10,14 @@ import {
   type LoyaltyClienteUi,
 } from './_ui';
 
-export function AltaClienteForm({ tenantId }: { tenantId: TenantId }) {
-  const tenant = getTenant(tenantId);
+export function AltaClienteForm({
+  tenantId,
+  tenant: tenantProp,
+}: {
+  tenantId: string;
+  tenant?: TenantConfig;
+}) {
+  const tenant = tenantProp ?? getTenant(tenantId);
   const accent = tenant?.colorAcento ?? '#F2691F';
   const negocioNombre = tenant?.nombre ?? 'nuestro negocio';
   const primary = tenant?.colorPrimario ?? '#1E2340';

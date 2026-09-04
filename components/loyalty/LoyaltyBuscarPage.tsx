@@ -11,7 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { roundPuntos } from '@/lib/wallet-sabucan-points';
-import { getTenant, type TenantId } from '@/lib/wallet-tenant';
+import { useLoyaltyTenant } from './tenant-context';
 import {
   WalletButton,
   formatFecha,
@@ -22,8 +22,8 @@ import {
   type LoyaltyClienteUi,
 } from './_ui';
 
-export function LoyaltyBuscarPage({ tenantId }: { tenantId: TenantId }) {
-  const tenant = getTenant(tenantId);
+export function LoyaltyBuscarPage({ tenantId }: { tenantId: string }) {
+  const tenant = useLoyaltyTenant(tenantId);
   const accent = tenant?.colorAcento ?? '#F2691F';
   const basePath = tenant?.basePath ?? `/demo/${tenantId}`;
   const apiBase = `/api/loyalty/${tenantId}`;

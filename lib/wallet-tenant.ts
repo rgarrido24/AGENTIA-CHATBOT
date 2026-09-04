@@ -11,7 +11,7 @@ export type DemoNegocio = 'cafe' | 'barberia' | 'abarrotes';
 export type TenantId = 'sabucan' | 'carnitas_granada' | DemoNegocio;
 
 export type TenantConfig = {
-  id: TenantId;
+  id: string;
   nombre: string;
   logoUrl: string;
   colorPrimario: string;

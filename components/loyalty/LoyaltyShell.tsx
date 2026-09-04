@@ -4,15 +4,17 @@ import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 import { useState } from 'react';
 import { Search, ShoppingCart, Users } from 'lucide-react';
-import { getTenant, type TenantId } from '@/lib/wallet-tenant';
+import { getTenant, type TenantConfig } from '@/lib/wallet-tenant';
+import { LoyaltyTenantProvider } from './tenant-context';
 
 type Props = {
-  tenantId: TenantId;
+  tenantId: string;
+  tenant?: TenantConfig;
   children: ReactNode;
 };
 
-export function LoyaltyShell({ tenantId, children }: Props) {
-  const tenant = getTenant(tenantId);
+export function LoyaltyShell({ tenantId, tenant: tenantProp, children }: Props) {
+  const tenant = tenantProp ?? getTenant(tenantId);
   const [logoOk, setLogoOk] = useState(true);
 
   if (!tenant) return null;
@@ -34,6 +36,7 @@ export function LoyaltyShell({ tenantId, children }: Props) {
   } as CSSProperties;
 
   return (
+    <LoyaltyTenantProvider tenant={tenant}>
     <div
       className="min-h-screen text-white font-[family-name:var(--font-inter)]"
       style={rootStyle}
@@ -116,5 +119,6 @@ export function LoyaltyShell({ tenantId, children }: Props) {
       </header>
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">{children}</main>
     </div>
+    </LoyaltyTenantProvider>
   );
 }

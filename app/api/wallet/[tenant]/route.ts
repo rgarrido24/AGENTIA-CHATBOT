@@ -7,8 +7,8 @@ import {
   getWalletIssuerId,
   getWalletServiceAccount,
 } from '@/lib/wallet-sabucan';
+import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
 import {
-  getTenant,
   sabucanWaDigits,
   tenantClassId,
   tenantObjectId,
@@ -22,7 +22,7 @@ type Ctx = { params: Promise<{ tenant: string }> };
 export async function POST(req: Request, ctx: Ctx) {
   try {
     const { tenant } = await ctx.params;
-    const cfg = getTenant(tenant);
+    const cfg = await getLoyaltyTenant(tenant);
     if (!cfg) {
       return Response.json({ error: 'Tenant inválido' }, { status: 404 });
     }

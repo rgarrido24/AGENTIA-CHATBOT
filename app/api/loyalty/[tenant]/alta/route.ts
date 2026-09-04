@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { altaCliente } from '@/lib/sabucan-clientes';
-import { getTenant } from '@/lib/wallet-tenant';
+import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +9,7 @@ type Ctx = { params: Promise<{ tenant: string }> };
 export async function POST(req: Request, ctx: Ctx) {
   try {
     const { tenant } = await ctx.params;
-    if (!getTenant(tenant)) {
+    if (!(await getLoyaltyTenant(tenant))) {
       return NextResponse.json({ error: 'Tenant inválido' }, { status: 404 });
     }
 

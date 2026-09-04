@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { resetClientesCollection } from '@/lib/sabucan-clientes';
-import { getTenant } from '@/lib/wallet-tenant';
+import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +10,7 @@ type Ctx = { params: Promise<{ tenant: string }> };
 export async function POST(_req: Request, ctx: Ctx) {
   try {
     const { tenant } = await ctx.params;
-    const cfg = getTenant(tenant);
+    const cfg = await getLoyaltyTenant(tenant);
     if (!cfg) return NextResponse.json({ error: 'Tenant inválido' }, { status: 404 });
     if (!cfg.isDemo) {
       return NextResponse.json({ error: 'Solo demos se pueden reiniciar' }, { status: 403 });

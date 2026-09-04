@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { Download } from 'lucide-react';
-import type { TenantId } from '@/lib/wallet-tenant';
 
-export function DownloadAltaQrButton({ tenantId }: { tenantId: TenantId }) {
+export function DownloadAltaQrButton({ tenantId }: { tenantId: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

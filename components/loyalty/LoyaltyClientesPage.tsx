@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, MessageCircle, RefreshCw, RotateCcw, Users } from 'lucide-react';
-import { getTenant, sabucanWaDigits, type TenantId } from '@/lib/wallet-tenant';
+import { sabucanWaDigits } from '@/lib/wallet-tenant';
+import { useLoyaltyTenant } from './tenant-context';
 import { RecuperacionAsistida } from '@/components/RecuperacionAsistida';
 import { formatFechaCorta, formatPuntos, type LoyaltyClienteUi } from './_ui';
 import { DownloadAltaQrButton } from './DownloadAltaQrButton';
@@ -52,8 +53,8 @@ function waUrl(
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 
-export function LoyaltyClientesPage({ tenantId }: { tenantId: TenantId }) {
-  const tenant = getTenant(tenantId);
+export function LoyaltyClientesPage({ tenantId }: { tenantId: string }) {
+  const tenant = useLoyaltyTenant(tenantId);
   const accent = tenant?.colorAcento ?? '#F2691F';
   const negocioNombre = tenant?.nombre ?? 'nuestro negocio';
   const isDemo = tenant?.isDemo ?? false;

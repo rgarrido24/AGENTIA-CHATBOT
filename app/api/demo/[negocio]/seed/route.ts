@@ -16,7 +16,8 @@ import { DEMO_AUTH_COOKIE, expectedDemoAuthToken } from '@/lib/demo-auth';
 import { getMongoDb } from '@/lib/mongodb';
 import { normalizeSabucanTelefono, parseFechaNacimiento } from '@/lib/sabucan-clientes';
 import { roundPuntos } from '@/lib/wallet-sabucan-points';
-import { getTenant, isDemoNegocio, tenantCashbackPct } from '@/lib/wallet-tenant';
+import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
+import { tenantCashbackPct } from '@/lib/wallet-tenant';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,11 +58,10 @@ export async function POST(request: NextRequest, ctx: Ctx) {
   if (denied) return denied;
 
   const { negocio } = await ctx.params;
-  if (!isDemoNegocio(negocio)) {
+  const tenant = await getLoyaltyTenant(negocio);
+  if (!tenant?.isDemo) {
     return NextResponse.json({ error: 'Demo inválida' }, { status: 404 });
   }
-  const tenant = getTenant(negocio);
-  if (!tenant) return NextResponse.json({ error: 'Demo inválida' }, { status: 404 });
 
   try {
     const body = (await request.json().catch(() => null)) as
@@ -149,8 +149,8 @@ export async function DELETE(_request: NextRequest, ctx: Ctx) {
   if (denied) return denied;
 
   const { negocio } = await ctx.params;
-  const tenant = isDemoNegocio(negocio) ? getTenant(negocio) : null;
-  if (!tenant) return NextResponse.json({ error: 'Demo inválida' }, { status: 404 });
+  const tenant = await getLoyaltyTenant(negocio);
+  if (!tenant?.isDemo) return NextResponse.json({ error: 'Demo inválida' }, { status: 404 });
 
   const db = await getMongoDb();
   const res = await db.collection(tenant.collection).deleteMany({ [SEED_FLAG]: true });

@@ -16,7 +16,8 @@ import {
   formatPuntos,
   roundPuntos,
 } from '@/lib/wallet-sabucan-points';
-import { getTenant, tenantCashbackPct, type TenantId } from '@/lib/wallet-tenant';
+import { tenantCashbackPct } from '@/lib/wallet-tenant';
+import { useLoyaltyTenant } from './tenant-context';
 import {
   SendPassWhatsAppButton,
   formatMxn,
@@ -37,8 +38,8 @@ type LookupState =
 
 type UsePointsChoice = 'unset' | 'yes' | 'no';
 
-export function LoyaltyCajaPage({ tenantId }: { tenantId: TenantId }) {
-  const tenant = getTenant(tenantId);
+export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
+  const tenant = useLoyaltyTenant(tenantId);
   const accent = tenant?.colorAcento ?? '#F2691F';
   const primary = tenant?.colorPrimario ?? '#1E2340';
   const apiBase = `/api/loyalty/${tenantId}`;
