@@ -9,7 +9,7 @@
  *   node scripts/tenant-admin.js add
  *   node scripts/tenant-admin.js activar <key>
  *   node scripts/tenant-admin.js suspender <key>
- *   node scripts/tenant-admin.js migrate   # siembra sabucan + carnitas + 3 demos
+ *   node scripts/tenant-admin.js recompensa <key> sellos 10
  *
  * Requiere MONGODB_URI (Render Shell o .env.local).
  */
@@ -404,6 +404,38 @@ async function cmdMigrate(col) {
   }
 }
 
+async function cmdRecompensa(col, key, modelo, paramRaw) {
+  if (!MODELOS.includes(modelo)) {
+    console.error(`Modelo inválido. Usa: ${MODELOS.join(', ')}`);
+    process.exit(1);
+  }
+  const parametro = Number(paramRaw);
+  if (!Number.isFinite(parametro) || parametro <= 0) {
+    console.error('El parámetro debe ser un número > 0 (sellos para el premio, % cashback, o puntos por $100).');
+    process.exit(1);
+  }
+  const now = new Date();
+  const res = await col.updateOne(
+    { key },
+    {
+      $set: {
+        recompensa: { modelo, parametro },
+        rewardMeta: modelo === 'sellos' ? parametro : 10,
+        updatedAt: now,
+      },
+    },
+  );
+  if (res.matchedCount === 0) {
+    console.error(`No existe el tenant "${key}".`);
+    process.exit(1);
+  }
+  const doc = await col.findOne({ key });
+  console.log(
+    `${doc.nombre} (${key}) → ${fmtRecompensa(doc.recompensa)}`,
+  );
+  console.log(`Para actualizar el texto del pase: node scripts/update-demo-logos.js ${key}`);
+}
+
 function usage() {
   console.log(`Uso:
   node scripts/tenant-admin.js list
@@ -411,11 +443,12 @@ function usage() {
   node scripts/tenant-admin.js add
   node scripts/tenant-admin.js activar <key>
   node scripts/tenant-admin.js suspender <key>
+  node scripts/tenant-admin.js recompensa <key> <sellos|puntos|cashback> <parametro>
   node scripts/tenant-admin.js migrate`);
 }
 
 async function main() {
-  const [cmd, arg] = process.argv.slice(2);
+  const [cmd, arg, arg2, arg3] = process.argv.slice(2);
   if (!cmd) {
     usage();
     process.exit(1);
@@ -456,6 +489,13 @@ async function main() {
         await cmdMigrate(col);
         console.log('');
         await cmdList(col);
+        break;
+      case 'recompensa':
+        if (!arg || !arg2 || !arg3) {
+          console.error('Uso: node scripts/tenant-admin.js recompensa <key> <sellos|puntos|cashback> <parametro>');
+          process.exit(1);
+        }
+        await cmdRecompensa(col, arg, arg2, arg3);
         break;
       default:
         usage();

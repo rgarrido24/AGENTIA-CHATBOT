@@ -3,7 +3,7 @@ import { registrarVenta } from '@/lib/sabucan-clientes';
 import { syncWalletPuntosByObjectId } from '@/lib/wallet-sabucan';
 import { formatPuntos } from '@/lib/wallet-sabucan-points';
 import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
-import { tenantObjectId } from '@/lib/wallet-tenant';
+import { tenantObjectId, tenantRecompensa } from '@/lib/wallet-tenant';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,12 +37,18 @@ export async function POST(req: Request, ctx: Ctx) {
       cfg,
     );
 
+    const rec = tenantRecompensa(cfg);
+    const mensaje =
+      rec.modelo === 'sellos'
+        ? `Visita registrada — +${Math.round(result.puntosGanados)} sello, total: ${Math.round(result.cliente.puntos)} sellos`
+        : `Venta registrada — ${formatPuntos(result.puntosGanados)} puntos agregados, saldo total: ${formatPuntos(result.cliente.puntos)} puntos`;
+
     return NextResponse.json({
       ok: true,
       puntosGanados: result.puntosGanados,
       esNuevo: result.esNuevo,
       cliente: result.cliente,
-      mensaje: `Venta registrada — ${formatPuntos(result.puntosGanados)} puntos agregados, saldo total: ${formatPuntos(result.cliente.puntos)} puntos`,
+      mensaje,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Error al registrar venta';

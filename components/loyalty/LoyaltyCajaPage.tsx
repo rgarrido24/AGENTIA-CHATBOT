@@ -16,7 +16,7 @@ import {
   formatPuntos,
   roundPuntos,
 } from '@/lib/wallet-sabucan-points';
-import { tenantCashbackPct } from '@/lib/wallet-tenant';
+import { tenantCashbackPct, tenantRecompensa } from '@/lib/wallet-tenant';
 import { useLoyaltyTenant } from './tenant-context';
 import {
   SendPassWhatsAppButton,
@@ -43,7 +43,10 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
   const accent = tenant?.colorAcento ?? '#F2691F';
   const primary = tenant?.colorPrimario ?? '#1E2340';
   const apiBase = `/api/loyalty/${tenantId}`;
+  const rec = tenant ? tenantRecompensa(tenant) : { modelo: 'cashback' as const, parametro: 1 };
+  const isSellos = rec.modelo === 'sellos';
   const cashbackPct = tenant ? tenantCashbackPct(tenant) : 1;
+  const sellosMeta = rec.parametro;
 
   const [telefono, setTelefono] = useState('');
   const [lookup, setLookup] = useState<LookupState>({ status: 'idle' });
@@ -97,12 +100,15 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
     lookup.status !== 'new' ||
     (nombreNuevo.trim().length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(fechaNacimiento));
 
-  const ventaLista =
-    altaValida &&
-    Number.isFinite(ticketNum) &&
-    ticketNum > 0 &&
-    (usePoints !== 'yes' || puntosUsarValidos) &&
-    (montoVenta > 0 || (usePoints === 'yes' && puntosUsarNum > 0));
+  const ventaLista = isSellos
+    ? altaValida &&
+      (usePoints !== 'yes' ||
+        (lookup.status === 'found' && saldoDisponible >= sellosMeta))
+    : altaValida &&
+      Number.isFinite(ticketNum) &&
+      ticketNum > 0 &&
+      (usePoints !== 'yes' || puntosUsarValidos) &&
+      (montoVenta > 0 || (usePoints === 'yes' && puntosUsarNum > 0));
 
   async function buscarCliente() {
     setFormError(null);
@@ -122,7 +128,10 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
       if (!res.ok) throw new Error(json.error ?? 'Error al buscar');
       if (json.found && json.cliente) {
         setLookup({ status: 'found', cliente: json.cliente });
-        if (roundPuntos(json.cliente.puntos ?? 0) > 0) {
+        if (isSellos) {
+          setUsePoints('no');
+          setPhase('sale');
+        } else if (roundPuntos(json.cliente.puntos ?? 0) > 0) {
           setPhase('use_points');
         } else {
           setUsePoints('no');
@@ -155,11 +164,13 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
       let clienteFinal: LoyaltyClienteUi | null = null;
 
       const quiereCanje =
-        lookup.status === 'found' && usePoints === 'yes' && puntosUsarNum > 0;
-      const hayVenta = montoVenta > 0;
+        lookup.status === 'found' &&
+        usePoints === 'yes' &&
+        (isSellos ? saldoDisponible >= sellosMeta : puntosUsarNum > 0);
+      const hayVenta = isSellos ? usePoints !== 'yes' : montoVenta > 0;
 
       if (!quiereCanje && !hayVenta) {
-        throw new Error('Ingresa un monto de venta válido');
+        throw new Error(isSellos ? 'No hay visita que registrar' : 'Ingresa un monto de venta válido');
       }
 
       if (quiereCanje) {
@@ -168,7 +179,7 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             telefono: tel,
-            puntos: puntosUsarNum,
+            puntos: isSellos ? sellosMeta : puntosUsarNum,
             skipWalletSync: hayVenta,
           }),
         });
@@ -191,7 +202,7 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
           monto: number;
           nombreCompleto?: string;
           fechaNacimiento?: string;
-        } = { telefono: tel, monto: montoVenta };
+        } = { telefono: tel, monto: isSellos ? 0 : montoVenta };
         if (lookup.status === 'new') {
           body.nombreCompleto = nombreNuevo.trim();
           body.fechaNacimiento = fechaNacimiento;
@@ -218,14 +229,24 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
 
       const partes: string[] = [];
       if (puntosUsados > 0) {
-        partes.push(`Usó ${formatPuntos(puntosUsados)} puntos (−${formatMxn(puntosUsados)})`);
+        partes.push(
+          isSellos
+            ? `Canjeó ${Math.round(puntosUsados)} sellos por una recompensa`
+            : `Usó ${formatPuntos(puntosUsados)} puntos (−${formatMxn(puntosUsados)})`,
+        );
       }
       if (hayVenta) {
         partes.push(
-          `Ganó ${formatPuntos(puntosGanados)} pts por ${formatMxn(montoVenta)} cobrados`,
+          isSellos
+            ? `Sumó ${Math.round(puntosGanados)} sello`
+            : `Ganó ${formatPuntos(puntosGanados)} pts por ${formatMxn(montoVenta)} cobrados`,
         );
       }
-      partes.push(`Saldo: ${formatPuntos(clienteFinal.puntos)} pts`);
+      partes.push(
+        isSellos
+          ? `Total: ${Math.round(clienteFinal.puntos)} / ${sellosMeta} sellos`
+          : `Saldo: ${formatPuntos(clienteFinal.puntos)} pts`,
+      );
 
       setResultado({
         mensaje: partes.join(' · '),
@@ -275,13 +296,15 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
           Flujo de caja
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-space)] text-3xl font-bold tracking-tight">
-          Registrar venta
+          Registrar {isSellos ? 'visita' : 'venta'}
         </h1>
         <p className="mt-2 text-sm text-white/50">
-          {cashbackPct === 1
-            ? `1 punto por cada $${POINTS_RATE} MXN`
-            : `${cashbackPct}% de cashback en puntos (1 punto = $1 MXN)`}{' '}
-          · canje integrado en la misma venta
+          {isSellos
+            ? `1 sello por visita · junta ${sellosMeta} y el siguiente es gratis`
+            : cashbackPct === 1
+              ? `1 punto por cada $${POINTS_RATE} MXN`
+              : `${cashbackPct}% de cashback en puntos (1 punto = $1 MXN)`}{' '}
+          {isSellos ? '' : '· canje integrado en la misma venta'}
         </p>
       </div>
 
@@ -298,7 +321,7 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
               <CheckCircle2 className="mt-0.5 h-7 w-7 shrink-0" style={{ color: accent }} />
               <div className="min-w-0 flex-1">
                 <p className="font-[family-name:var(--font-space)] text-lg font-bold text-white">
-                  Venta registrada
+                  {isSellos ? 'Listo' : 'Venta registrada'}
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-white/75">{resultado.mensaje}</p>
                 <dl className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -311,7 +334,7 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
                   {resultado.puntosUsados > 0 ? (
                     <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
                       <dt className="text-[10px] uppercase tracking-wider text-white/40">
-                        Puntos usados
+                        {isSellos ? 'Sellos usados' : 'Puntos usados'}
                       </dt>
                       <dd className="mt-1 font-[family-name:var(--font-space)] text-xl font-bold text-red-300">
                         −{formatPuntos(resultado.puntosUsados)}
@@ -320,7 +343,7 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
                   ) : null}
                   <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
                     <dt className="text-[10px] uppercase tracking-wider text-white/40">
-                      Puntos ganados
+                      {isSellos ? 'Sellos ganados' : 'Puntos ganados'}
                     </dt>
                     <dd
                       className="mt-1 font-[family-name:var(--font-space)] text-xl font-bold"
@@ -331,10 +354,12 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
                     <dt className="text-[10px] uppercase tracking-wider text-white/40">
-                      Saldo total
+                      {isSellos ? 'Sellos' : 'Saldo total'}
                     </dt>
                     <dd className="mt-1 font-[family-name:var(--font-space)] text-xl font-bold text-white">
-                      {formatPuntos(resultado.cliente.puntos)}
+                      {isSellos
+                        ? `${Math.round(resultado.cliente.puntos)} / ${sellosMeta}`
+                        : formatPuntos(resultado.cliente.puntos)}
                     </dd>
                   </div>
                 </dl>
@@ -350,7 +375,7 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-5 py-3 text-sm font-medium text-white/80 transition-colors hover:border-white/30 hover:text-white"
           >
             <RotateCcw className="h-4 w-4" />
-            Nueva venta
+            Nueva {isSellos ? 'visita' : 'venta'}
           </button>
         </div>
       ) : (
@@ -423,7 +448,9 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
               <p className="mt-3 text-xl font-semibold">
                 {clienteFound.nombreCompleto || clienteFound.nombre} —{' '}
                 <span style={{ color: accent }}>
-                  {formatPuntos(clienteFound.puntos)} puntos disponibles
+                  {isSellos
+                    ? `${Math.round(clienteFound.puntos)} / ${sellosMeta} sellos`
+                    : `${formatPuntos(clienteFound.puntos)} puntos disponibles`}
                 </span>
               </p>
               <p className="mt-1 text-sm text-white/50">{clienteFound.telefono}</p>
@@ -479,7 +506,7 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
             </div>
           ) : null}
 
-          {phase === 'use_points' && clienteFound ? (
+          {phase === 'use_points' && clienteFound && !isSellos ? (
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
               <p className="font-[family-name:var(--font-space)] text-base font-semibold">
                 ¿Desea usar sus puntos en esta compra?
@@ -515,7 +542,7 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
             </div>
           ) : null}
 
-          {phase === 'points_amount' && clienteFound ? (
+          {phase === 'points_amount' && clienteFound && !isSellos ? (
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
               <label className={loyaltyLabelClass()} htmlFor="pts-usar">
                 ¿Cuántos puntos desea usar? (máx. {formatPuntos(saldoDisponible)})
@@ -567,7 +594,82 @@ export function LoyaltyCajaPage({ tenantId }: { tenantId: string }) {
             </div>
           ) : null}
 
-          {phase === 'sale' ? (
+          {phase === 'sale' && isSellos ? (
+            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7">
+              {lookup.status === 'found' && saldoDisponible >= sellosMeta ? (
+                <div className="mb-6">
+                  <p className="font-[family-name:var(--font-space)] text-base font-semibold">
+                    ¿Canjear recompensa? (usa {sellosMeta} sellos)
+                  </p>
+                  <p className="mt-1 text-sm text-white/50">
+                    Tiene {Math.round(saldoDisponible)} sellos. El canje no suma sello extra.
+                  </p>
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => setUsePoints('yes')}
+                      className="inline-flex flex-1 items-center justify-center rounded-xl px-5 py-3.5 text-sm font-bold text-white hover:opacity-90"
+                      style={{
+                        backgroundColor: usePoints === 'yes' ? accent : 'transparent',
+                        border:
+                          usePoints === 'yes' ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                        color: usePoints === 'yes' ? '#fff' : 'rgba(255,255,255,0.8)',
+                      }}
+                    >
+                      Sí, canjear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUsePoints('no')}
+                      className="inline-flex flex-1 items-center justify-center rounded-xl border border-white/15 px-5 py-3.5 text-sm font-medium text-white/80 hover:border-white/30 hover:text-white"
+                      style={{
+                        backgroundColor: usePoints === 'no' ? `${accent}33` : 'transparent',
+                      }}
+                    >
+                      No, sumar 1 sello
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="mb-4 text-sm text-white/60">
+                  Esta visita suma <strong style={{ color: accent }}>+1 sello</strong>
+                  {lookup.status === 'found'
+                    ? ` · quedaría en ${Math.round(saldoDisponible) + 1} / ${sellosMeta}`
+                    : ` · arranca en 1 / ${sellosMeta}`}
+                  .
+                </p>
+              )}
+
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => {
+                    volverALookup();
+                    setFormError(null);
+                  }}
+                  className="inline-flex flex-1 items-center justify-center rounded-xl border border-white/15 px-5 py-3.5 text-sm font-medium text-white/70 hover:border-white/30 hover:text-white"
+                >
+                  Volver
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void confirmarVentaYCanje()}
+                  disabled={saving || !ventaLista}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-5 py-3.5 text-sm font-bold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  style={{ backgroundColor: accent }}
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Receipt className="h-4 w-4" />
+                  )}
+                  {usePoints === 'yes' ? 'Canjear recompensa' : 'Sumar 1 sello'}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {phase === 'sale' && !isSellos ? (
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7">
               <label className={loyaltyLabelClass()} htmlFor="monto">
                 {usePoints === 'yes'

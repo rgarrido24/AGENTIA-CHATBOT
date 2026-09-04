@@ -122,8 +122,12 @@ function cfgFromMongoDoc(doc) {
   if (!key) return null;
   const isDemo = doc.isDemo === true || doc.plan === 'demo';
   const rec = doc.recompensa || {};
-  const cashbackPct =
-    rec.modelo === 'cashback' && Number(rec.parametro) > 0 ? Number(rec.parametro) : 1;
+  const modelo = rec.modelo === 'sellos' || rec.modelo === 'puntos' || rec.modelo === 'cashback'
+    ? rec.modelo
+    : 'cashback';
+  const parametro =
+    Number(rec.parametro) > 0 ? Number(rec.parametro) : modelo === 'sellos' ? 10 : 1;
+  const cashbackPct = modelo === 'cashback' ? parametro : 1;
   const color = String(doc.colorPrimario || '#1E2340');
   return {
     nombre: String(doc.nombre || key),
@@ -131,6 +135,8 @@ function cfgFromMongoDoc(doc) {
     color,
     logoUrl: String(doc.logoUrl || '').trim(),
     cashbackPct,
+    modelo,
+    parametro,
     programName: 'Lealtad',
   };
 }
@@ -192,6 +198,32 @@ function imagen(uri, description) {
   };
 }
 
+function comoAcumular(cfg) {
+  if (cfg.modelo === 'sellos') {
+    const n = Number(cfg.parametro) > 0 ? Number(cfg.parametro) : 10;
+    return `1 sello por cada visita. Junta ${n} y el siguiente es gratis · ${cfg.nombre}`;
+  }
+  const pct = Number(cfg.cashbackPct) > 0 ? Number(cfg.cashbackPct) : 1;
+  if (pct === 1) {
+    return `1 punto por cada $100 MXN de compra (1 punto = $1 MXN) · ${cfg.nombre}`;
+  }
+  return `${pct}% de cashback en puntos (1 punto = $1 MXN) · ${cfg.nombre}`;
+}
+
+function comoUsarlo(cfg) {
+  if (cfg.modelo === 'sellos') {
+    return 'Muestra este código en la caja. Cada visita suma 1 sello.';
+  }
+  return 'Muestra este código en la caja. Puedes usar tu saldo como pago en cualquier visita.';
+}
+
+function textModules(cfg) {
+  return [
+    { header: 'Cómo acumular', body: comoAcumular(cfg) },
+    { header: 'Cómo usarlo', body: comoUsarlo(cfg) },
+  ];
+}
+
 function classIdOf(cfg) {
   return `${ISSUER_ID}.${cfg.classSuffix}`;
 }
@@ -214,7 +246,6 @@ function heroAndWide(cfg, sinHero) {
 
 async function createClass(token, cfg) {
   const classId = classIdOf(cfg);
-  const pct = Number(cfg.cashbackPct) > 0 ? Number(cfg.cashbackPct) : 1;
   const { heroUrl, wideUrl } = heroAndWide(cfg, false);
   const body = {
     id: classId,
@@ -223,15 +254,7 @@ async function createClass(token, cfg) {
     programLogo: imagen(cfg.logoUrl, `Logo ${cfg.nombre}`),
     hexBackgroundColor: cfg.color,
     reviewStatus: 'UNDER_REVIEW',
-    textModulesData: [
-      {
-        header: 'Cómo acumular',
-        body:
-          pct === 1
-            ? `1 punto por cada $100 MXN de compra (1 punto = $1 MXN) · ${cfg.nombre}`
-            : `${pct}% de cashback en puntos (1 punto = $1 MXN) · ${cfg.nombre}`,
-      },
-    ],
+    textModulesData: textModules(cfg),
   };
   if (heroUrl) body.heroImage = imagen(heroUrl, `${cfg.nombre} — bienvenida`);
   if (wideUrl) body.wideProgramLogo = imagen(wideUrl, `Logo ${cfg.nombre}`);
@@ -266,6 +289,7 @@ async function patchLogo(token, cfg, sinHero) {
     id: classId,
     reviewStatus: 'UNDER_REVIEW',
     programLogo: imagen(cfg.logoUrl, `Logo ${cfg.nombre}`),
+    textModulesData: textModules(cfg),
   };
   if (heroUrl) body.heroImage = imagen(heroUrl, `${cfg.nombre} — bienvenida`);
   if (wideUrl) body.wideProgramLogo = imagen(wideUrl, `Logo ${cfg.nombre}`);
@@ -285,6 +309,7 @@ async function patchLogo(token, cfg, sinHero) {
       ...clase,
       reviewStatus: 'UNDER_REVIEW',
       programLogo: imagen(cfg.logoUrl, `Logo ${cfg.nombre}`),
+      textModulesData: textModules(cfg),
       ...(cfg.programName ? { programName: cfg.programName } : {}),
     };
     if (heroUrl) body.heroImage = imagen(heroUrl, `${cfg.nombre} — bienvenida`);
@@ -342,6 +367,7 @@ async function processKey(token, cfg, sinHero) {
   console.log(`\n========== ${cfg.key.toUpperCase()} ==========`);
   console.log('classId:', classId);
   console.log('nombre :', cfg.nombre);
+  console.log('modelo :', cfg.modelo || 'cashback', cfg.parametro ?? cfg.cashbackPct);
   console.log('logoUrl:', cfg.logoUrl);
 
   if (!cfg.logoUrl) {

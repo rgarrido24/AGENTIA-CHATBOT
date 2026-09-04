@@ -26,6 +26,8 @@ export type TenantConfig = {
   isDemo: boolean;
   /** % de cashback en puntos (1 punto = $1 MXN). 1 = 1 pt por cada $100. */
   cashbackPct: number;
+  /** Modelo de recompensa. Si falta, se asume cashback con cashbackPct. */
+  recompensa?: { modelo: 'sellos' | 'puntos' | 'cashback'; parametro: number };
   /** Logo horizontal para la vista de lista de Wallet. */
   wideLogoUrl?: string;
   /** Logo cuadrado aplanado para programLogo de Google Wallet. */
@@ -353,9 +355,46 @@ export function tenantCashbackPct(tenant: TenantConfig): number {
     : 1;
 }
 
+export function tenantRecompensa(tenant: TenantConfig): {
+  modelo: 'sellos' | 'puntos' | 'cashback';
+  parametro: number;
+} {
+  const modelo = tenant.recompensa?.modelo;
+  const raw = Number(tenant.recompensa?.parametro);
+  if (modelo === 'sellos') {
+    return { modelo: 'sellos', parametro: raw > 0 ? raw : 10 };
+  }
+  if (modelo === 'puntos') {
+    return { modelo: 'puntos', parametro: raw > 0 ? raw : 1 };
+  }
+  if (modelo === 'cashback') {
+    return {
+      modelo: 'cashback',
+      parametro: raw > 0 ? raw : tenantCashbackPct(tenant),
+    };
+  }
+  return { modelo: 'cashback', parametro: tenantCashbackPct(tenant) };
+}
+
 export function tenantRewardMeta(tenant: TenantConfig): number {
+  const rec = tenantRecompensa(tenant);
+  if (rec.modelo === 'sellos') return rec.parametro;
   const meta = Number(tenant.rewardMeta);
   return Number.isFinite(meta) && meta > 0 ? meta : 10;
+}
+
+export function comoAcumularCopy(tenant: TenantConfig): string {
+  const rec = tenantRecompensa(tenant);
+  if (rec.modelo === 'sellos') {
+    return `1 sello por cada visita. Junta ${rec.parametro} y el siguiente es gratis · ${tenant.nombre}`;
+  }
+  if (rec.modelo === 'puntos') {
+    return `${rec.parametro} punto${rec.parametro === 1 ? '' : 's'} por cada $100 MXN · ${tenant.nombre}`;
+  }
+  if (rec.parametro === 1) {
+    return `1 punto por cada $100 MXN · ${tenant.nombre}`;
+  }
+  return `${rec.parametro}% de cashback en puntos (1 punto = $1 MXN) · ${tenant.nombre}`;
 }
 
 export function isDemoNegocio(raw: string): raw is DemoNegocio {

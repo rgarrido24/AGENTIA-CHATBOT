@@ -1,7 +1,7 @@
 import { ObjectId, type Collection } from 'mongodb';
 import { getMongoDb } from '@/lib/mongodb';
 import { calcularPuntosCashback, roundPuntos } from '@/lib/wallet-sabucan-points';
-import { tenantCashbackPct, type TenantId } from '@/lib/wallet-tenant';
+import { tenantCashbackPct, tenantRecompensa, type TenantId } from '@/lib/wallet-tenant';
 import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
 
 export const SABUCAN_CLIENTES_COLLECTION = 'sabucan_clientes';
@@ -207,14 +207,22 @@ export async function registrarVenta(
   if (telefono.length < 10) {
     throw new Error('Teléfono inválido (mínimo 10 dígitos)');
   }
-  const monto = Number(input.monto);
-  if (!Number.isFinite(monto) || monto <= 0) {
-    throw new Error('Monto inválido');
-  }
-
   const tenantCfg = await getLoyaltyTenant(tenantId);
   if (!tenantCfg) throw new Error(`Tenant inválido: ${tenantId}`);
-  const puntosGanados = calcularPuntosCashback(monto, tenantCashbackPct(tenantCfg));
+
+  const rec = tenantRecompensa(tenantCfg);
+  const esSellos = rec.modelo === 'sellos';
+  let monto = Number(input.monto);
+  let puntosGanados: number;
+  if (esSellos) {
+    if (!Number.isFinite(monto) || monto < 0) monto = 0;
+    puntosGanados = 1;
+  } else {
+    if (!Number.isFinite(monto) || monto <= 0) {
+      throw new Error('Monto inválido');
+    }
+    puntosGanados = calcularPuntosCashback(monto, tenantCashbackPct(tenantCfg));
+  }
   const now = new Date().toISOString();
   const compra: SabucanCompra = { fecha: now, monto, puntosGanados, tipo: 'compra' };
   const coll = await collection(tenantId);

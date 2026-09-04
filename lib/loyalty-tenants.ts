@@ -34,10 +34,13 @@ export function loyaltyDocToConfig(doc: Record<string, unknown>): TenantConfig {
   const isDemo = doc.isDemo === true || doc.plan === 'demo';
   const hyphen = key.replace(/_/g, '-');
   const rec = (doc.recompensa ?? {}) as Recompensa;
-  let cashbackPct = 1;
-  if (rec.modelo === 'cashback' && Number(rec.parametro) > 0) {
-    cashbackPct = Number(rec.parametro);
-  }
+  const modelo =
+    rec.modelo === 'sellos' || rec.modelo === 'puntos' || rec.modelo === 'cashback'
+      ? rec.modelo
+      : 'cashback';
+  const parametro =
+    Number(rec.parametro) > 0 ? Number(rec.parametro) : modelo === 'sellos' ? 10 : 1;
+  const cashbackPct = modelo === 'cashback' ? parametro : 1;
 
   const ubicacionRaw = doc.ubicacion as { lat?: number; lng?: number } | undefined;
   const lat = Number(ubicacionRaw?.lat);
@@ -60,12 +63,18 @@ export function loyaltyDocToConfig(doc: Record<string, unknown>): TenantConfig {
     basePath: String(doc.basePath || (isDemo ? `/demo/${key}` : `/${hyphen}`)),
     isDemo,
     cashbackPct,
+    recompensa: { modelo, parametro },
     waNumber: doc.whatsapp ? String(doc.whatsapp) : undefined,
     mapsUrl: doc.mapsUrl ? String(doc.mapsUrl) : undefined,
     direccion: doc.direccion ? String(doc.direccion) : undefined,
     horario: doc.horario ? String(doc.horario) : undefined,
     ubicacion: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : undefined,
-    rewardMeta: Number(doc.rewardMeta) > 0 ? Number(doc.rewardMeta) : 10,
+    rewardMeta:
+      modelo === 'sellos'
+        ? parametro
+        : Number(doc.rewardMeta) > 0
+          ? Number(doc.rewardMeta)
+          : 10,
   };
 }
 

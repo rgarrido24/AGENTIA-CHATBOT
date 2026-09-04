@@ -12,6 +12,7 @@ import {
   sabucanWaDigits,
   tenantClassId,
   tenantObjectId,
+  tenantRecompensa,
 } from '@/lib/wallet-tenant';
 import { buildLoyaltyObjectTextModules } from '@/lib/wallet-pass-modules';
 
@@ -58,6 +59,8 @@ export async function POST(req: Request, ctx: Ctx) {
     const objectId = tenantObjectId(cfg, clienteId);
     const classId = tenantClassId(cfg);
 
+    const rec = tenantRecompensa(cfg);
+    const esSellos = rec.modelo === 'sellos';
     const saldo = Math.max(0, puntosActuales);
     const textModulesData = buildLoyaltyObjectTextModules(cfg, saldo);
 
@@ -88,15 +91,21 @@ export async function POST(req: Request, ctx: Ctx) {
         alternateText: telefono,
       },
       loyaltyPoints: {
-        label: 'Puntos',
-        balance: { string: formatPuntos(saldo) },
-      },
-      secondaryLoyaltyPoints: {
-        label: 'Saldo a favor',
+        label: esSellos ? 'Sellos' : 'Puntos',
         balance: {
-          money: { currencyCode: 'MXN', micros: Math.round(saldo * 1_000_000) },
+          string: esSellos ? String(Math.round(saldo)) : formatPuntos(saldo),
         },
       },
+      ...(esSellos
+        ? {}
+        : {
+            secondaryLoyaltyPoints: {
+              label: 'Saldo a favor',
+              balance: {
+                money: { currencyCode: 'MXN', micros: Math.round(saldo * 1_000_000) },
+              },
+            },
+          }),
       textModulesData,
       ...(links.length > 0 ? { linksModuleData: { uris: links } } : {}),
       // Sin heroImage a nivel objeto: el objeto pisa a la clase y los pases ya

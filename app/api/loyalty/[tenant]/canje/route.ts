@@ -3,7 +3,7 @@ import { canjearPuntos } from '@/lib/sabucan-clientes';
 import { syncWalletPuntosByObjectId } from '@/lib/wallet-sabucan';
 import { formatPuntos } from '@/lib/wallet-sabucan-points';
 import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
-import { tenantObjectId } from '@/lib/wallet-tenant';
+import { tenantObjectId, tenantRecompensa } from '@/lib/wallet-tenant';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,12 +35,18 @@ export async function POST(req: Request, ctx: Ctx) {
       );
     }
 
+    const rec = tenantRecompensa(cfg);
+    const mensaje =
+      rec.modelo === 'sellos'
+        ? `Canjeados ${Math.round(result.puntosCanjeados)} sellos. Quedan ${Math.round(result.cliente.puntos)}`
+        : `Canjeados ${formatPuntos(result.puntosCanjeados)} puntos = $${formatPuntos(result.descuentoMxn)} MXN. Saldo: ${formatPuntos(result.cliente.puntos)}`;
+
     return NextResponse.json({
       ok: true,
       puntosCanjeados: result.puntosCanjeados,
-      descuentoMxn: result.descuentoMxn,
+      descuentoMxn: rec.modelo === 'sellos' ? 0 : result.descuentoMxn,
       cliente: result.cliente,
-      mensaje: `Canjeados ${formatPuntos(result.puntosCanjeados)} puntos = $${formatPuntos(result.descuentoMxn)} MXN. Saldo: ${formatPuntos(result.cliente.puntos)}`,
+      mensaje,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Error al canjear puntos';

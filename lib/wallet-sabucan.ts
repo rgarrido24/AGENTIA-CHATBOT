@@ -4,7 +4,7 @@ export {
   POINTS_RATE,
   calcularPuntos,
 } from '@/lib/wallet-sabucan-points';
-import { TENANTS, type TenantConfig } from '@/lib/wallet-tenant';
+import { TENANTS, tenantRecompensa, type TenantConfig } from '@/lib/wallet-tenant';
 import { buildLoyaltyObjectTextModules } from '@/lib/wallet-pass-modules';
 
 export const SABUCAN_WALLET_CLASS_SUFFIX = 'sabucan_lealtad';
@@ -81,11 +81,16 @@ export async function actualizarPaseWallet(
   const id = String(objectId ?? '').trim();
   if (!id) return false;
 
+  const rec = tenant ? tenantRecompensa(tenant) : null;
+  const esSellos = rec?.modelo === 'sellos';
   const balance = Math.max(0, Number(puntosNuevos) || 0);
-  const balanceStr = (Math.round(balance * 10) / 10).toFixed(1);
+  const balanceStr = esSellos
+    ? String(Math.round(balance))
+    : (Math.round(balance * 10) / 10).toFixed(1);
 
   const patch: Record<string, unknown> = {
     loyaltyPoints: {
+      label: esSellos ? 'Sellos' : 'Puntos',
       balance: { string: balanceStr },
     },
   };
