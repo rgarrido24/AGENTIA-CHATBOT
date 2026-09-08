@@ -73,7 +73,14 @@ export async function GET(
     createdAt:          (d.createdAt as Date).toISOString(),
   }));
 
-  return NextResponse.json({ leads, clientNombre: client.nombre });
+  const formularios = (client.formularios ?? [])
+    .filter((f) => f.activo && f.formId)
+    .map((f) => ({
+      formId: String(f.formId),
+      formName: String(f.formName || f.formId),
+    }));
+
+  return NextResponse.json({ leads, clientNombre: client.nombre, formularios });
 }
 
 export async function DELETE(

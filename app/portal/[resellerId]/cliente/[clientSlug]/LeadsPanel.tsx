@@ -25,6 +25,8 @@ type EstadoLegacy = 'nuevo' | 'contactado' | 'en_seguimiento';
 
 type Nota = { texto: string; autor: string; fecha: string };
 
+type FormOption = { formId: string; formName: string };
+
 type Lead = {
   id:                 string;
   nombre:             string;
@@ -956,6 +958,8 @@ export function LeadsPanel({
 
   const [leads,        setLeads]        = useState<Lead[]>([]);
   const [clientNombre, setClientNombre] = useState(clientSlug);
+  const [formularios,  setFormularios]  = useState<FormOption[]>([]);
+  const [formFilter,   setFormFilter]   = useState('');
   const [newIds,       setNewIds]       = useState<Set<string>>(new Set());
   const [loading,      setLoading]      = useState(true);
   const [totalBump,    setTotalBump]    = useState(false);
@@ -968,9 +972,10 @@ export function LeadsPanel({
     try {
       const res  = await fetch(apiBase, { cache: 'no-store' });
       if (!res.ok) { if (isFirst) setLoading(false); return; }
-      const data = await res.json() as { leads: Lead[]; clientNombre: string };
+      const data = await res.json() as { leads: Lead[]; clientNombre: string; formularios?: FormOption[] };
       const incoming = data.leads ?? [];
       setClientNombre(data.clientNombre || clientSlug);
+      setFormularios(Array.isArray(data.formularios) ? data.formularios : []);
 
       if (isFirst) {
         knownIds.current = new Set(incoming.map((l) => l.id));
@@ -1016,6 +1021,11 @@ export function LeadsPanel({
   const totalHoy    = leads.filter((l) => new Date(l.createdAt) >= today).length;
   const totalSemana = leads.filter((l) => new Date(l.createdAt) >= week).length;
   const contactados = leads.filter((l) => l.status_seguimiento !== 'en_seguimiento').length;
+
+  const showFormFilter = formularios.length > 1;
+  const visibleLeads = formFilter
+    ? leads.filter((l) => l.form_id === formFilter)
+    : leads;
 
   const selectedLead = leads.find((l) => l.id === selectedId) ?? null;
 
@@ -1148,6 +1158,41 @@ export function LeadsPanel({
             // On lg+, fixed width
           >
             <style>{`@media (min-width: 1024px) { .leads-list { width: 380px !important; min-width: 380px; } }`}</style>
+            {showFormFilter ? (
+              <div className="shrink-0 border-b px-3 py-2.5" style={{ borderColor: ui.listBorder }}>
+                <label htmlFor="form-filter" className="mb-1 block text-[10px] font-semibold uppercase tracking-wider" style={{ color: ui.kpiLabel }}>
+                  Formulario
+                </label>
+                <select
+                  id="form-filter"
+                  value={formFilter}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setFormFilter(next);
+                    setSelectedId((cur) => {
+                      if (!cur) return cur;
+                      const lead = leads.find((l) => l.id === cur);
+                      if (!lead) return null;
+                      if (next && lead.form_id !== next) return null;
+                      return cur;
+                    });
+                  }}
+                  className="w-full rounded-lg px-2.5 py-2 text-xs font-medium outline-none"
+                  style={{
+                    background: ui.selectBg,
+                    color: ui.selectColor,
+                    border: `1px solid ${ui.selectBorder}`,
+                  }}
+                >
+                  <option value="">Todos</option>
+                  {formularios.map((f) => (
+                    <option key={f.formId} value={f.formId}>
+                      {f.formName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <div
               className="flex flex-col overflow-hidden"
               style={{ width: '100%', height: '100%', background: ui.listInnerBg }}
@@ -1161,9 +1206,14 @@ export function LeadsPanel({
                   <p className="text-sm font-medium" style={{ color: ui.emptyTitle }}>Sin leads aún</p>
                   <p className="text-xs" style={{ color: ui.emptyHint }}>Aparecerán aquí automáticamente cuando lleguen.</p>
                 </div>
+              ) : visibleLeads.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                  <p className="text-sm font-medium" style={{ color: ui.emptyTitle }}>Sin leads de este formulario</p>
+                  <p className="text-xs" style={{ color: ui.emptyHint }}>Probá con “Todos” para ver el listado completo.</p>
+                </div>
               ) : (
                 <div className="flex-1 overflow-y-auto">
-                  {leads.map((lead) => (
+                  {visibleLeads.map((lead) => (
                     <LeadCard
                       key={lead.id}
                       lead={lead}
