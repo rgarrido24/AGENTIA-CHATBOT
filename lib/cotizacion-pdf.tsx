@@ -22,9 +22,8 @@ const EMISOR = {
 } as const;
 
 const DATOS_BANCARIOS_SPEI = {
-  banco: 'Mercado Pago Wallet',
-  clabe: '722969015572057526',
-  cuenta: '3562441418',
+  banco: 'Klar',
+  clabe: '661180024415772828',
   beneficiario: 'Garrido Holdings S.A.S. de C.V.',
   rfc: 'GHO2606309U4',
 } as const;
@@ -384,7 +383,7 @@ export function CotizacionPdfDocument({ data }: { data: CwfCotizacion }) {
 
           <Text style={[styles.condicionesLabel, { marginBottom: 4 }]}>Transferencia SPEI:</Text>
           <Text style={{ marginLeft: 8, marginBottom: 8, lineHeight: 1.5 }}>
-            {`  Banco: ${DATOS_BANCARIOS_SPEI.banco}\n  CLABE: ${DATOS_BANCARIOS_SPEI.clabe}\n  Cuenta: ${DATOS_BANCARIOS_SPEI.cuenta}\n  Beneficiario: ${DATOS_BANCARIOS_SPEI.beneficiario}\n  RFC: ${DATOS_BANCARIOS_SPEI.rfc}`}
+            {`  Banco: ${DATOS_BANCARIOS_SPEI.banco}\n  CLABE: ${DATOS_BANCARIOS_SPEI.clabe}\n  Beneficiario: ${DATOS_BANCARIOS_SPEI.beneficiario}\n  RFC: ${DATOS_BANCARIOS_SPEI.rfc}`}
           </Text>
 
           <Text style={[styles.condicionesLabel, { marginBottom: 4 }]}>Tarjeta de crédito o débito:</Text>
