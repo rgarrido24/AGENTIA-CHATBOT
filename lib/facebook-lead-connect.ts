@@ -143,11 +143,18 @@ export function mergeFormularios(
   existing: ResellerFormulario[] | undefined,
   incoming: FbLeadForm[],
 ): ResellerFormulario[] {
+  const incomingIds = new Set(
+    incoming.map((f) => String(f.id || '').trim()).filter(Boolean),
+  );
   const map = new Map<string, ResellerFormulario>();
   for (const f of existing ?? []) {
     const id = String(f.formId || '').trim();
     if (!id) continue;
-    map.set(id, { ...f, formId: id });
+    map.set(id, {
+      ...f,
+      formId: id,
+      activo: incomingIds.has(id),
+    });
   }
   for (const form of incoming) {
     const id = String(form.id || '').trim();
