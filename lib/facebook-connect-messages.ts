@@ -18,6 +18,18 @@ export type FbConnectReveal = {
   formsCount: number;
 };
 
+export function facebookUiState(nativeConnected: boolean, activeFormCount: number): {
+  fbStatus: 'pending' | 'connected';
+  fbNative: boolean;
+} {
+  const native = !!nativeConnected;
+  const hasForms = activeFormCount > 0;
+  return {
+    fbStatus: native || hasForms ? 'connected' : 'pending',
+    fbNative: native,
+  };
+}
+
 export function fbConnectUserMessage(code: FbConnectErrorCode | string): string {
   switch (code) {
     case 'cancelled':

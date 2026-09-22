@@ -15,6 +15,7 @@ type ClientItem = {
   total:      number;
   alertNumber: string;
   fbStatus: 'pending' | 'connected';
+  fbNative?: boolean;
 };
 
 export default function ClientsList({ resellerId, clients }: { resellerId: string; clients: ClientItem[] }) {
@@ -166,7 +167,7 @@ export default function ClientsList({ resellerId, clients }: { resellerId: strin
               <FbConnectLink
                 resellerId={resellerId}
                 clientSlug={c.clientSlug}
-                connected={(c.fbStatus ?? 'pending') === 'connected'}
+                connected={!!c.fbNative}
                 light={light}
               />
             </div>

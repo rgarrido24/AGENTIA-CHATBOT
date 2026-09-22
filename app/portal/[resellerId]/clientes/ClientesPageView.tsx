@@ -17,6 +17,7 @@ export type ClienteRow = {
   activeForms: number;
   alertNumber: string;
   fbStatus: 'pending' | 'connected';
+  fbNative?: boolean;
   leadsHoy: number;
   leadsMes: number;
   total: number;
@@ -263,7 +264,7 @@ export default function ClientesPageView({
                       <FbConnectLink
                         resellerId={resellerId}
                         clientSlug={c.clientSlug}
-                        connected={(c.fbStatus ?? 'pending') === 'connected'}
+                        connected={!!c.fbNative}
                         light={light}
                       />
                       <button

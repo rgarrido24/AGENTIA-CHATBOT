@@ -10,6 +10,7 @@ import {
 } from '@/lib/portal-luciano-ui';
 import { LucianoPortalThemeProvider } from './LucianoPortalTheme';
 import DashboardView from './DashboardView';
+import { facebookUiState } from '@/lib/facebook-connect-messages';
 
 export async function generateMetadata({
   params,
@@ -102,16 +103,21 @@ export default async function DashboardPage({ params }: { params: { resellerId: 
         statsHoy={statsHoy}
         statsSemana={statsSemana}
         statsMes={statsMes}
-        clients={clientsWithStats.map((c) => ({
-          clientSlug: c.clientSlug,
-          nombre: c.nombre,
-          negocio: c.negocio,
-          status: String(c.status ?? ''),
-          leadsHoy: c.leadsHoy,
-          total: c.total,
-          alertNumber: c.alertNumber ? String(c.alertNumber) : '',
-          fbStatus: (c.fb_connection?.status === 'connected' ? 'connected' : 'pending') as 'pending' | 'connected',
-        }))}
+        clients={clientsWithStats.map((c) => {
+          const activeForms = (c.formularios ?? []).filter((f) => f.activo && String(f.formId ?? '').trim()).length;
+          const fbUi = facebookUiState(c.fb_connection?.status === 'connected', activeForms);
+          return {
+            clientSlug: c.clientSlug,
+            nombre: c.nombre,
+            negocio: c.negocio,
+            status: String(c.status ?? ''),
+            leadsHoy: c.leadsHoy,
+            total: c.total,
+            alertNumber: c.alertNumber ? String(c.alertNumber) : '',
+            fbStatus: fbUi.fbStatus,
+            fbNative: fbUi.fbNative,
+          };
+        })}
       />
     </LucianoPortalThemeProvider>
   );

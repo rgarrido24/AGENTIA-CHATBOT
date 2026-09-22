@@ -2,6 +2,7 @@ import { requireResellerAuth } from '@/lib/reseller-auth';
 import { getMongoDb } from '@/lib/mongodb';
 import type { ResellerClient } from '@/lib/reseller-auth';
 import { LucianoPortalThemeProvider } from '../dashboard/LucianoPortalTheme';
+import { facebookUiState } from '@/lib/facebook-connect-messages';
 import ClientesPageView from './ClientesPageView';
 
 export default async function ClientesPage({
@@ -36,14 +37,17 @@ export default async function ClientesPage({
         db.collection('leads').countDocuments({ ...base, createdAt: { $gte: hoy } }),
         db.collection('leads').countDocuments({ ...base, createdAt: { $gte: mes } }),
       ]);
+      const activeForms = (c.formularios ?? []).filter((f) => f.activo && String(f.formId ?? '').trim()).length;
+      const fbUi = facebookUiState(c.fb_connection?.status === 'connected', activeForms);
       return {
         clientSlug: c.clientSlug,
         nombre: c.nombre,
         negocio: c.negocio,
         status: String(c.status ?? ''),
-        activeForms: (c.formularios ?? []).filter((f) => f.activo).length,
+        activeForms,
         alertNumber: c.alertNumber ? String(c.alertNumber) : '',
-        fbStatus: (c.fb_connection?.status === 'connected' ? 'connected' : 'pending') as 'pending' | 'connected',
+        fbStatus: fbUi.fbStatus,
+        fbNative: fbUi.fbNative,
         leadsHoy,
         leadsMes,
         total,

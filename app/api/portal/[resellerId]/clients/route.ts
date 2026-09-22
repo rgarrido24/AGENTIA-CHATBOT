@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 import { verifyResellerCookie, COOKIE_NAME, type ResellerClient } from '@/lib/reseller-auth';
 import { hashClientPassword, generateTempPassword } from '@/lib/client-auth';
+import { facebookUiState } from '@/lib/facebook-connect-messages';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,13 +36,16 @@ export async function GET(
         db.collection('leads').countDocuments({ ...query, createdAt: { $gte: hoy } }),
         db.collection('leads').countDocuments({ ...query, createdAt: { $gte: mes } }),
       ]);
+      const activeForms = (c.formularios ?? []).filter((f) => f.activo && String(f.formId ?? '').trim()).length;
+      const fbUi = facebookUiState(c.fb_connection?.status === 'connected', activeForms);
       return {
         clientSlug: c.clientSlug,
         nombre:     c.nombre,
         negocio:    c.negocio,
         status:     c.status,
         formularios: c.formularios,
-        fbStatus:   (c.fb_connection?.status === 'connected' ? 'connected' : 'pending') as 'pending' | 'connected',
+        fbStatus:   fbUi.fbStatus,
+        fbNative:   fbUi.fbNative,
         total,
         leadsHoy,
         leadsMes,
