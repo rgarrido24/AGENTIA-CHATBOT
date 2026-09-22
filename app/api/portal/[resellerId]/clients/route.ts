@@ -41,6 +41,7 @@ export async function GET(
         negocio:    c.negocio,
         status:     c.status,
         formularios: c.formularios,
+        fbStatus:   (c.fb_connection?.status === 'connected' ? 'connected' : 'pending') as 'pending' | 'connected',
         total,
         leadsHoy,
         leadsMes,
@@ -120,6 +121,7 @@ export async function POST(
         activo:     true,
       })),
     status:    'activo',
+    fb_connection: { status: 'pending' },
     createdAt: now,
     updatedAt: now,
   });

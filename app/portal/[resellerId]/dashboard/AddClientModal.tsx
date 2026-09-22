@@ -205,9 +205,12 @@ export default function AddClientModal({ resellerId }: { resellerId: string }) {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label style={{ ...labelStyle, marginBottom: 0 }}>Formularios de Meta</label>
+                  <label style={{ ...labelStyle, marginBottom: 0 }}>Formularios de Meta (opcional)</label>
                   <button type="button" onClick={addForm} className="text-[11px]" style={{ color: addBtnColor }}>+ Agregar</button>
                 </div>
+                <p className="text-[10px] mb-2" style={{ color: hintColor }}>
+                  Si el cliente se va a conectar con Facebook desde este panel, podés dejarlos vacíos. Zapier sigue funcionando si cargás el Form ID a mano.
+                </p>
                 <div className="space-y-2">
                   {forms.map((f, i) => (
                     <div key={i} className="flex gap-2 items-start">

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLucianoPortalThemeOptional } from './LucianoPortalTheme';
+import { FbConnectLink, FbConnectionBadge } from '../clientes/FacebookConnectUi';
 
 type ClientItem = {
   clientSlug: string;
@@ -13,6 +14,7 @@ type ClientItem = {
   leadsHoy:   number;
   total:      number;
   alertNumber: string;
+  fbStatus: 'pending' | 'connected';
 };
 
 export default function ClientsList({ resellerId, clients }: { resellerId: string; clients: ClientItem[] }) {
@@ -159,6 +161,15 @@ export default function ClientsList({ resellerId, clients }: { resellerId: strin
           <Link href={`/portal/${resellerId}/cliente/${c.clientSlug}`} className="flex-1 min-w-0">
             <p className="text-sm font-semibold" style={{ color: nameColor }}>{c.nombre}</p>
             <p className="text-xs mt-0.5" style={{ color: subColor }}>{c.negocio}</p>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <FbConnectionBadge status={c.fbStatus ?? 'pending'} light={light} />
+              <FbConnectLink
+                resellerId={resellerId}
+                clientSlug={c.clientSlug}
+                connected={(c.fbStatus ?? 'pending') === 'connected'}
+                light={light}
+              />
+            </div>
             <p className="text-[10px] mt-0.5 truncate" style={{ color: totalColor }}>
               Alertas: {c.alertNumber ? c.alertNumber : '→ FB_ALERT_NUMBER'}
             </p>

@@ -110,6 +110,7 @@ export default async function DashboardPage({ params }: { params: { resellerId: 
           leadsHoy: c.leadsHoy,
           total: c.total,
           alertNumber: c.alertNumber ? String(c.alertNumber) : '',
+          fbStatus: (c.fb_connection?.status === 'connected' ? 'connected' : 'pending') as 'pending' | 'connected',
         }))}
       />
     </LucianoPortalThemeProvider>

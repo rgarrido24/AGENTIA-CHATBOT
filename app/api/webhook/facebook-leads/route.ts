@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getMongoDb } from '@/lib/mongodb';
 import { notifyPortalNewLeadAfterInsert } from '@/lib/portal-push';
+import { fetchMetaLeadById } from '@/lib/facebook-lead-connect';
 
 const DEFAULT_PUBLIC_ORIGIN = 'https://agentia.software';
 
@@ -624,14 +625,26 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
       const value = change.value as Record<string, unknown>;
 
       const leadgen_id    = String(value.leadgen_id    ?? '');
-      const form_id       = String(value.form_id       ?? '');
+      let form_id         = String(value.form_id       ?? '');
       const ad_id         = String(value.ad_id         ?? '');
-      const ad_name       = String(value.ad_name       ?? '');
-      const adset_name    = String(value.adset_name    ?? '');
-      const campaign_name = String(value.campaign_name ?? '');
+      let ad_name         = String(value.ad_name       ?? '');
+      let adset_name      = String(value.adset_name    ?? '');
+      let campaign_name   = String(value.campaign_name ?? '');
       const page_id       = String(value.page_id       ?? entry.id ?? '');
 
-      const fieldData: FieldData[] = (value.field_data as FieldData[]) ?? [];
+      let fieldData: FieldData[] = (value.field_data as FieldData[]) ?? [];
+      const needsFetch = !fieldData.some((f) => f?.values?.[0]);
+      if (needsFetch && leadgen_id) {
+        const fetched = await fetchMetaLeadById(leadgen_id, page_id);
+        if (fetched?.field_data?.length) {
+          fieldData = fetched.field_data;
+          if (!form_id && fetched.form_id) form_id = String(fetched.form_id);
+          if (!ad_name && fetched.ad_name) ad_name = String(fetched.ad_name);
+          if (!adset_name && fetched.adset_name) adset_name = String(fetched.adset_name);
+          if (!campaign_name && fetched.campaign_name) campaign_name = String(fetched.campaign_name);
+        }
+      }
+
       const field = (name: string) => fieldData.find((f) => f.name === name)?.values?.[0] ?? '';
 
       // Mapa plano de todo el formulario para los fallbacks de nombre/teléfono.

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useLucianoPortalThemeOptional } from '../dashboard/LucianoPortalTheme';
 import { LUCINO_PRODUCT_TITLE } from '@/lib/portal-luciano-ui';
+import { FacebookConnectBanners, FbConnectLink, FbConnectionBadge } from './FacebookConnectUi';
 
 export type ClienteRow = {
   clientSlug: string;
@@ -15,6 +16,7 @@ export type ClienteRow = {
   status: string;
   activeForms: number;
   alertNumber: string;
+  fbStatus: 'pending' | 'connected';
   leadsHoy: number;
   leadsMes: number;
   total: number;
@@ -26,6 +28,8 @@ type Props = {
   brandName: string | null | undefined;
   nombre: string;
   rows: ClienteRow[];
+  fbError?: string;
+  fbJustConnected?: boolean;
 };
 
 export default function ClientesPageView({
@@ -34,6 +38,8 @@ export default function ClientesPageView({
   brandName,
   nombre,
   rows,
+  fbError,
+  fbJustConnected,
 }: Props) {
   const router = useRouter();
   const ctx = useLucianoPortalThemeOptional();
@@ -163,6 +169,11 @@ export default function ClientesPageView({
             Brief Digital
           </Link>
         </div>
+        <FacebookConnectBanners
+          resellerId={resellerId}
+          fbError={fbError}
+          fbJustConnected={fbJustConnected}
+        />
         {rows.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-sm" style={{ color: emptyColor }}>No tienes clientes registrados.</p>
@@ -248,6 +259,13 @@ export default function ClientesPageView({
                       >
                         {c.status}
                       </span>
+                      <FbConnectionBadge status={c.fbStatus ?? 'pending'} light={light} />
+                      <FbConnectLink
+                        resellerId={resellerId}
+                        clientSlug={c.clientSlug}
+                        connected={(c.fbStatus ?? 'pending') === 'connected'}
+                        light={light}
+                      />
                       <button
                         type="button"
                         title="Número WhatsApp para alertas"

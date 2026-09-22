@@ -42,6 +42,15 @@ export interface ResellerClient {
     plataforma:  string;
     activo:      boolean;
   }>;
+  /** Conexión nativa Meta (OAuth). Independiente de Zapier. */
+  fb_connection?: {
+    status:             'pending' | 'connected';
+    page_id?:           string;
+    page_name?:         string;
+    /** Page Access Token cifrado (AES-256-GCM). Nunca enviarlo al cliente. */
+    page_access_token?: string;
+    connected_at?:      Date;
+  };
   alertNumber?:        string;
   clientPasswordHash?: string;
   status:              'activo' | 'suspendido';

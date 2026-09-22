@@ -4,7 +4,13 @@ import type { ResellerClient } from '@/lib/reseller-auth';
 import { LucianoPortalThemeProvider } from '../dashboard/LucianoPortalTheme';
 import ClientesPageView from './ClientesPageView';
 
-export default async function ClientesPage({ params }: { params: { resellerId: string } }) {
+export default async function ClientesPage({
+  params,
+  searchParams,
+}: {
+  params: { resellerId: string };
+  searchParams?: { fb_error?: string; fb?: string };
+}) {
   const { resellerId } = params;
   const reseller = await requireResellerAuth(resellerId);
 
@@ -35,8 +41,9 @@ export default async function ClientesPage({ params }: { params: { resellerId: s
         nombre: c.nombre,
         negocio: c.negocio,
         status: String(c.status ?? ''),
-        activeForms: c.formularios.filter((f) => f.activo).length,
+        activeForms: (c.formularios ?? []).filter((f) => f.activo).length,
         alertNumber: c.alertNumber ? String(c.alertNumber) : '',
+        fbStatus: (c.fb_connection?.status === 'connected' ? 'connected' : 'pending') as 'pending' | 'connected',
         leadsHoy,
         leadsMes,
         total,
@@ -52,6 +59,8 @@ export default async function ClientesPage({ params }: { params: { resellerId: s
         brandName={reseller.brandName}
         nombre={reseller.nombre}
         rows={rows}
+        fbError={searchParams?.fb_error}
+        fbJustConnected={searchParams?.fb === 'connected'}
       />
     </LucianoPortalThemeProvider>
   );
