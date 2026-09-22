@@ -3,34 +3,36 @@ import { Inter, Montserrat, Plus_Jakarta_Sans, Roboto, Space_Grotesk } from 'nex
 import './globals.css';
 import { GlobalWhatsAppAndExit } from '@/components/GlobalWhatsAppAndExit';
 
+/** Variable: omitir `weight` (Google a veces sirve archivos sin extensión y next/font 14 falla). */
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
   variable: '--font-space',
+  display: 'swap',
 });
 
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
   variable: '--font-inter',
+  display: 'swap',
 });
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-jakarta',
+  display: 'swap',
 });
 
 const montserrat = Montserrat({
   subsets: ['latin'],
-  weight: ['600', '700', '800'],
   variable: '--font-montserrat',
+  display: 'swap',
 });
 
 const roboto = Roboto({
   subsets: ['latin'],
   weight: ['400', '500'],
   variable: '--font-roboto',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
