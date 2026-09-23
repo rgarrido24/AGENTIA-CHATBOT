@@ -13,7 +13,12 @@ export { fbConnectUserMessage };
 export type { FbConnectErrorCode, FbConnectReveal };
 
 export const FB_GRAPH_VERSION = 'v21.0';
-export const FB_OAUTH_SCOPES = ['pages_show_list', 'pages_manage_metadata', 'leads_retrieval'].join(',');
+export const FB_OAUTH_SCOPES = [
+  'pages_show_list',
+  'pages_manage_metadata',
+  'pages_manage_ads',
+  'leads_retrieval',
+].join(',');
 export const FB_OAUTH_SESSION_COOKIE = 'fb_oauth_sid';
 export const FB_CONNECT_REVEAL_COOKIE = 'fb_connect_reveal';
 export const FB_OAUTH_SESSION_TTL_MS = 15 * 60 * 1000;
