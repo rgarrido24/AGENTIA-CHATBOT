@@ -4,7 +4,6 @@ import { buildIzziMetadata } from '@/lib/izzi-metadata';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 

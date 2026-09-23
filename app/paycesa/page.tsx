@@ -4,14 +4,12 @@ import { PaycesaPresentation } from './PaycesaPresentation';
 
 const arimo = Arimo({
   subsets: ['latin'],
-  weight: ['400', '700'],
   variable: '--font-paycesa-arimo',
   display: 'swap',
 });
 
 const azeret = Azeret_Mono({
   subsets: ['latin'],
-  weight: ['400', '700'],
   variable: '--font-paycesa-azeret',
   display: 'swap',
 });
