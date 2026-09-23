@@ -2,6 +2,7 @@ export type FbConnectErrorCode =
   | 'cancelled'
   | 'no_pages'
   | 'no_forms'
+  | 'forms_unusable'
   | 'subscribe'
   | 'oauth'
   | 'expired'
@@ -38,7 +39,9 @@ export function fbConnectUserMessage(code: FbConnectErrorCode | string): string 
     case 'no_pages':
       return 'No encontramos páginas de Facebook en esa cuenta. Entrá con el perfil que administra la página del cliente y volvé a conectar.';
     case 'no_forms':
-      return 'La página elegida no tiene formularios de leads activos. Creá un formulario de captación en Meta Ads y reintentá.';
+      return 'La página elegida no tiene formularios de leads. Creá un formulario de captación en Meta Ads y reintentá.';
+    case 'forms_unusable':
+      return 'Encontramos formularios en esa página, pero están archivados o eliminados. Reactivalos en Meta Ads y volvé a conectar.';
     case 'subscribe':
       return 'No pudimos activar la recepción de leads en esa página. Revisá que el perfil tenga permiso de administrador y volvé a intentar.';
     case 'expired':

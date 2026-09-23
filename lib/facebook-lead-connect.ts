@@ -285,9 +285,21 @@ export async function listPageLeadgenForms(pageId: string, pageToken: string): P
     }));
 }
 
-export function activeLeadgenForms(forms: FbLeadForm[]): FbLeadForm[] {
-  const active = forms.filter((f) => !f.status || f.status === 'ACTIVE');
-  return active.length > 0 ? active : [];
+export function usableLeadgenForms(forms: FbLeadForm[]): FbLeadForm[] {
+  return forms.filter((f) => isUsableLeadgenStatus(f.status));
+}
+
+const LEADGEN_UNUSABLE_STATUS = new Set(['ARCHIVED', 'DELETED']);
+
+export function isUsableLeadgenStatus(status: string | undefined): boolean {
+  if (!status) return true;
+  return !LEADGEN_UNUSABLE_STATUS.has(status);
+}
+
+export function summarizeLeadgenForms(forms: FbLeadForm[]): string {
+  return forms
+    .map((f) => `${f.name || f.id} (${f.status || 'sin estado'})`)
+    .join(', ');
 }
 
 export async function subscribePageToLeadgen(pageId: string, pageToken: string): Promise<void> {
@@ -357,14 +369,32 @@ export async function completeFacebookPageConnection(opts: {
     return { ok: false, code: 'generic', message: 'No encontramos ese cliente. Volvé al listado e intentá de nuevo.' };
   }
 
-  let forms: FbLeadForm[];
+  let listed: FbLeadForm[];
   try {
-    forms = activeLeadgenForms(await listPageLeadgenForms(page.id, page.access_token));
+    listed = await listPageLeadgenForms(page.id, page.access_token);
   } catch (err) {
     console.error('[fb-connect] leadgen_forms', (err as Error).message);
-    return { ok: false, code: 'no_forms', message: fbConnectUserMessage('no_forms') };
+    return {
+      ok: false,
+      code: 'no_forms',
+      message:
+        'No pudimos leer los formularios de esa página. Revisá que el perfil tenga permiso para ver leads y volvé a intentar.',
+    };
   }
+  console.log(
+    '[fb-connect] leadgen_forms',
+    page.id,
+    listed.length ? summarizeLeadgenForms(listed) : '(ninguno)',
+  );
+  const forms = usableLeadgenForms(listed);
   if (forms.length === 0) {
+    if (listed.length > 0) {
+      return {
+        ok: false,
+        code: 'forms_unusable',
+        message: `Encontramos formularios, pero no se pueden usar: ${summarizeLeadgenForms(listed)}. Reactivalos en Meta Ads y volvé a conectar.`,
+      };
+    }
     return { ok: false, code: 'no_forms', message: fbConnectUserMessage('no_forms') };
   }
 
