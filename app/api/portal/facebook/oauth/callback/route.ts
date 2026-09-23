@@ -78,8 +78,23 @@ export async function GET(req: NextRequest) {
   try {
     const shortToken = await exchangeCodeForUserToken(code);
     const userToken = await exchangeForLongLivedUserToken(shortToken);
-    const pages = await listUserPages(userToken);
+    console.log('[fb-oauth] tokens', {
+      shortLen: shortToken.length,
+      longLen: userToken.length,
+      exchanged: userToken !== shortToken,
+      clientSlug,
+    });
+    let pages = await listUserPages(userToken);
+    if (pages.length === 0 && userToken !== shortToken) {
+      console.warn('[fb-oauth] 0 páginas con token long-lived; reintento con short-lived');
+      pages = await listUserPages(shortToken);
+    }
+    console.log(
+      '[fb-oauth] pages',
+      pages.map((p) => ({ id: p.id, name: p.name, has_token: Boolean(p.access_token) })),
+    );
     if (pages.length === 0) {
+      console.error('[fb-oauth] no_pages after accounts/debug_token/assigned_pages/businesses');
       return NextResponse.redirect(clientesUrl(resellerId, { fb_error: 'no_pages' }));
     }
 
@@ -129,7 +144,7 @@ export async function GET(req: NextRequest) {
     });
     return res;
   } catch (err) {
-    console.error('[fb-oauth/callback]', (err as Error).message);
+    console.error('[fb-oauth]', (err as Error).message);
     return NextResponse.redirect(clientesUrl(resellerId, { fb_error: 'oauth' }));
   }
 }

@@ -258,20 +258,250 @@ async function graphCollect<T>(firstUrl: string): Promise<T[]> {
   return out;
 }
 
-export async function listUserPages(userToken: string): Promise<FbPageChoice[]> {
+function redactSecrets(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactSecrets);
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (/token|secret|authorization/i.test(k) && typeof v === 'string') {
+        out[k] = v ? `[redacted len=${v.length}]` : v;
+      } else {
+        out[k] = redactSecrets(v);
+      }
+    }
+    return out;
+  }
+  return value;
+}
+
+function safeGraphUrl(url: string): string {
+  return url
+    .replace(/access_token=[^&]+/gi, 'access_token=[redacted]')
+    .replace(/input_token=[^&]+/gi, 'input_token=[redacted]')
+    .replace(/client_secret=[^&]+/gi, 'client_secret=[redacted]');
+}
+
+async function graphGetLogged(url: string, label: string): Promise<Record<string, unknown>> {
+  console.log(`[fb-connect] GET ${label}`, safeGraphUrl(url));
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    const json = (await res.json().catch(() => ({ parse_error: true }))) as Record<string, unknown>;
+    console.log(
+      `[fb-connect] ${label} status=${res.status}`,
+      JSON.stringify(redactSecrets(json)).slice(0, 8000),
+    );
+    return json;
+  } catch (err) {
+    console.error(`[fb-connect] ${label} fetch failed`, (err as Error).message);
+    return { error: { message: (err as Error).message } };
+  }
+}
+
+function graphDataRows(json: Record<string, unknown>): Array<Record<string, unknown>> {
+  return Array.isArray(json.data) ? (json.data as Array<Record<string, unknown>>) : [];
+}
+
+function upsertPage(map: Map<string, FbPageChoice>, row: { id?: unknown; name?: unknown; access_token?: unknown }) {
+  const id = String(row.id ?? '').trim();
+  if (!id) return;
+  const prev = map.get(id);
+  const token = String(row.access_token ?? '').trim() || prev?.access_token || '';
+  map.set(id, {
+    id,
+    name: String(row.name ?? prev?.name ?? id),
+    access_token: token,
+  });
+}
+
+type DebugGranularScope = { scope?: string; target_ids?: string[] };
+
+const PAGE_GRANULAR_SCOPES = new Set([
+  'pages_show_list',
+  'pages_manage_metadata',
+  'pages_manage_ads',
+  'leads_retrieval',
+  'pages_read_engagement',
+  'pages_manage_posts',
+]);
+
+function isLikelyPageId(id: string): boolean {
+  if (!id) return false;
+  if (id.startsWith('act_')) return false;
+  return /^\d+$/.test(id);
+}
+
+async function pageIdsFromDebugToken(userToken: string): Promise<string[]> {
+  const appId = getFbAppId();
+  const appSecret = process.env.FB_APP_SECRET || '';
+  if (!appId || !appSecret) {
+    console.error('[fb-connect] debug_token skipped: falta FB_APP_ID o FB_APP_SECRET');
+    return [];
+  }
+  const appToken = `${appId}|${appSecret}`;
   const url =
-    `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/accounts` +
+    `https://graph.facebook.com/${FB_GRAPH_VERSION}/debug_token` +
+    `?input_token=${encodeURIComponent(userToken)}` +
+    `&access_token=${encodeURIComponent(appToken)}`;
+  const json = await graphGetLogged(url, 'debug_token');
+  const data = (json.data ?? json) as Record<string, unknown>;
+  const ids = new Set<string>();
+  const granular = Array.isArray(data.granular_scopes) ? (data.granular_scopes as DebugGranularScope[]) : [];
+  for (const g of granular) {
+    const scope = String(g.scope || '');
+    if (scope && !PAGE_GRANULAR_SCOPES.has(scope)) continue;
+    for (const raw of g.target_ids ?? []) {
+      const id = String(raw || '').trim();
+      if (isLikelyPageId(id)) ids.add(id);
+    }
+  }
+  console.log(
+    '[fb-connect] debug_token summary',
+    JSON.stringify({
+      type: data.type,
+      is_valid: data.is_valid,
+      scopes: data.scopes,
+      granular_scopes: granular.map((g) => ({ scope: g.scope, target_ids: g.target_ids })),
+      page_ids: [...ids],
+    }),
+  );
+  return [...ids];
+}
+
+async function fetchPageAsChoice(pageId: string, userToken: string): Promise<FbPageChoice | null> {
+  const url =
+    `https://graph.facebook.com/${FB_GRAPH_VERSION}/${encodeURIComponent(pageId)}` +
     `?fields=id,name,access_token` +
+    `&access_token=${encodeURIComponent(userToken)}`;
+  const json = await graphGetLogged(url, `page/${pageId}`);
+  if (json.error || !json.id) {
+    console.warn('[fb-connect] page lookup failed', pageId, json.error ? redactSecrets(json.error) : 'sin id');
+    return null;
+  }
+  const token = String(json.access_token ?? '').trim();
+  if (!token) {
+    console.warn('[fb-connect] page sin access_token', pageId, String(json.name ?? ''));
+    return null;
+  }
+  return {
+    id: String(json.id),
+    name: String(json.name ?? json.id),
+    access_token: token,
+  };
+}
+
+async function collectBusinessPages(userToken: string, map: Map<string, FbPageChoice>): Promise<void> {
+  const bizUrl =
+    `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/businesses` +
+    `?fields=id,name` +
     `&limit=50` +
     `&access_token=${encodeURIComponent(userToken)}`;
-  const rows = await graphCollect<{ id?: string; name?: string; access_token?: string }>(url);
-  return rows
-    .filter((p) => p.id && p.access_token)
-    .map((p) => ({
-      id: String(p.id),
-      name: String(p.name || p.id),
-      access_token: String(p.access_token),
-    }));
+  const bizJson = await graphGetLogged(bizUrl, 'me/businesses');
+  const businesses = graphDataRows(bizJson);
+  console.log('[fb-connect] me/businesses count', businesses.length);
+  for (const biz of businesses) {
+    const bizId = String(biz.id ?? '').trim();
+    if (!bizId) continue;
+    const accountsByBizUrl =
+      `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/accounts` +
+      `?fields=id,name,access_token,tasks` +
+      `&business=${encodeURIComponent(bizId)}` +
+      `&limit=100` +
+      `&access_token=${encodeURIComponent(userToken)}`;
+    ingestPageRows(
+      map,
+      await graphGetLogged(accountsByBizUrl, `me/accounts?business=${bizId}`),
+      `me/accounts?business=${bizId}`,
+    );
+    for (const edge of ['owned_pages', 'client_pages'] as const) {
+      const pagesUrl =
+        `https://graph.facebook.com/${FB_GRAPH_VERSION}/${encodeURIComponent(bizId)}/${edge}` +
+        `?fields=id,name,access_token` +
+        `&limit=50` +
+        `&access_token=${encodeURIComponent(userToken)}`;
+      ingestPageRows(
+        map,
+        await graphGetLogged(pagesUrl, `business/${bizId}/${edge}`),
+        `business/${bizId}/${edge}`,
+      );
+    }
+  }
+}
+
+function ingestPageRows(map: Map<string, FbPageChoice>, json: Record<string, unknown>, label: string) {
+  const rows = graphDataRows(json);
+  for (const row of rows) upsertPage(map, row);
+  console.log(`[fb-connect] ${label} count`, rows.length);
+}
+
+/**
+ * Lista páginas autorizadas. Login for Business (asset-scoped) a menudo deja
+ * GET /me/accounts vacío aunque el usuario eligió 1 página: las páginas de
+ * Meta Business Suite no salen ahí sin business_management. En ese caso se
+ * leen los target_ids de debug_token y se pide GET /{page-id}?fields=access_token.
+ */
+export async function listUserPages(userToken: string): Promise<FbPageChoice[]> {
+  const map = new Map<string, FbPageChoice>();
+
+  await graphGetLogged(
+    `https://graph.facebook.com/${FB_GRAPH_VERSION}/me` +
+      `?fields=id,name` +
+      `&access_token=${encodeURIComponent(userToken)}`,
+    'me',
+  );
+  await graphGetLogged(
+    `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/permissions` +
+      `?access_token=${encodeURIComponent(userToken)}`,
+    'me/permissions',
+  );
+
+  const accountsUrl =
+    `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/accounts` +
+    `?fields=id,name,access_token,tasks` +
+    `&limit=100` +
+    `&access_token=${encodeURIComponent(userToken)}`;
+  ingestPageRows(map, await graphGetLogged(accountsUrl, 'me/accounts'), 'me/accounts');
+
+  const nestedAccountsUrl =
+    `https://graph.facebook.com/${FB_GRAPH_VERSION}/me` +
+    `?fields=accounts.limit(100){id,name,access_token,tasks}` +
+    `&access_token=${encodeURIComponent(userToken)}`;
+  const nestedJson = await graphGetLogged(nestedAccountsUrl, 'me?fields=accounts');
+  const nestedAccounts = (nestedJson.accounts ?? {}) as Record<string, unknown>;
+  ingestPageRows(map, nestedAccounts, 'me.accounts nested');
+
+  const assignedUrl =
+    `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/assigned_pages` +
+    `?fields=id,name,access_token` +
+    `&limit=100` +
+    `&access_token=${encodeURIComponent(userToken)}`;
+  ingestPageRows(map, await graphGetLogged(assignedUrl, 'me/assigned_pages'), 'me/assigned_pages');
+
+  const fromToken = await pageIdsFromDebugToken(userToken);
+  for (const pageId of fromToken) {
+    const existing = map.get(pageId);
+    if (existing?.access_token) continue;
+    const fetched = await fetchPageAsChoice(pageId, userToken);
+    if (fetched) map.set(pageId, fetched);
+    else upsertPage(map, { id: pageId, name: existing?.name ?? pageId });
+  }
+
+  await collectBusinessPages(userToken, map);
+
+  for (const [id, page] of [...map.entries()]) {
+    if (page.access_token) continue;
+    const fetched = await fetchPageAsChoice(id, userToken);
+    if (fetched) map.set(id, fetched);
+  }
+
+  const usable = [...map.values()].filter((p) => p.id && p.access_token);
+  console.log(
+    '[fb-connect] pages resolved',
+    JSON.stringify({
+      candidates: [...map.values()].map((p) => ({ id: p.id, name: p.name, has_token: Boolean(p.access_token) })),
+      usable: usable.length,
+    }),
+  );
+  return usable;
 }
 
 export async function listPageLeadgenForms(pageId: string, pageToken: string): Promise<FbLeadForm[]> {
