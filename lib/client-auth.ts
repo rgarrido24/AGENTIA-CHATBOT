@@ -42,6 +42,7 @@ export async function verifyClientCookie(
       clientSlug,
     });
     if (!doc?.clientPasswordHash) return false;
+    if (String(doc.status || 'activo') !== 'activo') return false;
     const expected = buildClientCookieValue(resellerId, clientSlug, String(doc.clientPasswordHash));
     return cookieValue === expected;
   } catch {

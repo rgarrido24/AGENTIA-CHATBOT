@@ -107,7 +107,9 @@ export async function GET(req: NextRequest) {
       if (!result.ok) {
         return NextResponse.redirect(clientesUrl(resellerId, { fb_error: result.code }));
       }
-      const res = NextResponse.redirect(clientesUrl(resellerId, { fb: 'connected' }));
+      const res = NextResponse.redirect(
+        clientesUrl(resellerId, { fb: result.pausedForms ? 'paused_forms' : 'connected' }),
+      );
       if (result.reveal) {
         res.cookies.set(FB_CONNECT_REVEAL_COOKIE, signReveal(result.reveal), {
           httpOnly: true,

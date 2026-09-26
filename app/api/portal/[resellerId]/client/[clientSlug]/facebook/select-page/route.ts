@@ -66,7 +66,7 @@ export async function POST(
 
   await deleteOauthSession(session.sessionId);
 
-  const redirectTo = `${getPublicOrigin()}/portal/${resellerId}/clientes?fb=connected`;
+  const redirectTo = `${getPublicOrigin()}/portal/${resellerId}/clientes?fb=${result.pausedForms ? 'paused_forms' : 'connected'}`;
   const res = NextResponse.json({ ok: true, redirect: redirectTo });
   res.cookies.set(FB_OAUTH_SESSION_COOKIE, '', { path: '/', maxAge: 0 });
   if (result.reveal) {

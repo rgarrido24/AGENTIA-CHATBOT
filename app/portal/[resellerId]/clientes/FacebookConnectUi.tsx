@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLucianoPortalThemeOptional } from '../dashboard/LucianoPortalTheme';
-import { fbConnectUserMessage, type FbConnectReveal } from '@/lib/facebook-connect-messages';
+import { fbConnectUserMessage, fbPausedFormsNotice, type FbConnectReveal } from '@/lib/facebook-connect-messages';
 
 export function FbConnectionBadge({
   status,
@@ -88,10 +88,12 @@ export function FacebookConnectBanners({
   resellerId,
   fbError,
   fbJustConnected,
+  fbPausedForms,
 }: {
   resellerId: string;
   fbError?: string;
   fbJustConnected?: boolean;
+  fbPausedForms?: boolean;
 }) {
   const ctx = useLucianoPortalThemeOptional();
   const light = ctx?.light ?? false;
@@ -128,6 +130,18 @@ export function FacebookConnectBanners({
           style={{ background: light ? '#fef2f2' : '#1a0000', borderColor: light ? '#fecaca' : '#3f1010', color: '#ef4444' }}
         >
           {fbConnectUserMessage(fbError)}
+        </div>
+      )}
+      {fbPausedForms && !fbError && (
+        <div
+          className="rounded-xl border px-4 py-3 text-xs"
+          style={{
+            background: light ? '#fffbeb' : '#1a1400',
+            borderColor: light ? '#fde68a' : '#3f2f00',
+            color: light ? '#b45309' : '#fbbf24',
+          }}
+        >
+          {fbPausedFormsNotice()}
         </div>
       )}
       {fbJustConnected && !reveal && !closed && (

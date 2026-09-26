@@ -27,7 +27,7 @@ export async function POST(
     clientSlug,
   });
 
-  if (!doc?.clientPasswordHash) {
+  if (!doc?.clientPasswordHash || String(doc.status || 'activo') !== 'activo') {
     return NextResponse.json({ error: 'Acceso no habilitado para este cliente' }, { status: 401 });
   }
 

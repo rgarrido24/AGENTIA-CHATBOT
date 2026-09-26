@@ -41,7 +41,7 @@ export function fbConnectUserMessage(code: FbConnectErrorCode | string): string 
     case 'no_forms':
       return 'La página elegida no tiene formularios de leads. Creá un formulario de captación en Meta Ads y reintentá.';
     case 'forms_unusable':
-      return 'Encontramos formularios en esa página, pero están archivados o eliminados. Reactivalos en Meta Ads y volvé a conectar.';
+      return 'Esta página no tiene formularios activos en este momento — pausá la conexión por ahora y volvé a intentarlo cuando la campaña esté corriendo.';
     case 'subscribe':
       return 'No pudimos activar la recepción de leads en esa página. Revisá que el perfil tenga permiso de administrador y volvé a intentar.';
     case 'expired':
@@ -53,4 +53,8 @@ export function fbConnectUserMessage(code: FbConnectErrorCode | string): string 
     default:
       return 'No se pudo completar la conexión con Facebook. Intentá de nuevo.';
   }
+}
+
+export function fbPausedFormsNotice(): string {
+  return 'La página sigue conectada. No hay formularios activos en Meta ahora: el selector queda vacío hasta que la campaña vuelva a correr. Cuando esté activa, tocá Reconectar.';
 }

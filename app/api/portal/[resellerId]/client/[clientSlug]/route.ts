@@ -28,6 +28,17 @@ export async function PATCH(
   const $set: Record<string, unknown> = { updatedAt: new Date() };
   const $unset: Record<string, string> = {};
 
+  if ('status' in body) {
+    const raw = String((body as { status?: unknown }).status ?? '').trim().toLowerCase();
+    if (raw === 'activo') {
+      $set.status = 'activo';
+    } else if (raw === 'inactivo' || raw === 'suspendido') {
+      $set.status = 'inactivo';
+    } else {
+      return NextResponse.json({ error: 'Status inválido' }, { status: 400 });
+    }
+  }
+
   if ('alertNumber' in body) {
     const raw = String((body as { alertNumber?: unknown }).alertNumber ?? '').trim();
     if (!raw) {
@@ -63,10 +74,11 @@ export async function PATCH(
     return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
   }
 
-  const updated = await db.collection('leads').findOne(filter, { projection: { alertNumber: 1 } });
+  const updated = await db.collection('leads').findOne(filter, { projection: { alertNumber: 1, status: 1 } });
   return NextResponse.json({
     ok: true,
     alertNumber: updated?.alertNumber ? String(updated.alertNumber) : null,
+    status: updated?.status ? String(updated.status) : null,
   });
 }
 

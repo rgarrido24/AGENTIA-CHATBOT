@@ -144,13 +144,15 @@ export function generateClientPortalPassword(nombre: string): string {
   return `${clean || 'cliente'}${new Date().getFullYear()}`;
 }
 
+/** Solo formularios que siguen corriendo. PAUSED / ARCHIVED / DRAFT / sin status → activo:false. */
+export function isActiveLeadgenStatus(status: string | undefined): boolean {
+  return String(status || '').toUpperCase() === 'ACTIVE';
+}
+
 export function mergeFormularios(
   existing: ResellerFormulario[] | undefined,
   incoming: FbLeadForm[],
 ): ResellerFormulario[] {
-  const incomingIds = new Set(
-    incoming.map((f) => String(f.id || '').trim()).filter(Boolean),
-  );
   const map = new Map<string, ResellerFormulario>();
   for (const f of existing ?? []) {
     const id = String(f.formId || '').trim();
@@ -158,7 +160,7 @@ export function mergeFormularios(
     map.set(id, {
       ...f,
       formId: id,
-      activo: incomingIds.has(id),
+      activo: false,
     });
   }
   for (const form of incoming) {
@@ -169,7 +171,7 @@ export function mergeFormularios(
       formId: id,
       formName: (form.name || '').trim() || prev?.formName || id,
       plataforma: prev?.plataforma || 'fb/ig',
-      activo: true,
+      activo: isActiveLeadgenStatus(form.status),
     });
   }
   return Array.from(map.values());
@@ -521,14 +523,13 @@ export async function listPageLeadgenForms(pageId: string, pageToken: string): P
 }
 
 export function usableLeadgenForms(forms: FbLeadForm[]): FbLeadForm[] {
-  return forms.filter((f) => isUsableLeadgenStatus(f.status));
+  return forms.filter((f) => isActiveLeadgenStatus(f.status));
 }
 
-const LEADGEN_UNUSABLE_STATUS = new Set(['ARCHIVED', 'DELETED']);
+const LEADGEN_DELETED_STATUS = new Set(['DELETED']);
 
 export function isUsableLeadgenStatus(status: string | undefined): boolean {
-  if (!status) return true;
-  return !LEADGEN_UNUSABLE_STATUS.has(status);
+  return isActiveLeadgenStatus(status);
 }
 
 export function summarizeLeadgenForms(forms: FbLeadForm[]): string {
@@ -543,13 +544,54 @@ export async function subscribePageToLeadgen(pageId: string, pageToken: string):
     subscribed_fields: 'leadgen',
     access_token: pageToken,
   });
-  const data = await graphRequest<{ success?: boolean }>(url, {
+  console.log('[fb-connect] POST subscribed_apps', pageId, 'fields=leadgen');
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
+    cache: 'no-store',
   });
-  if (data.success === false) {
-    throw new Error('subscribed_apps devolvió success=false');
+  const json = (await res.json().catch(() => ({ parse_error: true }))) as Record<string, unknown> & GraphErrorBody;
+  console.log(
+    '[fb-connect] subscribed_apps POST result',
+    pageId,
+    `http=${res.status}`,
+    JSON.stringify(redactSecrets(json)).slice(0, 4000),
+  );
+  if (!res.ok || json.error || json.success === false) {
+    const msg =
+      json.error?.error_user_msg ||
+      json.error?.error_user_title ||
+      json.error?.message ||
+      `subscribed_apps HTTP ${res.status}`;
+    const err = new Error(msg) as Error & { graphCode?: number };
+    err.graphCode = json.error?.code;
+    throw err;
+  }
+
+  const checkUrl =
+    `${url}?fields=id,subscribed_fields` +
+    `&access_token=${encodeURIComponent(pageToken)}`;
+  const check = await graphGetLogged(checkUrl, `subscribed_apps GET ${pageId}`);
+  const rows = graphDataRows(check);
+  const appId = getFbAppId();
+  const ours = rows.find((row) => !appId || String(row.id ?? '') === appId) ?? rows[0];
+  const fields = Array.isArray(ours?.subscribed_fields)
+    ? (ours.subscribed_fields as unknown[]).map((f) => String(f))
+    : [];
+  const hasLeadgen = fields.includes('leadgen');
+  console.log(
+    '[fb-connect] subscribed_apps confirm',
+    JSON.stringify({
+      pageId,
+      appId: ours?.id ?? null,
+      subscribed_fields: fields,
+      leadgen: hasLeadgen,
+      apps: rows.length,
+    }),
+  );
+  if (!hasLeadgen) {
+    throw new Error('subscribed_apps no listó leadgen después del POST');
   }
 }
 
@@ -584,7 +626,7 @@ export function newOauthSessionId(): string {
 }
 
 export type CompleteFbConnectionResult =
-  | { ok: true; reveal: FbConnectReveal | null; pageName: string; formsCount: number }
+  | { ok: true; reveal: FbConnectReveal | null; pageName: string; formsCount: number; pausedForms: boolean }
   | { ok: false; code: FbConnectErrorCode; message: string };
 
 export async function completeFacebookPageConnection(opts: {
@@ -621,27 +663,28 @@ export async function completeFacebookPageConnection(opts: {
     page.id,
     listed.length ? summarizeLeadgenForms(listed) : '(ninguno)',
   );
-  const forms = usableLeadgenForms(listed);
-  if (forms.length === 0) {
+  const persistable = listed.filter((f) => !LEADGEN_DELETED_STATUS.has(String(f.status || '').toUpperCase()));
+  const forms = usableLeadgenForms(persistable);
+  const wasConnected = client.fb_connection?.status === 'connected';
+
+  if (forms.length === 0 && !wasConnected) {
     if (listed.length > 0) {
-      return {
-        ok: false,
-        code: 'forms_unusable',
-        message: `Encontramos formularios, pero no se pueden usar: ${summarizeLeadgenForms(listed)}. Reactivalos en Meta Ads y volvé a conectar.`,
-      };
+      return { ok: false, code: 'forms_unusable', message: fbConnectUserMessage('forms_unusable') };
     }
     return { ok: false, code: 'no_forms', message: fbConnectUserMessage('no_forms') };
   }
 
   try {
     await subscribePageToLeadgen(page.id, page.access_token);
+    console.log('[fb-connect] subscribed_apps OK', page.id, clientSlug);
   } catch (err) {
-    console.error('[fb-connect] subscribed_apps', (err as Error).message);
-    return { ok: false, code: 'subscribe', message: fbConnectUserMessage('subscribe') };
+    console.error('[fb-connect] subscribed_apps FAIL', page.id, clientSlug, (err as Error).message);
+    if (!wasConnected) {
+      return { ok: false, code: 'subscribe', message: fbConnectUserMessage('subscribe') };
+    }
   }
 
-  const wasConnected = client.fb_connection?.status === 'connected';
-  const formularios = mergeFormularios(client.formularios, forms);
+  const formularios = mergeFormularios(client.formularios, persistable);
   let encrypted: string;
   try {
     encrypted = encryptFbToken(page.access_token);
@@ -676,7 +719,22 @@ export async function completeFacebookPageConnection(opts: {
   }
 
   await db.collection('leads').updateOne(filter, { $set });
-  return { ok: true, reveal, pageName: page.name, formsCount: forms.length };
+  console.log(
+    '[fb-connect] saved',
+    clientSlug,
+    'active',
+    forms.length,
+    'stored',
+    formularios.length,
+    wasConnected ? 'reconnect' : 'first',
+  );
+  return {
+    ok: true,
+    reveal,
+    pageName: page.name,
+    formsCount: forms.length,
+    pausedForms: forms.length === 0,
+  };
 }
 
 export async function resolvePageAccessToken(pageId: string): Promise<string | null> {

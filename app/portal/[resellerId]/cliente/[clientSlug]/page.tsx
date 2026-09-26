@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
-import { getResellerAuth } from '@/lib/reseller-auth';
+import { getResellerAuth, isResellerClientPortalActive } from '@/lib/reseller-auth';
 import { verifyClientCookie, CLIENT_COOKIE_NAME } from '@/lib/client-auth';
 import { getMongoDb } from '@/lib/mongodb';
 import {
@@ -24,7 +24,7 @@ async function isResellerClientSuspended(
       { _collection_type: 'reseller_client', resellerId, clientSlug },
       { projection: { status: 1 } },
     );
-    return doc?.status === 'suspendido';
+    return !isResellerClientPortalActive(doc?.status);
   } catch {
     return false;
   }
@@ -110,14 +110,13 @@ export default async function ClientPage({
   const isClientAuthed =
     !reseller && (await verifyClientCookie(clientCookie, resellerId, clientSlug));
 
-  if (reseller || isClientAuthed) {
+  if (reseller) {
+    return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} allowLeadDelete />;
+  }
+
+  if (isClientAuthed) {
     if (await isResellerClientSuspended(resellerId, clientSlug)) {
       return <ClientSuspendedNotice />;
-    }
-    if (reseller) {
-      return (
-        <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} allowLeadDelete />
-      );
     }
     return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} />;
   }

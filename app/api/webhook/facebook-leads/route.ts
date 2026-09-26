@@ -30,12 +30,18 @@ function verifyMetaSignature(body: string, signature: string): boolean {
 // ─── GET — Meta webhook verification ─────────────────────────────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  if (
-    searchParams.get('hub.mode') === 'subscribe' &&
-    searchParams.get('hub.verify_token') === process.env.FB_VERIFY_TOKEN
-  ) {
-    return new NextResponse(searchParams.get('hub.challenge'), { status: 200 });
+  const mode = searchParams.get('hub.mode');
+  const token = searchParams.get('hub.verify_token');
+  const challenge = searchParams.get('hub.challenge');
+  const expected =
+    process.env.FB_VERIFY_TOKEN?.trim() ||
+    process.env.META_VERIFY_TOKEN?.trim() ||
+    '';
+  if (mode === 'subscribe' && expected && token === expected) {
+    console.log('[fb-leads] webhook verify OK');
+    return new NextResponse(challenge, { status: 200 });
   }
+  console.warn('[fb-leads] webhook verify FAIL', { mode, hasExpected: Boolean(expected) });
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 }
 

@@ -53,7 +53,7 @@ export interface ResellerClient {
   };
   alertNumber?:        string;
   clientPasswordHash?: string;
-  status:              'activo' | 'suspendido';
+  status:              'activo' | 'suspendido' | 'inactivo';
   /** Habilita PWA + push para asesoras de este cliente (default: true si no se define). */
   pwa_enabled?:        boolean;
   pwaBadgeCount?:      number;
@@ -122,4 +122,9 @@ export async function requireResellerAuth(resellerId: string): Promise<Reseller>
     redirect(`/portal/${resellerId}`);
   }
   return reseller;
+}
+
+/** El panel del cliente solo entra si status es activo. `suspendido` e `inactivo` bloquean el login. */
+export function isResellerClientPortalActive(status: unknown): boolean {
+  return String(status || 'activo') === 'activo';
 }

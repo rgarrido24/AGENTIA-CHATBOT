@@ -65,6 +65,7 @@ export default async function ClientesPage({
         rows={rows}
         fbError={searchParams?.fb_error}
         fbJustConnected={searchParams?.fb === 'connected'}
+        fbPausedForms={searchParams?.fb === 'paused_forms'}
       />
     </LucianoPortalThemeProvider>
   );

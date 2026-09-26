@@ -31,6 +31,7 @@ type Props = {
   rows: ClienteRow[];
   fbError?: string;
   fbJustConnected?: boolean;
+  fbPausedForms?: boolean;
 };
 
 type SortKey = 'az' | 'za' | 'hoy' | 'mes' | 'total';
@@ -63,7 +64,8 @@ function filterAndSortRows(
     }
     if (opts.hoy === 'with' && c.leadsHoy <= 0) return false;
     if (opts.hoy === 'without' && c.leadsHoy > 0) return false;
-    if (opts.status && c.status !== opts.status) return false;
+    if (opts.status === 'activo' && c.status !== 'activo') return false;
+    if (opts.status === 'suspendido' && c.status === 'activo') return false;
     if (opts.fbPending && c.fbNative) return false;
     if (opts.noAlert && c.alertNumber.trim()) return false;
     return true;
@@ -89,6 +91,7 @@ export default function ClientesPageView({
   rows,
   fbError,
   fbJustConnected,
+  fbPausedForms,
 }: Props) {
   const router = useRouter();
   const ctx = useLucianoPortalThemeOptional();
@@ -97,6 +100,8 @@ export default function ClientesPageView({
   const toggleTheme = ctx?.toggleTheme;
   const [alertEdit, setAlertEdit] = useState<{ slug: string; nombre: string; value: string } | null>(null);
   const [savingAlert, setSavingAlert] = useState(false);
+  const [statusEdit, setStatusEdit] = useState<{ slug: string; nombre: string; next: 'activo' | 'inactivo' } | null>(null);
+  const [savingStatus, setSavingStatus] = useState(false);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('az');
   const [hoy, setHoy] = useState<HoyChip>(null);
@@ -153,6 +158,29 @@ export default function ClientesPageView({
       router.refresh();
     } finally {
       setSavingAlert(false);
+    }
+  }
+
+  async function applyClientStatus() {
+    if (!statusEdit) return;
+    setSavingStatus(true);
+    try {
+      const res = await fetch(`/api/portal/${resellerId}/client/${statusEdit.slug}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: statusEdit.next }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert((data as { error?: string }).error || 'No se pudo actualizar el estado');
+        return;
+      }
+      setStatusEdit(null);
+      router.refresh();
+    } catch {
+      alert('Error de conexión');
+    } finally {
+      setSavingStatus(false);
     }
   }
 
@@ -234,6 +262,7 @@ export default function ClientesPageView({
           resellerId={resellerId}
           fbError={fbError}
           fbJustConnected={fbJustConnected}
+          fbPausedForms={fbPausedForms}
         />
         {rows.length === 0 ? (
           <div className="text-center py-20">
@@ -327,6 +356,53 @@ export default function ClientesPageView({
                 </div>
               </div>
             )}
+            {statusEdit && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                style={{ background: 'rgba(0,0,0,0.55)' }}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="clientes-status-title"
+              >
+                <div
+                  className="w-full max-w-sm rounded-xl border p-4 shadow-xl"
+                  style={{ background: cardBg, borderColor: cardBorder }}
+                >
+                  <p id="clientes-status-title" className="text-sm font-bold" style={{ color: nameColor }}>
+                    {statusEdit.next === 'inactivo'
+                      ? `¿Seguro que quieres suspender a ${statusEdit.nombre}?`
+                      : `¿Seguro que quieres reactivar a ${statusEdit.nombre}?`}
+                  </p>
+                  <p className="text-xs mt-2" style={{ color: negocioColor }}>
+                    {statusEdit.next === 'inactivo'
+                      ? 'No podrá entrar a su panel. Los leads, formularios e historial se conservan.'
+                      : 'Vuelve a poder entrar a su panel con la misma contraseña.'}
+                  </p>
+                  <div className="flex gap-2 mt-4 justify-end">
+                    <button
+                      type="button"
+                      className="rounded-lg px-3 py-1.5 text-xs"
+                      style={{ background: light ? '#e2e8f0' : '#222', color: nameColor }}
+                      onClick={() => setStatusEdit(null)}
+                      disabled={savingStatus}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold"
+                      style={statusEdit.next === 'inactivo'
+                        ? { background: '#dc2626', color: '#fff' }
+                        : { background: isLuciano && light ? '#CCFF00' : '#22c55e', color: isLuciano && light ? '#000' : '#fff' }}
+                      onClick={() => void applyClientStatus()}
+                      disabled={savingStatus}
+                    >
+                      {savingStatus ? '…' : statusEdit.next === 'inactivo' ? 'Suspender' : 'Reactivar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {visible.length === 0 ? (
               <div className="rounded-xl border px-4 py-10 text-center" style={{ background: cardBg, borderColor: cardBorder }}>
                 <p className="text-sm" style={{ color: emptyColor }}>Ningún cliente coincide con la búsqueda.</p>
@@ -365,8 +441,30 @@ export default function ClientesPageView({
                           ? { background: activoBg, color: activoColor }
                           : { background: suspendBg, color: suspendColor }}
                       >
-                        {c.status}
+                        {c.status === 'activo' ? 'activo' : 'inactivo'}
                       </span>
+                      <button
+                        type="button"
+                        className="text-[10px] font-semibold rounded-lg px-2 py-0.5"
+                        style={c.status === 'activo'
+                          ? {
+                              background: light ? '#fef2f2' : '#1a0000',
+                              color: suspendColor,
+                              border: `1px solid ${light ? '#fecaca' : '#7f1d1d'}`,
+                            }
+                          : {
+                              background: light ? '#ecfdf5' : '#0d2200',
+                              color: activoColor,
+                              border: `1px solid ${light ? '#a7f3d0' : '#14532d'}`,
+                            }}
+                        onClick={() => setStatusEdit({
+                          slug: c.clientSlug,
+                          nombre: c.nombre,
+                          next: c.status === 'activo' ? 'inactivo' : 'activo',
+                        })}
+                      >
+                        {c.status === 'activo' ? 'Suspender' : 'Reactivar'}
+                      </button>
                       <FbConnectionBadge status={c.fbStatus ?? 'pending'} light={light} />
                       <FbConnectLink
                         resellerId={resellerId}
