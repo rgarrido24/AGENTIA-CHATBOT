@@ -41,7 +41,7 @@ export async function GET(
       email: 1, campana: 1, adset: 1, canal_origen: 1,
       form_id: 1, form_name: 1, page_name: 1, platform_src: 1,
       form_fields: 1, nombre_es_usuario_ig: 1, status_vendedor: 1, status: 1,
-      status_seguimiento: 1, notas: 1, createdAt: 1, _id: 0,
+      status_seguimiento: 1, notas: 1, createdAt: 1, recuperado_manual: 1, _id: 0,
     })
     .toArray();
 
@@ -67,7 +67,9 @@ export async function GET(
     form_fields:        (d.form_fields || {}) as Record<string, string>,
     // Meta solo mandó el @usuario de Instagram: el panel lo marca con un ícono.
     nombre_es_usuario_ig: d.nombre_es_usuario_ig === true,
-    estado:             mapEstado(d.status_vendedor as string | undefined),
+    // Lead cargado a mano porque no entró por el webhook (ej. cuenta desconectada): el panel lo etiqueta "Recuperado".
+    recuperado:         d.recuperado_manual === true,
+    estado:            mapEstado(d.status_vendedor as string | undefined),
     status_seguimiento: (d.status_seguimiento || 'en_seguimiento') as string,
     notas:              (d.notas || []) as Array<{ texto: string; autor: string; fecha: string }>,
     createdAt:          (d.createdAt as Date).toISOString(),

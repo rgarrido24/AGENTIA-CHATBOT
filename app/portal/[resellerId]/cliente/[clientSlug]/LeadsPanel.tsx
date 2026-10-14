@@ -44,6 +44,8 @@ type Lead = {
   form_fields:        Record<string, string>;
   /** El nombre es un @usuario de Instagram, no el nombre real del lead. */
   nombre_es_usuario_ig?: boolean;
+  /** Lead cargado manualmente tras un corte de conexión (no entró por el webhook). */
+  recuperado?:        boolean;
   estado:             EstadoLegacy;
   status_seguimiento: StatusSeg;
   notas:              Nota[];
@@ -54,6 +56,13 @@ type Lead = {
 
 const ACCENT = '#CCFF00';
 const EMERALD = '#50C878';
+
+/** Etiqueta ámbar "Recuperado": legible tanto en tema oscuro como claro. */
+const RECUPERADO_CHIP_STYLE = {
+  background: 'rgba(245, 158, 11, 0.18)',
+  color: '#d97706',
+  border: '1px solid rgba(245, 158, 11, 0.45)',
+} as const;
 
 const STATUS_SEG_CONFIG: Record<StatusSeg, { label: string; bg: string; color: string }> = {
   en_seguimiento: { label: 'En Seguimiento', bg: '#0d1f00', color: '#4ade80' },
@@ -512,6 +521,15 @@ function LeadCard({
               {lead.campana.length > 20 ? lead.campana.slice(0, 20) + '…' : lead.campana}
             </span>
           )}
+          {lead.recuperado && (
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+              style={RECUPERADO_CHIP_STYLE}
+              title="Lead que no llegó en su momento por una desconexión y se cargó manualmente"
+            >
+              Recuperado
+            </span>
+          )}
           <span className="text-[10px]" style={{ color: ui.leadTime }}>{timeAgo(lead.createdAt)}</span>
         </div>
       </div>
@@ -723,6 +741,14 @@ function LeadDetail({
             </p>
           )}
           <p className="text-sm" style={{ color: ui.detailSubtitle }}>{lead.form_display || lead.form_name || lead.form_id || lead.campana || lead.platform_src || 'Lead'}</p>
+          {lead.recuperado && (
+            <span
+              className="mt-1 inline-block text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+              style={RECUPERADO_CHIP_STYLE}
+            >
+              Recuperado · no llegó en su momento por una desconexión
+            </span>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {allowDelete && (
