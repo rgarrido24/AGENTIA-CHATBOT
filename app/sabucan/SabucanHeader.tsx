@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, ShoppingCart, Users } from 'lucide-react';
+import { Search, ShoppingCart, Users, ImageIcon } from 'lucide-react';
 import { useState } from 'react';
 import { SABUCAN_LOGO_URL, SABUCAN_NAVY, SABUCAN_ORANGE } from '@/lib/sabucan-brand';
 
@@ -9,6 +9,7 @@ const NAV = [
   { href: '/sabucan/caja', label: 'Caja', icon: ShoppingCart },
   { href: '/sabucan/buscar', label: 'Buscar', icon: Search },
   { href: '/sabucan/clientes', label: 'Clientes', icon: Users },
+  { href: '/sabucan/banner', label: 'Banner', icon: ImageIcon },
 ] as const;
 
 export function SabucanHeader() {
