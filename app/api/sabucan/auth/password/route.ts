@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import clientPromise from '@/lib/mongodb';
+import { getMongoDb } from '@/lib/mongodb';
 import {
   SABUCAN_AUTH_COOKIE,
   SABUCAN_AUTH_MAX_AGE,
@@ -18,8 +18,7 @@ export const dynamic = 'force-dynamic';
 
 async function getSabucanPasswordOverride(): Promise<string | null> {
   try {
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB || 'agentia_chatbot_ventas');
+    const db = await getMongoDb();
     const doc = await db
       .collection('bot_settings')
       .findOne({ _id: 'sabucan_password_override' } as never);
@@ -32,8 +31,7 @@ async function getSabucanPasswordOverride(): Promise<string | null> {
 }
 
 async function setSabucanPasswordOverride(newPassword: string): Promise<void> {
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB || 'agentia_chatbot_ventas');
+  const db = await getMongoDb();
   await db.collection('bot_settings').updateOne(
     { _id: 'sabucan_password_override' } as never,
     { $set: { password: newPassword, updatedAt: new Date() } } as never,
