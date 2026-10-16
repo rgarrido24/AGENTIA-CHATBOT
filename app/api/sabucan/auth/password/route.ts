@@ -22,9 +22,8 @@ async function getSabucanPasswordOverride(): Promise<string | null> {
     const doc = await db
       .collection('bot_settings')
       .findOne({ _id: 'sabucan_password_override' } as never);
-    return typeof (doc as { password?: string } | null)?.password === 'string'
-      ? (doc as { password: string }).password
-      : null;
+    const d = doc as unknown as { password?: string } | null;
+    return typeof d?.password === 'string' ? d.password : null;
   } catch {
     return null;
   }
