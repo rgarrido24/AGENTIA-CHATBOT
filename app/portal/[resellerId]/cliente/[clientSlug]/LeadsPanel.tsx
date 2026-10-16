@@ -572,13 +572,44 @@ function LeadDetail({
   const [savingN,  setSavingN]  = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Reset state when lead changes
+  const [noteError, setNoteError] = useState('');
+  const draftKey = `agentia:nota-draft:${lead.id}`;
+
+  function updateNotaText(v: string) {
+    setNotaText(v);
+    try {
+      if (v) sessionStorage.setItem(draftKey, v);
+      else sessionStorage.removeItem(draftKey);
+    } catch {
+      /* sin almacenamiento: el borrador queda solo en memoria */
+    }
+  }
+
+  // Al cambiar de lead: reiniciar y recuperar el borrador de nota de ese lead (si había).
+  // IMPORTANTE: depende SOLO de lead.id. El panel recarga la lista cada 30 s y eso crea
+  // un array de notas nuevo; si dependiera de lead.notas se borraba lo que se estaba escribiendo.
   useEffect(() => {
     setStatus(lead.status_seguimiento);
     setNotas(lead.notas);
-    setShowNota(false);
-    setNotaText('');
-  }, [lead.id, lead.status_seguimiento, lead.notas]);
+    setNoteError('');
+    let draft = '';
+    try {
+      draft = sessionStorage.getItem(draftKey) || '';
+    } catch {
+      /* ignore */
+    }
+    setNotaText(draft);
+    setShowNota(!!draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead.id]);
+
+  // Recarga en segundo plano: sincroniza estado y notas del servidor SIN tocar la nota que se está escribiendo.
+  const notasKey = JSON.stringify(lead.notas);
+  useEffect(() => {
+    setStatus(lead.status_seguimiento);
+    setNotas(lead.notas);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead.status_seguimiento, notasKey]);
 
   const ff = lead.form_fields || {};
   const normalizeKey = (s: string) =>
@@ -690,6 +721,7 @@ function LeadDetail({
   async function submitNota() {
     if (!notaText.trim()) return;
     setSavingN(true);
+    setNoteError('');
     const res = await fetch(`/api/leads/${encodeURIComponent(lead.id)}/notes`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -699,8 +731,11 @@ function LeadDetail({
       const nueva: Nota = { texto: notaText.trim(), autor: resellerId, fecha: new Date().toISOString() };
       setNotas((prev) => [...prev, nueva]);
       onNoteAdded(lead.id, nueva);
-      setNotaText('');
+      updateNotaText('');
       setShowNota(false);
+    } else {
+      // No perder lo escrito: el texto queda en el cuadro y se avisa del error.
+      setNoteError('No se pudo guardar la nota. Tu texto sigue acá: probá de nuevo.');
     }
     setSavingN(false);
   }
@@ -844,7 +879,7 @@ function LeadDetail({
               <div className="mb-4">
                 <textarea
                   value={notaText}
-                  onChange={(e) => setNotaText(e.target.value)}
+                  onChange={(e) => updateNotaText(e.target.value)}
                   placeholder="Escribe una nota…"
                   rows={3}
                   autoFocus
@@ -870,13 +905,16 @@ function LeadDetail({
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setShowNota(false); setNotaText(''); }}
+                    onClick={() => { setShowNota(false); updateNotaText(''); setNoteError(''); }}
                     className="rounded-xl px-3 py-2 text-sm"
                     style={{ background: ui.ghostBtnBg, color: ui.ghostBtnColor }}
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
+                {noteError && (
+                  <p className="mt-2 text-xs" style={{ color: '#ef4444' }}>{noteError}</p>
+                )}
               </div>
             )}
 
