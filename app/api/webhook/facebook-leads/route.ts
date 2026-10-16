@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { getMongoDb } from '@/lib/mongodb';
 import { notifyPortalNewLeadAfterInsert } from '@/lib/portal-push';
 import { fetchMetaLeadById } from '@/lib/facebook-lead-connect';
+import { isMetaTestLeadFields } from '@/lib/facebook-test-lead';
 
 const DEFAULT_PUBLIC_ORIGIN = 'https://agentia.software';
 
@@ -659,13 +660,16 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
         if (fd?.name && fd.values?.[0]) rawFields[fd.name] = fd.values[0];
       }
 
+      // Lead de prueba de Meta (botón "Probar leads" del panel): se guarda para comprobar
+      // que el webhook y el ruteo funcionan, pero sin alertas ni push al asesor.
+      const esPrueba = isMetaTestLeadFields(rawFields);
       const { nombre: resolvedName, esUsuarioIg } = resolveLeadName(rawFields);
-      const full_name = resolvedName === SIN_NOMBRE ? '' : resolvedName;
-      const phone_raw = resolveLeadPhone(rawFields, value);
-      const email     = field('email') || field('correo');
+      const full_name = esPrueba ? 'PRUEBA Agentia' : resolvedName === SIN_NOMBRE ? '' : resolvedName;
+      const phone_raw = esPrueba ? '' : resolveLeadPhone(rawFields, value);
+      const email     = esPrueba ? '' : field('email') || field('correo');
 
       console.log(
-        `[fb-leads/meta] nombre="${resolvedName}"${esUsuarioIg ? ' (usuario IG)' : ''} ` +
+        `[fb-leads/meta] ${esPrueba ? '(PRUEBA) ' : ''}nombre="${resolvedName}"${esUsuarioIg ? ' (usuario IG)' : ''} ` +
           `tel="${phone_raw}" campos=${Object.keys(rawFields).join(',')}`,
       );
 
@@ -708,6 +712,7 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
             adset:         adset_name   || undefined,
             form_id:       form_id      || undefined,
             leadgen_id:    leadgen_id   || undefined,
+            ...(esPrueba ? { es_prueba: true } : {}),
             resellerId:    resellerMatch?.resellerId ?? 'unknown',
             clientSlug:    resellerMatch?.clientSlug ?? undefined,
             ...(Object.keys(form_fields).length > 0 ? { form_fields } : {}),
@@ -740,13 +745,20 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
           await insertLeadBackup(db, snap);
         }
 
-        await insertFbLeadHighActivityAlert(db, {
-          leadId,
-          resellerMatch,
-          nombre: full_name,
-          whatsapp: phone,
-          email,
-        });
+        if (!esPrueba) {
+          await insertFbLeadHighActivityAlert(db, {
+            leadId,
+            resellerMatch,
+            nombre: full_name,
+            whatsapp: phone,
+            email,
+          });
+        }
+      }
+
+      if (esPrueba) {
+        console.log(`[fb-leads/meta] Lead de PRUEBA guardado sin alertas: ${leadId} | form: ${form_id} | cliente: ${resellerMatch?.clientSlug ?? 'SIN ASIGNAR'}`);
+        continue;
       }
 
       // NO enviar ningún mensaje al lead. Solo alerta al admin (Luciano).

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLucianoPortalThemeOptional } from './LucianoPortalTheme';
-import { FbConnectLink, FbConnectionBadge } from '../clientes/FacebookConnectUi';
+import { FbConnectLink, FbConnectionBadge, FbTestLeadButton } from '../clientes/FacebookConnectUi';
 
 type ClientItem = {
   clientSlug: string;
@@ -170,6 +170,9 @@ export default function ClientsList({ resellerId, clients }: { resellerId: strin
                 connected={!!c.fbNative}
                 light={light}
               />
+              {c.fbNative && (
+                <FbTestLeadButton resellerId={resellerId} clientSlug={c.clientSlug} light={light} />
+              )}
             </div>
             <p className="text-[10px] mt-0.5 truncate" style={{ color: totalColor }}>
               Alertas: {c.alertNumber ? c.alertNumber : '→ FB_ALERT_NUMBER'}

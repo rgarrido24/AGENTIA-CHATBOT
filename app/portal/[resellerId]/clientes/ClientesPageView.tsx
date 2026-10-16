@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useLucianoPortalThemeOptional } from '../dashboard/LucianoPortalTheme';
 import { LUCINO_PRODUCT_TITLE } from '@/lib/portal-luciano-ui';
-import { FacebookConnectBanners, FbConnectLink, FbConnectionBadge } from './FacebookConnectUi';
+import { FacebookConnectBanners, FbConnectLink, FbConnectionBadge, FbTestLeadButton } from './FacebookConnectUi';
 
 export type ClienteRow = {
   clientSlug: string;
@@ -472,6 +472,9 @@ export default function ClientesPageView({
                         connected={!!c.fbNative}
                         light={light}
                       />
+                      {c.fbNative && (
+                        <FbTestLeadButton resellerId={resellerId} clientSlug={c.clientSlug} light={light} />
+                      )}
                       <button
                         type="button"
                         title="Número WhatsApp para alertas"
