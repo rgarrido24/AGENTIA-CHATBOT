@@ -22,8 +22,8 @@ export function SabucanHeader() {
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link href="/sabucan/caja" className="flex min-w-0 items-center gap-2.5">
           <span
-            className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-white"
-            style={{ borderColor: `${SABUCAN_ORANGE}66` }}
+            className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border"
+            style={{ borderColor: `${SABUCAN_ORANGE}66`, backgroundColor: `${SABUCAN_NAVY}` }}
             aria-hidden
           >
             {logoOk ? (
