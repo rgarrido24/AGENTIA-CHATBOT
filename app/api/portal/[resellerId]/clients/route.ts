@@ -62,8 +62,9 @@ function buildLeadQuery(
   legacyQuery?: Record<string, unknown>
 ) {
   const primary = { resellerId, clientSlug };
-  if (!legacyQuery) return primary;
-  return { $or: [primary, legacyQuery] };
+  const sinPrueba = { es_prueba: { $ne: true } };
+  if (!legacyQuery) return { ...primary, ...sinPrueba };
+  return { $and: [{ $or: [primary, legacyQuery] }, sinPrueba] };
 }
 
 export async function POST(

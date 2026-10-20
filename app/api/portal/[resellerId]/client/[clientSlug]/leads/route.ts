@@ -114,7 +114,8 @@ export async function DELETE(
 }
 
 function buildLeadQuery(resellerId: string, clientSlug: string): Record<string, unknown> {
-  return { resellerId, clientSlug };
+  // es_prueba: leads de prueba del botón "Probar leads" (se borran solos); nunca se muestran ni cuentan.
+  return { resellerId, clientSlug, es_prueba: { $ne: true } };
 }
 
 /** Teléfono del lead: en MongoDB el campo es `telefono` (no whatsapp/phone). */
