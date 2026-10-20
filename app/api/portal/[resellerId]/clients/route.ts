@@ -116,6 +116,7 @@ export async function POST(
     ...(email       ? { email }       : {}),
     ...(alertNumber ? { alertNumber } : {}),
     clientPasswordHash,
+    passwordTemp: true,
     formularios: formularios
       .filter((f: { formId?: string }) => f.formId?.trim())
       .map((f: { formId: string; formName?: string }) => ({

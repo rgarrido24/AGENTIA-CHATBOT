@@ -53,6 +53,8 @@ export interface ResellerClient {
   };
   alertNumber?:        string;
   clientPasswordHash?: string;
+  /** true mientras la clave es la temporal del alta (nadie la vio): la primera conexion de Facebook la reemplaza. */
+  passwordTemp?: boolean;
   status:              'activo' | 'suspendido' | 'inactivo';
   /** Habilita PWA + push para asesoras de este cliente (default: true si no se define). */
   pwa_enabled?:        boolean;
