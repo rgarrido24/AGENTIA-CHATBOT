@@ -35,6 +35,7 @@
     "check:izzi": "node scripts/check-izzi-chat.js",
     "chequeo:cliente": "node scripts/chequeo-cliente.js",
     "recuperar:leads": "node scripts/recuperar-leads-meta.js",
+    "listado:migracion": "node scripts/listado-migracion.js",
     "update:cwf": "node scripts/seed-cwf-config.js",
     "update:biovela": "node scripts/seed-biovela-config.js",
     "seed:anuario-k3": "node scripts/seed-anuario-k3-alumnos.js",

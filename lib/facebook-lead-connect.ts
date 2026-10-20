@@ -705,7 +705,9 @@ export async function completeFacebookPageConnection(opts: {
   };
 
   let reveal: FbConnectReveal | null = null;
-  if (!wasConnected) {
+  // Solo se genera contraseña si el cliente aún no tiene una: al migrar un cliente que ya
+  // usaba el panel (p. ej. venía de Zapier) NO hay que cambiarle la clave y dejarlo afuera.
+  if (!wasConnected && !client.clientPasswordHash) {
     const password = generateClientPortalPassword(client.nombre);
     $set.clientPasswordHash = hashClientPassword(password);
     reveal = {
