@@ -250,6 +250,12 @@ export async function notifyPortalNewLeadAfterInsert(leadId: string): Promise<vo
 }
 
 /** Envía push a asesoras suscritas cuando llega un lead nuevo al portal. */
+/**
+ * Prioridad alta: sin esto el push sale con urgencia "normal" y Android en reposo (Doze) lo puede
+ * retrasar hasta que la asesora abre la app. TTL 24 h: un aviso de lead de hace días ya no sirve.
+ */
+const PUSH_SEND_OPTIONS = { urgency: 'high' as const, TTL: 60 * 60 * 24 };
+
 export async function notifyPortalNewLead(params: {
   resellerId: string;
   clientSlug: string;
@@ -307,7 +313,7 @@ export async function notifyPortalNewLead(params: {
   const results = await Promise.allSettled(
     subs.map(async (sub) => {
       try {
-        await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, json);
+        await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, json, PUSH_SEND_OPTIONS);
       } catch (err: unknown) {
         const status = (err as { statusCode?: number })?.statusCode;
         console.error('[PWA PUSH] fallo envío:', status ?? (err instanceof Error ? err.message : err));

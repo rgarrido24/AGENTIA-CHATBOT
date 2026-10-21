@@ -1,3 +1,4 @@
+import { runLeadWhatsAppAutomation } from '@/lib/wa-automation';
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getMongoDb } from '@/lib/mongodb';
@@ -616,6 +617,13 @@ async function processZapierLead(data: Record<string, unknown>) {
 
   console.log('[FB-LEADS] Lead insertado (zapier), disparando PWA push:', { leadId });
   await notifyPortalNewLeadAfterInsert(leadId);
+  void runLeadWhatsAppAutomation({
+    resellerId: resellerMatch?.resellerId ?? '',
+    clientSlug: resellerMatch?.clientSlug ?? '',
+    leadId,
+    nombre: full_name,
+    telefono: phone,
+  });
 }
 
 // ─── Formato Meta nativo (entry.changes[].field === 'leadgen') ────────────────
@@ -775,6 +783,13 @@ async function processMetaWebhook(payload: Record<string, unknown>) {
       if (result.upsertedCount > 0) {
         console.log('[FB-LEADS] Lead insertado (meta), disparando PWA push:', { leadId, form_id });
         await notifyPortalNewLeadAfterInsert(leadId);
+        void runLeadWhatsAppAutomation({
+          resellerId: resellerMatch?.resellerId ?? '',
+          clientSlug: resellerMatch?.clientSlug ?? '',
+          leadId,
+          nombre: full_name,
+          telefono: phone,
+        });
       } else {
         console.error('[PWA PUSH] omitido en fb-leads/meta: lead ya existía (upsertedCount=0)', {
           leadId,

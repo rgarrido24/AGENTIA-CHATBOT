@@ -10,6 +10,7 @@ type Usage = { month: string; byCategory: Array<{ category: string; messages: nu
 const card = 'rounded-xl border border-zinc-800 bg-zinc-900 p-4';
 const input = 'w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100';
 const btn = 'rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50';
+const btnGhost = 'rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-200 disabled:opacity-50';
 
 export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }: { resellerId: string; clientSlug: string; clientName: string }) {
   const base = `/api/portal/${resellerId}/client/${clientSlug}/whatsapp`;
@@ -17,6 +18,11 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [notice, setNotice] = useState('');
+  // Mensajes automáticos al llegar un lead
+  type Auto = { enabled: boolean; templateName: string; language: string };
+  const [autoWelcome, setAutoWelcome] = useState<Auto>({ enabled: false, templateName: '', language: 'es_MX' });
+  const [autoAlert, setAutoAlert] = useState<Auto>({ enabled: false, templateName: '', language: 'es_MX' });
+  const [autoBusy, setAutoBusy] = useState(false);
 
   // Plantilla nueva
   const [tName, setTName] = useState('');
@@ -46,6 +52,12 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
     if (c.ok) setCampaigns(cj.campaigns ?? []);
     const uj = (await u.json().catch(() => ({}))) as Usage;
     if (u.ok) setUsage(uj);
+    const sres = await fetch(`${base}/settings`, { cache: 'no-store' });
+    const sj = (await sres.json().catch(() => ({}))) as { settings?: { welcome?: Auto; advisorAlert?: Auto } };
+    if (sres.ok) {
+      if (sj.settings?.welcome) setAutoWelcome(sj.settings.welcome);
+      if (sj.settings?.advisorAlert) setAutoAlert(sj.settings.advisorAlert);
+    }
   }, [base]);
 
   useEffect(() => {
@@ -74,6 +86,33 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
     setTBody('');
     setTExamples('');
     await load();
+  }
+
+  async function createDefaults() {
+    setAutoBusy(true);
+    setNotice('');
+    const res = await fetch(`${base}/templates/defaults`, { method: 'POST' });
+    const j = (await res.json().catch(() => ({}))) as { error?: string; results?: Array<{ name: string; result: string }> };
+    setAutoBusy(false);
+    if (!res.ok) return setNotice(j.error || 'No se pudieron crear las plantillas');
+    setNotice((j.results ?? []).map((r) => `${r.name}: ${r.result}`).join(' · ') + '. Meta las revisa; cuando estén aprobadas ya puedes activarlas abajo.');
+    await load();
+  }
+
+  async function saveAuto() {
+    setAutoBusy(true);
+    setNotice('');
+    const payload: Record<string, Auto> = {};
+    if (autoWelcome.templateName) payload.welcome = autoWelcome;
+    if (autoAlert.templateName) payload.advisorAlert = autoAlert;
+    const res = await fetch(`${base}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const j = (await res.json().catch(() => ({}))) as { error?: string };
+    setAutoBusy(false);
+    setNotice(res.ok ? 'Mensajes automáticos guardados.' : j.error || 'No se pudo guardar');
   }
 
   async function launchCampaign() {
@@ -141,6 +180,35 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
           </Link>
         </div>
         {notice ? <p className="rounded-lg bg-zinc-800 p-3 text-sm">{notice}</p> : null}
+
+        <section className={card}>
+          <h2 className="text-sm font-semibold">Mensajes automáticos cuando llega un lead</h2>
+          <p className="mt-1 text-xs text-zinc-400">
+            Se mandan solos desde el WhatsApp oficial del negocio, usando plantillas aprobadas. Primero crea las plantillas básicas y espera a que Meta las apruebe.
+          </p>
+          <button className={`${btnGhost} mt-3`} disabled={autoBusy} onClick={() => void createDefaults()}>
+            Crear plantillas básicas (bienvenida y aviso)
+          </button>
+          {([
+            ['Bienvenida a la persona que llenó el formulario ("recibimos tus datos, te contactaremos")', autoWelcome, setAutoWelcome],
+            ['Aviso a la asesora de que entró un lead nuevo', autoAlert, setAutoAlert],
+          ] as const).map(([label, value, setValue]) => (
+            <div key={label} className="mt-3 space-y-2 rounded-lg bg-zinc-950 p-3">
+              <label className="flex items-start gap-2 text-xs">
+                <input type="checkbox" className="mt-0.5" checked={value.enabled} onChange={(e) => setValue({ ...value, enabled: e.target.checked })} />
+                {label}
+              </label>
+              <select className={input} value={value.templateName} onChange={(e) => setValue({ ...value, templateName: e.target.value, language: approved.find((t) => t.name === e.target.value)?.language ?? value.language })}>
+                <option value="">Elige una plantilla aprobada…</option>
+                {approved.map((t) => (
+                  <option key={`${t.name}-${t.language}`} value={t.name}>{t.name} ({t.variables} variable{t.variables === 1 ? '' : 's'})</option>
+                ))}
+              </select>
+            </div>
+          ))}
+          <p className="mt-2 text-xs text-zinc-500">Bienvenida usa 2 variables (nombre, negocio). Aviso a la asesora usa 2 (nombre, teléfono).</p>
+          <button className={`${btn} mt-3`} disabled={autoBusy} onClick={() => void saveAuto()}>Guardar</button>
+        </section>
 
         <section className={card}>
           <h2 className="text-sm font-semibold">Plantillas</h2>
