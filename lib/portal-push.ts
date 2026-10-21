@@ -332,3 +332,45 @@ export async function notifyPortalNewLead(params: {
 export function getPortalVapidPublicKey(): string | null {
   return getVapidKeys()?.publicKey ?? null;
 }
+
+/** Aviso push cuando una persona contesta por WhatsApp al número oficial del cliente. */
+export async function notifyPortalInboundMessage(params: {
+  resellerId: string;
+  clientSlug: string;
+  contactKey: string;
+  name?: string;
+  text?: string;
+}): Promise<void> {
+  try {
+    const { resellerId, clientSlug } = normalizePortalIds(params.resellerId, params.clientSlug);
+    if (!resellerId || !clientSlug) return;
+    if (!(await isPortalPwaEnabled(resellerId, clientSlug)) || !configureWebPush()) return;
+    const subs = await listPortalPushSubscriptions(resellerId, clientSlug);
+    if (!subs.length) return;
+    const badgeCount = await incrementPortalBadgeCount(resellerId, clientSlug);
+    const who = params.name?.trim() || `+${params.contactKey}`;
+    const preview = (params.text || 'Mensaje nuevo').slice(0, 90);
+    const payload: PortalPushPayload = {
+      title: `💬 ${who}`,
+      body: preview,
+      url: `${portalOrigin()}/portal/${resellerId}/cliente/${clientSlug}/whatsapp/bandeja?c=${encodeURIComponent(params.contactKey)}`,
+      icon: PORTAL_PWA_ICON_192,
+      badge: PORTAL_PWA_ICON_192,
+      badgeCount,
+      tag: `portal-wa-${params.contactKey}`,
+    };
+    const json = JSON.stringify(payload);
+    await Promise.allSettled(
+      subs.map(async (sub) => {
+        try {
+          await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, json, PUSH_SEND_OPTIONS);
+        } catch (err: unknown) {
+          const status = (err as { statusCode?: number })?.statusCode;
+          if (status === 404 || status === 410) await removePortalPushSubscription(sub.endpoint);
+        }
+      }),
+    );
+  } catch (err) {
+    console.error('[PWA PUSH] notifyPortalInboundMessage:', err instanceof Error ? err.message : err);
+  }
+}

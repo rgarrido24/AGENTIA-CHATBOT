@@ -175,9 +175,10 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-bold">WhatsApp · {clientName}</h1>
-          <Link href={`/portal/${resellerId}/cliente/${clientSlug}`} className="text-xs text-zinc-400 underline">
-            Volver a leads
-          </Link>
+          <div className="flex gap-3 text-xs text-zinc-400">
+            <Link href={`/portal/${resellerId}/cliente/${clientSlug}/whatsapp/bandeja`} className="underline">Bandeja</Link>
+            <Link href={`/portal/${resellerId}/cliente/${clientSlug}`} className="underline">Volver a leads</Link>
+          </div>
         </div>
         {notice ? <p className="rounded-lg bg-zinc-800 p-3 text-sm">{notice}</p> : null}
 

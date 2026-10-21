@@ -8,6 +8,8 @@ import {
 } from '@/lib/agentia-panel';
 import { sendPushNotification } from '@/lib/panel-push';
 import { getWaAccountByPhoneNumberId, recordWaInbound, recordWaStatus } from '@/lib/wa-accounts';
+import { contactKey } from '@/lib/wa-inbox';
+import { notifyPortalInboundMessage } from '@/lib/portal-push';
 import {
   usesClientPanelStore,
   recordClientPanelInbound,
@@ -175,9 +177,21 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
         const from = typeof m.from === 'string' ? m.from : '';
         if (!id || !from) continue;
         const text = (m.text as { body?: string } | undefined)?.body;
-        await recordWaInbound(waAcc, { id, from, type: typeof m.type === 'string' ? m.type : undefined, text }).catch((err) => {
+        const contacts = Array.isArray(value?.contacts) ? (value.contacts as Array<{ wa_id?: string; profile?: { name?: string } }>) : [];
+        const name = contacts.find((c) => c.wa_id === from)?.profile?.name ?? contacts[0]?.profile?.name;
+        const isNew = await recordWaInbound(waAcc, { id, from, type: typeof m.type === 'string' ? m.type : undefined, text, name }).catch((err) => {
           console.error('[webhook/whatsapp] wa inbound:', err instanceof Error ? err.message : err);
+          return false;
         });
+        if (isNew) {
+          void notifyPortalInboundMessage({
+            resellerId: waAcc.resellerId,
+            clientSlug: waAcc.clientSlug,
+            contactKey: contactKey(from),
+            name,
+            text: text ?? '[archivo o mensaje especial]',
+          });
+        }
       }
       return NextResponse.json({ ok: true, clientAccount: waAcc.clientSlug });
     }

@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { getMongoDb } from '@/lib/mongodb';
 import { decryptFbToken, encryptFbToken } from '@/lib/fb-token-crypto';
 import { FB_GRAPH_VERSION, getFbAppId } from '@/lib/facebook-lead-connect';
+import { contactKey, touchConversation } from '@/lib/wa-inbox';
 
 /**
  * Cuentas de WhatsApp Business (API oficial) conectadas por cliente vía Embedded Signup.
@@ -172,6 +173,8 @@ export type WaMessageDoc = {
   /** wamid de Meta */
   wamid: string;
   contact: string;
+  /** Llave unificada de la persona (ver contactKey en wa-inbox). */
+  contactKey?: string;
   text?: string;
   type?: string;
   campaignId?: string;
@@ -184,11 +187,16 @@ export type WaMessageDoc = {
   updatedAt: Date;
 };
 
-/** Guarda un mensaje entrante de una cuenta conectada. Idempotente por wamid. */
-export async function recordWaInbound(acc: WaAccountDoc, msg: { id: string; from: string; type?: string; text?: string }): Promise<void> {
+/** Guarda un mensaje entrante de una cuenta conectada. Idempotente por wamid. Devuelve true si es nuevo. */
+export async function recordWaInbound(
+  acc: WaAccountDoc,
+  msg: { id: string; from: string; type?: string; text?: string; name?: string },
+): Promise<boolean> {
   const db = await getMongoDb();
   const now = new Date();
-  await db.collection<WaMessageDoc>(WA_MESSAGES).updateOne(
+  const key = contactKey(msg.from);
+  const shown = msg.text ?? (msg.type ? `[${msg.type}]` : '');
+  const res = await db.collection<WaMessageDoc>(WA_MESSAGES).updateOne(
     { wamid: msg.id },
     {
       $setOnInsert: {
@@ -198,14 +206,27 @@ export async function recordWaInbound(acc: WaAccountDoc, msg: { id: string; from
         direction: 'in',
         wamid: msg.id,
         contact: msg.from,
+        contactKey: key,
         type: msg.type,
-        text: msg.text,
+        text: shown,
         createdAt: now,
       },
       $set: { updatedAt: now },
     },
     { upsert: true },
   );
+  if (res.upsertedCount === 0) return false;
+  await touchConversation({
+    resellerId: acc.resellerId,
+    clientSlug: acc.clientSlug,
+    contact: msg.from,
+    direction: 'in',
+    text: shown,
+    name: msg.name,
+    wamid: msg.id,
+    at: now,
+  });
+  return true;
 }
 
 /** Actualiza el estado de entrega de un mensaje saliente por wamid (no falla si no existe). */
