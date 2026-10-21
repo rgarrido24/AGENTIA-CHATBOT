@@ -189,7 +189,7 @@ export default function ClientsList({ resellerId, clients }: { resellerId: strin
           aria-modal="true"
           aria-labelledby="addon-edit-title"
         >
-          <div className="w-full max-w-sm rounded-xl border p-4 shadow-xl" style={{ background: modalBg, borderColor: modalBorder }}>
+          <div className="w-full max-w-sm rounded-xl border p-4 shadow-xl" style={{ background: modalBg, borderColor: modalBorder, color: nameColor }}>
             <p id="addon-edit-title" className="text-sm font-bold" style={{ color: nameColor }}>Add-ons</p>
             <p className="text-xs mt-1" style={{ color: subColor }}>{addonEdit.nombre}</p>
             <div className="mt-3 space-y-2">
