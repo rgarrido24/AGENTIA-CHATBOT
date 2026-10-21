@@ -205,6 +205,15 @@ export default function ClientsList({ resellerId, clients }: { resellerId: strin
                 </label>
               ))}
             </div>
+            {addonEdit.values.forms && (
+              <a
+                href={`/portal/${resellerId}/cliente/${addonEdit.slug}/formularios`}
+                className="mt-3 block text-xs underline"
+                style={{ color: nameColor }}
+              >
+                Abrir formularios a WhatsApp →
+              </a>
+            )}
             {addonEdit.values.whatsappApi && (
               <WhatsAppConnectButton resellerId={resellerId} clientSlug={addonEdit.slug} />
             )}
