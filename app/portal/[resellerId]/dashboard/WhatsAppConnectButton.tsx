@@ -81,6 +81,30 @@ export default function WhatsAppConnectButton({ resellerId, clientSlug }: { rese
     return () => window.removeEventListener('message', onMessage);
   }, []);
 
+  const [manualOpen, setManualOpen] = useState(false);
+  const [mWaba, setMWaba] = useState('');
+  const [mPhone, setMPhone] = useState('');
+  const [mToken, setMToken] = useState('');
+
+  async function connectManual() {
+    setBusy(true);
+    setMsg('');
+    try {
+      const res = await fetch(base, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wabaId: mWaba.trim(), phoneNumberId: mPhone.trim(), token: mToken.trim() }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) return setMsg(data.error || 'No se pudo conectar');
+      setMToken('');
+      setManualOpen(false);
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function connect() {
     if (!cfg?.appId || !cfg.configId) {
       setMsg('Falta configurar WA_EMBEDDED_SIGNUP_CONFIG_ID en el servidor.');
@@ -153,6 +177,19 @@ export default function WhatsAppConnectButton({ resellerId, clientSlug }: { rese
       >
         {busy ? 'Conectando…' : account ? 'Reconectar número' : 'Conectar número'}
       </button>
+      <button type="button" className="mt-2 block underline" onClick={() => setManualOpen(!manualOpen)}>
+        {manualOpen ? 'Ocultar conexión manual' : 'Conexión manual (pegar datos de la cuenta)'}
+      </button>
+      {manualOpen ? (
+        <div className="mt-2 space-y-2">
+          <input className="w-full rounded border px-2 py-1" style={{ color: '#111', background: '#fff' }} placeholder="ID de la cuenta de WhatsApp (WABA ID)" value={mWaba} onChange={(e) => setMWaba(e.target.value)} />
+          <input className="w-full rounded border px-2 py-1" style={{ color: '#111', background: '#fff' }} placeholder="ID del número (Phone number ID)" value={mPhone} onChange={(e) => setMPhone(e.target.value)} />
+          <input className="w-full rounded border px-2 py-1" style={{ color: '#111', background: '#fff' }} type="password" placeholder="Token de acceso (usuario del sistema)" value={mToken} onChange={(e) => setMToken(e.target.value)} />
+          <button type="button" disabled={busy || !mWaba || !mPhone || !mToken} onClick={() => void connectManual()} className="rounded-lg px-3 py-1.5 font-semibold disabled:opacity-50" style={{ background: '#22c55e', color: '#fff' }}>
+            {busy ? 'Conectando…' : 'Conectar con estos datos'}
+          </button>
+        </div>
+      ) : null}
       {account ? (
         <a
           href={`/portal/${resellerId}/cliente/${clientSlug}/whatsapp`}

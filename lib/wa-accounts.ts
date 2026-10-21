@@ -163,6 +163,51 @@ export async function completeWhatsAppEmbeddedSignup(opts: {
   return doc;
 }
 
+/**
+ * Conexión manual (plan B sin Embedded Signup): se pegan el WABA ID, el ID del número y un token
+ * de usuario del sistema generado PARA ESTA APP con permisos de WhatsApp. Valida el token contra
+ * el número y suscribe la app a la cuenta para recibir mensajes y estados.
+ */
+export async function completeWhatsAppManualConnection(opts: {
+  resellerId: string;
+  clientSlug: string;
+  wabaId: string;
+  phoneNumberId: string;
+  token: string;
+}): Promise<WaAccountDoc> {
+  const info = await graph(`${opts.phoneNumberId}?fields=display_phone_number,verified_name,quality_rating,code_verification_status`, opts.token);
+  if (info.error) {
+    throw new Error(`El token no puede leer ese número: ${info.error.message}. Revisa que el ID del número sea correcto y que el token tenga acceso a esa cuenta.`);
+  }
+  const errors: string[] = [];
+  const sub = await graph(`${opts.wabaId}/subscribed_apps`, opts.token, { method: 'POST', body: {} });
+  const subscribed = !sub.error;
+  if (sub.error) errors.push(`suscripción: ${sub.error.message}`);
+
+  const now = new Date();
+  const doc: WaAccountDoc = {
+    resellerId: opts.resellerId,
+    clientSlug: opts.clientSlug,
+    wabaId: opts.wabaId,
+    phoneNumberId: opts.phoneNumberId,
+    displayPhone: typeof info.display_phone_number === 'string' ? info.display_phone_number : undefined,
+    verifiedName: typeof info.verified_name === 'string' ? info.verified_name : undefined,
+    qualityRating: typeof info.quality_rating === 'string' ? info.quality_rating : undefined,
+    tokenEnc: encryptFbToken(opts.token),
+    // El número ya está dado de alta en la nube por quien lo creó en Meta; no se vuelve a registrar.
+    registered: true,
+    subscribed,
+    status: subscribed ? 'connected' : 'error',
+    lastError: errors.length ? errors.join(' | ').slice(0, 500) : undefined,
+    connectedAt: now,
+    updatedAt: now,
+  };
+  const db = await getMongoDb();
+  await db.collection<WaAccountDoc>(WA_ACCOUNTS).updateOne({ resellerId: opts.resellerId, clientSlug: opts.clientSlug }, { $set: doc }, { upsert: true });
+  await db.collection(WA_ACCOUNTS).createIndex({ phoneNumberId: 1 }, { unique: true }).catch(() => undefined);
+  return doc;
+}
+
 // ─── Registro de mensajes (entrantes y estados) ─────────────────────────────
 
 export type WaMessageDoc = {

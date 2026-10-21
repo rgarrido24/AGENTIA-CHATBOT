@@ -5,6 +5,7 @@ import { getFbAppId } from '@/lib/facebook-lead-connect';
 import { isAddonEnabled } from '@/lib/client-addons';
 import {
   completeWhatsAppEmbeddedSignup,
+  completeWhatsAppManualConnection,
   getWaAccountByClient,
   getWaEmbeddedSignupConfigId,
   toPublicWaAccount,
@@ -49,12 +50,17 @@ export async function POST(req: NextRequest, ctx: Params) {
   const { error } = await authAndClient(req, ctx.params);
   if (error) return error;
 
-  const body = (await req.json().catch(() => ({}))) as { code?: unknown; wabaId?: unknown; phoneNumberId?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { code?: unknown; wabaId?: unknown; phoneNumberId?: unknown; token?: unknown };
   const code = typeof body.code === 'string' ? body.code.trim() : '';
+  const token = typeof body.token === 'string' ? body.token.trim() : '';
   const wabaId = typeof body.wabaId === 'string' ? body.wabaId.trim() : '';
   const phoneNumberId = typeof body.phoneNumberId === 'string' ? body.phoneNumberId.trim() : '';
-  if (!code || !/^\d+$/.test(wabaId) || !/^\d+$/.test(phoneNumberId)) {
-    return NextResponse.json({ error: 'Faltan code, wabaId o phoneNumberId' }, { status: 400 });
+  const manual = !!token;
+  if ((!manual && !code) || !/^\d+$/.test(wabaId) || !/^\d+$/.test(phoneNumberId)) {
+    return NextResponse.json(
+      { error: manual ? 'Faltan el ID de la cuenta o el ID del número (solo dígitos)' : 'Faltan code, wabaId o phoneNumberId' },
+      { status: 400 },
+    );
   }
 
   // Un número solo puede pertenecer a un cliente.
@@ -66,13 +72,21 @@ export async function POST(req: NextRequest, ctx: Params) {
   }
 
   try {
-    const doc = await completeWhatsAppEmbeddedSignup({
-      resellerId: ctx.params.resellerId,
-      clientSlug: ctx.params.clientSlug,
-      code,
-      wabaId,
-      phoneNumberId,
-    });
+    const doc = manual
+      ? await completeWhatsAppManualConnection({
+          resellerId: ctx.params.resellerId,
+          clientSlug: ctx.params.clientSlug,
+          wabaId,
+          phoneNumberId,
+          token,
+        })
+      : await completeWhatsAppEmbeddedSignup({
+          resellerId: ctx.params.resellerId,
+          clientSlug: ctx.params.clientSlug,
+          code,
+          wabaId,
+          phoneNumberId,
+        });
     return NextResponse.json({ ok: true, account: toPublicWaAccount(doc) });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Error al conectar WhatsApp';
