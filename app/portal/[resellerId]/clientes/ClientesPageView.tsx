@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useLucianoPortalThemeOptional } from '../dashboard/LucianoPortalTheme';
 import { LUCINO_PRODUCT_TITLE } from '@/lib/portal-luciano-ui';
+import AddonsButton from '../dashboard/AddonsButton';
 import { FacebookConnectBanners, FbConnectLink, FbConnectionBadge, FbTestLeadButton } from './FacebookConnectUi';
 
 export type ClienteRow = {
@@ -18,6 +19,7 @@ export type ClienteRow = {
   alertNumber: string;
   fbStatus: 'pending' | 'connected';
   fbNative?: boolean;
+  addons?: { whatsappApi: boolean; forms: boolean };
   leadsHoy: number;
   leadsMes: number;
   total: number;
@@ -488,6 +490,19 @@ export default function ClientesPageView({
                       >
                         Alertas
                       </button>
+                      <AddonsButton
+                        resellerId={resellerId}
+                        clientSlug={c.clientSlug}
+                        nombre={c.nombre}
+                        initial={c.addons}
+                        light={light}
+                        className="text-[10px] font-semibold rounded-lg px-2 py-0.5"
+                        style={{
+                          background: light ? '#f1f5f9' : '#1a1a1a',
+                          color: negocioColor,
+                          border: `1px solid ${light ? 'rgba(15,23,42,0.12)' : '#2a2a2a'}`,
+                        }}
+                      />
                     </div>
                     <p className="text-xs mt-0.5" style={{ color: negocioColor }}>{c.negocio}</p>
                     <p className="text-xs mt-1.5" style={{ color: formsColor }}>

@@ -4,6 +4,7 @@ import type { ResellerClient } from '@/lib/reseller-auth';
 import { LucianoPortalThemeProvider } from '../dashboard/LucianoPortalTheme';
 import { facebookUiState } from '@/lib/facebook-connect-messages';
 import ClientesPageView from './ClientesPageView';
+import { normalizeAddons } from '@/lib/client-addons';
 
 export default async function ClientesPage({
   params,
@@ -48,6 +49,7 @@ export default async function ClientesPage({
         alertNumber: c.alertNumber ? String(c.alertNumber) : '',
         fbStatus: fbUi.fbStatus,
         fbNative: fbUi.fbNative,
+        addons: normalizeAddons(c.addons),
         leadsHoy,
         leadsMes,
         total,
