@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLucianoPortalThemeOptional } from './LucianoPortalTheme';
 import { FbConnectLink, FbConnectionBadge, FbTestLeadButton } from '../clientes/FacebookConnectUi';
+import { ADDON_KEYS, ADDON_LABELS, type AddonKey } from '@/lib/client-addons';
+import WhatsAppConnectButton from './WhatsAppConnectButton';
 
 type ClientItem = {
   clientSlug: string;
@@ -16,6 +18,7 @@ type ClientItem = {
   alertNumber: string;
   fbStatus: 'pending' | 'connected';
   fbNative?: boolean;
+  addons?: { whatsappApi: boolean; forms: boolean };
 };
 
 export default function ClientsList({ resellerId, clients }: { resellerId: string; clients: ClientItem[] }) {
@@ -23,6 +26,8 @@ export default function ClientsList({ resellerId, clients }: { resellerId: strin
   const [deleting, setDeleting] = useState<string | null>(null);
   const [alertEdit, setAlertEdit] = useState<{ slug: string; nombre: string; value: string } | null>(null);
   const [savingAlert, setSavingAlert] = useState(false);
+  const [addonEdit, setAddonEdit] = useState<{ slug: string; nombre: string; values: Record<AddonKey, boolean> } | null>(null);
+  const [savingAddon, setSavingAddon] = useState<AddonKey | null>(null);
   const themeCtx = useLucianoPortalThemeOptional();
   const light = themeCtx?.light ?? false;
 
@@ -64,6 +69,29 @@ export default function ClientsList({ resellerId, clients }: { resellerId: strin
       alert('Error de conexión');
     } finally {
       setSavingAlert(false);
+    }
+  }
+
+  async function toggleAddon(key: AddonKey, value: boolean) {
+    if (!addonEdit) return;
+    setSavingAddon(key);
+    try {
+      const res = await fetch(`/api/portal/${resellerId}/client/${addonEdit.slug}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addons: { [key]: value } }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; addons?: Record<AddonKey, boolean> };
+      if (!res.ok) {
+        alert(data.error || 'No se pudo guardar');
+        return;
+      }
+      setAddonEdit({ ...addonEdit, values: data.addons ?? { ...addonEdit.values, [key]: value } });
+      router.refresh();
+    } catch {
+      alert('Error de conexión');
+    } finally {
+      setSavingAddon(null);
     }
   }
 
@@ -153,6 +181,46 @@ export default function ClientsList({ resellerId, clients }: { resellerId: strin
           </div>
         </div>
       )}
+      {addonEdit && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.55)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="addon-edit-title"
+        >
+          <div className="w-full max-w-sm rounded-xl border p-4 shadow-xl" style={{ background: modalBg, borderColor: modalBorder }}>
+            <p id="addon-edit-title" className="text-sm font-bold" style={{ color: nameColor }}>Add-ons</p>
+            <p className="text-xs mt-1" style={{ color: subColor }}>{addonEdit.nombre}</p>
+            <div className="mt-3 space-y-2">
+              {ADDON_KEYS.map((key) => (
+                <label key={key} className="flex items-center justify-between gap-3 text-sm" style={{ color: nameColor }}>
+                  <span>{ADDON_LABELS[key]}</span>
+                  <input
+                    type="checkbox"
+                    checked={addonEdit.values[key]}
+                    disabled={savingAddon !== null}
+                    onChange={(e) => void toggleAddon(key, e.target.checked)}
+                  />
+                </label>
+              ))}
+            </div>
+            {addonEdit.values.whatsappApi && (
+              <WhatsAppConnectButton resellerId={resellerId} clientSlug={addonEdit.slug} />
+            )}
+            <div className="flex justify-end mt-4">
+              <button
+                type="button"
+                className="rounded-lg px-3 py-1.5 text-xs"
+                style={{ background: light ? '#e2e8f0' : '#222', color: nameColor }}
+                onClick={() => setAddonEdit(null)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {clients.map((c) => (
         <div
           key={c.clientSlug}
@@ -192,6 +260,21 @@ export default function ClientsList({ resellerId, clients }: { resellerId: strin
               onClick={() => setAlertEdit({ slug: c.clientSlug, nombre: c.nombre, value: c.alertNumber })}
             >
               Alertas
+            </button>
+            <button
+              type="button"
+              title="Activar o desactivar add-ons de este cliente"
+              className="rounded-lg px-2 py-1 text-[10px] font-semibold transition"
+              style={{ background: light ? '#f1f5f9' : '#1a1a1a', color: subColor, border: `1px solid ${modalBorder}` }}
+              onClick={() =>
+                setAddonEdit({
+                  slug: c.clientSlug,
+                  nombre: c.nombre,
+                  values: c.addons ?? { whatsappApi: false, forms: false },
+                })
+              }
+            >
+              Add-ons
             </button>
             <span
               className="text-[10px] px-2 py-0.5 rounded-full"

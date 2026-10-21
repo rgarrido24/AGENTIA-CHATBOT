@@ -19,6 +19,7 @@ export type DashboardClientRow = {
   alertNumber: string;
   fbStatus: 'pending' | 'connected';
   fbNative?: boolean;
+  addons?: { whatsappApi: boolean; forms: boolean };
 };
 
 type Props = {

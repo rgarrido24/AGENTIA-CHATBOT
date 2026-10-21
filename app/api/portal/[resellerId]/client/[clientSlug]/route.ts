@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 import { verifyResellerCookie, COOKIE_NAME } from '@/lib/reseller-auth';
+import { isAddonKey, normalizeAddons } from '@/lib/client-addons';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +53,19 @@ export async function PATCH(
     }
   }
 
+  if ('addons' in body) {
+    const raw = (body as { addons?: unknown }).addons;
+    if (!raw || typeof raw !== 'object') {
+      return NextResponse.json({ error: 'addons inválido' }, { status: 400 });
+    }
+    for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+      if (!isAddonKey(key) || typeof value !== 'boolean') {
+        return NextResponse.json({ error: `Add-on inválido: ${key}` }, { status: 400 });
+      }
+      $set[`addons.${key}`] = value;
+    }
+  }
+
   if (Object.keys($set).length === 1 && Object.keys($unset).length === 0) {
     return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
   }
@@ -74,9 +88,10 @@ export async function PATCH(
     return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
   }
 
-  const updated = await db.collection('leads').findOne(filter, { projection: { alertNumber: 1, status: 1 } });
+  const updated = await db.collection('leads').findOne(filter, { projection: { alertNumber: 1, status: 1, addons: 1 } });
   return NextResponse.json({
     ok: true,
+    addons: normalizeAddons(updated?.addons),
     alertNumber: updated?.alertNumber ? String(updated.alertNumber) : null,
     status: updated?.status ? String(updated.status) : null,
   });
