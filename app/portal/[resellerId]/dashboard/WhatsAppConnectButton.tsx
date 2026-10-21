@@ -153,6 +153,14 @@ export default function WhatsAppConnectButton({ resellerId, clientSlug }: { rese
       >
         {busy ? 'Conectando…' : account ? 'Reconectar número' : 'Conectar número'}
       </button>
+      {account ? (
+        <a
+          href={`/portal/${resellerId}/cliente/${clientSlug}/whatsapp`}
+          className="mt-2 block underline"
+        >
+          Abrir plantillas y campañas →
+        </a>
+      ) : null}
       {msg ? <p className="mt-2 text-red-500">{msg}</p> : null}
     </div>
   );

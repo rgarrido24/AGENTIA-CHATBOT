@@ -177,6 +177,9 @@ export type WaMessageDoc = {
   campaignId?: string;
   status?: 'sent' | 'delivered' | 'read' | 'failed';
   errorCode?: number;
+  /** Categoría de cobro que reporta Meta en el estado (marketing, utility, service, authentication…). */
+  pricingCategory?: string;
+  billable?: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -206,12 +209,25 @@ export async function recordWaInbound(acc: WaAccountDoc, msg: { id: string; from
 }
 
 /** Actualiza el estado de entrega de un mensaje saliente por wamid (no falla si no existe). */
-export async function recordWaStatus(status: { id: string; status: string; errorCode?: number }): Promise<void> {
+export async function recordWaStatus(status: {
+  id: string;
+  status: string;
+  errorCode?: number;
+  pricing?: { category?: string; billable?: boolean };
+}): Promise<void> {
   const s = status.status.toLowerCase();
   if (s !== 'sent' && s !== 'delivered' && s !== 'read' && s !== 'failed') return;
   const db = await getMongoDb();
   await db.collection<WaMessageDoc>(WA_MESSAGES).updateOne(
     { wamid: status.id, direction: 'out' },
-    { $set: { status: s, updatedAt: new Date(), ...(status.errorCode ? { errorCode: status.errorCode } : {}) } },
+    {
+      $set: {
+        status: s,
+        updatedAt: new Date(),
+        ...(status.errorCode ? { errorCode: status.errorCode } : {}),
+        ...(status.pricing?.category ? { pricingCategory: status.pricing.category } : {}),
+        ...(typeof status.pricing?.billable === 'boolean' ? { billable: status.pricing.billable } : {}),
+      },
+    },
   );
 }
