@@ -188,6 +188,7 @@ export async function sendPushNotification(params: {
             keys: sub.keys,
           },
           json,
+          { urgency: 'high', TTL: 60 * 60 * 24 },
         );
         console.error('[panel-push] sendPushNotification: enviado OK', {
           panel,
