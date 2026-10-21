@@ -53,6 +53,12 @@ export default function AdminDashboardPage() {
             >
               Configuración
             </Link>
+            <Link
+              href="/admin/cobranza"
+              className="text-sm text-slate-400 hover:text-emerald-400 transition"
+            >
+              Cobranza
+            </Link>
             <span className="text-slate-600">|</span>
             <span className="text-white/90 font-semibold">Panel de control</span>
           </div>

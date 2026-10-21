@@ -1179,6 +1179,19 @@ export function LeadsPanel({
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
               {isLuc && (
+              <Link
+                href={`/portal/${resellerId}/cliente/${clientSlug}/whatsapp`}
+                className="rounded-full border px-3 py-1.5 text-xs font-semibold"
+                style={{
+                  background: ui.refreshBtnBg,
+                  borderColor: ui.refreshBtnBorder,
+                  color: ui.refreshBtnColor,
+                }}
+              >
+                WhatsApp
+              </Link>
+              )}
+              {isLuc && (
                 <button
                   type="button"
                   onClick={toggleLucianoTheme}
