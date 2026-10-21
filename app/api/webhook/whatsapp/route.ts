@@ -143,7 +143,8 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
         if (!waMessageId || !deliveryStatus) continue;
         // Campañas de clientes con API propia (add-on): estado de entrega por wamid.
         const stErr = (raw as { errors?: Array<{ code?: number }> }).errors?.[0]?.code;
-        await recordWaStatus({ id: waMessageId, status: deliveryStatus, errorCode: stErr }).catch((err) => {
+        const stPricing = (raw as { pricing?: { category?: string; billable?: boolean } }).pricing;
+        await recordWaStatus({ id: waMessageId, status: deliveryStatus, errorCode: stErr, pricing: stPricing }).catch((err) => {
           console.error('[webhook/whatsapp] wa status:', err instanceof Error ? err.message : err);
         });
         await updatePanelMessageDeliveryStatus({ waMessageId, status: deliveryStatus }).catch((err) => {
