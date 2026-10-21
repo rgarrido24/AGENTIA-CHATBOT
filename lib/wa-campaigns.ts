@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 import { getMongoDb } from '@/lib/mongodb';
 import { FB_GRAPH_VERSION } from '@/lib/facebook-lead-connect';
 import { decryptWaToken, WA_MESSAGES, type WaAccountDoc, type WaMessageDoc } from '@/lib/wa-accounts';
+import { contactKey, touchConversation } from '@/lib/wa-inbox';
 
 export const WA_CAMPAIGNS = 'wa_campaigns';
 export const WA_CAMPAIGN_RECIPIENTS = 'wa_campaign_recipients';
@@ -232,6 +233,7 @@ export async function runCampaignBatch(acc: WaAccountDoc, campaign: CampaignDoc 
         direction: 'out',
         wamid: out.wamid,
         contact: r.phone,
+        contactKey: contactKey(r.phone),
         type: 'template',
         text: campaign.templateName,
         campaignId: campaign._id.toHexString(),
@@ -239,6 +241,14 @@ export async function runCampaignBatch(acc: WaAccountDoc, campaign: CampaignDoc 
         createdAt: now,
         updatedAt: now,
       });
+      await touchConversation({
+        resellerId: campaign.resellerId,
+        clientSlug: campaign.clientSlug,
+        contact: r.phone,
+        direction: 'out',
+        text: `Campaña: ${campaign.name}`,
+        at: now,
+      }).catch(() => undefined);
     } else {
       lastError = out.error;
       await recipients.updateOne({ _id: r._id }, { $set: { status: 'failed', error: out.error } });

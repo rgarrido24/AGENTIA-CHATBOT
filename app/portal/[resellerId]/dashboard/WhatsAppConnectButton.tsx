@@ -161,6 +161,11 @@ export default function WhatsAppConnectButton({ resellerId, clientSlug }: { rese
           Abrir plantillas y campañas →
         </a>
       ) : null}
+      {account ? (
+        <a href={`/portal/${resellerId}/cliente/${clientSlug}/whatsapp/bandeja`} className="mt-1 block underline">
+          Abrir bandeja de respuestas →
+        </a>
+      ) : null}
       {msg ? <p className="mt-2 text-red-500">{msg}</p> : null}
     </div>
   );

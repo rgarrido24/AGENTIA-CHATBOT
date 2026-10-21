@@ -2,6 +2,7 @@ import { getMongoDb } from '@/lib/mongodb';
 import { isAddonEnabled } from '@/lib/client-addons';
 import { getWaAccountByClient, WA_MESSAGES, type WaMessageDoc } from '@/lib/wa-accounts';
 import { normalizeWaPhone, sendWaTemplate } from '@/lib/wa-campaigns';
+import { contactKey, touchConversation } from '@/lib/wa-inbox';
 
 /**
  * Mensajes automáticos cuando llega un lead, enviados desde el número de WhatsApp oficial del propio cliente:
@@ -101,12 +102,24 @@ export async function runLeadWhatsAppAutomation(lead: LeadInfo): Promise<void> {
           direction: 'out',
           wamid: out.wamid,
           contact: to,
+          contactKey: contactKey(to),
           type: 'template',
           text: cfg.templateName,
           status: 'sent',
           createdAt: now,
           updatedAt: now,
         });
+        // La bienvenida abre la conversación con la persona; el aviso a la asesora no.
+        if (kind === 'welcome') {
+          await touchConversation({
+            resellerId: lead.resellerId,
+            clientSlug: lead.clientSlug,
+            contact: to,
+            direction: 'out',
+            text: 'Mensaje de bienvenida enviado',
+            at: now,
+          }).catch(() => undefined);
+        }
       } else {
         console.error(`[wa-auto] ${kind} falló para ${lead.clientSlug}:`, out.error, out.code ?? '');
       }
