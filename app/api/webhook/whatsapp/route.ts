@@ -7,6 +7,7 @@ import {
   getAgentiaWhatsAppPhoneNumberId,
 } from '@/lib/agentia-panel';
 import { sendPushNotification } from '@/lib/panel-push';
+import { getWaAccountByPhoneNumberId, recordWaInbound, recordWaStatus } from '@/lib/wa-accounts';
 import {
   usesClientPanelStore,
   recordClientPanelInbound,
@@ -140,6 +141,11 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
             ? statusRaw
             : null;
         if (!waMessageId || !deliveryStatus) continue;
+        // Campañas de clientes con API propia (add-on): estado de entrega por wamid.
+        const stErr = (raw as { errors?: Array<{ code?: number }> }).errors?.[0]?.code;
+        await recordWaStatus({ id: waMessageId, status: deliveryStatus, errorCode: stErr }).catch((err) => {
+          console.error('[webhook/whatsapp] wa status:', err instanceof Error ? err.message : err);
+        });
         await updatePanelMessageDeliveryStatus({ waMessageId, status: deliveryStatus }).catch((err) => {
           console.error(
             '[webhook/whatsapp] status update:',
@@ -153,6 +159,27 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
       console.error('[webhook/whatsapp] STATUSES DEBUG:', JSON.stringify(value));
     }
     return NextResponse.json({ ok: true });
+  }
+
+  // Cuentas de WhatsApp de clientes conectadas por Embedded Signup (add-on): solo se registra el
+  // mensaje para la bandeja; no pasan por el bot de Agentia ni por resolveCloudTenant.
+  {
+    const value = getWhatsAppCloudChangeValue(body);
+    const meta = value?.metadata as { phone_number_id?: string } | undefined;
+    const waAcc = meta?.phone_number_id ? await getWaAccountByPhoneNumberId(String(meta.phone_number_id)).catch(() => null) : null;
+    if (waAcc) {
+      const msgs = Array.isArray(value?.messages) ? (value.messages as Array<Record<string, unknown>>) : [];
+      for (const m of msgs) {
+        const id = typeof m.id === 'string' ? m.id : '';
+        const from = typeof m.from === 'string' ? m.from : '';
+        if (!id || !from) continue;
+        const text = (m.text as { body?: string } | undefined)?.body;
+        await recordWaInbound(waAcc, { id, from, type: typeof m.type === 'string' ? m.type : undefined, text }).catch((err) => {
+          console.error('[webhook/whatsapp] wa inbound:', err instanceof Error ? err.message : err);
+        });
+      }
+      return NextResponse.json({ ok: true, clientAccount: waAcc.clientSlug });
+    }
   }
 
   const parsed = parseCloudApiTextMessage(body);

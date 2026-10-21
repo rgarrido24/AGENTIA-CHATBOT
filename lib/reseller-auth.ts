@@ -58,6 +58,8 @@ export interface ResellerClient {
   status:              'activo' | 'suspendido' | 'inactivo';
   /** Habilita PWA + push para asesoras de este cliente (default: true si no se define). */
   pwa_enabled?:        boolean;
+  /** Add-ons de pago por cliente (apagados por defecto). Ver lib/client-addons.ts */
+  addons?:             { whatsappApi?: boolean; forms?: boolean };
   pwaBadgeCount?:      number;
   legacyQuery?:        Record<string, unknown>;
   createdAt:           Date;

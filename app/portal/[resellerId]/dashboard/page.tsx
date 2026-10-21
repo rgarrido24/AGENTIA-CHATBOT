@@ -11,6 +11,7 @@ import {
 import { LucianoPortalThemeProvider } from './LucianoPortalTheme';
 import DashboardView from './DashboardView';
 import { facebookUiState } from '@/lib/facebook-connect-messages';
+import { normalizeAddons } from '@/lib/client-addons';
 
 export async function generateMetadata({
   params,
@@ -116,6 +117,7 @@ export default async function DashboardPage({ params }: { params: { resellerId: 
             alertNumber: c.alertNumber ? String(c.alertNumber) : '',
             fbStatus: fbUi.fbStatus,
             fbNative: fbUi.fbNative,
+            addons: normalizeAddons(c.addons),
           };
         })}
       />
