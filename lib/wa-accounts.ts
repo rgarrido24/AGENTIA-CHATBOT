@@ -175,7 +175,7 @@ export async function completeWhatsAppManualConnection(opts: {
   phoneNumberId: string;
   token: string;
 }): Promise<WaAccountDoc> {
-  const info = await graph(`${opts.phoneNumberId}?fields=display_phone_number,verified_name,quality_rating,code_verification_status`, opts.token);
+  const info = await graph(`${opts.phoneNumberId}?fields=display_phone_number,verified_name,quality_rating,code_verification_status,status`, opts.token);
   if (info.error) {
     throw new Error(`El token no puede leer ese número: ${info.error.message}. Revisa que el ID del número sea correcto y que el token tenga acceso a esa cuenta.`);
   }
@@ -183,6 +183,20 @@ export async function completeWhatsAppManualConnection(opts: {
   const sub = await graph(`${opts.wabaId}/subscribed_apps`, opts.token, { method: 'POST', body: {} });
   const subscribed = !sub.error;
   if (sub.error) errors.push(`suscripción: ${sub.error.message}`);
+
+  // Un número recién verificado en WhatsApp Manager queda "pendiente" hasta registrarlo en Cloud API.
+  // Si Meta ya lo reporta CONNECTED no se toca; si no, se registra con un PIN aleatorio (queda guardado cifrado).
+  let registered = String(info.status ?? '').toUpperCase() === 'CONNECTED';
+  let pin: string | undefined;
+  if (!registered) {
+    pin = String(crypto.randomInt(100000, 1000000));
+    const reg = await graph(`${opts.phoneNumberId}/register`, opts.token, {
+      method: 'POST',
+      body: { messaging_product: 'whatsapp', pin },
+    });
+    registered = !reg.error || /already|ya (est|fue)/i.test(String(reg.error?.message ?? ''));
+    if (!registered) errors.push(`registro: ${reg.error?.message}`);
+  }
 
   const now = new Date();
   const doc: WaAccountDoc = {
@@ -194,10 +208,10 @@ export async function completeWhatsAppManualConnection(opts: {
     verifiedName: typeof info.verified_name === 'string' ? info.verified_name : undefined,
     qualityRating: typeof info.quality_rating === 'string' ? info.quality_rating : undefined,
     tokenEnc: encryptFbToken(opts.token),
-    // El número ya está dado de alta en la nube por quien lo creó en Meta; no se vuelve a registrar.
-    registered: true,
+    ...(pin ? { pinEnc: encryptFbToken(pin) } : {}),
+    registered,
     subscribed,
-    status: subscribed ? 'connected' : 'error',
+    status: subscribed && registered ? 'connected' : 'error',
     lastError: errors.length ? errors.join(' | ').slice(0, 500) : undefined,
     connectedAt: now,
     updatedAt: now,
