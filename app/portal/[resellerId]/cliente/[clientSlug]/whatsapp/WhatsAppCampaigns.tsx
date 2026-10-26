@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { normalizeWaPhone } from '@/lib/wa-phone';
 
 type Template = { name: string; status: string; category: string; language: string; bodyText: string; variables: number; rejectedReason?: string };
 type Campaign = { id: string; name: string; templateName: string; status: string; total: number; pending: number; sent: number; failed: number };
@@ -12,7 +13,7 @@ const input = 'w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 te
 const btn = 'rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50';
 const btnGhost = 'rounded-lg border border-zinc-700 px-3 py-2 text-xs text-zinc-200 disabled:opacity-50';
 
-export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }: { resellerId: string; clientSlug: string; clientName: string }) {
+export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName, defaultCc }: { resellerId: string; clientSlug: string; clientName: string; defaultCc?: string }) {
   const base = `/api/portal/${resellerId}/client/${clientSlug}/whatsapp`;
   const [templates, setTemplates] = useState<Template[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -44,6 +45,8 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
   const [cOptIn, setCOptIn] = useState(false);
   const [cBusy, setCBusy] = useState(false);
   const [progress, setProgress] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [fileInfo, setFileInfo] = useState('');
 
   const load = useCallback(async () => {
     const [t, c, u] = await Promise.all([
@@ -159,6 +162,47 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
     setNotice(res.ok ? 'Mensajes automáticos guardados.' : j.error || 'No se pudo guardar');
   }
 
+  /** Lee un Excel (.xlsx/.xls) o CSV en el navegador: columna 1 = teléfono, columnas siguientes = variables de la plantilla. */
+  async function loadContactsFile(file: File) {
+    setNotice('');
+    setFileInfo('');
+    try {
+      const XLSX = await import('xlsx');
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: true, blankrows: false });
+      const cellText = (v: unknown) => (typeof v === 'number' ? String(Math.round(v)) : String(v ?? '')).replace(/[\r\n,]+/g, ' ').trim();
+      const body = rows.filter((r) => Array.isArray(r) && r.some((c) => String(c ?? '').trim() !== ''));
+      // Si la primera fila no trae un teléfono (7+ dígitos) se toma como encabezado.
+      const firstPhone = String((body[0] as unknown[] | undefined)?.[0] ?? '').replace(/\D/g, '');
+      const data = firstPhone.length >= 7 ? body : body.slice(1);
+      const width = selected ? selected.variables + 1 : Math.max(1, ...data.map((r) => (r as unknown[]).length));
+      const lines = data.map((r) => {
+        const cells = r as unknown[];
+        return Array.from({ length: width }, (_, i) => cellText(cells[i])).join(', ');
+      });
+      if (lines.length === 0) return setNotice('El archivo no tiene contactos.');
+      setCContacts(lines.join('\n'));
+      setFileInfo(`${file.name}: ${lines.length} fila(s) leídas.`);
+    } catch {
+      setNotice('No se pudo leer el archivo. Usa un Excel (.xlsx) o un CSV con el teléfono en la primera columna.');
+    } finally {
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
+  /** Descarga un Excel de ejemplo con las columnas que pide la plantilla elegida (teléfono como texto). */
+  async function downloadExample() {
+    const XLSX = await import('xlsx');
+    const n = selected ? selected.variables : 1;
+    const header = ['telefono', ...Array.from({ length: n }, (_, i) => (i === 0 ? 'nombre' : `variable${i + 1}`))];
+    const sample = [defaultCc === '52' ? '5219991234567' : '5493517012345', 'Ana', ...Array.from({ length: Math.max(0, n - 1) }, () => 'ejemplo')];
+    const ws = XLSX.utils.aoa_to_sheet([header, sample.slice(0, n + 1)]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Contactos');
+    XLSX.writeFile(wb, 'contactos-ejemplo.xlsx');
+  }
+
   async function launchCampaign() {
     setCBusy(true);
     setNotice('');
@@ -212,6 +256,28 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
   }
 
   const approved = templates.filter((t) => t.status === 'APPROVED');
+  const selected0 = templates.find((t) => t.name === cTemplate);
+
+  // Revisión en vivo de la lista: cuántos son válidos, repetidos o inválidos, y cuántos faltan de variables.
+  const contactStats = useMemo(() => {
+    const seen = new Set<string>();
+    let valid = 0, invalid = 0, dup = 0, missing = 0;
+    const badExamples: string[] = [];
+    for (const line of cContacts.split('\n').map((l) => l.trim()).filter(Boolean)) {
+      const [phone, ...params] = line.split(',').map((x) => x.trim());
+      const p = normalizeWaPhone(phone, defaultCc);
+      if (p.length < 10 || p.length > 15) {
+        invalid++;
+        if (badExamples.length < 3) badExamples.push(phone || '(vacío)');
+        continue;
+      }
+      if (seen.has(p)) { dup++; continue; }
+      seen.add(p);
+      if (selected0 && selected0.variables > 0 && (params.length < selected0.variables || params.slice(0, selected0.variables).some((x) => !x))) missing++;
+      valid++;
+    }
+    return { valid, invalid, dup, missing, badExamples };
+  }, [cContacts, defaultCc, selected0]);
 
   // Si aún no se eligió plantilla, se sugiere la básica correspondiente (cuando ya está aprobada).
   useEffect(() => {
@@ -317,6 +383,21 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
                 <option key={`${t.name}-${t.language}`} value={t.name}>{t.name} ({t.variables} variable{t.variables === 1 ? '' : 's'})</option>
               ))}
             </select>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                ref={fileRef}
+                type="file"
+                className="hidden"
+                accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadContactsFile(f); }}
+              />
+              <button type="button" className={btnGhost} onClick={() => fileRef.current?.click()}>📎 Cargar Excel o CSV</button>
+              <button type="button" className={btnGhost} onClick={() => void downloadExample()}>Descargar Excel de ejemplo</button>
+              {fileInfo ? <span className="text-xs text-zinc-400">{fileInfo}</span> : null}
+            </div>
+            <p className="text-[11px] text-zinc-500">
+              Primera columna: teléfono con código de país. Siguientes columnas: lo que pide la plantilla, en orden (por ejemplo, nombre). Elige primero la plantilla para que lea las columnas correctas. Puedes revisar y corregir la lista antes de enviar.
+            </p>
             <textarea
               className={input}
               rows={6}
@@ -325,6 +406,25 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
               onChange={(e) => setCContacts(e.target.value)}
             />
             {selected ? <p className="text-xs text-zinc-400">Cada línea necesita {selected.variables} variable(s) después del número.</p> : null}
+            {cContacts.trim() ? (
+              <div className="rounded-lg bg-zinc-950 p-3 text-xs">
+                <p>
+                  <span className="font-semibold">{contactStats.valid}</span> contacto(s) listos para enviar
+                  {contactStats.dup ? ` · ${contactStats.dup} repetido(s) se omiten` : ''}
+                  {contactStats.invalid ? ` · ${contactStats.invalid} con teléfono inválido se omiten (${contactStats.badExamples.join(', ')})` : ''}
+                </p>
+                {contactStats.missing ? <p className="mt-1 text-yellow-400">{contactStats.missing} contacto(s) no traen todas las variables; completa esas filas antes de enviar.</p> : null}
+                {(() => {
+                  const cat = (selected?.category ?? '').toLowerCase();
+                  const rate = Number(String(rates[cat] ?? '').replace(',', '.'));
+                  return cat && rate > 0 ? (
+                    <p className="mt-1 text-zinc-400">Costo estimado de Meta: ≈ USD {(contactStats.valid * rate).toFixed(2)} ({contactStats.valid} × {rate}, categoría {cat}).</p>
+                  ) : (
+                    <p className="mt-1 text-zinc-500">Para ver el costo estimado, captura la tarifa de la categoría de la plantilla en la sección Consumo, más abajo.</p>
+                  );
+                })()}
+              </div>
+            ) : null}
             <label className="flex items-start gap-2 text-xs text-zinc-300">
               <input type="checkbox" className="mt-0.5" checked={cOptIn} onChange={(e) => setCOptIn(e.target.checked)} />
               Confirmo que todos estos contactos aceptaron recibir mensajes de este negocio. Escribir a contactos que no lo pidieron baja la calidad del número y puede bloquearlo.
@@ -364,7 +464,11 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
             Conteo de mensajes salientes según lo que reporta Meta (incluye los avisos a la asesora). Escribe la tarifa de Meta por mensaje en cada categoría para ver un gasto estimado.
           </p>
           <ul className="mt-2 space-y-2 text-xs">
-            {(usage?.byCategory ?? []).map((r) => {
+            {(() => {
+              const base = usage?.byCategory ?? [];
+              const extra = ['marketing', 'utility'].filter((c) => !base.some((r) => r.category === c)).map((c) => ({ category: c, messages: 0, billable: 0 }));
+              return [...base, ...extra];
+            })().map((r) => {
               const rate = Number(String(rates[r.category] ?? '').replace(',', '.'));
               const cost = Number.isFinite(rate) && rate > 0 ? r.billable * rate : null;
               return (
@@ -382,7 +486,6 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
                 </li>
               );
             })}
-            {usage && usage.byCategory.length === 0 ? <li className="text-zinc-500">Sin mensajes este mes.</li> : null}
           </ul>
           {(() => {
             const total = (usage?.byCategory ?? []).reduce((sum, r) => {
