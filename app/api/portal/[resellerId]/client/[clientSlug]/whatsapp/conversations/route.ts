@@ -28,6 +28,8 @@ export async function GET(req: NextRequest, ctx: WaRouteCtx) {
       lastDirection: r.lastDirection,
       lastMessageAt: r.lastMessageAt,
       unread: r.unread || 0,
+      /** false = le escribimos pero la persona todavía no ha contestado nunca. */
+      replied: !!r.lastInboundAt,
       windowOpen: windowOpen(r.lastInboundAt, now),
     })),
   });
