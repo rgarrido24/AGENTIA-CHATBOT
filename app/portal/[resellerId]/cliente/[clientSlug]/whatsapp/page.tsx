@@ -6,6 +6,7 @@ import { verifyClientCookie, CLIENT_COOKIE_NAME } from '@/lib/client-auth';
 import { getMongoDb } from '@/lib/mongodb';
 import { isAddonEnabled } from '@/lib/client-addons';
 import { getWaAccountByClient } from '@/lib/wa-accounts';
+import { accountCountryCode } from '@/lib/wa-phone';
 import WhatsAppCampaigns from './WhatsAppCampaigns';
 
 export const dynamic = 'force-dynamic';
@@ -75,6 +76,7 @@ export default async function WhatsAppPage({ params }: { params: { resellerId: s
       resellerId={resellerId}
       clientSlug={clientSlug}
       clientName={client.nombre ? String(client.nombre) : clientSlug}
+      defaultCc={accountCountryCode(account)}
     />
   );
 }
