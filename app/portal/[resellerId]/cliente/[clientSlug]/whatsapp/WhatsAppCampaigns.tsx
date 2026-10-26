@@ -24,6 +24,9 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
   const [autoAlert, setAutoAlert] = useState<Auto>({ enabled: false, templateName: '', language: 'es_MX' });
   const [autoReply, setAutoReply] = useState<Auto>({ enabled: false, templateName: '', language: 'es_MX' });
   const [autoBusy, setAutoBusy] = useState(false);
+  // Tarifa por mensaje (USD) que el usuario captura por categoría, para estimar el gasto. Se guarda solo en este navegador.
+  const [rates, setRates] = useState<Record<string, string>>({});
+  const ratesKey = `wa_rates_${clientSlug}`;
   const [testPhone, setTestPhone] = useState('');
   const [testBusy, setTestBusy] = useState(false);
 
@@ -67,6 +70,25 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(ratesKey);
+      if (raw) setRates(JSON.parse(raw) as Record<string, string>);
+    } catch {
+      /* sin almacenamiento: se captura cada vez */
+    }
+  }, [ratesKey]);
+
+  function setRate(category: string, value: string) {
+    const next = { ...rates, [category]: value };
+    setRates(next);
+    try {
+      window.localStorage.setItem(ratesKey, JSON.stringify(next));
+    } catch {
+      /* no crítico */
+    }
+  }
 
   async function createTemplate() {
     setTBusy(true);
@@ -338,13 +360,40 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
 
         <section className={card}>
           <h2 className="text-sm font-semibold">Consumo de {usage?.month ?? 'este mes'}</h2>
-          <p className="mt-1 text-xs text-zinc-400">Conteo de mensajes salientes según lo que reporta Meta. El costo exacto es el de tu factura de Meta.</p>
-          <ul className="mt-2 space-y-1 text-xs">
-            {(usage?.byCategory ?? []).map((r) => (
-              <li key={r.category}>{r.category}: {r.messages} mensajes ({r.billable} cobrables)</li>
-            ))}
+          <p className="mt-1 text-xs text-zinc-400">
+            Conteo de mensajes salientes según lo que reporta Meta (incluye los avisos a la asesora). Escribe la tarifa de Meta por mensaje en cada categoría para ver un gasto estimado.
+          </p>
+          <ul className="mt-2 space-y-2 text-xs">
+            {(usage?.byCategory ?? []).map((r) => {
+              const rate = Number(String(rates[r.category] ?? '').replace(',', '.'));
+              const cost = Number.isFinite(rate) && rate > 0 ? r.billable * rate : null;
+              return (
+                <li key={r.category} className="flex flex-wrap items-center gap-2">
+                  <span className="min-w-[8rem]">{r.category}: {r.messages} mensajes ({r.billable} cobrables)</span>
+                  <span className="text-zinc-400">× USD</span>
+                  <input
+                    className="w-20 rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-100"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={rates[r.category] ?? ''}
+                    onChange={(e) => setRate(r.category, e.target.value)}
+                  />
+                  {cost !== null ? <span className="font-semibold">≈ USD {cost.toFixed(2)}</span> : null}
+                </li>
+              );
+            })}
             {usage && usage.byCategory.length === 0 ? <li className="text-zinc-500">Sin mensajes este mes.</li> : null}
           </ul>
+          {(() => {
+            const total = (usage?.byCategory ?? []).reduce((sum, r) => {
+              const rate = Number(String(rates[r.category] ?? '').replace(',', '.'));
+              return sum + (Number.isFinite(rate) && rate > 0 ? r.billable * rate : 0);
+            }, 0);
+            return total > 0 ? <p className="mt-2 text-xs font-semibold">Gasto estimado del mes: USD {total.toFixed(2)}</p> : null;
+          })()}
+          <p className="mt-2 text-[11px] text-zinc-500">
+            Es una estimación. El cargo exacto está en WhatsApp Manager → Información general → "Cargos aproximados". Las tarifas por país y categoría las publica Meta.
+          </p>
           {usage && Object.keys(usage.byStatus).length ? (
             <p className="mt-2 text-xs text-zinc-400">
               Estados: {Object.entries(usage.byStatus).map(([k, v]) => `${k} ${v}`).join(' · ')}

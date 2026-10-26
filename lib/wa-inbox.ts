@@ -80,6 +80,13 @@ export async function touchConversation(opts: {
     },
     { upsert: true },
   );
+  // Mensajes salientes con nombre conocido (campañas, bienvenida): se guarda solo si la conversación aún no tiene nombre.
+  if (opts.direction === 'out' && opts.name?.trim()) {
+    await col.updateOne(
+      { resellerId: opts.resellerId, clientSlug: opts.clientSlug, contactKey: key, $or: [{ name: { $exists: false } }, { name: '' }] },
+      { $set: { name: opts.name.trim().slice(0, 80) } },
+    );
+  }
   // Al crear la conversación, enlazarla con el lead del panel si el teléfono coincide.
   if (res.upsertedCount > 0) {
     const lead = await db.collection('leads').findOne(

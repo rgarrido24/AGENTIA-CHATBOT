@@ -1,7 +1,7 @@
 import { getMongoDb } from '@/lib/mongodb';
 import { isAddonEnabled } from '@/lib/client-addons';
 import { getWaAccountByClient, WA_MESSAGES, type WaAccountDoc, type WaMessageDoc } from '@/lib/wa-accounts';
-import { accountCountryCode, findTemplateBody, normalizeWaPhone, renderTemplateText, sendWaTemplate } from '@/lib/wa-campaigns';
+import { accountCountryCode, findTemplateBody, looksLikeName, normalizeWaPhone, renderTemplateText, sendWaTemplate } from '@/lib/wa-campaigns';
 import { WA_CONVERSATIONS, contactKey, touchConversation } from '@/lib/wa-inbox';
 
 /**
@@ -121,6 +121,7 @@ async function deliver(o: DeliverOpts): Promise<{ ok: boolean; error?: string }>
       contact: o.to,
       direction: 'out',
       text: 'Mensaje de bienvenida enviado',
+      name: looksLikeName(o.params[0]),
       at: now,
     }).catch(() => undefined);
   }

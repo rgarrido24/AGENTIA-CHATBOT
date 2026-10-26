@@ -52,6 +52,12 @@ export function countTemplateVariables(text: string): number {
   return found.length ? Math.max(...found.map((m) => Number(m.replace(/\D/g, '')))) : 0;
 }
 
+/** ¿Esta variable parece un nombre de persona? (por convención la primera variable de las plantillas es el nombre) */
+export function looksLikeName(s: string | undefined): string | undefined {
+  const t = String(s ?? '').trim();
+  return /^\p{L}[\p{L} .'\-]{1,39}$/u.test(t) && !/^cliente$/i.test(t) ? t : undefined;
+}
+
 /** Texto que realmente recibió la persona: el cuerpo de la plantilla con sus variables ya puestas. */
 export function renderTemplateText(body: string, params: string[]): string {
   return body.replace(/\{\{\s*(\d+)\s*\}\}/g, (_m, n: string) => params[Number(n) - 1] ?? '').slice(0, 1024);
@@ -299,6 +305,7 @@ export async function runCampaignBatch(acc: WaAccountDoc, campaign: CampaignDoc 
         contact: r.phone,
         direction: 'out',
         text: `Campaña: ${campaign.name}`,
+        name: looksLikeName(r.params[0]),
         at: now,
       }).catch(() => undefined);
     } else {

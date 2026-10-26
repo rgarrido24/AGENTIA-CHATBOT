@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type Conv = { contactKey: string; name: string; leadId: string | null; lastText: string; lastDirection: 'in' | 'out'; lastMessageAt: string; unread: number; windowOpen: boolean };
+type Conv = { contactKey: string; name: string; leadId: string | null; lastText: string; lastDirection: 'in' | 'out'; lastMessageAt: string; unread: number; replied: boolean; windowOpen: boolean };
 type Msg = {
   direction: 'in' | 'out';
   text: string;
@@ -188,6 +188,7 @@ export default function Inbox({ resellerId, clientSlug, clientName }: { reseller
                 <span className="truncate text-sm font-semibold">{c.name || `+${c.contactKey}`}</span>
                 {c.unread > 0 ? <span className="rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-bold">{c.unread}</span> : null}
               </div>
+              {!c.replied ? <span className="mt-1 inline-block rounded-full bg-yellow-500/15 px-2 py-0.5 text-[10px] font-semibold text-yellow-300">Sin respuesta</span> : null}
               <p className="mt-0.5 truncate text-xs text-zinc-400">{c.lastDirection === 'out' ? 'Tú: ' : ''}{c.lastText}</p>
               <p className="mt-0.5 text-[10px] text-zinc-600">{fmt(c.lastMessageAt)}</p>
             </button>
@@ -203,7 +204,7 @@ export default function Inbox({ resellerId, clientSlug, clientName }: { reseller
                 <button className="text-xs text-zinc-400 md:hidden" onClick={() => setSelected(null)}>← Atrás</button>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{title}</p>
-                  <p className="text-[11px] text-zinc-500">+{selected}{current?.leadId ? ' · es un lead de tu panel' : ''}</p>
+                  <p className="text-[11px] text-zinc-500">+{selected}{current?.leadId ? ' · es un lead de tu panel' : ''}{current && !current.replied ? ' · todavía no ha contestado' : ''}</p>
                 </div>
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
