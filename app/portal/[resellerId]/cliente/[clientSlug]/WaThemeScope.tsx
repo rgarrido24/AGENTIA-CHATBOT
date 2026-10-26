@@ -23,6 +23,7 @@ const LIGHT_CSS = `
 .wa-light .text-red-400{color:#b91c1c}
 .wa-light .text-yellow-400,.wa-light .text-yellow-300{color:#a16207}
 .wa-light .bg-yellow-500\\/15{background-color:#fef3c7}
+.wa-light .bg-green-600,.wa-light .bg-green-700{color:#ffffff}
 .wa-light input,.wa-light textarea,.wa-light select{color:#0f172a}
 `;
 
