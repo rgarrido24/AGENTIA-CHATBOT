@@ -224,6 +224,9 @@ export async function completeWhatsAppManualConnection(opts: {
 
 // ─── Registro de mensajes (entrantes y estados) ─────────────────────────────
 
+export type WaMediaInfo = { id: string; mime?: string; filename?: string; caption?: string; voice?: boolean };
+export type WaLocation = { lat: number; lng: number; name?: string; address?: string };
+
 export type WaMessageDoc = {
   resellerId: string;
   clientSlug: string;
@@ -236,6 +239,10 @@ export type WaMessageDoc = {
   contactKey?: string;
   text?: string;
   type?: string;
+  /** Pie de foto / texto propio del mensaje multimedia (sin etiqueta). */
+  caption?: string;
+  media?: WaMediaInfo;
+  location?: WaLocation;
   campaignId?: string;
   status?: 'sent' | 'delivered' | 'read' | 'failed';
   errorCode?: number;
@@ -249,7 +256,7 @@ export type WaMessageDoc = {
 /** Guarda un mensaje entrante de una cuenta conectada. Idempotente por wamid. Devuelve true si es nuevo. */
 export async function recordWaInbound(
   acc: WaAccountDoc,
-  msg: { id: string; from: string; type?: string; text?: string; name?: string },
+  msg: { id: string; from: string; type?: string; text?: string; name?: string; caption?: string; media?: WaMediaInfo; location?: WaLocation },
 ): Promise<boolean> {
   const db = await getMongoDb();
   const now = new Date();
@@ -268,6 +275,9 @@ export async function recordWaInbound(
         contactKey: key,
         type: msg.type,
         text: shown,
+        ...(msg.caption ? { caption: msg.caption } : {}),
+        ...(msg.media ? { media: msg.media } : {}),
+        ...(msg.location ? { location: msg.location } : {}),
         createdAt: now,
       },
       $set: { updatedAt: now },

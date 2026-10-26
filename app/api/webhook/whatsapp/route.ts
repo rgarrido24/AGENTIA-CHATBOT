@@ -8,6 +8,7 @@ import {
 } from '@/lib/agentia-panel';
 import { sendPushNotification } from '@/lib/panel-push';
 import { getWaAccountByPhoneNumberId, recordWaInbound, recordWaStatus } from '@/lib/wa-accounts';
+import { extractInboundContent } from '@/lib/wa-media';
 import { contactKey } from '@/lib/wa-inbox';
 import { notifyPortalInboundMessage } from '@/lib/portal-push';
 import {
@@ -176,10 +177,20 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
         const id = typeof m.id === 'string' ? m.id : '';
         const from = typeof m.from === 'string' ? m.from : '';
         if (!id || !from) continue;
-        const text = (m.text as { body?: string } | undefined)?.body;
+        const content = extractInboundContent(m);
+        const text = content.text;
         const contacts = Array.isArray(value?.contacts) ? (value.contacts as Array<{ wa_id?: string; profile?: { name?: string } }>) : [];
         const name = contacts.find((c) => c.wa_id === from)?.profile?.name ?? contacts[0]?.profile?.name;
-        const isNew = await recordWaInbound(waAcc, { id, from, type: typeof m.type === 'string' ? m.type : undefined, text, name }).catch((err) => {
+        const isNew = await recordWaInbound(waAcc, {
+          id,
+          from,
+          type: content.type,
+          text,
+          name,
+          caption: content.caption,
+          media: content.media,
+          location: content.location,
+        }).catch((err) => {
           console.error('[webhook/whatsapp] wa inbound:', err instanceof Error ? err.message : err);
           return false;
         });
@@ -189,7 +200,7 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
             clientSlug: waAcc.clientSlug,
             contactKey: contactKey(from),
             name,
-            text: text ?? '[archivo o mensaje especial]',
+            text: text || 'Mensaje nuevo',
           });
         }
       }
