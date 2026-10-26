@@ -641,6 +641,7 @@ function LeadDetail({
 
   /** Keys que NO se muestran como campos extras (ya van en la cabecera fija). */
   const HIDDEN_KEYS = new Set([
+    normalizeKey('raw'),
     normalizeKey('Nombre'),
     normalizeKey('Nombre completo'),
     normalizeKey('Full name'),
@@ -815,14 +816,14 @@ function LeadDetail({
               {detailRows.map(([k, v], i) => (
                 <div
                   key={k}
-                  className="flex justify-between gap-4 px-4 py-2.5 text-sm"
+                  className="flex flex-col gap-1 px-4 py-2.5 text-sm"
                   style={{
                     background: i % 2 === 0 ? ui.rowEven : ui.rowOdd,
                     borderBottom: i < detailRows.length - 1 ? `1px solid ${ui.rowBorder}` : 'none',
                   }}
                 >
-                  <dt className="shrink-0 text-xs" style={{ color: ui.dtColor }}>{k}</dt>
-                  <dd className="max-w-[220px] truncate text-right text-xs font-medium" style={{ color: ui.ddColor }} title={v}>{v}</dd>
+                  <dt className="text-xs normal-case" style={{ color: ui.dtColor, overflowWrap: 'anywhere' }}>{k}</dt>
+                  <dd className="whitespace-pre-wrap break-words text-sm font-medium" style={{ color: ui.ddColor, overflowWrap: 'anywhere' }}>{v}</dd>
                 </div>
               ))}
             </div>
