@@ -52,6 +52,21 @@ export function countTemplateVariables(text: string): number {
   return found.length ? Math.max(...found.map((m) => Number(m.replace(/\D/g, '')))) : 0;
 }
 
+/** Texto que realmente recibió la persona: el cuerpo de la plantilla con sus variables ya puestas. */
+export function renderTemplateText(body: string, params: string[]): string {
+  return body.replace(/\{\{\s*(\d+)\s*\}\}/g, (_m, n: string) => params[Number(n) - 1] ?? '').slice(0, 1024);
+}
+
+/** Cuerpo de una plantilla por nombre e idioma (null si no se puede leer; solo se usa para mostrar). */
+export async function findTemplateBody(acc: WaAccountDoc, name: string, language: string): Promise<string | null> {
+  try {
+    const { templates } = await listWaTemplates(acc);
+    return templates.find((t) => t.name === name && t.language === language)?.bodyText ?? templates.find((t) => t.name === name)?.bodyText ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function listWaTemplates(acc: WaAccountDoc): Promise<{ templates: WaTemplate[]; error?: string }> {
   const token = decryptWaToken(acc);
   const json = await graphCall<
@@ -220,6 +235,8 @@ export async function runCampaignBatch(acc: WaAccountDoc, campaign: CampaignDoc 
   const batch = await recipients.find({ campaignId: campaign._id, status: 'pending' }).limit(CAMPAIGN_BATCH_SIZE).toArray();
   let paused = false;
   let lastError: string | undefined;
+  // Solo para mostrar en la bandeja el texto real que recibió cada persona.
+  const tplBody = batch.length ? await findTemplateBody(acc, campaign.templateName, campaign.language) : null;
 
   for (const r of batch) {
     const out = await sendWaTemplate(acc, r.phone, { name: campaign.templateName, language: campaign.language }, r.params);
@@ -235,7 +252,7 @@ export async function runCampaignBatch(acc: WaAccountDoc, campaign: CampaignDoc 
         contact: r.phone,
         contactKey: contactKey(r.phone),
         type: 'template',
-        text: campaign.templateName,
+        text: tplBody ? renderTemplateText(tplBody, r.params) : campaign.templateName,
         campaignId: campaign._id.toHexString(),
         status: 'sent',
         createdAt: now,

@@ -4,11 +4,75 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Conv = { contactKey: string; name: string; leadId: string | null; lastText: string; lastDirection: 'in' | 'out'; lastMessageAt: string; unread: number; windowOpen: boolean };
-type Msg = { direction: 'in' | 'out'; text: string; type: string; status: string | null; errorCode: number | null; createdAt: string };
+type Msg = {
+  direction: 'in' | 'out';
+  text: string;
+  type: string;
+  caption?: string | null;
+  media?: { id: string; mime: string | null; filename: string | null; voice: boolean } | null;
+  location?: { lat: number; lng: number; name?: string; address?: string } | null;
+  status: string | null;
+  errorCode: number | null;
+  createdAt: string;
+};
 type Thread = { name: string; contactKey: string; windowOpen: boolean; windowClosesAt: string | null; messages: Msg[] };
 
 const fmt = (iso: string) => new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 const tick = (m: Msg) => (m.direction !== 'out' ? '' : m.status === 'read' ? ' ✓✓ leído' : m.status === 'delivered' ? ' ✓✓' : m.status === 'failed' ? ' ✗ no entregado' : ' ✓');
+
+/** Contenido de una burbuja: texto, foto, audio, video, documento o ubicación. */
+function Body({ m, mediaBase }: { m: Msg; mediaBase: string }) {
+  const url = m.media ? `${mediaBase}/${m.media.id}` : '';
+  const caption = m.caption ? <p className="mt-1">{m.caption}</p> : null;
+  if (m.media && (m.type === 'image' || m.type === 'sticker')) {
+    return (
+      <>
+        <a href={url} target="_blank" rel="noreferrer">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt={m.type === 'sticker' ? 'Sticker' : 'Imagen recibida'} loading="lazy" className="max-h-72 max-w-full rounded-lg" />
+        </a>
+        {caption}
+      </>
+    );
+  }
+  if (m.media && m.type === 'audio') {
+    return (
+      <>
+        <audio controls preload="none" src={url} className="w-60 max-w-full" />
+        <a href={`${url}?download=1`} className="mt-1 block text-[11px] underline">Descargar audio</a>
+      </>
+    );
+  }
+  if (m.media && m.type === 'video') {
+    return (
+      <>
+        <video controls playsInline preload="metadata" src={url} className="max-h-72 max-w-full rounded-lg" />
+        {caption}
+      </>
+    );
+  }
+  if (m.media && m.type === 'document') {
+    const isPdf = (m.media.mime || '').includes('pdf');
+    return (
+      <>
+        <p>📄 {m.media.filename || 'Documento'}</p>
+        <p className="mt-1 text-[12px]">
+          {isPdf ? <><a href={url} target="_blank" rel="noreferrer" className="underline">Abrir</a>{' · '}</> : null}
+          <a href={`${url}?download=1`} className="underline">Descargar</a>
+        </p>
+        {caption}
+      </>
+    );
+  }
+  if (m.location) {
+    return (
+      <a href={`https://www.google.com/maps?q=${m.location.lat},${m.location.lng}`} target="_blank" rel="noreferrer" className="underline">
+        📍 {m.location.name || m.location.address || 'Ver ubicación en el mapa'}
+      </a>
+    );
+  }
+  return <>{m.text}</>;
+}
 
 export default function Inbox({ resellerId, clientSlug, clientName }: { resellerId: string; clientSlug: string; clientName: string }) {
   const base = `/api/portal/${resellerId}/client/${clientSlug}/whatsapp/conversations`;
@@ -19,6 +83,8 @@ export default function Inbox({ resellerId, clientSlug, clientName }: { reseller
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const mediaBase = `/api/portal/${resellerId}/client/${clientSlug}/whatsapp/media`;
 
   const loadList = useCallback(async () => {
     try {
@@ -70,6 +136,23 @@ export default function Inbox({ resellerId, clientSlug, clientName }: { reseller
     const j = (await r.json().catch(() => ({}))) as { error?: string };
     setBusy(false);
     if (!r.ok) return setError(j.error || 'No se pudo enviar');
+    setText('');
+    await loadThread(selected, false);
+    await loadList();
+  }
+
+  async function sendFile(file: File) {
+    if (!selected) return;
+    setBusy(true);
+    setError('');
+    const fd = new FormData();
+    fd.append('file', file);
+    if (text.trim()) fd.append('caption', text.trim());
+    const r = await fetch(`${base}/${selected}/attachment`, { method: 'POST', body: fd });
+    const j = (await r.json().catch(() => ({}))) as { error?: string };
+    setBusy(false);
+    if (fileRef.current) fileRef.current.value = '';
+    if (!r.ok) return setError(j.error || 'No se pudo enviar el archivo');
     setText('');
     await loadThread(selected, false);
     await loadList();
@@ -128,7 +211,7 @@ export default function Inbox({ resellerId, clientSlug, clientName }: { reseller
                 {thread?.messages.map((m, i) => (
                   <div key={i} className={`flex ${m.direction === 'out' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${m.direction === 'out' ? 'bg-green-700' : 'bg-zinc-800'}`}>
-                      {m.text}
+                      <Body m={m} mediaBase={mediaBase} />
                       <p className="mt-1 text-right text-[10px] opacity-60">{fmt(m.createdAt)}{tick(m)}</p>
                     </div>
                   </div>
@@ -143,7 +226,17 @@ export default function Inbox({ resellerId, clientSlug, clientName }: { reseller
                 ) : (
                   <>
                     {error ? <p className="mb-2 text-xs text-red-400">{error}</p> : null}
-                    <div className="flex gap-2">
+                    <div className="flex items-end gap-2">
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        className="hidden"
+                        accept="image/jpeg,image/png,audio/aac,audio/mp4,audio/mpeg,audio/amr,audio/ogg,video/mp4,video/3gpp,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) void sendFile(f); }}
+                      />
+                      <button type="button" title="Adjuntar foto, audio, video o documento" className="h-[44px] rounded-lg border border-zinc-700 px-3 text-lg disabled:opacity-50" disabled={busy} onClick={() => fileRef.current?.click()}>
+                        📎
+                      </button>
                       <textarea
                         className="min-h-[44px] flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
                         rows={2}

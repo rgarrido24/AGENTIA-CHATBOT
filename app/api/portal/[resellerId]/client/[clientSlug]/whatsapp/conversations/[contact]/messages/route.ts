@@ -42,6 +42,9 @@ export async function GET(req: NextRequest, ctx: Ctx) {
     messages: msgs.map((m) => ({
       direction: m.direction,
       text: m.text || (m.type ? `[${m.type}]` : ''),
+      caption: m.caption || null,
+      media: m.media ? { id: m.media.id, mime: m.media.mime || null, filename: m.media.filename || null, voice: m.media.voice === true } : null,
+      location: m.location || null,
       type: m.type || 'text',
       status: m.status || null,
       errorCode: m.errorCode || null,

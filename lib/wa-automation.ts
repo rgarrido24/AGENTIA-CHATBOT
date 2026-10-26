@@ -1,7 +1,7 @@
 import { getMongoDb } from '@/lib/mongodb';
 import { isAddonEnabled } from '@/lib/client-addons';
 import { getWaAccountByClient, WA_MESSAGES, type WaMessageDoc } from '@/lib/wa-accounts';
-import { normalizeWaPhone, sendWaTemplate } from '@/lib/wa-campaigns';
+import { findTemplateBody, normalizeWaPhone, renderTemplateText, sendWaTemplate } from '@/lib/wa-campaigns';
 import { contactKey, touchConversation } from '@/lib/wa-inbox';
 
 /**
@@ -95,6 +95,9 @@ export async function runLeadWhatsAppAutomation(lead: LeadInfo): Promise<void> {
         { $set: { [`${flag}.status`]: out.ok ? 'sent' : 'failed', [`${flag}.wamid`]: out.wamid ?? null, [`${flag}.error`]: out.error ?? null, [`${flag}.at`]: now } },
       );
       if (out.ok && out.wamid) {
+        // Texto real que recibió la persona (para la bandeja); si no se puede leer, se muestra el nombre de la plantilla.
+        const def = Object.values(DEFAULT_TEMPLATES).find((t) => t.name === cfg.templateName);
+        const body = def?.bodyText ?? (await findTemplateBody(account, cfg.templateName, cfg.language));
         await db.collection<WaMessageDoc>(WA_MESSAGES).insertOne({
           resellerId: lead.resellerId,
           clientSlug: lead.clientSlug,
@@ -104,7 +107,7 @@ export async function runLeadWhatsAppAutomation(lead: LeadInfo): Promise<void> {
           contact: to,
           contactKey: contactKey(to),
           type: 'template',
-          text: cfg.templateName,
+          text: body ? renderTemplateText(body, params) : cfg.templateName,
           status: 'sent',
           createdAt: now,
           updatedAt: now,
