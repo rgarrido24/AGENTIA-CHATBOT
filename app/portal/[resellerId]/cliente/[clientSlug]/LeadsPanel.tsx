@@ -659,6 +659,7 @@ function LeadDetail({
     normalizeKey('Form name'),
     normalizeKey('Page name'),
     normalizeKey('Platform'),
+    ...['Ad id','Adgroup id','Ad group id','Adset id','Campaign id','Leadgen id','Page id','Id','Event field','Field','Created time','Is organic','Retailer item id','Form id','Lead id','Page id','Ad name','Adset name','Campaign name'].map((k) => normalizeKey(k)),
   ]);
 
   /** Rows dinámicos: TODOS los `form_fields` que tengan valor, sin importar el nombre.
