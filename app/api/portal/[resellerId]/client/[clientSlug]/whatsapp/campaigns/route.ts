@@ -5,6 +5,7 @@ import {
   CAMPAIGN_MAX_RECIPIENTS,
   WA_CAMPAIGNS,
   campaignProgress,
+  accountCountryCode,
   createCampaign,
   countTemplateVariables,
   listWaTemplates,
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest, ctx: WaRouteCtx) {
     templateName: tpl.name,
     language: tpl.language,
     recipients,
+    defaultCc: accountCountryCode(auth.account!),
   });
   return NextResponse.json({ ok: true, ...out });
 }

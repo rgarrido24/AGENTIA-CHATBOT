@@ -22,7 +22,10 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
   type Auto = { enabled: boolean; templateName: string; language: string };
   const [autoWelcome, setAutoWelcome] = useState<Auto>({ enabled: false, templateName: '', language: 'es_MX' });
   const [autoAlert, setAutoAlert] = useState<Auto>({ enabled: false, templateName: '', language: 'es_MX' });
+  const [autoReply, setAutoReply] = useState<Auto>({ enabled: false, templateName: '', language: 'es_MX' });
   const [autoBusy, setAutoBusy] = useState(false);
+  const [testPhone, setTestPhone] = useState('');
+  const [testBusy, setTestBusy] = useState(false);
 
   // Plantilla nueva
   const [tName, setTName] = useState('');
@@ -53,10 +56,11 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
     const uj = (await u.json().catch(() => ({}))) as Usage;
     if (u.ok) setUsage(uj);
     const sres = await fetch(`${base}/settings`, { cache: 'no-store' });
-    const sj = (await sres.json().catch(() => ({}))) as { settings?: { welcome?: Auto; advisorAlert?: Auto } };
+    const sj = (await sres.json().catch(() => ({}))) as { settings?: { welcome?: Auto; advisorAlert?: Auto; replyAlert?: Auto } };
     if (sres.ok) {
       if (sj.settings?.welcome) setAutoWelcome(sj.settings.welcome);
       if (sj.settings?.advisorAlert) setAutoAlert(sj.settings.advisorAlert);
+      if (sj.settings?.replyAlert) setAutoReply(sj.settings.replyAlert);
     }
   }, [base]);
 
@@ -99,12 +103,30 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
     await load();
   }
 
+  async function sendTest() {
+    setTestBusy(true);
+    setNotice('');
+    const res = await fetch(`${base}/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: testPhone }),
+    });
+    const j = (await res.json().catch(() => ({}))) as { error?: string; results?: Array<{ kind: string; ok: boolean; error?: string; skipped?: string }> };
+    setTestBusy(false);
+    if (!res.ok) return setNotice(j.error || 'No se pudo hacer la prueba');
+    const names: Record<string, string> = { welcome: 'Bienvenida', advisorAlert: 'Aviso de lead nuevo', replyAlert: 'Aviso al contestar' };
+    setNotice(
+      (j.results ?? []).map((r) => `${names[r.kind] ?? r.kind}: ${r.ok ? 'enviado ✓' : r.skipped ? `omitido (${r.skipped})` : `falló (${r.error})`}`).join(' · '),
+    );
+  }
+
   async function saveAuto() {
     setAutoBusy(true);
     setNotice('');
     const payload: Record<string, Auto> = {};
     if (autoWelcome.templateName) payload.welcome = autoWelcome;
     if (autoAlert.templateName) payload.advisorAlert = autoAlert;
+    if (autoReply.templateName) payload.replyAlert = autoReply;
     const res = await fetch(`${base}/settings`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -168,6 +190,18 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
   }
 
   const approved = templates.filter((t) => t.status === 'APPROVED');
+
+  // Si aún no se eligió plantilla, se sugiere la básica correspondiente (cuando ya está aprobada).
+  useEffect(() => {
+    const pick = (cur: Auto, name: string, set: (a: Auto) => void) => {
+      const t = approved.find((x) => x.name === name);
+      if (!cur.templateName && t) set({ ...cur, templateName: t.name, language: t.language });
+    };
+    pick(autoWelcome, 'bienvenida_lead_v1', setAutoWelcome);
+    pick(autoAlert, 'aviso_nuevo_lead_v1', setAutoAlert);
+    pick(autoReply, 'respuesta_lead_v1', setAutoReply);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templates, autoWelcome.templateName, autoAlert.templateName, autoReply.templateName]);
   const selected = templates.find((t) => t.name === cTemplate);
 
   return (
@@ -193,6 +227,7 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
           {([
             ['Bienvenida a la persona que llenó el formulario ("recibimos tus datos, te contactaremos")', autoWelcome, setAutoWelcome],
             ['Aviso a la asesora de que entró un lead nuevo', autoAlert, setAutoAlert],
+            ['Aviso a la asesora cuando la persona le contesta (máximo uno por hora por persona)', autoReply, setAutoReply],
           ] as const).map(([label, value, setValue]) => (
             <div key={label} className="mt-3 space-y-2 rounded-lg bg-zinc-950 p-3">
               <label className="flex items-start gap-2 text-xs">
@@ -207,8 +242,18 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName }
               </select>
             </div>
           ))}
-          <p className="mt-2 text-xs text-zinc-500">Bienvenida usa 2 variables (nombre, negocio). Aviso a la asesora usa 2 (nombre, teléfono).</p>
+          <p className="mt-2 text-xs text-zinc-500">Bienvenida usa 2 variables (nombre, negocio). Aviso a la asesora usa 2 (nombre, teléfono). Aviso al contestar usa 1 (nombre).</p>
           <button className={`${btn} mt-3`} disabled={autoBusy} onClick={() => void saveAuto()}>Guardar</button>
+          <div className="mt-4 space-y-2 border-t border-zinc-800 pt-4">
+            <p className="text-xs font-semibold">Probar sin esperar un lead</p>
+            <p className="text-xs text-zinc-400">
+              Manda la bienvenida al teléfono que pongas (con código de país, por ejemplo 5219991234567) y los avisos al número de alertas de la asesora, usando las plantillas elegidas arriba. Guarda antes de probar.
+            </p>
+            <input className={input} placeholder="Tu teléfono con código de país" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} />
+            <button className={btnGhost} disabled={testBusy || !testPhone.trim()} onClick={() => void sendTest()}>
+              {testBusy ? 'Enviando…' : 'Enviar prueba'}
+            </button>
+          </div>
         </section>
 
         <section className={card}>

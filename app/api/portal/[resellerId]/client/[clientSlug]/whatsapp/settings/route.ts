@@ -15,13 +15,13 @@ export async function GET(req: NextRequest, ctx: WaRouteCtx) {
   return NextResponse.json({ ok: true, settings: (c?.wa_settings ?? {}) as WaSettings, alertNumber: c?.alertNumber ? String(c.alertNumber) : '' });
 }
 
-/** Body: { welcome?: {enabled, templateName, language}, advisorAlert?: {...} } */
+/** Body: { welcome?: {enabled, templateName, language}, advisorAlert?: {...}, replyAlert?: {...} } */
 export async function PUT(req: NextRequest, ctx: WaRouteCtx) {
   const auth = await authWaRoute(req, ctx.params, true);
   if (auth.error) return auth.error;
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const $set: Record<string, unknown> = {};
-  for (const key of ['welcome', 'advisorAlert'] as const) {
+  for (const key of ['welcome', 'advisorAlert', 'replyAlert'] as const) {
     if (!(key in body)) continue;
     const s = sanitizeSetting(body[key]);
     if (!s) return NextResponse.json({ error: `Configuración inválida en ${key}: elige una plantilla` }, { status: 400 });

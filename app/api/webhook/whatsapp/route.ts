@@ -9,6 +9,7 @@ import {
 import { sendPushNotification } from '@/lib/panel-push';
 import { getWaAccountByPhoneNumberId, recordWaInbound, recordWaStatus } from '@/lib/wa-accounts';
 import { extractInboundContent } from '@/lib/wa-media';
+import { maybeSendReplyAlert } from '@/lib/wa-automation';
 import { contactKey } from '@/lib/wa-inbox';
 import { notifyPortalInboundMessage } from '@/lib/portal-push';
 import {
@@ -202,6 +203,8 @@ async function handleWhatsAppCloudApiPost(body: unknown): Promise<NextResponse> 
             name,
             text: text || 'Mensaje nuevo',
           });
+          // Aviso por WhatsApp a la asesora (si lo activó el cliente); las reacciones no cuentan como respuesta.
+          if (content.type !== 'reaction') void maybeSendReplyAlert(waAcc, { contact: from, name });
         }
       }
       return NextResponse.json({ ok: true, clientAccount: waAcc.clientSlug });
