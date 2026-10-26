@@ -49,7 +49,8 @@ export function buildPortalManifest(resellerId: string, clientSlug: string) {
     short_name: 'Mis Leads',
     description: 'Gestión de leads en tiempo real',
     start_url: startUrl,
-    scope: `${startUrl}/`,
+    // Sin "/" final: start_url debe quedar dentro del scope o Chrome no ofrece instalar.
+    scope: startUrl,
     display: 'standalone',
     orientation: 'portrait-primary',
     background_color: PORTAL_PWA_BACKGROUND_COLOR,
