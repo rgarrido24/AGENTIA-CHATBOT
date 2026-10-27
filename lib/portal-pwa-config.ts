@@ -1,5 +1,5 @@
-export const PORTAL_PWA_ICON_192 = '/pwa/portal/icon-192.png';
-export const PORTAL_PWA_ICON_512 = '/pwa/portal/icon-512.png';
+export const PORTAL_PWA_ICON_192 = '/pwa/portal/icon-192.png?v=2';
+export const PORTAL_PWA_ICON_512 = '/pwa/portal/icon-512.png?v=2';
 export const PORTAL_PWA_THEME_COLOR = '#0a0f1a';
 export const PORTAL_PWA_BACKGROUND_COLOR = '#0a0f1a';
 
