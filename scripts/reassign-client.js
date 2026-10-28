@@ -84,6 +84,9 @@ const envVal = (k) => {
   for (const [label, col, f] of targets.slice(1)) dump[label] = await col.find(f).toArray();
   fs.writeFileSync(file, JSON.stringify(dump));
   console.log(`\nRespaldo guardado: ${file}`);
+  // Copia persistente en Mongo (el disco de Render se borra en cada deploy/reinicio).
+  await db.collection('client_reassign_backups').insertOne({ resellerId, oldSlug, newSlug, createdAt: new Date(), dump });
+  console.log('Respaldo tambien en la coleccion Mongo: client_reassign_backups');
 
   // 2) Borrar historial
   for (const [label, col, f] of targets) { const r = await col.deleteMany(f); console.log(`  borrados ${r.deletedCount}  ${label}`); }
