@@ -74,7 +74,14 @@ export async function findTemplateBody(acc: WaAccountDoc, name: string, language
   }
 }
 
+const DEMO_TEMPLATES: WaTemplate[] = [
+  { name: 'bienvenida_lead_v1', category: 'UTILITY', bodyText: 'Hola {{1}}, recibimos tus datos en el formulario de {{2}}. En unos momentos un asesor te va a contactar por llamada o por WhatsApp, como te quede más cómodo. ¡Gracias por tu interés!' },
+  { name: 'promo_octubre_v1', category: 'MARKETING', bodyText: 'Hola {{1}}, este mes tenemos una promoción especial en {{2}}. Responde a este mensaje y te contamos los detalles sin compromiso.' },
+  { name: 'respuesta_lead_v1', category: 'UTILITY', bodyText: 'Hola, {{1}} respondió a tu mensaje por WhatsApp. Entra a tu bandeja para continuar la conversación.' },
+].map((t) => ({ ...t, language: 'es_MX', status: 'APPROVED', variables: countTemplateVariables(t.bodyText) }));
+
 export async function listWaTemplates(acc: WaAccountDoc): Promise<{ templates: WaTemplate[]; error?: string }> {
+  if (acc.es_demo) return { templates: DEMO_TEMPLATES };
   const token = decryptWaToken(acc);
   const json = await graphCall<
     GraphErr & {

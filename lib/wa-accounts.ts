@@ -29,6 +29,8 @@ export type WaAccountDoc = {
   lastError?: string;
   connectedAt: Date;
   updatedAt: Date;
+  /** Cuenta de demostración: no tiene token real y nunca habla con Meta. */
+  es_demo?: boolean;
 };
 
 export type WaAccountPublic = Pick<
@@ -67,7 +69,8 @@ export async function getWaAccountByPhoneNumberId(phoneNumberId: string): Promis
   return db.collection<WaAccountDoc>(WA_ACCOUNTS).findOne({ phoneNumberId });
 }
 
-export function decryptWaToken(acc: Pick<WaAccountDoc, 'tokenEnc'>): string {
+export function decryptWaToken(acc: Pick<WaAccountDoc, 'tokenEnc'> & { es_demo?: boolean }): string {
+  if (acc.es_demo) return 'DEMO_SIN_TOKEN';
   return decryptFbToken(acc.tokenEnc);
 }
 
