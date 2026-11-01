@@ -1,6 +1,6 @@
 import webpush from 'web-push';
 import { getMongoDb } from '@/lib/mongodb';
-import { PORTAL_PWA_ICON_192 } from '@/lib/portal-pwa-config';
+import { PORTAL_PWA_ICON_192, portalNotificationIcon } from '@/lib/portal-pwa-config';
 
 /** @deprecated use PORTAL_PWA_ICON_192 */
 export const PORTAL_PWA_ICON = PORTAL_PWA_ICON_192;
@@ -293,8 +293,8 @@ export async function notifyPortalNewLead(params: {
     title: '🔔 Nuevo lead!',
     body: `Nuevo lead: ${nombre} - ${telefono}`,
     url,
-    icon: PORTAL_PWA_ICON_192,
-    badge: PORTAL_PWA_ICON_192,
+    icon: portalNotificationIcon(resellerId),
+    badge: portalNotificationIcon(resellerId),
     badgeCount,
     tag: `portal-lead-${leadId}`,
   };
@@ -354,8 +354,8 @@ export async function notifyPortalInboundMessage(params: {
       title: `💬 ${who}`,
       body: preview,
       url: `${portalOrigin()}/portal/${resellerId}/cliente/${clientSlug}/whatsapp/bandeja?c=${encodeURIComponent(params.contactKey)}`,
-      icon: PORTAL_PWA_ICON_192,
-      badge: PORTAL_PWA_ICON_192,
+      icon: portalNotificationIcon(resellerId),
+      badge: portalNotificationIcon(resellerId),
       badgeCount,
       tag: `portal-wa-${params.contactKey}`,
     };

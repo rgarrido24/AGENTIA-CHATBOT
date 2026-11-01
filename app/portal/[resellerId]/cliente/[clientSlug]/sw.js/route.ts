@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PORTAL_PWA_ICON_192, getPortalPwaConfig } from '@/lib/portal-pwa-config';
+import { portalNotificationIcon, getPortalPwaConfig } from '@/lib/portal-pwa-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +9,7 @@ export async function GET(
 ) {
   const { resellerId, clientSlug } = params;
   const config = getPortalPwaConfig(resellerId, clientSlug);
-  const icon = PORTAL_PWA_ICON_192;
+  const icon = portalNotificationIcon(resellerId);
 
   const js = `/**
  * Service worker — portal asesoras (push de leads).
