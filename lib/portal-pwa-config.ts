@@ -42,8 +42,9 @@ export function getPortalPwaConfig(resellerId: string, clientSlug: string): Port
 
 /** Íconos de la app: Luciano usa su logo; el resto de revendedores usa el de Agentia. */
 export function portalIconsFor(resellerId: string) {
-  const base = resellerId.trim().toLowerCase() === 'luciano' ? '/pwa/portal' : '/pwa/agentia';
-  const v = '?v=2';
+  const isLuciano = resellerId.trim().toLowerCase() === 'luciano';
+  const base = isLuciano ? '/pwa/portal' : '/pwa/agentia-brand';
+  const v = isLuciano ? '?v=2' : '?v=3';
   return [
     { src: `${base}/icon-192.png${v}`, sizes: '192x192', type: 'image/png', purpose: 'any' },
     { src: `${base}/icon-512.png${v}`, sizes: '512x512', type: 'image/png', purpose: 'any' },
