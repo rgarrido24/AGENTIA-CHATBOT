@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { getResellerAuth, isResellerClientPortalActive } from '@/lib/reseller-auth';
 import { verifyClientCookie, CLIENT_COOKIE_NAME } from '@/lib/client-auth';
+import { isAddonEnabled } from '@/lib/client-addons';
 import { getMongoDb } from '@/lib/mongodb';
 import {
   isLucianoReseller,
@@ -110,15 +111,27 @@ export default async function ClientPage({
   const isClientAuthed =
     !reseller && (await verifyClientCookie(clientCookie, resellerId, clientSlug));
 
+  // El botón de WhatsApp aparece solo si el cliente tiene activo el add-on de API de WhatsApp.
+  const waClientDoc = await (async () => {
+    try {
+      const db = await getMongoDb();
+      return await db.collection('leads').findOne(
+        { _collection_type: 'reseller_client', resellerId, clientSlug },
+        { projection: { addons: 1 } },
+      );
+    } catch { return null; }
+  })();
+  const whatsappEnabled = isAddonEnabled(waClientDoc, 'whatsappApi');
+
   if (reseller) {
-    return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} allowLeadDelete />;
+    return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} allowLeadDelete whatsappEnabled={whatsappEnabled} />;
   }
 
   if (isClientAuthed) {
     if (await isResellerClientSuspended(resellerId, clientSlug)) {
       return <ClientSuspendedNotice />;
     }
-    return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} />;
+    return <LeadsPanel resellerId={resellerId} clientSlug={clientSlug} whatsappEnabled={whatsappEnabled} />;
   }
 
   // Not authenticated → show login

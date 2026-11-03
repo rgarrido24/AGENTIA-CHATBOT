@@ -981,11 +981,14 @@ export function LeadsPanel({
   resellerId,
   clientSlug,
   allowLeadDelete,
+  whatsappEnabled,
 }: {
   resellerId: string;
   clientSlug: string;
   /** Solo cuando el reseller entra al panel (no el cliente final). */
   allowLeadDelete?: boolean;
+  /** Muestra el botón de WhatsApp (add-on API activo). Luciano siempre lo ve. */
+  whatsappEnabled?: boolean;
 }) {
   const isLuc = useMemo(() => isLucianoReseller(resellerId), [resellerId]);
   const [lucTheme, setLucTheme] = useState<LucianoThemeMode>('light');
@@ -1180,7 +1183,7 @@ export function LeadsPanel({
               >
                 <RefreshCw className="h-3.5 w-3.5" />
               </button>
-              {isLuc && (
+              {(isLuc || whatsappEnabled) && (
               <Link
                 href={`/portal/${resellerId}/cliente/${clientSlug}/whatsapp`}
                 className="rounded-full border px-3 py-1.5 text-xs font-semibold"
