@@ -401,7 +401,7 @@ export default function WhatsAppCampaigns({ resellerId, clientSlug, clientName, 
             <textarea
               className={input}
               rows={6}
-              placeholder={'Un contacto por línea: número con código de país, y luego las variables separadas por coma\n5491112345678, Ana, Seguro de vida'}
+              placeholder={`Un contacto por línea: número con código de país, y luego las variables separadas por coma\n${defaultCc === '52' ? '5219991234567' : '5491112345678'}, Ana, Seguro de vida`}
               value={cContacts}
               onChange={(e) => setCContacts(e.target.value)}
             />

@@ -190,7 +190,7 @@ export default function AddClientModal({ resellerId }: { resellerId: string }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label style={labelStyle}>Teléfono</label>
-                  <input style={inputStyle} value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="5493511234567" />
+                  <input style={inputStyle} value={telefono} onChange={(e) => setTelefono(e.target.value)} placeholder="5215512345678" />
                 </div>
                 <div>
                   <label style={labelStyle}>Email</label>
@@ -200,7 +200,7 @@ export default function AddClientModal({ resellerId }: { resellerId: string }) {
 
               <div>
                 <label style={labelStyle}>Número de alerta WhatsApp</label>
-                <input style={inputStyle} value={alertNumber} onChange={(e) => setAlertNumber(e.target.value)} placeholder="5493511234567" />
+                <input style={inputStyle} value={alertNumber} onChange={(e) => setAlertNumber(e.target.value)} placeholder="5215512345678" />
               </div>
 
               <div>
