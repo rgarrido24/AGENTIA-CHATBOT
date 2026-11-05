@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Panel de Leads para Agencias | Agentia',
   description:
-    'El CRM para traffickers y agencias de Facebook Ads. Entrega leads en tiempo real a tus clientes con su propia marca. Sin Excel, sin capturas, sin Zapier.',
+    '+15,000 leads gestionados. CRM con marca blanca para agencias de Facebook Ads — entrega leads en tiempo real a tus clientes, con notificaciones push y seguimiento de ventas.',
   keywords: [
     'panel de leads Facebook Ads',
     'CRM para agencias de marketing',
@@ -11,11 +11,12 @@ export const metadata: Metadata = {
     'notificaciones de leads por WhatsApp',
     'CRM para traffickers',
     'leads Facebook Ads México',
+    'panel marca blanca agencia',
   ],
   openGraph: {
     title: 'Panel de Leads para Agencias | Agentia',
     description:
-      'Entrega leads de Facebook Ads a tus clientes en tiempo real. Panel con marca blanca, notificaciones push y seguimiento de ventas.',
+      '+15,000 leads gestionados. 52 negocios activos. Entrega leads de Facebook Ads a tus clientes en tiempo real.',
     images: [{ url: '/og-agentia.jpg', width: 1200, height: 630 }],
     type: 'website',
     url: 'https://agentia.software/panel-leads',
@@ -34,7 +35,7 @@ const jsonLd = {
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web, iOS, Android',
       description:
-        'CRM de leads para agencias y traffickers de Facebook Ads. Panel con marca blanca, notificaciones push, seguimiento de ventas y bandeja de WhatsApp.',
+        'CRM de leads para agencias y traffickers de Facebook Ads. Panel con marca blanca, notificaciones push, seguimiento de ventas y bandeja de WhatsApp. +15,000 leads gestionados.',
       offers: { '@type': 'Offer', price: '12', priceCurrency: 'USD' },
       url: 'https://agentia.software/panel-leads',
     },
@@ -46,23 +47,39 @@ const jsonLd = {
           name: '¿Mis clientes saben que usan Agentia?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'No. El panel lleva tu marca — tu logo, tu nombre, tu dominio si quieres. Agentia trabaja en el fondo como la tecnología que tú ofreces.',
+            text: 'No. El panel lleva tu marca — tu logo, tu nombre. Para tu cliente, tú eres el proveedor. Agentia es la infraestructura invisible.',
           },
         },
         {
           '@type': 'Question',
-          name: '¿Cómo conecta los leads de Facebook Ads?',
+          name: '¿Cómo conecta con Facebook Ads?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'A través de la integración nativa con Meta Lead Ads. En menos de 5 minutos enlazas la página de Facebook del cliente y los leads llegan directo al panel.',
+            text: 'Integración nativa con Meta Lead Ads. En menos de 5 minutos enlazas la página de Facebook del cliente. Sin Zapier, sin webhooks, sin código.',
           },
         },
         {
           '@type': 'Question',
-          name: '¿Cuánto tarda en estar listo el primer panel?',
+          name: '¿Cuánto tarda el primer panel?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Entre 24 y 48 horas desde que confirmas. No necesitas instalar nada.',
+            text: 'Entre 24 y 48 horas desde que confirmas. Recibes el acceso al panel maestro y una guía paso a paso. No instalas nada.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: '¿Funciona en iPhone sin App Store?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Sí. Es una PWA. Se instala desde Safari o Chrome en dos taps. Aparece en la pantalla de inicio y recibe notificaciones push como una app nativa.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: '¿Qué pasa si un cliente cancela?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Solo pagas paneles activos ese mes. Sin penalizaciones, sin contratos anuales.',
           },
         },
       ],
@@ -82,771 +99,1021 @@ export default function PanelLeadsPage() {
   );
 }
 
-// ── ESTILOS INLINE (evita conflictos con globals.css del panel) ────────────
+// ═══════════════════════════════════════════════════════════
+// ESTILOS — prefijo pl- para evitar colisiones con globals
+// ═══════════════════════════════════════════════════════════
 const css = `
-  #pl-root *, #pl-root *::before, #pl-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  #pl-root {
-    --bg: #080B10; --bg2: #0D1117; --bg3: #161B22;
-    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
-    --fg: #F0F6FF; --fg2: rgba(240,246,255,0.60); --fg3: rgba(240,246,255,0.35);
-    --accent: #3B82F6; --accent2: #60A5FA; --accent-glow: rgba(59,130,246,0.25);
-    --green: #10B981; --orange: #F59E0B;
-    --r: 16px; --rsm: 10px;
-    font-family: 'Inter', system-ui, sans-serif;
-    background: var(--bg); color: var(--fg); line-height: 1.6;
-    overflow-x: hidden; min-height: 100vh;
-  }
-  #pl-root a { color: inherit; text-decoration: none; }
-  #pl-root img { max-width: 100%; }
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
 
-  /* grid de fondo */
-  #pl-root::before {
-    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-    background-image:
-      linear-gradient(rgba(59,130,246,.03) 1px,transparent 1px),
-      linear-gradient(90deg,rgba(59,130,246,.03) 1px,transparent 1px);
-    background-size:60px 60px;
-  }
+#pl-root *, #pl-root *::before, #pl-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
+#pl-root a { color: inherit; text-decoration: none; }
 
-  /* NAV */
-  #pl-nav {
-    position:fixed; top:0; left:0; right:0; z-index:100;
-    padding:0 max(20px,env(safe-area-inset-left,0px));
-    border-bottom:1px solid var(--border);
-    backdrop-filter:blur(20px);
-    background:rgba(8,11,16,.8);
-  }
-  .pl-nav-inner {
-    max-width:1100px; margin:0 auto; height:60px;
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
-  }
-  .pl-logo { display:flex; align-items:center; gap:10px; }
-  .pl-logo img { height:28px; width:28px; object-fit:contain; border-radius:7px; }
-  .pl-logo-text { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; color:var(--fg); letter-spacing:.01em; }
-  .pl-nav-cta {
-    display:inline-flex; align-items:center; gap:8px;
-    padding:8px 18px; border-radius:999px;
-    background:var(--accent); color:#fff;
-    font-size:13px; font-weight:600;
-    transition:transform .15s,box-shadow .15s; white-space:nowrap;
-  }
-  .pl-nav-cta:hover { transform:translateY(-1px); box-shadow:0 4px 20px var(--accent-glow); }
+#pl-root {
+  --bg:         #08090b;
+  --bg-2:       #0f1013;
+  --bg-3:       #16181c;
+  --bg-4:       #1e2026;
+  --line:       rgba(255,255,255,.06);
+  --line-2:     rgba(255,255,255,.10);
+  --line-3:     rgba(255,255,255,.18);
+  --t1:         #f5f5f7;
+  --t2:         rgba(245,245,247,.56);
+  --t3:         rgba(245,245,247,.30);
+  --blue:       #2563eb;
+  --blue-hi:    #3b82f6;
+  --blue-soft:  rgba(37,99,235,.10);
+  --green:      #16a34a;
+  --green-hi:   #22c55e;
+  --green-soft: rgba(22,163,74,.09);
+  --amber:      #d97706;
+  --amber-hi:   #f59e0b;
+  --r4:4px; --r8:8px; --r12:12px; --r-pill:999px;
+  font-family: 'Geist', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--t1);
+  overflow-x: hidden;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
+  min-height: 100vh;
+}
 
-  /* SECCIONES */
-  #pl-root section { position:relative; z-index:1; }
-  .pl-c { max-width:1100px; margin:0 auto; padding:0 max(20px,env(safe-area-inset-left,0px)); }
+#pl-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 50% 35% at 65% -5%,rgba(37,99,235,.06) 0%,transparent 55%),
+    radial-gradient(ellipse 40% 20% at 15% 85%,rgba(22,163,74,.035) 0%,transparent 50%);
+}
 
-  /* HERO */
-  #pl-hero {
-    min-height:100svh; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:100px max(20px,env(safe-area-inset-left,0px)) 0;
-    position:relative; overflow:hidden;
-  }
-  #pl-hero::after {
-    content:''; position:absolute; width:800px; height:800px; border-radius:50%;
-    background:radial-gradient(circle,rgba(59,130,246,.12) 0%,transparent 70%);
-    top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none;
-  }
-  .pl-badge {
-    display:inline-flex; align-items:center; gap:8px;
-    padding:6px 16px; border-radius:999px;
-    border:1px solid rgba(59,130,246,.3); background:rgba(59,130,246,.08);
-    font-size:12px; font-weight:600; color:var(--accent2);
-    letter-spacing:.06em; text-transform:uppercase; margin-bottom:28px;
-    animation:plFadeUp .6s ease both;
-  }
-  .pl-bdot { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:plPulse 2s infinite; }
-  @keyframes plPulse { 0%,100%{opacity:1}50%{opacity:.4} }
-  @keyframes plFadeUp { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
-  @keyframes plSlideUp { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
-  @keyframes plTicker { from{transform:translateX(0)}to{transform:translateX(-50%)} }
+/* ── LAYOUT ── */
+.pl-wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: max(24px, env(safe-area-inset-left,0px));
+  padding-right: max(24px, env(safe-area-inset-right,0px));
+}
 
-  .pl-h1 {
-    font-family:'Space Grotesk',sans-serif;
-    font-size:clamp(36px,7vw,76px); font-weight:800; line-height:1.05;
-    letter-spacing:-.03em; text-wrap:balance; max-width:900px;
-    animation:plFadeUp .6s .1s ease both;
-  }
-  .pl-grad {
-    background:linear-gradient(135deg,#60A5FA 0%,#3B82F6 40%,#818CF8 100%);
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-  }
-  .pl-sub {
-    margin-top:20px; font-size:clamp(16px,2.2vw,20px); color:var(--fg2);
-    max-width:600px; text-wrap:balance; animation:plFadeUp .6s .2s ease both;
-  }
-  .pl-hero-btns {
-    display:flex; flex-wrap:wrap; gap:14px; justify-content:center;
-    margin-top:40px; animation:plFadeUp .6s .3s ease both;
-  }
-  .pl-btn-primary {
-    display:inline-flex; align-items:center; gap:10px;
-    padding:16px 32px; border-radius:999px;
-    background:var(--accent); color:#fff; font-size:16px; font-weight:700;
-    box-shadow:0 0 40px rgba(59,130,246,.3);
-    transition:transform .15s,box-shadow .15s;
-  }
-  .pl-btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 40px rgba(59,130,246,.5); }
-  .pl-btn-secondary {
-    display:inline-flex; align-items:center; gap:10px;
-    padding:16px 32px; border-radius:999px;
-    border:1px solid var(--border2); color:var(--fg); font-size:16px; font-weight:600;
-    background:rgba(255,255,255,.04); transition:background .15s,border-color .15s;
-  }
-  .pl-btn-secondary:hover { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.25); }
+/* ── NAV ── */
+#pl-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: 52px;
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  background: rgba(8,9,11,.8);
+}
+.pl-nav-inner { height: 100%; display: flex; align-items: center; justify-content: space-between; }
+.pl-nav-brand { display: flex; align-items: center; gap: 8px; }
+.pl-nav-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green-hi); box-shadow: 0 0 8px var(--green-hi);
+  animation: pl-pulse 2.4s ease-in-out infinite;
+}
+@keyframes pl-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.85)} }
+.pl-nav-name { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+.pl-nav-actions { display: flex; align-items: center; gap: 10px; }
+.pl-nav-link { font-size: 13px; color: var(--t2); transition: color .15s; }
+.pl-nav-link:hover { color: var(--t1); }
+.pl-nav-cta {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 16px; border-radius: var(--r-pill);
+  background: var(--t1); color: var(--bg);
+  font-size: 13px; font-weight: 600; letter-spacing: -.01em;
+  transition: opacity .12s, transform .12s;
+}
+.pl-nav-cta:hover { opacity: .88; }
+.pl-nav-cta:active { transform: scale(.97); }
 
-  /* PANEL MOCKUP */
-  .pl-visual { margin-top:64px; width:100%; max-width:900px; animation:plFadeUp .8s .4s ease both; }
-  .pl-mock {
-    background:var(--bg2); border:1px solid var(--border2); border-radius:var(--r);
-    overflow:hidden; box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06);
-  }
-  .pl-topbar {
-    display:flex; align-items:center; gap:10px; padding:14px 18px;
-    background:var(--bg3); border-bottom:1px solid var(--border);
-  }
-  .pl-dot { width:10px; height:10px; border-radius:50%; }
-  .pl-dot-r{background:#FF5F57} .pl-dot-y{background:#FFBD2E} .pl-dot-g{background:#28CA41}
-  .pl-topbar-ttl { flex:1; text-align:center; font-size:12px; color:var(--fg3); font-weight:500; }
-  .pl-body { display:grid; grid-template-columns:200px 1fr; min-height:320px; }
-  @media(max-width:600px){.pl-body{grid-template-columns:1fr}}
-  .pl-sidebar {
-    background:rgba(255,255,255,.02); border-right:1px solid var(--border);
-    padding:16px 12px; display:flex; flex-direction:column; gap:4px;
-  }
-  @media(max-width:600px){.pl-sidebar{display:none}}
-  .pl-si {
-    display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px;
-    font-size:13px; font-weight:500; color:var(--fg2); cursor:pointer; transition:background .15s;
-  }
-  .pl-si.active { background:rgba(59,130,246,.12); color:var(--accent2); }
-  .pl-content { padding:20px; }
-  .pl-hrow { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
-  .pl-htitle { font-size:14px; font-weight:700; color:var(--fg); }
-  .pl-live {
-    display:inline-flex; align-items:center; gap:5px;
-    padding:3px 10px; border-radius:999px;
-    background:rgba(16,185,129,.12); border:1px solid rgba(16,185,129,.25);
-    font-size:11px; font-weight:600; color:var(--green);
-  }
-  .pl-live::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--green); animation:plPulse 2s infinite; }
-  .pl-table { width:100%; border-collapse:collapse; }
-  .pl-table th { font-size:10px; font-weight:600; color:var(--fg3); text-transform:uppercase; letter-spacing:.08em; padding:6px 10px; text-align:left; border-bottom:1px solid var(--border); }
-  .pl-table td { font-size:12px; padding:10px; border-bottom:1px solid rgba(255,255,255,.04); color:var(--fg2); vertical-align:middle; }
-  .pl-lname { font-weight:600; color:var(--fg); font-size:13px; }
-  .pl-ltime { font-size:11px; color:var(--fg3); }
-  .pl-sbadge { display:inline-flex; padding:3px 10px; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:.04em; white-space:nowrap; }
-  .pl-s-new{background:rgba(59,130,246,.15);color:#93C5FD}
-  .pl-s-seg{background:rgba(245,158,11,.15);color:#FCD34D}
-  .pl-s-int{background:rgba(16,185,129,.15);color:#6EE7B7}
-  .pl-s-cer{background:rgba(129,140,248,.15);color:#C4B5FD}
-  .pl-wa {
-    display:inline-flex; align-items:center; gap:4px; padding:4px 10px;
-    border-radius:6px; background:rgba(37,211,102,.1); border:1px solid rgba(37,211,102,.2);
-    color:#25D366; font-size:11px; font-weight:600; cursor:pointer; transition:background .15s; white-space:nowrap;
-  }
-  .pl-wa:hover { background:rgba(37,211,102,.2); }
-  .pl-newrow td { animation:plFadeUp .5s ease both; }
+/* ── KEYFRAMES ── */
+@keyframes pl-fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pl-rowIn {
+  from { opacity: 0; background: rgba(37,99,235,.07); }
+  to   { opacity: 1; background: transparent; }
+}
+@keyframes pl-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
-  /* TICKER */
-  .pl-ticker-wrap {
-    overflow:hidden; border-top:1px solid var(--border); border-bottom:1px solid var(--border);
-    background:rgba(255,255,255,.02); padding:14px 0; margin-top:60px;
-  }
-  .pl-ticker { display:flex; gap:48px; width:max-content; animation:plTicker 22s linear infinite; }
-  .pl-ti { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; color:var(--fg3); white-space:nowrap; }
-  .pl-ti span { color:var(--accent2); }
+/* ── HERO ── */
+#pl-hero {
+  min-height: 100svh;
+  padding-top: 52px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+}
+.pl-hero-body {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  padding-block: 72px 0;
+}
+.pl-proof-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+  animation: pl-fadeUp .6s cubic-bezier(.16,1,.3,1) both;
+}
+.pl-proof-avatars { display: flex; }
+.pl-proof-av {
+  width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--bg);
+  background: linear-gradient(135deg,#3b82f6,#60a5fa);
+  font-size: 9px; font-weight: 700; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  margin-left: -8px;
+}
+.pl-proof-av:first-child { margin-left: 0; background: linear-gradient(135deg,#22c55e,#4ade80); }
+.pl-proof-av:nth-child(2) { background: linear-gradient(135deg,#f59e0b,#fbbf24); }
+.pl-proof-av:nth-child(3) { background: linear-gradient(135deg,#ec4899,#f9a8d4); }
+.pl-proof-text { font-size: 12px; color: var(--t2); }
+.pl-proof-text strong { color: var(--t1); font-weight: 500; }
 
-  /* SECCIÓN GENÉRICA */
-  .pl-slabel { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--accent2); margin-bottom:14px; }
-  .pl-stitle { font-family:'Space Grotesk',sans-serif; font-size:clamp(28px,4vw,44px); font-weight:700; line-height:1.15; letter-spacing:-.02em; text-wrap:balance; margin-bottom:16px; }
-  .pl-ssub { font-size:17px; color:var(--fg2); max-width:560px; text-wrap:balance; }
+#pl-root h1 {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(46px, 7.8vw, 92px);
+  font-weight: 400; line-height: 1.01; letter-spacing: -.035em;
+  text-wrap: balance; max-width: 860px;
+  animation: pl-fadeUp .7s .06s cubic-bezier(.16,1,.3,1) both;
+}
+#pl-root h1 em { font-style: italic; color: var(--t2); }
 
-  /* PROBLEMA */
-  #pl-prob { padding:100px 0; }
-  .pl-pain-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:56px; }
-  .pl-pain {
-    background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); padding:28px;
-    transition:border-color .2s,transform .2s; position:relative; overflow:hidden;
-  }
-  .pl-pain::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(239,68,68,.04) 0%,transparent 60%); }
-  .pl-pain:hover { border-color:var(--border2); transform:translateY(-3px); }
-  .pl-picon { width:44px; height:44px; border-radius:12px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.2); display:flex; align-items:center; justify-content:center; margin-bottom:18px; font-size:20px; }
-  .pl-pain h3 { font-size:16px; font-weight:700; margin-bottom:8px; }
-  .pl-pain p { font-size:14px; color:var(--fg2); line-height:1.6; }
+.pl-hero-sub {
+  margin-top: 24px;
+  font-size: clamp(15px, 1.6vw, 18px); line-height: 1.65;
+  color: var(--t2); max-width: 520px; text-wrap: balance;
+  animation: pl-fadeUp .7s .12s cubic-bezier(.16,1,.3,1) both;
+}
+.pl-hero-stats {
+  display: flex; flex-wrap: wrap; gap: 28px;
+  margin-top: 36px; padding-top: 32px;
+  border-top: 1px solid var(--line);
+  animation: pl-fadeUp .7s .18s cubic-bezier(.16,1,.3,1) both;
+}
+.pl-hstat { display: flex; flex-direction: column; gap: 4px; }
+.pl-hstat-n {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(28px, 3.2vw, 38px); font-weight: 400;
+  letter-spacing: -.03em; line-height: 1;
+}
+.pl-hstat-l { font-size: 11px; color: var(--t3); letter-spacing: .05em; text-transform: uppercase; font-weight: 500; }
+.pl-hstat-sep { width: 1px; background: var(--line-2); align-self: stretch; }
 
-  /* CÓMO */
-  #pl-como { padding:100px 0; background:linear-gradient(180deg,transparent,rgba(59,130,246,.03),transparent); }
-  .pl-steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:2px; margin-top:56px; background:var(--border); border-radius:var(--r); overflow:hidden; border:1px solid var(--border); }
-  .pl-step { background:var(--bg2); padding:40px 32px; transition:background .2s; }
-  .pl-step:hover { background:var(--bg3); }
-  .pl-stepn { font-family:'Space Grotesk',sans-serif; font-size:48px; font-weight:800; color:rgba(59,130,246,.15); line-height:1; margin-bottom:20px; letter-spacing:-.04em; }
-  .pl-step h3 { font-size:18px; font-weight:700; margin-bottom:10px; }
-  .pl-step p { font-size:14px; color:var(--fg2); line-height:1.65; }
+.pl-hero-actions {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px;
+  animation: pl-fadeUp .7s .22s cubic-bezier(.16,1,.3,1) both;
+}
+.pl-btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 26px; border-radius: var(--r-pill);
+  background: var(--t1); color: var(--bg);
+  font-size: 14px; font-weight: 600; letter-spacing: -.01em;
+  transition: transform .12s cubic-bezier(.16,1,.3,1), box-shadow .15s;
+}
+.pl-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,0,0,.45); }
+.pl-btn-primary:active { transform: scale(.97); }
+.pl-btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 24px; border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  font-size: 14px; font-weight: 400; color: var(--t2);
+  transition: border-color .15s, color .15s;
+}
+.pl-btn-secondary:hover { border-color: var(--line-3); color: var(--t1); }
 
-  /* FEATURES */
-  #pl-feat { padding:100px 0; }
-  .pl-feat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
-  .pl-fc {
-    background:var(--bg2); border:1px solid var(--border); border-radius:var(--r); padding:28px;
-    transition:border-color .2s,transform .2s; position:relative; overflow:hidden;
-  }
-  .pl-fc:hover { border-color:rgba(59,130,246,.3); transform:translateY(-3px); }
-  .pl-fc.hl { border-color:rgba(59,130,246,.25); background:linear-gradient(135deg,rgba(59,130,246,.06) 0%,var(--bg2) 60%); }
-  .pl-ficon { width:44px; height:44px; border-radius:12px; background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.2); display:flex; align-items:center; justify-content:center; margin-bottom:18px; font-size:20px; }
-  .pl-fc h3 { font-size:15px; font-weight:700; margin-bottom:8px; }
-  .pl-fc p { font-size:13px; color:var(--fg2); line-height:1.65; }
-  .pl-ftag { display:inline-block; margin-top:14px; padding:3px 10px; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:.06em; background:rgba(245,158,11,.1); color:var(--orange); border:1px solid rgba(245,158,11,.2); }
+/* ── PANEL SCREENSHOT ── */
+.pl-hero-screen {
+  position: relative; z-index: 1;
+  margin-top: 52px;
+  animation: pl-fadeUp .9s .28s cubic-bezier(.16,1,.3,1) both;
+}
+.pl-screen-chrome {
+  background: var(--bg-2);
+  border: 1px solid var(--line-2); border-bottom: none;
+  border-radius: 14px 14px 0 0; overflow: hidden;
+  box-shadow: 0 -4px 0 rgba(255,255,255,.04), 0 -24px 80px rgba(37,99,235,.05);
+}
+.pl-chrome-bar {
+  display: flex; align-items: center;
+  padding: 11px 16px; border-bottom: 1px solid var(--line);
+  background: var(--bg-3);
+}
+.pl-chrome-dots { display: flex; gap: 6px; margin-right: 14px; }
+.pl-cd { width: 9px; height: 9px; border-radius: 50%; }
+.pl-cd-r { background: #ff5f57; } .pl-cd-y { background: #febc2e; } .pl-cd-g { background: #28c840; }
+.pl-chrome-url {
+  flex: 1; text-align: center; padding: 5px 12px; border-radius: 6px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--line);
+  font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--t3);
+}
+.pl-panel-shell {
+  display: grid; grid-template-columns: 192px 1fr;
+  min-height: 380px; background: var(--bg-2);
+}
+.pl-p-sidebar {
+  background: rgba(255,255,255,.016); border-right: 1px solid var(--line);
+  padding: 14px 10px; display: flex; flex-direction: column; gap: 1px;
+}
+.pl-psec { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); padding: 12px 10px 6px; }
+.pl-pitem {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: var(--r8);
+  font-size: 12px; color: var(--t2); cursor: pointer; transition: background .1s, color .1s;
+}
+.pl-pitem.on { background: rgba(37,99,235,.09); color: var(--t1); }
+.pl-pitem:hover:not(.on) { background: rgba(255,255,255,.04); }
+.pl-pitem-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--line-2); flex-shrink: 0; }
+.pl-pitem.on .pl-pitem-dot { background: var(--blue-hi); }
+.pl-p-main { padding: 18px 20px; overflow: hidden; }
+.pl-pmain-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+.pl-pmain-title { font-size: 13.5px; font-weight: 600; letter-spacing: -.01em; }
+.pl-pmain-chips { display: flex; gap: 7px; align-items: center; }
+.pl-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: var(--r-pill); font-size: 10.5px; font-weight: 500; }
+.pl-chip-live { background: rgba(22,163,74,.08); color: var(--green-hi); border: 1px solid rgba(22,163,74,.14); }
+.pl-chip-live::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green-hi); animation: pl-pulse 1.6s infinite; }
+.pl-chip-date { background: rgba(37,99,235,.08); color: #93c5fd; border: 1px solid rgba(37,99,235,.12); }
+.pl-ltable { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pl-ltable thead th { padding: 0 10px 9px; text-align: left; font-size: 9.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--t3); border-bottom: 1px solid var(--line); }
+.pl-ltable tbody tr { cursor: default; transition: background .1s; }
+.pl-ltable tbody tr:hover { background: rgba(255,255,255,.022); }
+.pl-ltable td { padding: 11px 10px; border-bottom: 1px solid rgba(255,255,255,.028); vertical-align: middle; line-height: 1.3; }
+.pl-lead-name { font-size: 12.5px; font-weight: 500; }
+.pl-lead-time { font-size: 10px; color: var(--t3); margin-top: 2px; }
+.pl-lead-src { font-size: 11.5px; color: var(--t2); }
+.pl-badge { display: inline-flex; padding: 3px 9px; border-radius: var(--r-pill); font-size: 9.5px; font-weight: 600; letter-spacing: .03em; white-space: nowrap; }
+.pl-b-new { background: rgba(37,99,235,.10); color: #93c5fd; border: 1px solid rgba(37,99,235,.14); }
+.pl-b-hot { background: rgba(245,158,11,.08); color: #fcd34d; border: 1px solid rgba(245,158,11,.12); }
+.pl-b-won { background: rgba(22,163,74,.08); color: #86efac; border: 1px solid rgba(22,163,74,.12); }
+.pl-b-trk { background: rgba(168,85,247,.08); color: #d8b4fe; border: 1px solid rgba(168,85,247,.12); }
+.pl-wa-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: var(--r8);
+  background: rgba(37,211,102,.06); border: 1px solid rgba(37,211,102,.14);
+  color: #4ade80; font-size: 10.5px; font-weight: 500; cursor: pointer; white-space: nowrap;
+  transition: background .12s;
+}
+.pl-wa-btn:hover { background: rgba(37,211,102,.12); }
+.pl-row-new td { animation: pl-rowIn .45s cubic-bezier(.16,1,.3,1) both; }
 
-  /* VIDEO */
-  #pl-video { padding:100px 0; text-align:center; }
-  .pl-vwrap {
-    margin:48px auto 0; position:relative; border-radius:var(--r); overflow:hidden;
-    border:1px solid var(--border2); box-shadow:0 40px 100px rgba(0,0,0,.5);
-    max-width:800px; aspect-ratio:16/9; background:var(--bg3);
-    display:flex; align-items:center; justify-content:center; cursor:pointer;
-  }
-  .pl-vwrap video { width:100%; height:100%; object-fit:cover; display:block; }
-  .pl-voverlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(8,11,16,.6); transition:opacity .3s; }
-  .pl-play { width:72px; height:72px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; box-shadow:0 0 40px rgba(59,130,246,.4); transition:transform .15s; }
-  .pl-play:hover { transform:scale(1.08); }
-  .pl-plabel { margin-top:16px; font-size:14px; font-weight:600; color:var(--fg2); }
-  .pl-vwrap.playing .pl-voverlay { opacity:0; pointer-events:none; }
+/* ── TICKER ── */
+.pl-ticker { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; padding: 10px 0; background: rgba(255,255,255,.012); }
+.pl-ticker-track { display: flex; gap: 36px; width: max-content; animation: pl-marquee 28s linear infinite; }
+.pl-ticker-item { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 11.5px; color: var(--t3); }
+.pl-ticker-item b { color: var(--t2); font-weight: 500; }
+.pl-ticker-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--line-2); }
 
-  /* DEMO */
-  #pl-demo { padding:100px 0; background:linear-gradient(180deg,transparent,rgba(16,185,129,.03),transparent); }
-  .pl-dcard {
-    max-width:640px; margin:48px auto 0; background:var(--bg2);
-    border:1px solid rgba(16,185,129,.2); border-radius:var(--r); padding:40px;
-    text-align:center; box-shadow:0 0 60px rgba(16,185,129,.05);
-  }
-  .pl-creds { display:inline-flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-bottom:28px; }
-  .pl-cbox { background:var(--bg3); border:1px solid var(--border2); border-radius:10px; padding:14px 20px; font-size:13px; }
-  .pl-clabel { font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--fg3); margin-bottom:4px; }
-  .pl-cval { font-family:monospace; font-size:15px; font-weight:700; color:var(--green); }
-  .pl-btn-demo {
-    display:inline-flex; align-items:center; gap:10px; padding:14px 28px; border-radius:999px;
-    background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.3);
-    color:var(--green); font-size:15px; font-weight:700;
-    transition:background .15s,transform .15s;
-  }
-  .pl-btn-demo:hover { background:rgba(16,185,129,.18); transform:translateY(-1px); }
+/* ── SECTION SHARED ── */
+#pl-root section { position: relative; z-index: 1; }
+.pl-sec-label { display: block; margin-bottom: 12px; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); }
+#pl-root h2 { font-family: 'Instrument Serif', Georgia, serif; font-size: clamp(30px, 4.2vw, 50px); font-weight: 400; line-height: 1.08; letter-spacing: -.028em; text-wrap: balance; }
+.pl-sub { margin-top: 14px; font-size: clamp(14px, 1.5vw, 16px); line-height: 1.7; color: var(--t2); max-width: 480px; text-wrap: balance; }
 
-  /* PRECIOS */
-  #pl-prices { padding:100px 0; }
-  .pl-pgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; max-width:900px; margin:0 auto; }
-  .pl-pcard {
-    background:var(--bg2); border:1px solid var(--border); border-radius:var(--r);
-    padding:32px 24px; text-align:center; transition:border-color .2s,transform .2s; position:relative; overflow:hidden;
-  }
-  .pl-pcard:hover { border-color:var(--border2); transform:translateY(-4px); }
-  .pl-pcard.pop { border-color:rgba(59,130,246,.4); background:linear-gradient(160deg,rgba(59,130,246,.08) 0%,var(--bg2) 50%); }
-  .pl-pbadge { position:absolute; top:0; left:50%; transform:translateX(-50%); padding:4px 16px; border-radius:0 0 10px 10px; background:var(--accent); font-size:10px; font-weight:700; letter-spacing:.06em; color:#fff; text-transform:uppercase; }
-  .pl-ptier { font-size:12px; font-weight:600; color:var(--fg3); letter-spacing:.08em; text-transform:uppercase; margin-bottom:14px; }
-  .pl-pamt { font-family:'Space Grotesk',sans-serif; font-size:44px; font-weight:800; letter-spacing:-.04em; line-height:1; }
-  .pl-pamt sup { font-size:22px; vertical-align:top; margin-top:6px; font-weight:600; }
-  .pl-pamt span { font-size:14px; font-weight:500; color:var(--fg3); }
-  .pl-prange { font-size:13px; color:var(--fg2); margin-top:8px; }
-  .pl-ptotal { margin-top:16px; padding-top:16px; border-top:1px solid var(--border); font-size:12px; color:var(--fg3); }
-  .pl-ptotal strong { color:var(--fg2); }
+/* ── SOCIAL PROOF ── */
+#pl-social { padding: 60px 0; border-bottom: 1px solid var(--line); }
+.pl-social-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 28px; }
+.pl-social-left { max-width: 460px; }
+.pl-social-left p { font-size: 13.5px; line-height: 1.7; color: var(--t2); }
+.pl-social-left p strong { color: var(--t1); font-weight: 500; }
+.pl-stats-row { display: flex; gap: 1px; background: var(--line); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
+.pl-stat-tile { background: var(--bg-2); padding: 22px 28px; flex: 1; min-width: 130px; transition: background .15s; }
+.pl-stat-tile:hover { background: var(--bg-3); }
+.pl-st-n { font-family: 'Instrument Serif', serif; font-size: clamp(32px, 3.5vw, 42px); font-weight: 400; letter-spacing: -.04em; line-height: 1; }
+.pl-st-l { font-size: 10.5px; color: var(--t3); margin-top: 6px; letter-spacing: .04em; text-transform: uppercase; font-weight: 500; line-height: 1.4; }
+.pl-st-delta { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 11px; color: var(--green-hi); font-weight: 500; }
 
-  /* FAQ */
-  #pl-faq { padding:100px 0; }
-  .pl-faqlist { max-width:700px; margin:0 auto; display:flex; flex-direction:column; gap:4px; }
-  .pl-faqitem { background:var(--bg2); border:1px solid var(--border); border-radius:var(--rsm); overflow:hidden; }
-  .pl-faqitem[open] { border-color:rgba(59,130,246,.2); }
-  .pl-fq {
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
-    padding:20px 24px; cursor:pointer; font-size:15px; font-weight:600;
-    transition:color .15s; list-style:none; user-select:none;
-  }
-  .pl-fq::-webkit-details-marker { display:none; }
-  .pl-fq::after {
-    content:''; width:18px; height:18px; flex-shrink:0;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(240,246,255,0.4)' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-size:contain; background-repeat:no-repeat; transition:transform .25s;
-  }
-  .pl-faqitem[open] .pl-fq::after { transform:rotate(180deg); }
-  .pl-fa { padding:0 24px 20px; font-size:14px; color:var(--fg2); line-height:1.7; animation:plFadeUp .2s ease; }
+/* ── PROBLEMA ── */
+#pl-prob { padding: 100px 0; border-top: 1px solid var(--line); }
+.pl-prob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+.pl-pain-items { margin-top: 40px; }
+.pl-pain { display: grid; grid-template-columns: 28px 1fr; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--line); transition: border-color .2s; }
+.pl-pain:first-child { border-top: 1px solid var(--line); }
+.pl-pain:hover { border-color: var(--line-2); }
+.pl-pain-n { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 14px; color: var(--t3); padding-top: 2px; text-align: right; }
+.pl-pain h3 { font-size: 13.5px; font-weight: 500; margin-bottom: 5px; }
+.pl-pain p { font-size: 12.5px; line-height: 1.65; color: var(--t2); }
+.pl-compare { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
+.pl-compare-tabs { display: flex; border-bottom: 1px solid var(--line); }
+.pl-ctab { flex: 1; padding: 11px 16px; font-size: 12px; font-weight: 500; text-align: center; color: var(--t3); cursor: pointer; transition: color .15s, background .15s; border-right: 1px solid var(--line); }
+.pl-ctab:last-child { border-right: none; }
+.pl-ctab.on { color: var(--t1); background: rgba(255,255,255,.028); }
+.pl-cpane { padding: 20px; display: none; }
+.pl-cpane.on { display: block; }
+.pl-xrow { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 11.5px; }
+.pl-xcell { flex: 1; color: var(--t2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-xhead .pl-xcell { font-size: 9.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--t3); }
+.pl-xwarn { margin-top: 12px; padding: 10px 12px; border-radius: var(--r8); background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.12); font-size: 11.5px; color: #fca5a5; line-height: 1.5; display: flex; gap: 8px; align-items: flex-start; }
+.pl-notif { display: flex; gap: 12px; padding: 12px 14px; border-radius: 10px; background: var(--bg-3); border: 1px solid var(--line-2); margin-bottom: 8px; animation: pl-fadeUp .35s cubic-bezier(.16,1,.3,1) both; }
+.pl-notif:nth-child(2) { animation-delay: .08s; }
+.pl-notif-ic { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.pl-notif-ic-blue { background: rgba(37,99,235,.1); border: 1px solid rgba(37,99,235,.18); }
+.pl-notif-ic-green { background: rgba(22,163,74,.08); border: 1px solid rgba(22,163,74,.15); }
+.pl-notif-title { font-size: 12.5px; font-weight: 500; margin-bottom: 3px; }
+.pl-notif-body { font-size: 11.5px; color: var(--t2); line-height: 1.5; }
+.pl-notif-t { font-size: 10px; color: var(--t3); margin-top: 3px; }
+.pl-notif-wa { margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: var(--r-pill); background: rgba(37,211,102,.07); border: 1px solid rgba(37,211,102,.14); font-size: 11px; font-weight: 500; color: #4ade80; }
 
-  /* CTA FINAL */
-  #pl-cta { padding:120px max(20px,env(safe-area-inset-left,0px)); text-align:center; position:relative; overflow:hidden; }
-  #pl-cta::before {
-    content:''; position:absolute; width:600px; height:600px; border-radius:50%;
-    background:radial-gradient(circle,rgba(59,130,246,.1) 0%,transparent 70%);
-    top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none;
-  }
-  #pl-cta h2 { font-family:'Space Grotesk',sans-serif; font-size:clamp(32px,5vw,56px); font-weight:800; letter-spacing:-.03em; line-height:1.1; text-wrap:balance; margin-bottom:20px; }
-  #pl-cta p { font-size:18px; color:var(--fg2); margin-bottom:40px; text-wrap:balance; }
+/* ── VIDEO ── */
+#pl-video { padding: 100px 0; border-top: 1px solid var(--line); }
+.pl-video-layout { display: grid; grid-template-columns: 1fr 1.6fr; gap: 60px; align-items: center; }
+.pl-vwrap { position: relative; border-radius: var(--r12); overflow: hidden; border: 1px solid var(--line-2); background: var(--bg-3); aspect-ratio: 16/9; cursor: pointer; box-shadow: 0 0 60px rgba(37,99,235,.07); }
+.pl-vwrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pl-voverlay { position: absolute; inset: 0; background: rgba(8,9,11,.45); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; transition: opacity .25s cubic-bezier(.16,1,.3,1); }
+.pl-vplay-btn { width: 60px; height: 60px; border-radius: 50%; background: var(--t1); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 40px rgba(0,0,0,.5); transition: transform .15s cubic-bezier(.16,1,.3,1); }
+.pl-vplay-btn:hover { transform: scale(1.08); }
+.pl-vplay-btn:active { transform: scale(.94); }
+.pl-voverlay-label { font-size: 12px; color: rgba(255,255,255,.65); font-weight: 500; }
+.pl-vwrap.playing .pl-voverlay { opacity: 0; pointer-events: none; }
 
-  /* FOOTER */
-  #pl-footer { padding:40px max(20px,env(safe-area-inset-left,0px)); border-top:1px solid var(--border); text-align:center; font-size:13px; color:var(--fg3); }
-  #pl-footer a { color:var(--fg3); }
-  #pl-footer a:hover { color:var(--fg2); }
+/* ── CÓMO FUNCIONA ── */
+#pl-como { padding: 100px 0; border-top: 1px solid var(--line); }
+.pl-como-grid { display: grid; grid-template-columns: 380px 1fr; gap: 80px; align-items: start; margin-top: 52px; }
+.pl-steps { display: flex; flex-direction: column; }
+.pl-step { display: flex; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--line); transition: border-color .2s; cursor: default; }
+.pl-step:first-child { border-top: 1px solid var(--line); }
+.pl-step:hover { border-color: var(--line-2); }
+.pl-step-n { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 22px; color: var(--t3); flex-shrink: 0; width: 28px; text-align: right; padding-top: 2px; }
+.pl-step h3 { font-size: 13.5px; font-weight: 500; margin-bottom: 6px; }
+.pl-step p { font-size: 12.5px; line-height: 1.65; color: var(--t2); }
+.pl-step-time { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 10.5px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--green-hi); }
+.pl-step-vis { position: sticky; top: 72px; background: var(--bg-2); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
+.pl-sv-top { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--t2); }
+.pl-sv-body { padding: 16px 18px; }
+.pl-sv-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r8); background: var(--bg-3); margin-bottom: 8px; border: 1px solid var(--line); }
+.pl-sv-av { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; font-size: 11px; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.pl-sv-name { font-size: 12.5px; font-weight: 500; }
+.pl-sv-sub { font-size: 10.5px; color: var(--t3); margin-top: 1px; }
+.pl-sv-code { margin-top: 12px; padding: 12px 14px; border-radius: var(--r8); background: rgba(0,0,0,.35); border: 1px solid var(--line); font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #86efac; line-height: 1.65; }
 
-  /* WA FLOTANTE */
-  .pl-wafloat {
-    position:fixed; bottom:24px; right:24px; z-index:200;
-    display:flex; align-items:center; gap:12px;
-    background:#25D366; color:#fff; font-size:14px; font-weight:700;
-    padding:14px 22px; border-radius:999px;
-    text-decoration:none;
-    box-shadow:0 8px 30px rgba(37,211,102,.35);
-    transition:transform .15s,box-shadow .15s;
-    animation:plSlideUp .8s 1s ease both;
-  }
-  .pl-wafloat:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(37,211,102,.5); }
+/* ── FEATURES ── */
+#pl-feat { padding: 100px 0; border-top: 1px solid var(--line); }
+.pl-feat-intro { margin-bottom: 52px; }
+.pl-bento { display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: auto auto; gap: 1px; background: var(--line); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
+.pl-bc { background: var(--bg-2); padding: 28px 26px; transition: background .15s; }
+.pl-bc:hover { background: var(--bg-3); }
+.pl-bc.span2 { grid-column: 1/3; }
+.pl-bc.tall { grid-row: 1/3; grid-column: 3; display: flex; flex-direction: column; }
+.pl-bc-label { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; display: block; }
+.pl-bc h3 { font-size: 14.5px; font-weight: 500; letter-spacing: -.01em; margin-bottom: 8px; }
+.pl-bc p { font-size: 12.5px; line-height: 1.65; color: var(--t2); }
+.pl-bc-tag { display: inline-flex; margin-top: 14px; padding: 3px 10px; border-radius: var(--r-pill); font-size: 9.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: rgba(245,158,11,.07); color: var(--amber-hi); border: 1px solid rgba(245,158,11,.12); }
+.pl-mini-bars { margin-top: auto; padding-top: 24px; display: flex; flex-direction: column; gap: 9px; }
+.pl-mbar-row { display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.pl-mbar-label { color: var(--t3); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-mbar-wrap { flex: 2; height: 3px; background: var(--line-2); border-radius: 2px; overflow: hidden; }
+.pl-mbar-fill { height: 100%; border-radius: 2px; background: var(--blue-hi); }
+.pl-mbar-val { font-family: 'Geist Mono', monospace; font-size: 10.5px; font-weight: 500; color: var(--t2); min-width: 24px; text-align: right; }
 
-  /* REVEAL */
-  .pl-rv { opacity:0; transform:translateY(24px); transition:opacity .6s ease,transform .6s ease; }
-  .pl-rv.visible { opacity:1; transform:translateY(0); }
+/* ── PRICING ── */
+#pl-prices { padding: 100px 0; border-top: 1px solid var(--line); }
+.pl-price-intro { text-align: center; margin-bottom: 52px; }
+.pl-price-intro .pl-sub { margin: 14px auto 0; text-align: center; }
+.pl-price-table { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--line); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; max-width: 880px; margin: 0 auto; }
+.pl-pt { background: var(--bg-2); padding: 28px 22px; position: relative; transition: background .15s; }
+.pl-pt:hover { background: var(--bg-3); }
+.pl-pt.featured { background: linear-gradient(160deg,rgba(37,99,235,.06) 0%,var(--bg-2) 55%); }
+.pl-pt-pop { display: inline-flex; padding: 3px 9px; border-radius: var(--r-pill); margin-bottom: 14px; font-size: 9px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: var(--blue); color: #fff; }
+.pl-pt-tier { font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; }
+.pl-pt-price { font-family: 'Instrument Serif', serif; font-size: clamp(34px, 4vw, 44px); font-weight: 400; letter-spacing: -.04em; line-height: 1; }
+.pl-pt-price sup { font-size: 17px; vertical-align: super; margin-right: 1px; font-family: 'Geist', sans-serif; font-weight: 300; }
+.pl-pt-price sub { font-size: 13px; font-family: 'Geist', sans-serif; font-weight: 300; color: var(--t3); vertical-align: bottom; }
+.pl-pt-range { margin-top: 10px; font-size: 12px; color: var(--t2); line-height: 1.5; }
+.pl-pt-from { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--t3); line-height: 1.6; }
+.pl-pt-from strong { color: var(--t2); font-weight: 500; }
+.pl-price-anchor { max-width: 880px; margin: 20px auto 0; padding: 16px 20px; border-radius: var(--r8); background: var(--bg-2); border: 1px solid var(--line-2); font-size: 13px; color: var(--t2); line-height: 1.6; display: flex; align-items: center; gap: 14px; }
+.pl-price-anchor strong { color: var(--t1); font-weight: 500; }
+.pl-anchor-sep { flex-shrink: 0; font-size: 18px; color: var(--t3); }
+
+/* ── DEMO ── */
+#pl-demo { padding: 100px 0; border-top: 1px solid var(--line); }
+.pl-demo-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
+.pl-demo-creds { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pl-cred { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: var(--r8); padding: 14px 16px; }
+.pl-cred-k { font-size: 9.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--t3); margin-bottom: 7px; }
+.pl-cred-v { font-family: 'Geist Mono', monospace; font-size: 14px; font-weight: 500; letter-spacing: .01em; }
+.pl-demo-action { margin-top: 20px; }
+.pl-btn-outline { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: var(--r-pill); border: 1px solid var(--line-2); font-size: 13px; font-weight: 400; color: var(--t2); transition: border-color .15s, color .15s; }
+.pl-btn-outline:hover { border-color: var(--line-3); color: var(--t1); }
+.pl-demo-screen { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
+.pl-ds-top { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--t2); }
+.pl-ds-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
+.pl-ds-s { background: var(--bg-2); padding: 14px 16px; }
+.pl-ds-n { font-family: 'Instrument Serif', serif; font-size: 28px; font-weight: 400; letter-spacing: -.035em; line-height: 1; }
+.pl-ds-l { font-size: 10px; color: var(--t3); margin-top: 3px; letter-spacing: .04em; text-transform: uppercase; }
+.pl-ds-chg { font-size: 11px; color: var(--green-hi); margin-top: 2px; }
+.pl-ds-body { padding: 14px 16px; }
+.pl-ds-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.pl-ds-row:last-child { border: none; }
+.pl-ds-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pl-ds-dot-b { background: var(--blue-hi); box-shadow: 0 0 6px var(--blue-hi); }
+.pl-ds-dot-g { background: var(--green-hi); box-shadow: 0 0 5px var(--green-hi); }
+.pl-ds-dot-a { background: var(--amber-hi); }
+.pl-ds-nm { font-size: 12px; font-weight: 500; flex: 1; }
+.pl-ds-hr { font-size: 10.5px; color: var(--t3); }
+
+/* ── FAQ ── */
+#pl-faq { padding: 100px 0; border-top: 1px solid var(--line); }
+.pl-faq-layout { display: grid; grid-template-columns: 300px 1fr; gap: 80px; align-items: start; }
+.pl-faq-left { position: sticky; top: 72px; }
+.pl-faq-items { display: flex; flex-direction: column; }
+details.pl-fq { border-bottom: 1px solid var(--line); }
+details.pl-fq:first-child { border-top: 1px solid var(--line); }
+details[open].pl-fq { border-color: var(--line-2); }
+.pl-fq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; cursor: pointer; list-style: none; font-size: 13.5px; font-weight: 400; transition: color .15s; user-select: none; }
+.pl-fq summary::-webkit-details-marker { display: none; }
+.pl-fq-arrow { width: 16px; height: 16px; flex-shrink: 0; color: var(--t3); transition: transform .2s cubic-bezier(.16,1,.3,1), color .15s; }
+details[open] .pl-fq-arrow { transform: rotate(45deg); color: var(--t2); }
+.pl-fq-a { padding: 0 0 18px; font-size: 13px; line-height: 1.7; color: var(--t2); animation: pl-fadeUp .2s cubic-bezier(.16,1,.3,1) both; }
+
+/* ── CTA FINAL ── */
+#pl-cta { padding: 120px max(24px,env(safe-area-inset-left,0px)); text-align: center; position: relative; overflow: hidden; border-top: 1px solid var(--line); }
+#pl-cta::before { content: ''; position: absolute; width: 600px; height: 400px; border-radius: 50%; background: radial-gradient(ellipse,rgba(37,99,235,.07) 0%,transparent 65%); top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }
+#pl-cta h2 { font-size: clamp(34px, 5vw, 62px); max-width: 720px; margin: 0 auto 20px; }
+#pl-cta .pl-sub { margin: 0 auto 42px; font-size: 17px; text-align: center; max-width: 460px; }
+.pl-cta-note { margin-top: 16px; font-size: 12px; color: var(--t3); }
+.pl-cta-micro { margin-top: 28px; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
+.pl-cta-micro-item { font-size: 12px; color: var(--t3); display: flex; align-items: center; gap: 5px; }
+.pl-cta-micro-item::before { content: '✓'; color: var(--green-hi); font-size: 11px; }
+
+/* ── FOOTER ── */
+#pl-footer { padding: 28px max(24px,env(safe-area-inset-left,0px)); border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.pl-foot-left { font-size: 12px; color: var(--t3); }
+.pl-foot-left a { transition: color .15s; }
+.pl-foot-left a:hover { color: var(--t2); }
+.pl-foot-right { font-size: 11px; color: var(--t3); display: flex; gap: 16px; flex-wrap: wrap; }
+
+/* ── WA FLOTANTE ── */
+.pl-wa-float { position: fixed; bottom: 20px; right: 20px; z-index: 300; display: flex; align-items: center; gap: 9px; padding: 11px 20px; border-radius: var(--r-pill); background: #25D366; color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 4px 24px rgba(37,211,102,.28); transition: transform .12s cubic-bezier(.16,1,.3,1), box-shadow .15s; animation: pl-fadeUp .6s 1.4s cubic-bezier(.16,1,.3,1) both; }
+.pl-wa-float:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(37,211,102,.38); }
+.pl-wa-float:active { transform: scale(.96); }
+
+/* ── SCROLL REVEAL ── */
+.pl-rv { opacity: 0; transform: translateY(16px); transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1); }
+.pl-rv.in { opacity: 1; transform: translateY(0); }
+.pl-rv-d1 { transition-delay: .05s; } .pl-rv-d2 { transition-delay: .1s; } .pl-rv-d3 { transition-delay: .15s; } .pl-rv-d4 { transition-delay: .2s; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 800px) {
+  .pl-como-grid { grid-template-columns: 1fr; gap: 40px; }
+  .pl-step-vis { display: none; }
+}
+@media (max-width: 760px) {
+  .pl-video-layout { grid-template-columns: 1fr; gap: 36px; }
+  .pl-bento { grid-template-columns: 1fr; }
+  .pl-bc.span2, .pl-bc.tall { grid-column: 1; grid-row: auto; }
+}
+@media (max-width: 720px) {
+  .pl-prob-grid { grid-template-columns: 1fr; gap: 40px; }
+  .pl-demo-layout { grid-template-columns: 1fr; gap: 40px; }
+  .pl-faq-layout { grid-template-columns: 1fr; gap: 40px; }
+  .pl-faq-left { position: static; }
+}
+@media (max-width: 680px) {
+  .pl-price-table { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 620px) {
+  .pl-panel-shell { grid-template-columns: 1fr; }
+  .pl-p-sidebar { display: none; }
+}
+@media (max-width: 580px) {
+  .pl-hero-actions { flex-direction: column; align-items: flex-start; }
+  .pl-btn-primary, .pl-btn-secondary { width: 100%; justify-content: center; }
+}
+@media (max-width: 420px) {
+  .pl-price-table { grid-template-columns: 1fr; }
+}
 `;
+
+// SVG WA inline
+const WaSvg = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.555 4.122 1.528 5.858L.057 23.986l6.294-1.648A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.213-3.733.978 1.001-3.64-.234-.374A9.818 9.818 0 0112 2.182c5.426 0 9.818 4.392 9.818 9.818 0 5.427-4.392 9.818-9.818 9.818z"/>
+  </svg>
+);
 
 function PanelLeadsContent() {
   return (
-    <>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-      />
+    <div id="pl-root">
       <style dangerouslySetInnerHTML={{ __html: css }} />
 
-      <div id="pl-root">
-        {/* NAV */}
-        <nav id="pl-nav">
-          <div className="pl-nav-inner">
-            <a href="/" className="pl-logo">
-              <img src="/logo-agentia-2026.png" alt="Agentia" />
-              <span className="pl-logo-text">Agentia</span>
-            </a>
-            <a
-              href="https://wa.me/529844927769?text=Hola%2C%20quiero%20una%20demo%20del%20Panel%20de%20Leads"
-              className="pl-nav-cta"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <WaIcon size={14} />
-              Pedir demo
+      {/* NAV */}
+      <nav id="pl-nav">
+        <div className="pl-wrap pl-nav-inner">
+          <a href="/" className="pl-nav-brand">
+            <span className="pl-nav-dot" />
+            <span className="pl-nav-name">Agentia</span>
+          </a>
+          <div className="pl-nav-actions">
+            <a href="#pl-demo" className="pl-nav-link">Demo</a>
+            <a href="#pl-prices" className="pl-nav-link">Precios</a>
+            <a href="https://wa.me/529844927769?text=Quiero%20demo%20del%20Panel%20de%20Leads" className="pl-nav-cta" target="_blank" rel="noopener noreferrer">
+              Agendar demo
             </a>
           </div>
-        </nav>
+        </div>
+      </nav>
 
-        {/* HERO */}
-        <section id="pl-hero">
-          <span className="pl-badge">
-            <span className="pl-bdot" />
-            Panel activo · Agencias en México y LATAM
-          </span>
-          <h1 className="pl-h1">
-            Tu agencia entrega leads.<br />
-            <span className="pl-grad">Tus clientes los cierran.</span>
-          </h1>
-          <p className="pl-sub">
-            Panel de seguimiento de leads con marca blanca. Notificaciones en tiempo real,
-            estatus de venta y acceso WhatsApp — sin Excel, sin capturas, sin Zapier.
+      {/* HERO */}
+      <section id="pl-hero">
+        <div className="pl-hero-body pl-wrap">
+          <div className="pl-proof-badge">
+            <div className="pl-proof-avatars">
+              <span className="pl-proof-av">RF</span>
+              <span className="pl-proof-av">DP</span>
+              <span className="pl-proof-av">GP</span>
+              <span className="pl-proof-av">+</span>
+            </div>
+            <span className="pl-proof-text"><strong>52 negocios</strong> ya reciben sus leads aquí</span>
+          </div>
+
+          <h1>Tus clientes ven<br />sus leads. <em>Al instante.</em></h1>
+
+          <p className="pl-hero-sub">
+            Panel con marca blanca para agencias de Facebook Ads. Cada lead llega al celular de tu cliente en segundos — con nombre, número y un tap para contactar.
           </p>
-          <div className="pl-hero-btns">
-            <a
-              href="https://wa.me/529844927769?text=Hola%2C%20quiero%20una%20demo%20del%20Panel%20de%20Leads"
-              className="pl-btn-primary"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <WaIcon size={18} />
-              Quiero una demo
-            </a>
-            <a href="#pl-demo" className="pl-btn-secondary">
-              <DocIcon />
-              Ver acceso demo
-            </a>
+
+          <div className="pl-hero-stats">
+            <div className="pl-hstat">
+              <span className="pl-hstat-n">+15,000</span>
+              <span className="pl-hstat-l">Leads gestionados</span>
+            </div>
+            <div className="pl-hstat-sep" />
+            <div className="pl-hstat">
+              <span className="pl-hstat-n">+3,700</span>
+              <span className="pl-hstat-l">Solo el último mes</span>
+            </div>
+            <div className="pl-hstat-sep" />
+            <div className="pl-hstat">
+              <span className="pl-hstat-n">24 h</span>
+              <span className="pl-hstat-l">Primer panel activo</span>
+            </div>
           </div>
 
-          {/* Panel mockup */}
-          <div className="pl-visual">
-            <div className="pl-mock">
-              <div className="pl-topbar">
-                <span className="pl-dot pl-dot-r" />
-                <span className="pl-dot pl-dot-y" />
-                <span className="pl-dot pl-dot-g" />
-                <span className="pl-topbar-ttl">panel-leads · demo-agencia</span>
+          <div className="pl-hero-actions">
+            <a href="https://wa.me/529844927769?text=Quiero%20demo%20del%20Panel%20de%20Leads%20para%20mi%20agencia" className="pl-btn-primary" target="_blank" rel="noopener noreferrer">
+              <WaSvg /> Agendar demo
+            </a>
+            <a href="#pl-demo" className="pl-btn-secondary">Ver acceso demo →</a>
+          </div>
+        </div>
+
+        {/* Panel screenshot */}
+        <div className="pl-hero-screen pl-wrap">
+          <div className="pl-screen-chrome">
+            <div className="pl-chrome-bar">
+              <div className="pl-chrome-dots">
+                <span className="pl-cd pl-cd-r" /><span className="pl-cd pl-cd-y" /><span className="pl-cd pl-cd-g" />
               </div>
-              <div className="pl-body">
-                <aside className="pl-sidebar">
-                  {[
-                    ['Leads', '⏱'], ['Clientes', '👥'], ['WhatsApp', '💬'], ['Reportes', '📊'],
-                  ].map(([label, ic], i) => (
-                    <div key={label} className={`pl-si${i === 0 ? ' active' : ''}`}>
-                      <span>{ic}</span>{label}
-                    </div>
-                  ))}
-                </aside>
-                <div className="pl-content">
-                  <div className="pl-hrow">
-                    <span className="pl-htitle">Leads — Hoy</span>
-                    <span className="pl-live">En vivo</span>
+              <span className="pl-chrome-url">agentia.software / panel · demo-agencia</span>
+            </div>
+            <div className="pl-panel-shell">
+              <nav className="pl-p-sidebar">
+                <span className="pl-psec">Panel</span>
+                <div className="pl-pitem on"><span className="pl-pitem-dot" />Leads</div>
+                <div className="pl-pitem"><span className="pl-pitem-dot" />Clientes</div>
+                <div className="pl-pitem"><span className="pl-pitem-dot" />WhatsApp</div>
+                <span className="pl-psec">Reportes</span>
+                <div className="pl-pitem"><span className="pl-pitem-dot" />Campañas</div>
+                <div className="pl-pitem"><span className="pl-pitem-dot" />Resultados</div>
+              </nav>
+              <div className="pl-p-main">
+                <div className="pl-pmain-header">
+                  <span className="pl-pmain-title">Leads — hoy</span>
+                  <div className="pl-pmain-chips">
+                    <span className="pl-chip pl-chip-live">En vivo</span>
+                    <span className="pl-chip pl-chip-date">Nov 5, 2026</span>
                   </div>
-                  <table className="pl-table" id="pl-leads-table">
-                    <thead>
-                      <tr>
-                        <th>Nombre</th>
-                        <th>Campaña</th>
-                        <th>Estatus</th>
-                        <th>Acción</th>
+                </div>
+                <table className="pl-ltable">
+                  <thead>
+                    <tr><th>Nombre</th><th>Campaña</th><th>Hora</th><th>Estado</th><th /></tr>
+                  </thead>
+                  <tbody id="pl-leads-body">
+                    {[
+                      { n: 'María González', t: 'ahora', c: 'Promo Verano', h: '09:41', b: 'pl-b-new', bl: 'Nuevo' },
+                      { n: 'Carlos Mendoza', t: 'hace 4 min', c: 'Remarketing', h: '09:37', b: 'pl-b-hot', bl: 'Interesado' },
+                      { n: 'Ana Pérez', t: 'hace 19 min', c: 'Video Ads', h: '09:22', b: 'pl-b-won', bl: 'Vendido' },
+                      { n: 'Luis Ramírez', t: 'hace 32 min', c: 'Promo Verano', h: '09:09', b: 'pl-b-trk', bl: 'Seguimiento' },
+                    ].map((r) => (
+                      <tr key={r.n}>
+                        <td><div className="pl-lead-name">{r.n}</div><div className="pl-lead-time">{r.t}</div></td>
+                        <td><span className="pl-lead-src">{r.c}</span></td>
+                        <td className="pl-lead-time">{r.h}</td>
+                        <td><span className={`pl-badge ${r.b}`}>{r.bl}</span></td>
+                        <td><span className="pl-wa-btn"><WaSvg /> Llamar</span></td>
                       </tr>
-                    </thead>
-                    <tbody id="pl-leads-body">
-                      {[
-                        ['María G.', 'hace 2 min', 'Verano Promo', 'pl-s-new', 'Nuevo'],
-                        ['Carlos M.', 'hace 8 min', 'Remarketing', 'pl-s-int', 'Interesado'],
-                        ['Ana P.', 'hace 15 min', 'Prospección', 'pl-s-cer', 'Cerrado ✓'],
-                        ['Luis R.', 'hace 22 min', 'Verano Promo', 'pl-s-seg', 'Seguimiento'],
-                      ].map(([name, time, camp, cls, status]) => (
-                        <tr key={name as string}>
-                          <td>
-                            <div className="pl-lname">{name}</div>
-                            <div className="pl-ltime">{time}</div>
-                          </td>
-                          <td>{camp}</td>
-                          <td><span className={`pl-sbadge ${cls}`}>{status}</span></td>
-                          <td><span className="pl-wa">📱 WA</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Ticker */}
+        <div className="pl-ticker">
+          <div className="pl-ticker-track">
+            {['Restaurante El Fogón · ahora','Clínica DentalPro · 1 min','Gym PowerFit · 2 min','Academia de Inglés · 3 min','Inmobiliaria Sur · 5 min','Autoservicio Mérida · 7 min','Estética Canina · 9 min'].flatMap((item, i) => [
+              <span key={`a${i}`} className="pl-ticker-item"><b>Lead nuevo</b> · {item}<span className="pl-ticker-dot" /></span>,
+              <span key={`b${i}`} className="pl-ticker-item"><b>Contactado</b> · {item}<span className="pl-ticker-dot" /></span>,
+            ])}
+          </div>
+        </div>
+      </section>
+
+      {/* PRUEBA SOCIAL */}
+      <section id="pl-social">
+        <div className="pl-wrap">
+          <div className="pl-social-row">
+            <div className="pl-social-left pl-rv">
+              <span className="pl-sec-label">Producto en uso real</span>
+              <p>Estos números son los de hoy. <strong>+15,000 leads procesados</strong> por negocios reales en México — restaurantes, clínicas, gimnasios, escuelas — que usan el panel para dar seguimiento a sus prospectos de Facebook Ads sin depender de su agencia para ver qué llegó.</p>
+            </div>
+            <div className="pl-stats-row pl-rv pl-rv-d2">
+              <div className="pl-stat-tile"><div className="pl-st-n">+15k</div><div className="pl-st-l">Leads gestionados</div><div className="pl-st-delta">↑ en curso</div></div>
+              <div className="pl-stat-tile"><div className="pl-st-n">+3,700</div><div className="pl-st-l">Últimos 30 días</div><div className="pl-st-delta">↑ mes activo</div></div>
+              <div className="pl-stat-tile"><div className="pl-st-n">52</div><div className="pl-st-l">Negocios activos</div><div className="pl-st-delta">↑ este mes</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PROBLEMA */}
+      <section id="pl-prob">
+        <div className="pl-wrap">
+          <div className="pl-prob-grid">
+            <div>
+              <span className="pl-sec-label pl-rv">El problema</span>
+              <h2 className="pl-rv pl-rv-d1">Tu agencia trabaja bien.<br />Los leads llegan mal.</h2>
+              <p className="pl-sub pl-rv pl-rv-d2">El trafficker optimiza. Las campañas convierten. Y después de todo eso, el lead le llega al cliente una semana después en un Excel.</p>
+              <div className="pl-pain-items">
+                {[
+                  { n:'01', t:'Excel desactualizado', p:'Exportas leads a mano. El cliente pregunta cuántos llegaron ayer y tú buscas el archivo.' },
+                  { n:'02', t:'Screenshots por WhatsApp', p:'Mandas capturas del Ads Manager. El cliente no sabe qué significa CTR ni le importa.' },
+                  { n:'03', t:'Lead frío al día siguiente', p:'Llegó a las 3pm. Tu cliente lo vio el lunes. Para entonces ya compró con la competencia.' },
+                  { n:'04', t:'Automatizaciones que se rompen', p:'Zapier caído, leads perdidos. Y cuando falla, la culpa la carga la agencia.' },
+                ].map((item, i) => (
+                  <div key={item.n} className={`pl-pain pl-rv${i > 0 ? ` pl-rv-d${i}` : ''}`}>
+                    <span className="pl-pain-n">{item.n}</span>
+                    <div><h3>{item.t}</h3><p>{item.p}</p></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="pl-rv pl-rv-d2">
+              <div className="pl-compare">
+                <div className="pl-compare-tabs">
+                  <div className="pl-ctab on" onClick={() => {
+                    const tabs = document.querySelectorAll('.pl-ctab');
+                    const panes = document.querySelectorAll('.pl-cpane');
+                    tabs.forEach(t => t.classList.remove('on'));
+                    panes.forEach(p => p.classList.remove('on'));
+                    (tabs[0] as HTMLElement).classList.add('on');
+                    document.getElementById('pl-cp-excel')?.classList.add('on');
+                  }}>Sin panel</div>
+                  <div className="pl-ctab" onClick={() => {
+                    const tabs = document.querySelectorAll('.pl-ctab');
+                    const panes = document.querySelectorAll('.pl-cpane');
+                    tabs.forEach(t => t.classList.remove('on'));
+                    panes.forEach(p => p.classList.remove('on'));
+                    (tabs[1] as HTMLElement).classList.add('on');
+                    document.getElementById('pl-cp-panel')?.classList.add('on');
+                  }}>Con panel</div>
+                </div>
+                <div className="pl-cpane on" id="pl-cp-excel">
+                  <div className="pl-xrow pl-xhead"><span className="pl-xcell">Nombre</span><span className="pl-xcell">Tel</span><span className="pl-xcell">Fecha</span><span className="pl-xcell">Status</span></div>
+                  {['María G.','Carlos M.','Ana P.'].map(n => (
+                    <div key={n} className="pl-xrow"><span className="pl-xcell">{n}</span><span className="pl-xcell" style={{color:'var(--t3)'}}>—</span><span className="pl-xcell" style={{color:'var(--t3)'}}>28/oct</span><span className="pl-xcell" style={{color:'var(--t3)'}}>pendiente</span></div>
+                  ))}
+                  <div className="pl-xwarn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{flexShrink:0,marginTop:'1px'}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    8 días sin contactar. El cliente no sabe que llegaron.
+                  </div>
+                </div>
+                <div className="pl-cpane" id="pl-cp-panel">
+                  <div className="pl-notif">
+                    <div className="pl-notif-ic pl-notif-ic-blue">🔔</div>
+                    <div>
+                      <div className="pl-notif-title">Lead nuevo — María González</div>
+                      <div className="pl-notif-body">Promo Verano · +52 999 123 4567</div>
+                      <div className="pl-notif-t">hace 4 segundos</div>
+                      <div className="pl-notif-wa"><WaSvg />Llamar ahora</div>
+                    </div>
+                  </div>
+                  <div className="pl-notif">
+                    <div className="pl-notif-ic pl-notif-ic-green">✓</div>
+                    <div>
+                      <div className="pl-notif-title">Carlos Mendoza — Contactado</div>
+                      <div className="pl-notif-body">Remarketing · respondido en 3 min</div>
+                      <div className="pl-notif-t">hace 11 minutos</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Ticker */}
-          <div className="pl-ticker-wrap">
-            <div className="pl-ticker">
-              {[
-                ['📲 Lead nuevo —', 'Restaurante El Fogón'],
-                ['✅ Cerrado —', 'Clínica DentalPro'],
-                ['🔔 Notificación —', 'Agencia MX Traffic'],
-                ['📲 Lead nuevo —', 'Gym PowerFit'],
-                ['✅ Cerrado —', 'Academia de Inglés'],
-                ['📲 Lead nuevo —', 'Inmobiliaria Sur'],
-                ['📲 Lead nuevo —', 'Restaurante El Fogón'],
-                ['✅ Cerrado —', 'Clínica DentalPro'],
-                ['🔔 Notificación —', 'Agencia MX Traffic'],
-                ['📲 Lead nuevo —', 'Gym PowerFit'],
-                ['✅ Cerrado —', 'Academia de Inglés'],
-                ['📲 Lead nuevo —', 'Inmobiliaria Sur'],
-              ].map(([label, name], i) => (
-                <span key={i} className="pl-ti">{label} <span>{name}</span></span>
-              ))}
+      {/* VIDEO */}
+      <section id="pl-video">
+        <div className="pl-wrap">
+          <div className="pl-video-layout">
+            <div className="pl-video-left">
+              <span className="pl-sec-label pl-rv">En acción</span>
+              <h2 className="pl-rv pl-rv-d1">Míralo en<br />60 segundos</h2>
+              <p className="pl-sub pl-rv pl-rv-d2">El panel funcionando con un cliente real. Sin demo fabricada — el mismo que usan las 52 agencias activas hoy.</p>
             </div>
-          </div>
-        </section>
-
-        {/* PROBLEMA */}
-        <section id="pl-prob">
-          <div className="pl-c">
-            <div className="pl-rv">
-              <span className="pl-slabel">El problema</span>
-              <h2 className="pl-stitle">Tus clientes reciben leads<br />en capturas de pantalla</h2>
-              <p className="pl-ssub">El trafficker hace bien su trabajo. El problema está en cómo llegan los leads al cliente — y eso destruye la percepción de valor de tu agencia.</p>
-            </div>
-            <div className="pl-pain-grid">
-              {[
-                ['📊', 'Excel interminable', 'Exportas leads a mano cada semana. El cliente te pregunta cuántos llegaron y tú andas buscando el archivo.'],
-                ['📸', 'Capturas por WhatsApp', 'Mandas screenshots del Ads Manager. El cliente no entiende los números y pierde confianza en la campaña.'],
-                ['⚡', 'Leads fríos', 'El lead llegó a las 3pm. El cliente lo vio al día siguiente. Para entonces ya compró con la competencia.'],
-                ['🔄', 'Zapier que falla', 'Automatizaciones rotas, webhooks caídos, leads perdidos. Y cuando falla, la culpa la carga la agencia.'],
-              ].map(([icon, title, desc]) => (
-                <div key={title as string} className="pl-pain pl-rv">
-                  <div className="pl-picon">{icon}</div>
-                  <h3>{title}</h3>
-                  <p>{desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CÓMO FUNCIONA */}
-        <section id="pl-como">
-          <div className="pl-c">
-            <div className="pl-rv" style={{ textAlign: 'center' }}>
-              <span className="pl-slabel">Cómo funciona</span>
-              <h2 className="pl-stitle">Tres pasos y tu cliente<br />ya tiene su panel</h2>
-            </div>
-            <div className="pl-steps pl-rv">
-              {[
-                ['01', 'Conectas la campaña', 'Enlazas el formulario de Facebook Ads de tu cliente. Tarda menos de 5 minutos con la guía de Agentia.'],
-                ['02', 'Tu cliente recibe su acceso', 'Le mandas un link con su contraseña. Entra al panel con su logo, sus colores — no ve nada de Agentia.'],
-                ['03', 'Leads en tiempo real', 'Cada lead nuevo dispara una notificación push. Un tap abre WhatsApp para llamarle de inmediato.'],
-              ].map(([n, title, desc]) => (
-                <div key={n} className="pl-step">
-                  <div className="pl-stepn">{n}</div>
-                  <h3>{title}</h3>
-                  <p>{desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FEATURES */}
-        <section id="pl-feat">
-          <div className="pl-c">
-            <div className="pl-rv" style={{ textAlign: 'center', marginBottom: 56 }}>
-              <span className="pl-slabel">Funciones</span>
-              <h2 className="pl-stitle">Todo lo que necesita<br />tu agencia para escalar</h2>
-            </div>
-            <div className="pl-feat-grid">
-              {[
-                ['🏷️', 'Marca blanca total', 'El panel lleva el nombre y logo de tu agencia (o del cliente). Nadie sabe que detrás está Agentia. Tú eres el proveedor.', true, null],
-                ['🔔', 'Notificaciones push', 'El celular del cliente vibra cuando llega un lead. Sin abrir ninguna app, sin esperar el reporte semanal.', false, null],
-                ['📋', 'Estatus de seguimiento', 'Nuevo → Seguimiento → Interesado → Cerrado. El cliente actualiza y tú ves qué campañas realmente convierten.', false, null],
-                ['📱', 'App instalable (PWA)', 'El cliente la instala desde Chrome o Safari como app nativa. Sin tiendas, sin aprobaciones.', false, null],
-                ['💬', 'Botón WhatsApp directo', 'Un tap abre WhatsApp con el número y el nombre prellenado. El cliente llama en segundos.', false, null],
-                ['🏢', 'Panel maestro de agencia', 'Ves todos tus clientes desde un solo acceso. Cuántos leads llegaron hoy y qué paneles están activos.', false, null],
-                ['📨', 'Bandeja de WhatsApp', 'Envío de mensajes, seguimiento y conversaciones desde el panel.', false, 'Add-on'],
-                ['📤', 'Envíos masivos desde Excel', 'Sube un Excel y lanza campañas de WhatsApp desde el panel. Sin copiar y pegar.', false, 'Add-on'],
-              ].map(([icon, title, desc, hl, tag]) => (
-                <div key={title as string} className={`pl-fc pl-rv${hl ? ' hl' : ''}`}>
-                  <div className="pl-ficon">{icon}</div>
-                  <h3>{title}</h3>
-                  <p>{desc}{tag && <><br /><span className="pl-ftag">{tag}</span></>}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* VIDEO */}
-        <section id="pl-video">
-          <div className="pl-c">
-            <div className="pl-rv">
-              <span className="pl-slabel">El producto en acción</span>
-              <h2 className="pl-stitle">Míralo funcionar<br />en 60 segundos</h2>
-            </div>
-            <div className="pl-vwrap pl-rv" id="pl-vwrap">
-              <video id="pl-video-el" src="/anuncio-agentia-MX-subtitulado.mp4" preload="metadata" playsInline />
+            <div className="pl-vwrap pl-rv pl-rv-d2" id="pl-vwrap">
+              <video id="pl-vid" src="/anuncio-agentia-MX-subtitulado.mp4" preload="metadata" playsInline />
               <div className="pl-voverlay" id="pl-voverlay">
-                <div className="pl-play" id="pl-playbtn">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                <div className="pl-vplay-btn" id="pl-vplay">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--bg)"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 </div>
-                <span className="pl-plabel">Ver video del producto</span>
+                <span className="pl-voverlay-label">Ver video — 60 seg</span>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* DEMO */}
-        <section id="pl-demo">
-          <div className="pl-c">
-            <div style={{ textAlign: 'center' }} className="pl-rv">
-              <span className="pl-slabel">Acceso demo</span>
-              <h2 className="pl-stitle">Entra y explora<br />el panel ahora mismo</h2>
-              <p className="pl-ssub" style={{ margin: '16px auto 0' }}>Panel de demostración con datos de prueba. No necesitas registrarte.</p>
-            </div>
-            <div className="pl-dcard pl-rv">
-              <div className="pl-creds">
-                <div className="pl-cbox">
-                  <div className="pl-clabel">Usuario</div>
-                  <div className="pl-cval">demo-agencia</div>
-                </div>
-                <div className="pl-cbox">
-                  <div className="pl-clabel">Contraseña</div>
-                  <div className="pl-cval">demo2026</div>
-                </div>
-              </div>
-              <a href="/agentia-panel?demo=1" className="pl-btn-demo" target="_blank" rel="noopener noreferrer">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-                Abrir panel demo
-              </a>
-            </div>
-          </div>
-        </section>
-
-        {/* PRECIOS */}
-        <section id="pl-prices">
-          <div className="pl-c">
-            <div className="pl-rv" style={{ textAlign: 'center', marginBottom: 56 }}>
-              <span className="pl-slabel">Precios</span>
-              <h2 className="pl-stitle">Paga por lo que usas.<br />Escala sin límite.</h2>
-              <p className="pl-ssub" style={{ margin: '16px auto 0', textAlign: 'center' }}>
-                Por panel activo al mes. Entre más clientes, menos pagas por cada uno.
-              </p>
-            </div>
-            <div className="pl-pgrid pl-rv">
-              <div className="pl-pcard">
-                <div className="pl-ptier">Starter</div>
-                <div className="pl-pamt"><sup>$</sup>12<span> USD</span></div>
-                <div className="pl-prange">por panel / mes<br />(mínimo 5 paneles)</div>
-                <div className="pl-ptotal">Desde <strong>$60 USD/mes</strong><br />1 a 9 clientes</div>
-              </div>
-              <div className="pl-pcard pop">
-                <div className="pl-pbadge">Más popular</div>
-                <div className="pl-ptier" style={{ marginTop: 16 }}>Growth</div>
-                <div className="pl-pamt"><sup>$</sup>10<span> USD</span></div>
-                <div className="pl-prange">por panel / mes</div>
-                <div className="pl-ptotal">Desde <strong>$100 USD/mes</strong><br />10 a 29 clientes</div>
-              </div>
-              <div className="pl-pcard">
-                <div className="pl-ptier">Scale</div>
-                <div className="pl-pamt"><sup>$</sup>8.50<span> USD</span></div>
-                <div className="pl-prange">por panel / mes</div>
-                <div className="pl-ptotal">Desde <strong>$255 USD/mes</strong><br />30 a 55 clientes</div>
-              </div>
-              <div className="pl-pcard">
-                <div className="pl-ptier">Enterprise</div>
-                <div className="pl-pamt" style={{ fontSize: 32, letterSpacing: '-.02em' }}>Cotiza</div>
-                <div className="pl-prange">56 o más paneles</div>
-                <div className="pl-ptotal">Desde <strong>$400 USD/mes</strong><br />precio por volumen</div>
-              </div>
-            </div>
-            <div className="pl-rv" style={{ textAlign: 'center', marginTop: 32 }}>
-              <a
-                href="https://wa.me/529844927769?text=Hola%2C%20quiero%20cotizar%20el%20Panel%20de%20Leads%20para%20mi%20agencia"
-                className="pl-btn-primary"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Cotizar por WhatsApp
-              </a>
-              <p style={{ marginTop: 14, fontSize: 13, color: 'var(--fg3)' }}>
-                Sin prueba gratis · Sin contrato anual · Activo en 24h
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ */}
-        <section id="pl-faq">
-          <div className="pl-c">
-            <div className="pl-rv" style={{ textAlign: 'center', marginBottom: 56 }}>
-              <span className="pl-slabel">Preguntas frecuentes</span>
-              <h2 className="pl-stitle">Lo que nos preguntan<br />antes de contratar</h2>
-            </div>
-            <div className="pl-faqlist pl-rv">
+      {/* CÓMO FUNCIONA */}
+      <section id="pl-como">
+        <div className="pl-wrap">
+          <span className="pl-sec-label pl-rv">Cómo funciona</span>
+          <h2 className="pl-rv pl-rv-d1">Tres pasos. Listo en 24 horas.</h2>
+          <div className="pl-como-grid">
+            <div className="pl-steps">
               {[
-                ['¿Mis clientes saben que usan Agentia?', 'No. El panel lleva tu marca — tu logo, tu nombre, tu dominio si quieres. Agentia trabaja en el fondo como la tecnología que tú ofreces. Para tu cliente, tú eres el proveedor.'],
-                ['¿Cómo conecta los leads de Facebook Ads?', 'A través de la integración nativa con Meta Lead Ads. En menos de 5 minutos enlazas la página de Facebook de tu cliente y los leads llegan directo al panel sin pasar por Zapier ni webhooks manuales.'],
-                ['¿Funciona sin app? ¿En iPhone también?', 'Sí. Es una PWA (Progressive Web App). En Android e iPhone se instala desde el navegador en 2 taps, sin ir a la App Store. Funciona igual de rápido que una app nativa.'],
-                ['¿Cuánto tarda en estar listo el primer panel?', 'Entre 24 y 48 horas desde que confirmas. Te mandamos el acceso al panel maestro de tu agencia y la guía de configuración. No necesitas instalar nada.'],
-                ['¿Qué pasa si un cliente cancela?', 'Solo pagas los paneles activos ese mes. Si un cliente cancela, el siguiente mes ya no te cobramos ese panel. Sin penalizaciones ni contratos mínimos (excepto el mínimo de 5 paneles en Starter).'],
-                ['¿Incluye soporte?', 'Sí. Soporte directo por WhatsApp con el equipo de Agentia. No hay bot, no hay ticket — hablas con la persona que configuró tu cuenta.'],
-              ].map(([q, a]) => (
-                <details key={q as string} className="pl-faqitem">
-                  <summary className="pl-fq">{q}</summary>
-                  <div className="pl-fa">{a}</div>
+                { n:'1', t:'Conectas la campaña', p:'Enlazas el formulario de Facebook Ads. Menos de 5 minutos con la guía de Agentia.', time:'⏱ 5 min' },
+                { n:'2', t:'Tu cliente recibe su acceso', p:'Le mandas un link. Entra al panel con tu logo. No ve nada de Agentia — tú eres el proveedor.', time:'⏱ 24 h después del alta' },
+                { n:'3', t:'Leads en tiempo real', p:'Cada lead dispara una notificación push al celular. Un tap abre WhatsApp con el número del prospecto.', time:'⏱ segundos por lead' },
+              ].map((s, i) => (
+                <div key={s.n} className={`pl-step pl-rv${i > 0 ? ` pl-rv-d${i}` : ''}`}>
+                  <span className="pl-step-n">{s.n}</span>
+                  <div><h3>{s.t}</h3><p>{s.p}</p><span className="pl-step-time">{s.time}</span></div>
+                </div>
+              ))}
+            </div>
+            <div className="pl-step-vis pl-rv pl-rv-d2">
+              <div className="pl-sv-top">
+                <span>Clientes activos — panel maestro</span>
+                <span className="pl-chip pl-chip-live">En vivo</span>
+              </div>
+              <div className="pl-sv-body">
+                {[
+                  { av:'RF', name:'Restaurante El Fogón', sub:'14 leads · activo hoy', bg:'linear-gradient(135deg,#2563eb,#60a5fa)', badge:'pl-b-new', bl:'Activo' },
+                  { av:'DP', name:'Clínica DentalPro', sub:'8 leads · activo hoy', bg:'linear-gradient(135deg,#16a34a,#4ade80)', badge:'pl-b-won', bl:'Activo' },
+                  { av:'GP', name:'Gym PowerFit', sub:'22 leads · activo hoy', bg:'linear-gradient(135deg,#d97706,#fbbf24)', badge:'pl-b-hot', bl:'Activo' },
+                ].map(r => (
+                  <div key={r.av} className="pl-sv-row">
+                    <div className="pl-sv-av" style={{background: r.bg}}>{r.av}</div>
+                    <div><div className="pl-sv-name">{r.name}</div><div className="pl-sv-sub">{r.sub}</div></div>
+                    <span className={`pl-badge ${r.badge}`} style={{marginLeft:'auto',fontSize:'9px'}}>{r.bl}</span>
+                  </div>
+                ))}
+                <div className="pl-sv-code">
+                  → lead.nombre: &quot;María González&quot;<br />
+                  → lead.telefono: &quot;+52 999 123 4567&quot;<br />
+                  → notif.push: ✓ enviada<br />
+                  → tiempo_respuesta: 3 min
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section id="pl-feat">
+        <div className="pl-wrap">
+          <div className="pl-feat-intro">
+            <span className="pl-sec-label pl-rv">Funciones</span>
+            <h2 className="pl-rv pl-rv-d1">Todo lo que necesita<br />tu agencia para escalar</h2>
+          </div>
+          <div className="pl-bento pl-rv pl-rv-d2">
+            <div className="pl-bc span2"><span className="pl-bc-label">Marca blanca</span><h3>Tu marca, no la nuestra</h3><p>El panel lleva tu logo y el nombre de tu agencia. El cliente nunca ve &quot;Agentia&quot;. Tú eres el proveedor de tecnología.</p></div>
+            <div className="pl-bc"><span className="pl-bc-label">Notificaciones</span><h3>Push al celular</h3><p>Vibra en el momento exacto. Sin abrir apps, sin esperar reportes semanales.</p></div>
+            <div className="pl-bc tall">
+              <span className="pl-bc-label">Panel maestro</span>
+              <h3>Todos tus clientes, una vista</h3>
+              <p>Desde tu acceso de agencia ves qué paneles están activos, cuántos leads llegaron hoy y qué cuentas necesitan atención.</p>
+              <div className="pl-mini-bars">
+                {[{l:'El Fogón',w:'78%',v:'14'},{l:'DentalPro',w:'52%',v:'8',c:' style="background:var(--green-hi)"'},{l:'PowerFit',w:'95%',v:'22'},{l:'Inglés Pro',w:'36%',v:'6'}].map(b => (
+                  <div key={b.l} className="pl-mbar-row">
+                    <span className="pl-mbar-label">{b.l}</span>
+                    <div className="pl-mbar-wrap"><div className="pl-mbar-fill" style={{width: b.w}} /></div>
+                    <span className="pl-mbar-val">{b.v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="pl-bc"><span className="pl-bc-label">Pipeline</span><h3>Seguimiento de ventas</h3><p>Nuevo → Seguimiento → Interesado → Vendido. El cliente actualiza el estatus y tú ves qué campañas convierten.</p></div>
+            <div className="pl-bc"><span className="pl-bc-label">PWA · Sin App Store</span><h3>Se instala desde el navegador</h3><p>Android e iPhone, 2 taps. Funciona como app nativa. Sin descargas, sin aprobaciones.</p></div>
+            <div className="pl-bc"><span className="pl-bc-label">API oficial · WhatsApp Business</span><h3>Bandeja de WhatsApp</h3><p>Integración con la API oficial de WhatsApp Business. Responde conversaciones y lanza campañas desde el mismo panel.</p><span className="pl-bc-tag">Add-on disponible</span></div>
+          </div>
+        </div>
+      </section>
+
+      {/* PRECIOS */}
+      <section id="pl-prices">
+        <div className="pl-wrap">
+          <div className="pl-price-intro pl-rv">
+            <span className="pl-sec-label">Precios</span>
+            <h2>Paga por paneles activos.<br />Escala sin límite.</h2>
+            <p className="pl-sub">Por panel al mes. Entre más clientes tengas, menos pagas por cada uno.</p>
+          </div>
+          <div className="pl-price-table pl-rv pl-rv-d1">
+            <div className="pl-pt">
+              <div className="pl-pt-tier">Starter</div>
+              <div className="pl-pt-price"><sup>$</sup>12<sub> usd</sub></div>
+              <div className="pl-pt-range">por panel / mes<br />mínimo 5 paneles</div>
+              <div className="pl-pt-from">Desde <strong>$60 usd / mes</strong><br />1–9 clientes</div>
+            </div>
+            <div className="pl-pt featured">
+              <div className="pl-pt-pop">Más popular</div>
+              <div className="pl-pt-tier">Growth</div>
+              <div className="pl-pt-price"><sup>$</sup>10<sub> usd</sub></div>
+              <div className="pl-pt-range">por panel / mes</div>
+              <div className="pl-pt-from">Desde <strong>$100 usd / mes</strong><br />10–29 clientes</div>
+            </div>
+            <div className="pl-pt">
+              <div className="pl-pt-tier">Scale</div>
+              <div className="pl-pt-price"><sup>$</sup>8<span style={{fontFamily:'Geist,sans-serif',fontSize:'.6em',fontWeight:300}}>.50</span><sub> usd</sub></div>
+              <div className="pl-pt-range">por panel / mes</div>
+              <div className="pl-pt-from">Desde <strong>$255 usd / mes</strong><br />30–55 clientes</div>
+            </div>
+            <div className="pl-pt">
+              <div className="pl-pt-tier">Enterprise</div>
+              <div className="pl-pt-price" style={{fontFamily:'Geist,sans-serif',fontSize:'28px',fontWeight:300,letterSpacing:'-.02em'}}>Cotiza</div>
+              <div className="pl-pt-range">56 o más paneles</div>
+              <div className="pl-pt-from">Desde <strong>$400 usd / mes</strong><br />precio por volumen</div>
+            </div>
+          </div>
+          <div className="pl-price-anchor pl-rv pl-rv-d2">
+            <span>¿Cuánto cuesta <strong>no tener panel</strong>?</span>
+            <span className="pl-anchor-sep">→</span>
+            <span>Zapier (~$50/mes) + tiempo de exportar Excels (~2h/semana) + leads perdidos por respuesta tardía. <strong>$10 por cliente activo al mes es menos que un café a la semana.</strong></span>
+          </div>
+          <div style={{textAlign:'center',marginTop:'28px'}} className="pl-rv pl-rv-d3">
+            <a href="https://wa.me/529844927769?text=Quiero%20cotizar%20el%20Panel%20de%20Leads" className="pl-btn-primary" style={{fontSize:'14px'}} target="_blank" rel="noopener noreferrer">Cotizar por WhatsApp</a>
+            <p style={{marginTop:'12px',fontSize:'12px',color:'var(--t3)'}}>Sin contrato anual · Sin prueba gratis · Activo en 24 horas</p>
+          </div>
+        </div>
+      </section>
+
+      {/* DEMO */}
+      <section id="pl-demo">
+        <div className="pl-wrap">
+          <div className="pl-demo-layout">
+            <div>
+              <span className="pl-sec-label pl-rv">Demo</span>
+              <h2 className="pl-rv pl-rv-d1">Entra ahora.<br />Sin registrarte.</h2>
+              <p className="pl-sub pl-rv pl-rv-d2">Panel de demostración con datos reales de prueba. Ve exactamente lo que vería uno de tus clientes.</p>
+              <div className="pl-demo-creds pl-rv pl-rv-d2">
+                <div className="pl-cred"><div className="pl-cred-k">Usuario</div><div className="pl-cred-v">demo-agencia</div></div>
+                <div className="pl-cred"><div className="pl-cred-k">Contraseña</div><div className="pl-cred-v">demo2026</div></div>
+              </div>
+              <div className="pl-demo-action pl-rv pl-rv-d3">
+                <a href="/agentia-panel?demo=1" className="pl-btn-outline" target="_blank" rel="noopener noreferrer">
+                  Abrir panel demo
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </a>
+              </div>
+            </div>
+            <div className="pl-demo-screen pl-rv pl-rv-d2">
+              <div className="pl-ds-top"><span>Resumen del día</span><span className="pl-chip pl-chip-date">demo-agencia</span></div>
+              <div className="pl-ds-stats">
+                <div className="pl-ds-s"><div className="pl-ds-n">47</div><div className="pl-ds-l">Leads hoy</div><div className="pl-ds-chg">↑ +12 vs ayer</div></div>
+                <div className="pl-ds-s"><div className="pl-ds-n">23%</div><div className="pl-ds-l">Tasa contacto</div><div className="pl-ds-chg">↑ vs 18%</div></div>
+                <div className="pl-ds-s"><div className="pl-ds-n">4</div><div className="pl-ds-l">Paneles activos</div><div className="pl-ds-chg">↑ estable</div></div>
+              </div>
+              <div className="pl-ds-body">
+                {[{dot:'b',n:'María González',h:'09:41'},{dot:'g',n:'Carlos Mendoza',h:'09:35'},{dot:'a',n:'Ana Pérez',h:'09:23'},{dot:'b',n:'Luis Ramírez',h:'09:10'}].map(r=>(
+                  <div key={r.n} className="pl-ds-row">
+                    <span className={`pl-ds-dot pl-ds-dot-${r.dot}`} />
+                    <span className="pl-ds-nm">{r.n}</span>
+                    <span className="pl-ds-hr">{r.h}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="pl-faq">
+        <div className="pl-wrap">
+          <div className="pl-faq-layout">
+            <div className="pl-faq-left">
+              <span className="pl-sec-label pl-rv">FAQ</span>
+              <h2 className="pl-rv pl-rv-d1">Preguntas<br />frecuentes</h2>
+              <p className="pl-sub pl-rv pl-rv-d2">Las que llegan antes de contratar.</p>
+            </div>
+            <div className="pl-faq-items pl-rv pl-rv-d1">
+              {[
+                { q:'¿Mis clientes saben que usan Agentia?', a:'No. El panel lleva tu marca — tu logo, tu nombre. Para tu cliente, tú eres el proveedor. Agentia es la infraestructura invisible.' },
+                { q:'¿Cómo conecta con Facebook Ads?', a:'Integración nativa con Meta Lead Ads. En menos de 5 minutos enlazas la página de Facebook del cliente. Sin Zapier, sin webhooks, sin código.' },
+                { q:'¿Funciona en iPhone sin App Store?', a:'Sí. Es una PWA. Se instala desde Safari o Chrome en dos taps. Aparece en la pantalla de inicio y recibe notificaciones push como una app nativa.' },
+                { q:'¿Cuánto tarda el primer panel?', a:'Entre 24 y 48 horas desde que confirmas. Recibes el acceso al panel maestro y una guía paso a paso. No instalas nada.' },
+                { q:'¿Qué pasa si un cliente cancela?', a:'Solo pagas paneles activos ese mes. Sin penalizaciones, sin contratos anuales.' },
+                { q:'¿Incluye soporte?', a:'Sí. Soporte directo por WhatsApp con el equipo de Agentia. No hay bot — hablas con la persona que configuró tu cuenta.' },
+              ].map(item => (
+                <details key={item.q} className="pl-fq">
+                  <summary>
+                    {item.q}
+                    <svg className="pl-fq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                  </summary>
+                  <div className="pl-fq-a">{item.a}</div>
                 </details>
               ))}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* CTA FINAL */}
-        <section id="pl-cta">
-          <h2>¿Lista tu agencia para<br /><span className="pl-grad">dejar de mandar Excels?</span></h2>
-          <p>Agenda una demo en vivo. Te mostramos el panel con los datos de tu agencia, no un genérico.</p>
-          <a
-            href="https://wa.me/529844927769?text=Hola%2C%20quiero%20agendar%20una%20demo%20del%20Panel%20de%20Leads%20para%20agencias"
-            className="pl-btn-primary"
-            style={{ fontSize: 18, padding: '18px 40px' }}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <WaIcon size={22} />
-            Agendar demo por WhatsApp
-          </a>
-          <p style={{ marginTop: 20, fontSize: 13, color: 'var(--fg3)' }}>
-            +52 984 492 7769 · Respondemos en menos de 2 horas
-          </p>
-        </section>
-
-        {/* FOOTER */}
-        <footer id="pl-footer">
-          <p>© 2026 <a href="https://agentia.software">Agentia Software</a> · Panel de Leads para Agencias · <a href="/legal">Privacidad</a></p>
-          <p style={{ marginTop: 8 }}>
-            SEO: panel de leads Facebook Ads · CRM para traffickers · CRM para agencias de marketing · leads Facebook Ads México
-          </p>
-        </footer>
-
-        {/* WA FLOTANTE */}
-        <a
-          href="https://wa.me/529844927769?text=Hola%2C%20quiero%20info%20del%20Panel%20de%20Leads"
-          className="pl-wafloat"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Contactar por WhatsApp"
-        >
-          <WaIcon size={22} />
-          Hablar por WhatsApp
+      {/* CTA FINAL */}
+      <section id="pl-cta">
+        <h2 className="pl-rv">¿Lista tu agencia para<br />dejar de mandar Excels?</h2>
+        <p className="pl-sub pl-rv pl-rv-d1">Una demo en vivo con tus datos, no un genérico.</p>
+        <a href="https://wa.me/529844927769?text=Quiero%20agendar%20demo%20del%20Panel%20de%20Leads" className="pl-btn-primary pl-rv pl-rv-d2" style={{fontSize:'15px',padding:'14px 32px'}} target="_blank" rel="noopener noreferrer">
+          <WaSvg /> Agendar demo por WhatsApp
         </a>
-      </div>
+        <div className="pl-cta-micro pl-rv pl-rv-d3">
+          <span className="pl-cta-micro-item">Sin contrato anual</span>
+          <span className="pl-cta-micro-item">Activo en 24 horas</span>
+          <span className="pl-cta-micro-item">API oficial de WhatsApp Business</span>
+          <span className="pl-cta-micro-item">Tu marca, no la nuestra</span>
+        </div>
+        <p className="pl-cta-note pl-rv pl-rv-d4">+52 984 492 7769 · Respondemos en menos de 2 horas</p>
+      </section>
 
-      {/* JS interactividad */}
+      {/* FOOTER */}
+      <footer id="pl-footer">
+        <div className="pl-foot-left">© 2026 <a href="https://agentia.software">Agentia Software</a> · <a href="/legal">Privacidad</a></div>
+        <div className="pl-foot-right">
+          <span>panel de leads facebook ads</span>
+          <span>crm para agencias</span>
+          <span>crm para traffickers</span>
+        </div>
+      </footer>
+
+      {/* WA flotante */}
+      <a href="https://wa.me/529844927769?text=Info%20Panel%20de%20Leads" className="pl-wa-float" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.555 4.122 1.528 5.858L.057 23.986l6.294-1.648A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.213-3.733.978 1.001-3.64-.234-.374A9.818 9.818 0 0112 2.182c5.426 0 9.818 4.392 9.818 9.818 0 5.427-4.392 9.818-9.818 9.818z"/></svg>
+        WhatsApp
+      </a>
+
+      {/* Scripts */}
       <script dangerouslySetInnerHTML={{ __html: `
-        (function(){
-          // Scroll reveal
-          var obs = new IntersectionObserver(function(entries){
-            entries.forEach(function(e){
-              if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); }
-            });
-          }, { threshold:0.12, rootMargin:'0px 0px -40px 0px' });
-          document.querySelectorAll('#pl-root .pl-rv').forEach(function(el){ obs.observe(el); });
+        // Scroll reveal
+        var rv=new IntersectionObserver(function(e){
+          e.forEach(function(i){if(i.isIntersecting){i.target.classList.add('in');rv.unobserve(i.target)}})
+        },{threshold:0.08,rootMargin:'0px 0px -24px 0px'});
+        document.querySelectorAll('.pl-rv').forEach(function(el){rv.observe(el)});
 
-          // Video
-          var video = document.getElementById('pl-video-el');
-          var overlay = document.getElementById('pl-voverlay');
-          var wrap = document.getElementById('pl-vwrap');
-          if(video && overlay && wrap){
-            overlay.addEventListener('click', function(){ video.play(); wrap.classList.add('playing'); });
-            video.addEventListener('click', function(){ video.paused ? (video.play(), wrap.classList.add('playing')) : (video.pause(), wrap.classList.remove('playing')); });
-          }
-
-          // Live leads simulator
-          var names = ['Roberto A.','Sofía L.','Miguel T.','Carmen V.','Diego F.','Laura M.','Andrés K.','Patricia N.'];
-          var camps = ['Branding Q4','Remarketing','Nuevos clientes','Video Ads','Stories'];
-          var statuses = [['pl-s-new','Nuevo'],['pl-s-seg','Seguimiento'],['pl-s-int','Interesado']];
-          function addLead(){
-            var tbody = document.getElementById('pl-leads-body');
-            if(!tbody) return;
-            var n = names[Math.floor(Math.random()*names.length)];
-            var c = camps[Math.floor(Math.random()*camps.length)];
-            var s = statuses[Math.floor(Math.random()*statuses.length)];
-            var tr = document.createElement('tr');
-            tr.className='pl-newrow';
-            tr.innerHTML='<td><div class="pl-lname">'+n+'</div><div class="pl-ltime">ahora</div></td><td>'+c+'</td><td><span class="pl-sbadge '+s[0]+'">'+s[1]+'</span></td><td><span class="pl-wa">📱 WA</span></td>';
-            tbody.insertBefore(tr, tbody.firstChild);
-            if(tbody.rows.length > 6) tbody.deleteRow(tbody.rows.length-1);
-          }
-          setInterval(addLead, 4500);
-
-          // Smooth scroll
-          document.querySelectorAll('#pl-root a[href^="#"]').forEach(function(a){
-            a.addEventListener('click', function(e){
-              var t = document.querySelector(a.getAttribute('href'));
-              if(t){ e.preventDefault(); t.scrollIntoView({behavior:'smooth',block:'start'}); }
-            });
+        // Video
+        var vid=document.getElementById('pl-vid');
+        var vwrap=document.getElementById('pl-vwrap');
+        if(vid){
+          document.getElementById('pl-vplay').addEventListener('click',function(){
+            vid.play();vwrap.classList.add('playing');
           });
-        })();
+          vid.addEventListener('click',function(){
+            if(vid.paused){vid.play();vwrap.classList.add('playing')}
+            else{vid.pause();vwrap.classList.remove('playing')}
+          });
+          vid.addEventListener('ended',function(){vwrap.classList.remove('playing')});
+        }
+
+        // Live leads simulator
+        var PLN=['Roberto A.','Sofía L.','Miguel T.','Carmen V.','Diego F.','Valeria S.','Héctor R.','Laura M.'];
+        var PLC=['Promo Verano','Remarketing','Video Ads','Nuevos clientes','Stories'];
+        var PLB=[['pl-b-new','Nuevo'],['pl-b-trk','Seguimiento'],['pl-b-hot','Interesado']];
+        function plPad(n){return n<10?'0'+n:n}
+        var PLH=['09:','10:','11:'];
+        var waIco='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.555 4.122 1.528 5.858L.057 23.986l6.294-1.648A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.213-3.733.978 1.001-3.64-.234-.374A9.818 9.818 0 0112 2.182c5.426 0 9.818 4.392 9.818 9.818 0 5.427-4.392 9.818-9.818 9.818z"/></svg>';
+        function plAddRow(){
+          var tb=document.getElementById('pl-leads-body');if(!tb)return;
+          var n=PLN[Math.floor(Math.random()*PLN.length)];
+          var c=PLC[Math.floor(Math.random()*PLC.length)];
+          var b=PLB[Math.floor(Math.random()*PLB.length)];
+          var h=PLH[Math.floor(Math.random()*PLH.length)]+plPad(Math.floor(Math.random()*59));
+          var tr=document.createElement('tr');tr.className='pl-row-new';
+          tr.innerHTML='<td><div class="pl-lead-name">'+n+'</div><div class="pl-lead-time">ahora</div></td><td><span class="pl-lead-src">'+c+'</span></td><td class="pl-lead-time">'+h+'</td><td><span class="pl-badge '+b[0]+'">'+b[1]+'</span></td><td><span class="pl-wa-btn">'+waIco+' Llamar</span></td>';
+          tb.insertBefore(tr,tb.firstChild);
+          if(tb.rows.length>5)tb.deleteRow(tb.rows.length-1);
+        }
+        setInterval(plAddRow,5200);
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#pl-"]').forEach(function(a){
+          a.addEventListener('click',function(e){
+            var t=document.querySelector(a.getAttribute('href'));
+            if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth',block:'start'})}
+          });
+        });
       `}} />
-    </>
-  );
-}
-
-// ── Micro-iconos inline ──────────────────────────────────────────────────
-function WaIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.555 4.122 1.528 5.858L.057 23.986l6.294-1.648A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.213-3.733.978 1.001-3.64-.234-.374A9.818 9.818 0 0112 2.182c5.426 0 9.818 4.392 9.818 9.818 0 5.427-4.392 9.818-9.818 9.818z" />
-    </svg>
-  );
-}
-
-function DocIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <rect x="3" y="3" width="18" height="18" rx="3" />
-      <path d="M9 9h6M9 12h6M9 15h4" />
-    </svg>
+    </div>
   );
 }
