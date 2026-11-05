@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 
+// Forzar SSR — el componente tiene scripts inline y es muy pesado para SSG en Render
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Panel de Leads para Agencias | Agentia',
   description:
