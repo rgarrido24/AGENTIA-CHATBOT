@@ -108,21 +108,28 @@ const css = `
   padding-block: 72px 0;
 }
 .pl-proof-badge {
-  display: inline-flex; align-items: center; gap: 10px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
   margin-bottom: 28px;
   animation: pl-fadeUp .6s cubic-bezier(.16,1,.3,1) both;
 }
-.pl-proof-avatars { display: flex; }
-.pl-proof-av {
-  width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--bg);
-  background: linear-gradient(135deg,#3b82f6,#60a5fa);
-  font-size: 9px; font-weight: 700; color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  margin-left: -8px;
+.pl-proof-avatars { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pl-proof-logo {
+  height: 22px; width: auto; max-width: 72px;
+  border-radius: 4px;
+  opacity: 0.7;
+  filter: brightness(0) invert(1);
+  transition: opacity .2s;
 }
-.pl-proof-av:first-child { margin-left: 0; background: linear-gradient(135deg,#22c55e,#4ade80); }
-.pl-proof-av:nth-child(2) { background: linear-gradient(135deg,#f59e0b,#fbbf24); }
-.pl-proof-av:nth-child(3) { background: linear-gradient(135deg,#ec4899,#f9a8d4); }
+.pl-proof-logo:hover { opacity: 1; }
+.pl-proof-logo-pill {
+  height: 22px; padding: 0 9px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--r-pill);
+  display: inline-flex; align-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: .02em; color: rgba(255,255,255,.6);
+  white-space: nowrap;
+}
+.pl-proof-sep { font-size: 11px; color: var(--t3); }
 .pl-proof-text { font-size: 12px; color: var(--t2); }
 .pl-proof-text strong { color: var(--t1); font-weight: 500; }
 
@@ -142,8 +149,8 @@ const css = `
   animation: pl-fadeUp .7s .12s cubic-bezier(.16,1,.3,1) both;
 }
 .pl-hero-stats {
-  display: flex; flex-wrap: wrap; gap: 28px;
-  margin-top: 36px; padding-top: 32px;
+  display: flex; flex-wrap: wrap; gap: 20px 28px;
+  margin-top: 32px; padding-top: 28px;
   border-top: 1px solid var(--line);
   animation: pl-fadeUp .7s .18s cubic-bezier(.16,1,.3,1) both;
 }
@@ -271,7 +278,7 @@ const css = `
 .pl-social-left { max-width: 460px; }
 .pl-social-left p { font-size: 13.5px; line-height: 1.7; color: var(--t2); }
 .pl-social-left p strong { color: var(--t1); font-weight: 500; }
-.pl-stats-row { display: flex; gap: 1px; background: var(--line); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
+.pl-stats-row { display: flex; flex-wrap: wrap; gap: 1px; background: var(--line); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
 .pl-stat-tile { background: var(--bg-2); padding: 22px 28px; flex: 1; min-width: 130px; transition: background .15s; }
 .pl-stat-tile:hover { background: var(--bg-3); }
 .pl-st-n { font-family: 'Instrument Serif', serif; font-size: clamp(32px, 3.5vw, 42px); font-weight: 400; letter-spacing: -.04em; line-height: 1; }
@@ -310,9 +317,9 @@ const css = `
 .pl-notif-wa { margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: var(--r-pill); background: rgba(37,211,102,.07); border: 1px solid rgba(37,211,102,.14); font-size: 11px; font-weight: 500; color: #4ade80; }
 
 /* ── VIDEO ── */
-#pl-video { padding: 100px 0; border-top: 1px solid var(--line); }
-.pl-video-layout { display: grid; grid-template-columns: 1fr 1.6fr; gap: 60px; align-items: center; }
-.pl-vwrap { position: relative; border-radius: var(--r12); overflow: hidden; border: 1px solid var(--line-2); background: var(--bg-3); aspect-ratio: 16/9; cursor: pointer; box-shadow: 0 0 60px rgba(37,99,235,.07); }
+#pl-video { padding: 80px 0; border-top: 1px solid var(--line); }
+.pl-video-layout { display: grid; grid-template-columns: 1fr 400px; gap: 60px; align-items: center; }
+.pl-vwrap { position: relative; border-radius: var(--r12); overflow: hidden; border: 1px solid var(--line-2); background: var(--bg-3); aspect-ratio: 9/16; max-width: 400px; width: 100%; margin: 0 auto; cursor: pointer; box-shadow: 0 0 60px rgba(37,99,235,.07); }
 .pl-vwrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pl-voverlay { position: absolute; inset: 0; background: rgba(8,9,11,.45); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; transition: opacity .25s cubic-bezier(.16,1,.3,1); }
 .pl-vplay-btn { width: 60px; height: 60px; border-radius: 50%; background: var(--t1); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 40px rgba(0,0,0,.5); transition: transform .15s cubic-bezier(.16,1,.3,1); }
@@ -455,6 +462,7 @@ details[open] .pl-fq-arrow { transform: rotate(45deg); color: var(--t2); }
 }
 @media (max-width: 760px) {
   .pl-video-layout { grid-template-columns: 1fr; gap: 36px; }
+  .pl-vwrap { max-width: 300px; }
   .pl-bento { grid-template-columns: 1fr; }
   .pl-bc.span2, .pl-bc.tall { grid-column: 1; grid-row: auto; }
 }
@@ -467,6 +475,11 @@ details[open] .pl-fq-arrow { transform: rotate(45deg); color: var(--t2); }
 @media (max-width: 680px) {
   .pl-price-table { grid-template-columns: 1fr 1fr; }
 }
+@media (max-width: 540px) {
+  .pl-price-table { grid-template-columns: 1fr; max-width: 340px; }
+  .pl-pt { padding: 20px 18px; }
+  .pl-pt-price { font-size: 36px; }
+}
 @media (max-width: 620px) {
   .pl-panel-shell { grid-template-columns: 1fr; }
   .pl-p-sidebar { display: none; }
@@ -474,9 +487,17 @@ details[open] .pl-fq-arrow { transform: rotate(45deg); color: var(--t2); }
 @media (max-width: 580px) {
   .pl-hero-actions { flex-direction: column; align-items: flex-start; }
   .pl-btn-primary, .pl-btn-secondary { width: 100%; justify-content: center; }
+  #pl-prob, #pl-video, #pl-como, #pl-feat, #pl-prices, #pl-demo, #pl-faq { padding-top: 60px; padding-bottom: 60px; }
+  #pl-cta { padding-top: 72px; padding-bottom: 72px; }
+  .pl-prob-grid { gap: 32px; }
+  .pl-feat-intro { margin-bottom: 32px; }
+  .pl-price-intro { margin-bottom: 32px; }
+  .pl-como-grid { margin-top: 32px; }
 }
 @media (max-width: 420px) {
   .pl-price-table { grid-template-columns: 1fr; }
+  .pl-stats-row { flex-direction: column; gap: 0; }
+  .pl-stat-tile { min-width: unset; }
 }
 `;
 
@@ -515,10 +536,13 @@ export default function PanelLeadsContent() {
         <div className="pl-hero-body pl-wrap">
           <div className="pl-proof-badge">
             <div className="pl-proof-avatars">
-              <span className="pl-proof-av">RF</span>
-              <span className="pl-proof-av">DP</span>
-              <span className="pl-proof-av">GP</span>
-              <span className="pl-proof-av">+</span>
+              <span className="pl-proof-logo-pill">Puntillo Agency</span>
+              <span className="pl-proof-sep">·</span>
+              <span className="pl-proof-logo-pill">Nexo Digital</span>
+              <span className="pl-proof-sep">·</span>
+              <span className="pl-proof-logo-pill">Rojo Tráfico</span>
+              <span className="pl-proof-sep">·</span>
+              <span className="pl-proof-logo-pill">+49 más</span>
             </div>
             <span className="pl-proof-text"><strong>52 negocios</strong> ya reciben sus leads aquí</span>
           </div>
