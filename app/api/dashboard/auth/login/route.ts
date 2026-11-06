@@ -25,11 +25,16 @@ export async function POST(request: NextRequest) {
   const username = typeof body?.username === 'string' ? body.username.trim() : '';
   const password = typeof body?.password === 'string' ? body.password : '';
 
-  if (username !== adminUser || password !== adminPass) {
+  // Usuario demo (solo lectura, acceso público para demos)
+  const isDemoUser = username === 'demo-agencia' && password === 'demo2026';
+
+  if (!isDemoUser && (username !== adminUser || password !== adminPass)) {
     return NextResponse.json({ error: 'Usuario o contraseña incorrectos' }, { status: 401 });
   }
 
-  const token = await dashboardToken(adminUser, adminPass);
+  const token = isDemoUser
+    ? await dashboardToken('demo-agencia', 'demo2026')
+    : await dashboardToken(adminUser, adminPass);
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,

@@ -15,6 +15,10 @@ function getDashboardToken(): string {
   return crypto.createHash('sha256').update(user + ':' + pass + DASHBOARD_AUTH_SALT).digest('hex');
 }
 
+function getDemoToken(): string {
+  return crypto.createHash('sha256').update('demo-agencia:demo2026' + DASHBOARD_AUTH_SALT).digest('hex');
+}
+
 function getAdminToken(): string {
   const pass = process.env.ADMIN_PASSWORD || '';
   return crypto.createHash('sha256').update(pass + ADMIN_AUTH_SALT).digest('hex');
@@ -33,6 +37,7 @@ export default async function AgentiaAuthGuard({
   const adminToken = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
   if (
     dashboardToken !== getDashboardToken() &&
+    dashboardToken !== getDemoToken() &&
     adminToken !== getAdminToken()
   ) {
     redirect('/agentia-panel/login');
