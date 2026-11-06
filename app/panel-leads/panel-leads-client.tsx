@@ -358,8 +358,11 @@ const css = `
   position:relative;z-index:1;
   border-top:1px solid var(--ln);
   border-bottom:1px solid var(--ln);
-  overflow:hidden;padding:11px 0;
+  overflow:hidden;padding:12px 0;
   background:rgba(255,255,255,.01);
+  /* Fade masks left/right */
+  -webkit-mask-image:linear-gradient(to right,transparent 0%,black 8%,black 92%,transparent 100%);
+  mask-image:linear-gradient(to right,transparent 0%,black 8%,black 92%,transparent 100%);
 }
 .ticker-track{
   display:flex;gap:40px;width:max-content;
@@ -862,19 +865,23 @@ details[open] .fq-arrow{transform:rotate(45deg);color:var(--t2)}
   .hero-wrap{
     grid-template-columns:1fr;
     min-height:auto;
+    gap:40px;
   }
   .hero-left{
-    padding-top:52px;padding-bottom:40px;
+    padding-top:52px;padding-bottom:0;
     padding-right:0;
   }
   .hero-right{
-    padding-top:0;
+    padding-top:0;padding-bottom:48px;
     align-items:center;
-    max-width:480px;
+    max-width:520px;
     margin:0 auto;
     width:100%;
   }
   .browser-chrome{max-width:100%}
+  /* Hero mobile card — solo 2 leads, sin sidebar */
+  .panel-side{display:none}
+  .panel-shell{grid-template-columns:1fr}
   /* Layouts 2-col a 1-col */
   .prob-layout{grid-template-columns:1fr;gap:52px}
   .compare-box{position:static}
@@ -910,18 +917,43 @@ details[open] .fq-arrow{transform:rotate(45deg);color:var(--t2)}
   /* NAV */
   .nav-links .nav-link{display:none}
 
-  /* HERO */
-  .hero-left{padding-top:40px;padding-bottom:32px}
-  .hero-h1{font-size:clamp(44px,11vw,58px);letter-spacing:-.03em}
-  .hero-sub{font-size:15px;margin-top:18px}
-  .hero-stats{gap:16px;margin-top:28px}
-  .hstat-n{font-size:clamp(26px,8vw,34px)}
+  /* HERO — ocultar panel en mobile, solo texto */
+  .hero-wrap{display:block}
+  .hero-right{display:none}
+  .hero-left{
+    padding-top:40px;padding-bottom:52px;
+    padding-right:0;
+  }
+  .hero-h1{font-size:clamp(46px,12vw,60px);letter-spacing:-.03em;line-height:.97}
+  .hero-sub{font-size:15px;margin-top:20px;line-height:1.65}
+  .hero-stats{gap:20px;margin-top:32px;flex-wrap:nowrap}
+  .hstat-n{font-size:clamp(28px,8vw,36px)}
   .hstat-l{font-size:9.5px}
-  .hero-actions{flex-direction:column;align-items:stretch;gap:11px;margin-top:28px}
-  .btn-primary,.btn-ghost{width:100%;justify-content:center;padding:16px 24px}
-  .hero-agencies{margin-top:22px}
-  .hero-right{max-width:360px}
+  .hero-actions{
+    flex-direction:column;align-items:stretch;
+    gap:11px;margin-top:32px;
+  }
+  .btn-primary{
+    width:100%;justify-content:center;
+    padding:17px 24px;font-size:15px;
+  }
+  .btn-ghost{
+    width:100%;justify-content:center;
+    padding:15px 24px;font-size:14px;
+  }
+  .hero-agencies{margin-top:24px}
   .vwrap{max-width:220px}
+
+  /* Tabla panel: en mobile solo col Nombre + Estado + WA */
+  .ltable th:nth-child(2),
+  .ltable td:nth-child(2),
+  .ltable th:nth-child(3),
+  .ltable td:nth-child(3){display:none}
+  .ltable{font-size:12px}
+  .panel-main{padding:14px 14px}
+  .panel-hdr{margin-bottom:12px}
+  .ltable thead th{font-size:8.5px;padding:0 8px 8px}
+  .ltable td{padding:9px 8px}
 
   /* NUMBERS */
   .numbers-grid{grid-template-columns:1fr}
