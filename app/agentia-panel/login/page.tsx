@@ -7,8 +7,9 @@ function AgentiaLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get('from') || '/agentia-panel/conversaciones';
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const isDemo = searchParams.get('demo') === '1';
+  const [username, setUsername] = useState(isDemo ? 'demo-agencia' : '');
+  const [password, setPassword] = useState(isDemo ? 'demo2026' : '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -47,6 +48,11 @@ function AgentiaLoginForm() {
     >
       <h1 className="text-xl font-bold text-white/95 mb-2">Agentia Panel</h1>
       <p className="text-sm text-slate-400 mb-6">Conversaciones multi-canal · WhatsApp API oficial</p>
+      {isDemo && (
+        <div className="mb-4 px-4 py-3 rounded-xl text-sm" style={{ background: 'rgba(198,255,62,0.1)', border: '1px solid rgba(198,255,62,0.3)', color: '#C6FF3E' }}>
+          <strong>Acceso demo</strong> — credenciales ya llenadas. Solo presiona Entrar.
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
