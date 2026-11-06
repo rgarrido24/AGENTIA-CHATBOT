@@ -1,765 +1,1260 @@
 'use client';
 
+/* ─────────────────────────────────────────────────────────────
+   PANEL DE LEADS — LANDING PAGE
+   Diseño premium dark-first. Tipografía masiva. Mobile-first.
+   ───────────────────────────────────────────────────────────── */
+
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
 
-#pl-root *, #pl-root *::before, #pl-root *::after { box-sizing: border-box; margin: 0; padding: 0; }
-#pl-root a { color: inherit; text-decoration: none; }
+/* ── RESET ── */
+#pl *,#pl *::before,#pl *::after{box-sizing:border-box;margin:0;padding:0}
+#pl a{color:inherit;text-decoration:none}
+#pl img{max-width:100%;display:block}
+#pl button{background:none;border:none;cursor:pointer;font:inherit;color:inherit}
 
-#pl-root {
-  --bg:         #08090b;
-  --bg-2:       #0f1013;
-  --bg-3:       #16181c;
-  --bg-4:       #1e2026;
-  --line:       rgba(255,255,255,.06);
-  --line-2:     rgba(255,255,255,.10);
-  --line-3:     rgba(255,255,255,.18);
-  --t1:         #f5f5f7;
-  --t2:         rgba(245,245,247,.56);
-  --t3:         rgba(245,245,247,.30);
-  --blue:       #2563eb;
-  --blue-hi:    #3b82f6;
-  --blue-soft:  rgba(37,99,235,.10);
-  --green:      #16a34a;
-  --green-hi:   #22c55e;
-  --green-soft: rgba(22,163,74,.09);
-  --amber:      #d97706;
-  --amber-hi:   #f59e0b;
-  --r4:4px; --r8:8px; --r12:12px; --r-pill:999px;
-  font-family: 'Geist', system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--t1);
-  overflow-x: hidden;
-  line-height: 1;
-  -webkit-font-smoothing: antialiased;
-  color-scheme: dark;
-  min-height: 100vh;
+/* ── TOKENS ── */
+#pl {
+  --bg:   #07080a;
+  --bg1:  #0d0e11;
+  --bg2:  #141518;
+  --bg3:  #1b1d21;
+  --bg4:  #22242a;
+  --ln:   rgba(255,255,255,.055);
+  --ln2:  rgba(255,255,255,.10);
+  --ln3:  rgba(255,255,255,.18);
+  --t1:   #f4f4f6;
+  --t2:   rgba(244,244,246,.55);
+  --t3:   rgba(244,244,246,.28);
+  --bl:   #2563eb;
+  --blh:  #3b82f6;
+  --bls:  rgba(37,99,235,.12);
+  --gr:   #16a34a;
+  --grh:  #22c55e;
+  --amb:  #d97706;
+  --ambh: #f59e0b;
+  --r4:4px;--r8:8px;--r12:12px;--r16:16px;--rpill:999px;
+  --s12: 12px;--s14: 14px;--s16: 16px;
+  font-family:'Geist',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--t1);
+  overflow-x:hidden;
+  line-height:1;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  color-scheme:dark;
+  min-height:100vh;
 }
 
-#pl-root::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(ellipse 50% 35% at 65% -5%,rgba(37,99,235,.06) 0%,transparent 55%),
-    radial-gradient(ellipse 40% 20% at 15% 85%,rgba(22,163,74,.035) 0%,transparent 50%);
+/* ── GRID GLOBAL ── */
+/* Contenedor: 1200px max, padding responsivo */
+.w{
+  width:100%;
+  max-width:1200px;
+  margin:0 auto;
+  padding-left:max(32px,env(safe-area-inset-left,0px));
+  padding-right:max(32px,env(safe-area-inset-right,0px));
 }
 
-/* ── LAYOUT ── */
-.pl-wrap {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding-left: max(24px, env(safe-area-inset-left,0px));
-  padding-right: max(24px, env(safe-area-inset-right,0px));
-}
+/* ── TIPOGRAFÍA BASE ── */
+.serif{font-family:'Instrument Serif',Georgia,serif;font-weight:400}
+.mono{font-family:'Geist Mono',monospace}
 
 /* ── NAV ── */
-#pl-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: 52px;
-  border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  background: rgba(8,9,11,.8);
+#pl-nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  height:56px;
+  border-bottom:1px solid var(--ln);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  background:rgba(7,8,10,.82);
 }
-.pl-nav-inner { height: 100%; display: flex; align-items: center; justify-content: space-between; }
-.pl-nav-brand { display: flex; align-items: center; gap: 8px; }
-.pl-nav-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--green-hi); box-shadow: 0 0 8px var(--green-hi);
-  animation: pl-pulse 2.4s ease-in-out infinite;
+.nav-in{
+  height:100%;display:flex;align-items:center;
+  justify-content:space-between;
 }
-@keyframes pl-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.85)} }
-.pl-nav-name { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
-.pl-nav-actions { display: flex; align-items: center; gap: 10px; }
-.pl-nav-link { font-size: 13px; color: var(--t2); transition: color .15s; }
-.pl-nav-link:hover { color: var(--t1); }
-.pl-nav-cta {
-  display: inline-flex; align-items: center; gap: 7px;
-  padding: 7px 16px; border-radius: var(--r-pill);
-  background: var(--t1); color: var(--bg);
-  font-size: 13px; font-weight: 600; letter-spacing: -.01em;
-  transition: opacity .12s, transform .12s;
+.nav-logo{display:flex;align-items:center;gap:9px}
+.nav-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--grh);box-shadow:0 0 10px var(--grh);
+  animation:pulse 2.4s ease-in-out infinite;
 }
-.pl-nav-cta:hover { opacity: .88; }
-.pl-nav-cta:active { transform: scale(.97); }
-
-/* ── KEYFRAMES ── */
-@keyframes pl-fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.8)}}
+.nav-name{font-size:15px;font-weight:600;letter-spacing:-.015em}
+.nav-links{display:flex;align-items:center;gap:6px}
+.nav-link{
+  padding:7px 14px;border-radius:var(--rpill);
+  font-size:13px;color:var(--t2);
+  transition:color .15s,background .15s;
 }
-@keyframes pl-rowIn {
-  from { opacity: 0; background: rgba(37,99,235,.07); }
-  to   { opacity: 1; background: transparent; }
+.nav-link:hover{color:var(--t1);background:rgba(255,255,255,.05)}
+.nav-cta{
+  margin-left:6px;
+  padding:8px 20px;border-radius:var(--rpill);
+  background:var(--t1);color:var(--bg);
+  font-size:13px;font-weight:600;letter-spacing:-.01em;
+  transition:opacity .12s,transform .12s;
 }
-@keyframes pl-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.nav-cta:hover{opacity:.88}
+.nav-cta:active{transform:scale(.96)}
 
 /* ── HERO ── */
-#pl-hero {
-  min-height: 100svh;
-  padding-top: 52px;
-  display: flex; flex-direction: column;
-  position: relative; overflow: hidden;
+#pl-hero{
+  position:relative;
+  padding-top:56px; /* nav height */
+  overflow:hidden;
 }
-.pl-hero-body {
-  flex: 1; display: flex; flex-direction: column; justify-content: center;
-  padding-block: 56px 0;
+/* Gradientes de fondo */
+#pl-hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 70% 0%,rgba(37,99,235,.07) 0%,transparent 60%),
+    radial-gradient(ellipse 40% 30% at 10% 90%,rgba(22,163,74,.04) 0%,transparent 55%);
 }
-/* Logos agencias — fila compacta tipo "trusted by" */
-.pl-proof-badge {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-  margin-bottom: 32px;
-  animation: pl-fadeUp .6s cubic-bezier(.16,1,.3,1) both;
+.hero-wrap{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  align-items:start;
+  min-height:calc(100svh - 56px);
 }
-.pl-proof-eyebrow {
-  font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--t3);
+/* Columna izquierda: texto */
+.hero-left{
+  display:flex;flex-direction:column;justify-content:center;
+  padding-top:72px;padding-bottom:72px;
+  padding-right:48px;
 }
-.pl-proof-logos {
-  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+/* Badge "trusted by" */
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-bottom:28px;
+  animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;
 }
-.pl-proof-logo-pill {
-  height: 26px; padding: 0 11px;
-  background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.10);
-  border-radius: var(--r-pill);
-  display: inline-flex; align-items: center;
-  font-size: 11px; font-weight: 500; letter-spacing: -.01em; color: rgba(255,255,255,.55);
-  white-space: nowrap; transition: background .15s, color .15s;
+.hero-eyebrow-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--grh);box-shadow:0 0 8px var(--grh);
 }
-.pl-proof-logo-pill:hover { background: rgba(255,255,255,.09); color: rgba(255,255,255,.8); }
-.pl-proof-count {
-  font-size: 11px; color: var(--t3); padding-left: 2px;
+.hero-eyebrow-txt{
+  font-size:11px;font-weight:500;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--t3);
+}
+/* Headline MASIVA */
+.hero-h1{
+  font-family:'Instrument Serif',Georgia,serif;
+  font-size:clamp(52px,6.5vw,88px);
+  font-weight:400;
+  line-height:.98;
+  letter-spacing:-.035em;
+  text-wrap:balance;
+  animation:fadeUp .6s .04s cubic-bezier(.16,1,.3,1) both;
+}
+.hero-h1 em{font-style:italic;color:var(--t2)}
+.hero-h1 .accent-line{
+  display:block;
+  background:linear-gradient(90deg,var(--t1) 0%,rgba(244,244,246,.5) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-sub{
+  margin-top:24px;
+  font-size:clamp(15px,1.4vw,17px);line-height:1.72;
+  color:var(--t2);max-width:430px;
+  animation:fadeUp .6s .08s cubic-bezier(.16,1,.3,1) both;
+}
+/* Stats inline */
+.hero-stats{
+  display:flex;gap:28px;
+  margin-top:36px;
+  animation:fadeUp .6s .12s cubic-bezier(.16,1,.3,1) both;
+}
+.hstat-n{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(28px,3vw,38px);font-weight:400;
+  letter-spacing:-.03em;line-height:1;
+}
+.hstat-l{
+  font-size:10px;color:var(--t3);
+  letter-spacing:.06em;text-transform:uppercase;
+  font-weight:500;margin-top:4px;line-height:1.4;
+}
+.hstat-sep{
+  width:1px;background:var(--ln2);align-self:stretch;
+  flex-shrink:0;margin:0 4px;
+}
+/* CTAs */
+.hero-actions{
+  display:flex;gap:12px;margin-top:36px;flex-wrap:wrap;
+  animation:fadeUp .6s .16s cubic-bezier(.16,1,.3,1) both;
+}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:16px 32px;border-radius:var(--rpill);
+  background:var(--t1);color:var(--bg);
+  font-size:15px;font-weight:600;letter-spacing:-.01em;
+  transition:transform .12s cubic-bezier(.16,1,.3,1),box-shadow .15s;
+  white-space:nowrap;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(0,0,0,.5)}
+.btn-primary:active{transform:scale(.97)}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:16px 28px;border-radius:var(--rpill);
+  border:1px solid var(--ln2);
+  font-size:15px;font-weight:400;color:var(--t2);
+  transition:border-color .15s,color .15s;
+  white-space:nowrap;
+}
+.btn-ghost:hover{border-color:var(--ln3);color:var(--t1)}
+/* Agency pills */
+.hero-agencies{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  margin-top:28px;
+  animation:fadeUp .6s .20s cubic-bezier(.16,1,.3,1) both;
+}
+.agency-pill{
+  height:28px;padding:0 13px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:var(--rpill);
+  display:inline-flex;align-items:center;
+  font-size:11.5px;font-weight:400;color:rgba(255,255,255,.45);
+  white-space:nowrap;
+}
+.agency-more{
+  font-size:11.5px;color:var(--t3);
 }
 
-#pl-root h1 {
-  font-family: 'Instrument Serif', Georgia, serif;
-  font-size: clamp(40px, 7.2vw, 88px);
-  font-weight: 400; line-height: 1.03; letter-spacing: -.03em;
-  text-wrap: balance; max-width: 820px;
-  animation: pl-fadeUp .7s .06s cubic-bezier(.16,1,.3,1) both;
+/* Columna derecha: panel demo */
+.hero-right{
+  position:relative;
+  padding-top:72px;padding-bottom:0;
+  display:flex;flex-direction:column;align-items:flex-start;
+  overflow:hidden;
 }
-#pl-root h1 em { font-style: italic; color: var(--t2); }
-
-.pl-hero-sub {
-  margin-top: 20px;
-  font-size: clamp(14px, 1.5vw, 17px); line-height: 1.7;
-  color: var(--t2); max-width: 480px; text-wrap: balance;
-  animation: pl-fadeUp .7s .12s cubic-bezier(.16,1,.3,1) both;
+/* Chrome del browser */
+.browser-chrome{
+  width:100%;max-width:620px;
+  background:var(--bg1);
+  border:1px solid var(--ln2);border-bottom:none;
+  border-radius:14px 14px 0 0;
+  box-shadow:
+    0 -1px 0 rgba(255,255,255,.04),
+    0 -32px 100px rgba(37,99,235,.06),
+    0 -16px 60px rgba(0,0,0,.35);
+  animation:slideUp .9s .24s cubic-bezier(.16,1,.3,1) both;
+  overflow:hidden;
 }
-
-/* Stats en 3 tarjetas inline */
-.pl-hero-stats {
-  display: flex; flex-wrap: nowrap; gap: 0;
-  margin-top: 32px;
-  border: 1px solid var(--line-2); border-radius: var(--r12);
-  overflow: hidden; background: var(--line);
-  animation: pl-fadeUp .7s .18s cubic-bezier(.16,1,.3,1) both;
-  max-width: 520px;
+.browser-bar{
+  display:flex;align-items:center;
+  padding:11px 16px;border-bottom:1px solid var(--ln);
+  background:var(--bg2);gap:14px;
 }
-.pl-hstat {
-  flex: 1; display: flex; flex-direction: column; gap: 3px;
-  padding: 16px 20px;
-  background: var(--bg-2);
-  border-right: 1px solid var(--line-2);
+.b-dots{display:flex;gap:6px}
+.b-dot{width:9px;height:9px;border-radius:50%}
+.b-r{background:#ff5f57}.b-y{background:#febc2e}.b-g{background:#28c840}
+.b-url{
+  flex:1;text-align:center;padding:5px 12px;border-radius:6px;
+  background:rgba(255,255,255,.036);border:1px solid var(--ln);
+  font-family:'Geist Mono',monospace;font-size:11px;color:var(--t3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.pl-hstat:last-child { border-right: none; }
-.pl-hstat-n {
-  font-family: 'Instrument Serif', serif;
-  font-size: clamp(22px, 2.6vw, 30px); font-weight: 400;
-  letter-spacing: -.025em; line-height: 1;
+/* Panel interior */
+.panel-shell{
+  display:grid;grid-template-columns:180px 1fr;
+  min-height:420px;background:var(--bg1);
 }
-.pl-hstat-l { font-size: 10px; color: var(--t3); letter-spacing: .04em; text-transform: uppercase; font-weight: 500; line-height: 1.4; margin-top: 2px; }
-.pl-hstat-sep { display: none; }
-
-.pl-hero-actions {
-  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px;
-  animation: pl-fadeUp .7s .22s cubic-bezier(.16,1,.3,1) both;
+.panel-side{
+  background:rgba(255,255,255,.013);
+  border-right:1px solid var(--ln);
+  padding:14px 10px;
+  display:flex;flex-direction:column;gap:1px;
 }
-.pl-btn-primary {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 14px 28px; border-radius: var(--r-pill);
-  background: var(--t1); color: var(--bg);
-  font-size: 14px; font-weight: 600; letter-spacing: -.01em;
-  transition: transform .12s cubic-bezier(.16,1,.3,1), box-shadow .15s;
+.p-sec{
+  font-size:9px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--t3);
+  padding:12px 10px 6px;
 }
-.pl-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,0,0,.45); }
-.pl-btn-primary:active { transform: scale(.97); }
-.pl-btn-secondary {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 14px 24px; border-radius: var(--r-pill);
-  border: 1px solid var(--line-2);
-  font-size: 14px; font-weight: 400; color: var(--t2);
-  transition: border-color .15s, color .15s;
+.p-item{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 10px;border-radius:var(--r8);
+  font-size:11.5px;color:var(--t2);
+  transition:background .1s,color .1s;
 }
-.pl-btn-secondary:hover { border-color: var(--line-3); color: var(--t1); }
-
-/* ── PANEL SCREENSHOT ── */
-.pl-hero-screen {
-  position: relative; z-index: 1;
-  margin-top: 52px;
-  animation: pl-fadeUp .9s .28s cubic-bezier(.16,1,.3,1) both;
+.p-item.on{background:rgba(37,99,235,.09);color:var(--t1)}
+.p-item:hover:not(.on){background:rgba(255,255,255,.036)}
+.p-item-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--ln2);flex-shrink:0;
 }
-.pl-screen-chrome {
-  background: var(--bg-2);
-  border: 1px solid var(--line-2); border-bottom: none;
-  border-radius: 14px 14px 0 0; overflow: hidden;
-  box-shadow: 0 -4px 0 rgba(255,255,255,.04), 0 -24px 80px rgba(37,99,235,.05);
+.p-item.on .p-item-dot{background:var(--blh)}
+.panel-main{padding:18px 20px;overflow:hidden}
+.panel-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;flex-wrap:wrap;gap:8px;
 }
-.pl-chrome-bar {
-  display: flex; align-items: center;
-  padding: 11px 16px; border-bottom: 1px solid var(--line);
-  background: var(--bg-3);
+.panel-title{font-size:13px;font-weight:600;letter-spacing:-.01em}
+.panel-chips{display:flex;gap:7px}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:var(--rpill);
+  font-size:10px;font-weight:500;
 }
-.pl-chrome-dots { display: flex; gap: 6px; margin-right: 14px; }
-.pl-cd { width: 9px; height: 9px; border-radius: 50%; }
-.pl-cd-r { background: #ff5f57; } .pl-cd-y { background: #febc2e; } .pl-cd-g { background: #28c840; }
-.pl-chrome-url {
-  flex: 1; text-align: center; padding: 5px 12px; border-radius: 6px;
-  background: rgba(255,255,255,.04); border: 1px solid var(--line);
-  font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--t3);
+.chip-live{
+  background:rgba(22,163,74,.08);color:var(--grh);
+  border:1px solid rgba(22,163,74,.14);
 }
-.pl-panel-shell {
-  display: grid; grid-template-columns: 192px 1fr;
-  min-height: 380px; background: var(--bg-2);
+.chip-live::before{
+  content:'';width:5px;height:5px;border-radius:50%;
+  background:var(--grh);animation:pulse 1.6s infinite;
 }
-.pl-p-sidebar {
-  background: rgba(255,255,255,.016); border-right: 1px solid var(--line);
-  padding: 14px 10px; display: flex; flex-direction: column; gap: 1px;
+.chip-date{
+  background:rgba(37,99,235,.08);color:#93c5fd;
+  border:1px solid rgba(37,99,235,.12);
 }
-.pl-psec { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); padding: 12px 10px 6px; }
-.pl-pitem {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 10px; border-radius: var(--r8);
-  font-size: 12px; color: var(--t2); cursor: pointer; transition: background .1s, color .1s;
+/* Tabla leads */
+.ltable{width:100%;border-collapse:collapse;font-size:11.5px}
+.ltable thead th{
+  padding:0 10px 9px;text-align:left;
+  font-size:9px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--t3);
+  border-bottom:1px solid var(--ln);
 }
-.pl-pitem.on { background: rgba(37,99,235,.09); color: var(--t1); }
-.pl-pitem:hover:not(.on) { background: rgba(255,255,255,.04); }
-.pl-pitem-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--line-2); flex-shrink: 0; }
-.pl-pitem.on .pl-pitem-dot { background: var(--blue-hi); }
-.pl-p-main { padding: 18px 20px; overflow: hidden; }
-.pl-pmain-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
-.pl-pmain-title { font-size: 13.5px; font-weight: 600; letter-spacing: -.01em; }
-.pl-pmain-chips { display: flex; gap: 7px; align-items: center; }
-.pl-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: var(--r-pill); font-size: 10.5px; font-weight: 500; }
-.pl-chip-live { background: rgba(22,163,74,.08); color: var(--green-hi); border: 1px solid rgba(22,163,74,.14); }
-.pl-chip-live::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green-hi); animation: pl-pulse 1.6s infinite; }
-.pl-chip-date { background: rgba(37,99,235,.08); color: #93c5fd; border: 1px solid rgba(37,99,235,.12); }
-.pl-ltable { width: 100%; border-collapse: collapse; font-size: 12px; }
-.pl-ltable thead th { padding: 0 10px 9px; text-align: left; font-size: 9.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--t3); border-bottom: 1px solid var(--line); }
-.pl-ltable tbody tr { cursor: default; transition: background .1s; }
-.pl-ltable tbody tr:hover { background: rgba(255,255,255,.022); }
-.pl-ltable td { padding: 11px 10px; border-bottom: 1px solid rgba(255,255,255,.028); vertical-align: middle; line-height: 1.3; }
-.pl-lead-name { font-size: 12.5px; font-weight: 500; }
-.pl-lead-time { font-size: 10px; color: var(--t3); margin-top: 2px; }
-.pl-lead-src { font-size: 11.5px; color: var(--t2); }
-.pl-badge { display: inline-flex; padding: 3px 9px; border-radius: var(--r-pill); font-size: 9.5px; font-weight: 600; letter-spacing: .03em; white-space: nowrap; }
-.pl-b-new { background: rgba(37,99,235,.10); color: #93c5fd; border: 1px solid rgba(37,99,235,.14); }
-.pl-b-hot { background: rgba(245,158,11,.08); color: #fcd34d; border: 1px solid rgba(245,158,11,.12); }
-.pl-b-won { background: rgba(22,163,74,.08); color: #86efac; border: 1px solid rgba(22,163,74,.12); }
-.pl-b-trk { background: rgba(168,85,247,.08); color: #d8b4fe; border: 1px solid rgba(168,85,247,.12); }
-.pl-wa-btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 4px 10px; border-radius: var(--r8);
-  background: rgba(37,211,102,.06); border: 1px solid rgba(37,211,102,.14);
-  color: #4ade80; font-size: 10.5px; font-weight: 500; cursor: pointer; white-space: nowrap;
-  transition: background .12s;
+.ltable tbody tr{transition:background .1s}
+.ltable tbody tr:hover{background:rgba(255,255,255,.018)}
+.ltable td{
+  padding:10px 10px;
+  border-bottom:1px solid rgba(255,255,255,.025);
+  vertical-align:middle;line-height:1.3;
 }
-.pl-wa-btn:hover { background: rgba(37,211,102,.12); }
-.pl-row-new td { animation: pl-rowIn .45s cubic-bezier(.16,1,.3,1) both; }
+.lead-name{font-size:12px;font-weight:500}
+.lead-time{font-size:9.5px;color:var(--t3);margin-top:2px}
+.lead-src{font-size:11px;color:var(--t2)}
+.badge{
+  display:inline-flex;padding:3px 8px;border-radius:var(--rpill);
+  font-size:9px;font-weight:600;letter-spacing:.03em;white-space:nowrap;
+}
+.b-new{background:rgba(37,99,235,.10);color:#93c5fd;border:1px solid rgba(37,99,235,.14)}
+.b-hot{background:rgba(245,158,11,.08);color:#fcd34d;border:1px solid rgba(245,158,11,.12)}
+.b-won{background:rgba(22,163,74,.08);color:#86efac;border:1px solid rgba(22,163,74,.12)}
+.b-trk{background:rgba(168,85,247,.08);color:#d8b4fe;border:1px solid rgba(168,85,247,.12)}
+.wa-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:var(--r8);
+  background:rgba(37,211,102,.06);border:1px solid rgba(37,211,102,.14);
+  color:#4ade80;font-size:10px;font-weight:500;cursor:pointer;white-space:nowrap;
+  transition:background .12s;
+}
+.wa-btn:hover{background:rgba(37,211,102,.12)}
+@keyframes rowIn{
+  from{opacity:0;background:rgba(37,99,235,.07)}
+  to{opacity:1;background:transparent}
+}
+.row-new td{animation:rowIn .45s cubic-bezier(.16,1,.3,1) both}
 
 /* ── TICKER ── */
-.pl-ticker { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; padding: 10px 0; background: rgba(255,255,255,.012); }
-.pl-ticker-track { display: flex; gap: 36px; width: max-content; animation: pl-marquee 28s linear infinite; }
-.pl-ticker-item { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 11.5px; color: var(--t3); }
-.pl-ticker-item b { color: var(--t2); font-weight: 500; }
-.pl-ticker-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--line-2); }
+.ticker{
+  position:relative;z-index:1;
+  border-top:1px solid var(--ln);
+  border-bottom:1px solid var(--ln);
+  overflow:hidden;padding:11px 0;
+  background:rgba(255,255,255,.01);
+}
+.ticker-track{
+  display:flex;gap:40px;width:max-content;
+  animation:marquee 30s linear infinite;
+}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker-item{
+  display:flex;align-items:center;gap:9px;
+  white-space:nowrap;font-size:11.5px;color:var(--t3);
+}
+.ticker-item b{color:var(--t2);font-weight:500}
+.ticker-dot{width:3px;height:3px;border-radius:50%;background:var(--ln2)}
 
-/* ── SECTION SHARED ── */
-#pl-root section { position: relative; z-index: 1; }
-.pl-sec-label { display: block; margin-bottom: 12px; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); }
-#pl-root h2 { font-family: 'Instrument Serif', Georgia, serif; font-size: clamp(30px, 4.2vw, 50px); font-weight: 400; line-height: 1.08; letter-spacing: -.028em; text-wrap: balance; }
-.pl-sub { margin-top: 14px; font-size: clamp(14px, 1.5vw, 16px); line-height: 1.7; color: var(--t2); max-width: 480px; text-wrap: balance; }
-
-/* ── SOCIAL PROOF ── */
-#pl-social { padding: 60px 0; border-bottom: 1px solid var(--line); }
-.pl-social-row { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 32px; }
-.pl-social-left { max-width: 400px; }
-.pl-social-left p { font-size: 14px; line-height: 1.75; color: var(--t2); }
-.pl-social-left p strong { color: var(--t1); font-weight: 500; }
-.pl-stats-row { display: flex; gap: 1px; background: var(--line); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; flex: 1; min-width: 280px; }
-.pl-stat-tile { background: var(--bg-2); padding: 20px 22px; flex: 1; transition: background .15s; }
-.pl-stat-tile:hover { background: var(--bg-3); }
-.pl-st-n { font-family: 'Instrument Serif', serif; font-size: clamp(28px, 3vw, 38px); font-weight: 400; letter-spacing: -.04em; line-height: 1; }
-.pl-st-l { font-size: 10px; color: var(--t3); margin-top: 6px; letter-spacing: .04em; text-transform: uppercase; font-weight: 500; line-height: 1.4; }
-.pl-st-delta { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 11px; color: var(--green-hi); font-weight: 500; }
-
-/* ── PROBLEMA ── */
-#pl-prob { padding: 80px 0; border-top: 1px solid var(--line); }
-.pl-prob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
-.pl-pain-items { margin-top: 40px; }
-.pl-pain { display: grid; grid-template-columns: 28px 1fr; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--line); transition: border-color .2s; }
-.pl-pain:first-child { border-top: 1px solid var(--line); }
-.pl-pain:hover { border-color: var(--line-2); }
-.pl-pain-n { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 14px; color: var(--t3); padding-top: 2px; text-align: right; }
-.pl-pain h3 { font-size: 13.5px; font-weight: 500; margin-bottom: 5px; }
-.pl-pain p { font-size: 12.5px; line-height: 1.65; color: var(--t2); }
-.pl-compare { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
-.pl-compare-tabs { display: flex; border-bottom: 1px solid var(--line); }
-.pl-ctab { flex: 1; padding: 11px 16px; font-size: 12px; font-weight: 500; text-align: center; color: var(--t3); cursor: pointer; transition: color .15s, background .15s; border-right: 1px solid var(--line); }
-.pl-ctab:last-child { border-right: none; }
-.pl-ctab.on { color: var(--t1); background: rgba(255,255,255,.028); }
-.pl-cpane { padding: 20px; display: none; }
-.pl-cpane.on { display: block; }
-.pl-xrow { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 11.5px; }
-.pl-xcell { flex: 1; color: var(--t2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pl-xhead .pl-xcell { font-size: 9.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--t3); }
-.pl-xwarn { margin-top: 12px; padding: 10px 12px; border-radius: var(--r8); background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.12); font-size: 11.5px; color: #fca5a5; line-height: 1.5; display: flex; gap: 8px; align-items: flex-start; }
-.pl-notif { display: flex; gap: 12px; padding: 12px 14px; border-radius: 10px; background: var(--bg-3); border: 1px solid var(--line-2); margin-bottom: 8px; animation: pl-fadeUp .35s cubic-bezier(.16,1,.3,1) both; }
-.pl-notif:nth-child(2) { animation-delay: .08s; }
-.pl-notif-ic { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-.pl-notif-ic-blue { background: rgba(37,99,235,.1); border: 1px solid rgba(37,99,235,.18); }
-.pl-notif-ic-green { background: rgba(22,163,74,.08); border: 1px solid rgba(22,163,74,.15); }
-.pl-notif-title { font-size: 12.5px; font-weight: 500; margin-bottom: 3px; }
-.pl-notif-body { font-size: 11.5px; color: var(--t2); line-height: 1.5; }
-.pl-notif-t { font-size: 10px; color: var(--t3); margin-top: 3px; }
-.pl-notif-wa { margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: var(--r-pill); background: rgba(37,211,102,.07); border: 1px solid rgba(37,211,102,.14); font-size: 11px; font-weight: 500; color: #4ade80; }
-
-/* ── VIDEO ── */
-#pl-video { padding: 80px 0; border-top: 1px solid var(--line); }
-.pl-video-layout { display: grid; grid-template-columns: 1fr 400px; gap: 60px; align-items: center; }
-.pl-vwrap { position: relative; border-radius: var(--r12); overflow: hidden; border: 1px solid var(--line-2); background: var(--bg-3); aspect-ratio: 9/16; max-width: 400px; width: 100%; margin: 0 auto; cursor: pointer; box-shadow: 0 0 60px rgba(37,99,235,.07); }
-.pl-vwrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pl-voverlay { position: absolute; inset: 0; background: rgba(8,9,11,.45); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; transition: opacity .25s cubic-bezier(.16,1,.3,1); }
-.pl-vplay-btn { width: 60px; height: 60px; border-radius: 50%; background: var(--t1); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 40px rgba(0,0,0,.5); transition: transform .15s cubic-bezier(.16,1,.3,1); }
-.pl-vplay-btn:hover { transform: scale(1.08); }
-.pl-vplay-btn:active { transform: scale(.94); }
-.pl-voverlay-label { font-size: 12px; color: rgba(255,255,255,.65); font-weight: 500; }
-.pl-vwrap.playing .pl-voverlay { opacity: 0; pointer-events: none; }
-
-/* ── CÓMO FUNCIONA ── */
-#pl-como { padding: 80px 0; border-top: 1px solid var(--line); }
-.pl-como-grid { display: grid; grid-template-columns: 380px 1fr; gap: 80px; align-items: start; margin-top: 52px; }
-.pl-steps { display: flex; flex-direction: column; }
-.pl-step { display: flex; gap: 20px; padding: 24px 0; border-bottom: 1px solid var(--line); transition: border-color .2s; cursor: default; }
-.pl-step:first-child { border-top: 1px solid var(--line); }
-.pl-step:hover { border-color: var(--line-2); }
-.pl-step-n { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 22px; color: var(--t3); flex-shrink: 0; width: 28px; text-align: right; padding-top: 2px; }
-.pl-step h3 { font-size: 13.5px; font-weight: 500; margin-bottom: 6px; }
-.pl-step p { font-size: 12.5px; line-height: 1.65; color: var(--t2); }
-.pl-step-time { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 10.5px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--green-hi); }
-.pl-step-vis { position: sticky; top: 72px; background: var(--bg-2); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
-.pl-sv-top { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--t2); }
-.pl-sv-body { padding: 16px 18px; }
-.pl-sv-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r8); background: var(--bg-3); margin-bottom: 8px; border: 1px solid var(--line); }
-.pl-sv-av { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; font-size: 11px; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-.pl-sv-name { font-size: 12.5px; font-weight: 500; }
-.pl-sv-sub { font-size: 10.5px; color: var(--t3); margin-top: 1px; }
-.pl-sv-code { margin-top: 12px; padding: 12px 14px; border-radius: var(--r8); background: rgba(0,0,0,.35); border: 1px solid var(--line); font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #86efac; line-height: 1.65; }
-
-/* ── FEATURES ── */
-#pl-feat { padding: 80px 0; border-top: 1px solid var(--line); }
-.pl-feat-intro { margin-bottom: 52px; }
-.pl-bento { display: grid; grid-template-columns: repeat(3,1fr); grid-template-rows: auto auto; gap: 1px; background: var(--line); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
-.pl-bc { background: var(--bg-2); padding: 28px 26px; transition: background .15s; }
-.pl-bc:hover { background: var(--bg-3); }
-.pl-bc.span2 { grid-column: 1/3; }
-.pl-bc.tall { grid-row: 1/3; grid-column: 3; display: flex; flex-direction: column; }
-.pl-bc-label { font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; display: block; }
-.pl-bc h3 { font-size: 14.5px; font-weight: 500; letter-spacing: -.01em; margin-bottom: 8px; }
-.pl-bc p { font-size: 12.5px; line-height: 1.65; color: var(--t2); }
-.pl-bc-tag { display: inline-flex; margin-top: 14px; padding: 3px 10px; border-radius: var(--r-pill); font-size: 9.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: rgba(245,158,11,.07); color: var(--amber-hi); border: 1px solid rgba(245,158,11,.12); }
-.pl-mini-bars { margin-top: auto; padding-top: 24px; display: flex; flex-direction: column; gap: 9px; }
-.pl-mbar-row { display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
-.pl-mbar-label { color: var(--t3); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pl-mbar-wrap { flex: 2; height: 3px; background: var(--line-2); border-radius: 2px; overflow: hidden; }
-.pl-mbar-fill { height: 100%; border-radius: 2px; background: var(--blue-hi); }
-.pl-mbar-val { font-family: 'Geist Mono', monospace; font-size: 10.5px; font-weight: 500; color: var(--t2); min-width: 24px; text-align: right; }
-
-/* ── PRICING ── */
-#pl-prices { padding: 80px 0; border-top: 1px solid var(--line); }
-.pl-price-intro { text-align: center; margin-bottom: 52px; }
-.pl-price-intro .pl-sub { margin: 14px auto 0; text-align: center; }
-.pl-price-table { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--line); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; max-width: 880px; margin: 0 auto; }
-.pl-pt { background: var(--bg-2); padding: 28px 22px; position: relative; transition: background .15s; }
-.pl-pt:hover { background: var(--bg-3); }
-.pl-pt.featured { background: linear-gradient(160deg,rgba(37,99,235,.06) 0%,var(--bg-2) 55%); }
-.pl-pt-pop { display: inline-flex; padding: 3px 9px; border-radius: var(--r-pill); margin-bottom: 14px; font-size: 9px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; background: var(--blue); color: #fff; }
-.pl-pt-tier { font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; }
-.pl-pt-price { font-family: 'Instrument Serif', serif; font-size: clamp(34px, 4vw, 44px); font-weight: 400; letter-spacing: -.04em; line-height: 1; }
-.pl-pt-price sup { font-size: 17px; vertical-align: super; margin-right: 1px; font-family: 'Geist', sans-serif; font-weight: 300; }
-.pl-pt-price sub { font-size: 13px; font-family: 'Geist', sans-serif; font-weight: 300; color: var(--t3); vertical-align: bottom; }
-.pl-pt-range { margin-top: 10px; font-size: 12px; color: var(--t2); line-height: 1.5; }
-.pl-pt-from { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--t3); line-height: 1.6; }
-.pl-pt-from strong { color: var(--t2); font-weight: 500; }
-.pl-price-anchor { max-width: 880px; margin: 20px auto 0; padding: 16px 20px; border-radius: var(--r8); background: var(--bg-2); border: 1px solid var(--line-2); font-size: 13px; color: var(--t2); line-height: 1.6; display: flex; align-items: center; gap: 14px; }
-.pl-price-anchor strong { color: var(--t1); font-weight: 500; }
-.pl-anchor-sep { flex-shrink: 0; font-size: 18px; color: var(--t3); }
-
-/* ── DEMO ── */
-#pl-demo { padding: 80px 0; border-top: 1px solid var(--line); }
-.pl-demo-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
-.pl-demo-creds { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.pl-cred { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: var(--r8); padding: 14px 16px; }
-.pl-cred-k { font-size: 9.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--t3); margin-bottom: 7px; }
-.pl-cred-v { font-family: 'Geist Mono', monospace; font-size: 14px; font-weight: 500; letter-spacing: .01em; }
-.pl-demo-action { margin-top: 20px; }
-.pl-btn-outline { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: var(--r-pill); border: 1px solid var(--line-2); font-size: 13px; font-weight: 400; color: var(--t2); transition: border-color .15s, color .15s; }
-.pl-btn-outline:hover { border-color: var(--line-3); color: var(--t1); }
-.pl-demo-screen { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: var(--r12); overflow: hidden; }
-.pl-ds-top { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 500; color: var(--t2); }
-.pl-ds-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
-.pl-ds-s { background: var(--bg-2); padding: 14px 16px; }
-.pl-ds-n { font-family: 'Instrument Serif', serif; font-size: 28px; font-weight: 400; letter-spacing: -.035em; line-height: 1; }
-.pl-ds-l { font-size: 10px; color: var(--t3); margin-top: 3px; letter-spacing: .04em; text-transform: uppercase; }
-.pl-ds-chg { font-size: 11px; color: var(--green-hi); margin-top: 2px; }
-.pl-ds-body { padding: 14px 16px; }
-.pl-ds-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.pl-ds-row:last-child { border: none; }
-.pl-ds-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.pl-ds-dot-b { background: var(--blue-hi); box-shadow: 0 0 6px var(--blue-hi); }
-.pl-ds-dot-g { background: var(--green-hi); box-shadow: 0 0 5px var(--green-hi); }
-.pl-ds-dot-a { background: var(--amber-hi); }
-.pl-ds-nm { font-size: 12px; font-weight: 500; flex: 1; }
-.pl-ds-hr { font-size: 10.5px; color: var(--t3); }
-
-/* ── FAQ ── */
-#pl-faq { padding: 80px 0; border-top: 1px solid var(--line); }
-.pl-faq-layout { display: grid; grid-template-columns: 300px 1fr; gap: 80px; align-items: start; }
-.pl-faq-left { position: sticky; top: 72px; }
-.pl-faq-items { display: flex; flex-direction: column; }
-details.pl-fq { border-bottom: 1px solid var(--line); }
-details.pl-fq:first-child { border-top: 1px solid var(--line); }
-details[open].pl-fq { border-color: var(--line-2); }
-.pl-fq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; cursor: pointer; list-style: none; font-size: 13.5px; font-weight: 400; transition: color .15s; user-select: none; }
-.pl-fq summary::-webkit-details-marker { display: none; }
-.pl-fq-arrow { width: 16px; height: 16px; flex-shrink: 0; color: var(--t3); transition: transform .2s cubic-bezier(.16,1,.3,1), color .15s; }
-details[open] .pl-fq-arrow { transform: rotate(45deg); color: var(--t2); }
-.pl-fq-a { padding: 0 0 18px; font-size: 13px; line-height: 1.7; color: var(--t2); animation: pl-fadeUp .2s cubic-bezier(.16,1,.3,1) both; }
-
-/* ── CTA FINAL ── */
-#pl-cta { padding: 96px max(24px,env(safe-area-inset-left,0px)); text-align: center; position: relative; overflow: hidden; border-top: 1px solid var(--line); }
-#pl-cta::before { content: ''; position: absolute; width: 600px; height: 400px; border-radius: 50%; background: radial-gradient(ellipse,rgba(37,99,235,.07) 0%,transparent 65%); top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; }
-#pl-cta h2 { font-size: clamp(34px, 5vw, 62px); max-width: 720px; margin: 0 auto 20px; }
-#pl-cta .pl-sub { margin: 0 auto 42px; font-size: 17px; text-align: center; max-width: 460px; }
-.pl-cta-note { margin-top: 16px; font-size: 12px; color: var(--t3); }
-.pl-cta-micro { margin-top: 28px; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
-.pl-cta-micro-item { font-size: 12px; color: var(--t3); display: flex; align-items: center; gap: 5px; }
-.pl-cta-micro-item::before { content: '✓'; color: var(--green-hi); font-size: 11px; }
-
-/* ── FOOTER ── */
-#pl-footer { padding: 28px max(24px,env(safe-area-inset-left,0px)); border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-.pl-foot-left { font-size: 12px; color: var(--t3); }
-.pl-foot-left a { transition: color .15s; }
-.pl-foot-left a:hover { color: var(--t2); }
-.pl-foot-right { font-size: 11px; color: var(--t3); display: flex; gap: 16px; flex-wrap: wrap; }
-
-/* ── WA FLOTANTE ── */
-.pl-wa-float { position: fixed; bottom: 20px; right: 20px; z-index: 300; display: flex; align-items: center; gap: 9px; padding: 11px 20px; border-radius: var(--r-pill); background: #25D366; color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 4px 24px rgba(37,211,102,.28); transition: transform .12s cubic-bezier(.16,1,.3,1), box-shadow .15s; animation: pl-fadeUp .6s 1.4s cubic-bezier(.16,1,.3,1) both; }
-.pl-wa-float:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(37,211,102,.38); }
-.pl-wa-float:active { transform: scale(.96); }
-
-/* ── SCROLL REVEAL ── */
-.pl-rv { opacity: 0; transform: translateY(16px); transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1); }
-.pl-rv.in { opacity: 1; transform: translateY(0); }
-.pl-rv-d1 { transition-delay: .05s; } .pl-rv-d2 { transition-delay: .1s; } .pl-rv-d3 { transition-delay: .15s; } .pl-rv-d4 { transition-delay: .2s; }
-
-/* ── RESPONSIVE ── */
-
-/* Tablet */
-@media (max-width: 860px) {
-  .pl-como-grid { grid-template-columns: 1fr; gap: 36px; }
-  .pl-step-vis { display: none; }
-  .pl-prob-grid { grid-template-columns: 1fr; gap: 36px; }
-  .pl-demo-layout { grid-template-columns: 1fr; gap: 36px; }
-  .pl-faq-layout { grid-template-columns: 1fr; gap: 36px; }
-  .pl-faq-left { position: static; }
-  .pl-video-layout { grid-template-columns: 1fr; gap: 32px; }
-  .pl-vwrap { max-width: 280px; }
-  .pl-bento { grid-template-columns: 1fr 1fr; }
-  .pl-bc.span2 { grid-column: 1 / -1; }
-  .pl-bc.tall { grid-column: 1 / -1; grid-row: auto; }
-  .pl-price-table { grid-template-columns: 1fr 1fr; }
+/* ── KEYFRAMES GLOBALES ── */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(22px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(44px)}
+  to{opacity:1;transform:translateY(0)}
 }
 
-/* Mobile */
-@media (max-width: 600px) {
-  /* Layout global */
-  .pl-wrap { padding-left: max(20px, env(safe-area-inset-left,0px)); padding-right: max(20px, env(safe-area-inset-right,0px)); }
+/* ── SCROLL REVEAL ── */
+.rv{opacity:0;transform:translateY(18px);transition:opacity .65s cubic-bezier(.16,1,.3,1),transform .65s cubic-bezier(.16,1,.3,1)}
+.rv.in{opacity:1;transform:translateY(0)}
+.d1{transition-delay:.06s}.d2{transition-delay:.12s}.d3{transition-delay:.18s}.d4{transition-delay:.24s}
 
-  /* Hero */
-  .pl-hero-body { padding-block: 40px 0; }
-  #pl-root h1 { font-size: clamp(36px, 9.5vw, 46px); letter-spacing: -.025em; }
-  .pl-hero-sub { font-size: 15px; margin-top: 16px; }
-  .pl-hero-stats { max-width: 100%; margin-top: 24px; }
-  .pl-hstat { padding: 14px 16px; }
-  .pl-hstat-n { font-size: 24px; }
-  .pl-hstat-l { font-size: 9px; }
-  .pl-hero-actions { flex-direction: column; align-items: stretch; gap: 10px; margin-top: 24px; }
-  .pl-btn-primary, .pl-btn-secondary { width: 100%; justify-content: center; padding: 15px 24px; }
-  .pl-hero-screen { margin-top: 36px; }
+/* ── SECCIONES: TOKEN COMPARTIDO ── */
+#pl section{position:relative;z-index:1}
+.sec-label{
+  display:block;margin-bottom:14px;
+  font-size:10.5px;font-weight:700;letter-spacing:.10em;
+  text-transform:uppercase;color:var(--t3);
+}
+.sec-h2{
+  font-family:'Instrument Serif',Georgia,serif;
+  font-size:clamp(32px,4.5vw,58px);
+  font-weight:400;line-height:1.05;letter-spacing:-.03em;
+  text-wrap:balance;
+}
+.sec-sub{
+  margin-top:16px;
+  font-size:clamp(14px,1.4vw,16px);line-height:1.72;
+  color:var(--t2);max-width:460px;text-wrap:balance;
+}
+.sec-pad{padding:100px 0}
+.sec-border{border-top:1px solid var(--ln)}
 
-  /* Secciones */
-  #pl-social { padding: 48px 0; }
-  #pl-prob, #pl-video, #pl-como, #pl-feat, #pl-prices, #pl-demo, #pl-faq { padding-top: 56px; padding-bottom: 56px; }
-  #pl-cta { padding-top: 64px; padding-bottom: 64px; }
+/* ── NÚMEROS REALES ── */
+#pl-numbers{
+  padding:80px 0;
+  border-top:1px solid var(--ln);
+  border-bottom:1px solid var(--ln);
+  background:linear-gradient(180deg,rgba(37,99,235,.025) 0%,transparent 100%);
+}
+.numbers-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1px;
+  background:var(--ln);
+  border:1px solid var(--ln2);
+  border-radius:var(--r16);
+  overflow:hidden;
+}
+.number-card{
+  background:var(--bg1);
+  padding:40px 36px;
+  display:flex;flex-direction:column;gap:6px;
+  transition:background .2s;
+  position:relative;
+  overflow:hidden;
+}
+.number-card::before{
+  content:'';position:absolute;
+  width:120px;height:120px;border-radius:50%;
+  top:-30px;right:-30px;pointer-events:none;
+  opacity:.6;
+  background:radial-gradient(ellipse,rgba(37,99,235,.12) 0%,transparent 70%);
+}
+.number-card:hover{background:var(--bg2)}
+.number-big{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(44px,5vw,66px);font-weight:400;
+  letter-spacing:-.04em;line-height:1;
+}
+.number-label{
+  font-size:11px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--t3);margin-top:4px;
+}
+.number-delta{
+  font-size:12px;color:var(--grh);font-weight:500;margin-top:2px;
+}
 
-  /* Grids a 1 col */
-  .pl-bento { grid-template-columns: 1fr; }
-  .pl-bc.span2, .pl-bc.tall { grid-column: 1; grid-row: auto; }
-  .pl-panel-shell { grid-template-columns: 1fr; }
-  .pl-p-sidebar { display: none; }
+/* ── PROBLEMA ── */
+#pl-prob{
+  padding:100px 0;
+  border-top:1px solid var(--ln);
+}
+.prob-layout{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:100px;align-items:start;
+}
+.pain-list{margin-top:48px;display:flex;flex-direction:column}
+.pain-item{
+  display:grid;grid-template-columns:32px 1fr;gap:16px;
+  padding:22px 0;border-bottom:1px solid var(--ln);
+  transition:border-color .2s;
+}
+.pain-item:first-child{border-top:1px solid var(--ln)}
+.pain-item:hover{border-color:var(--ln2)}
+.pain-num{
+  font-family:'Instrument Serif',serif;font-style:italic;
+  font-size:15px;color:var(--t3);
+  text-align:right;padding-top:2px;
+}
+.pain-item h3{font-size:14px;font-weight:500;margin-bottom:5px;line-height:1.3}
+.pain-item p{font-size:13px;line-height:1.65;color:var(--t2)}
+/* Comparador */
+.compare-box{
+  background:var(--bg1);border:1px solid var(--ln2);
+  border-radius:var(--r16);overflow:hidden;
+  position:sticky;top:72px;
+}
+.compare-tabs{display:flex;border-bottom:1px solid var(--ln)}
+.ctab{
+  flex:1;padding:13px 16px;text-align:center;
+  font-size:12.5px;font-weight:500;
+  color:var(--t3);cursor:pointer;
+  border-right:1px solid var(--ln);
+  transition:color .15s,background .15s;
+}
+.ctab:last-child{border-right:none}
+.ctab.on{color:var(--t1);background:rgba(255,255,255,.025)}
+.cpane{padding:22px;display:none}
+.cpane.on{display:block}
+.xrow{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.036);font-size:11.5px}
+.xcell{flex:1;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xhead .xcell{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3)}
+.xwarn{
+  margin-top:12px;padding:11px 13px;border-radius:var(--r8);
+  background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.12);
+  font-size:11.5px;color:#fca5a5;line-height:1.5;
+  display:flex;gap:9px;align-items:flex-start;
+}
+.notif{
+  display:flex;gap:12px;padding:12px 14px;border-radius:12px;
+  background:var(--bg2);border:1px solid var(--ln2);
+  margin-bottom:9px;
+  animation:fadeUp .35s cubic-bezier(.16,1,.3,1) both;
+}
+.notif:nth-child(2){animation-delay:.08s}
+.notif-ic{
+  width:34px;height:34px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.ni-blue{background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.18)}
+.ni-green{background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.15)}
+.notif-title{font-size:12.5px;font-weight:500;margin-bottom:3px}
+.notif-body{font-size:11.5px;color:var(--t2);line-height:1.5}
+.notif-t{font-size:10px;color:var(--t3);margin-top:3px}
+.notif-wa{
+  margin-top:9px;display:inline-flex;align-items:center;gap:5px;
+  padding:5px 12px;border-radius:var(--rpill);
+  background:rgba(37,211,102,.07);border:1px solid rgba(37,211,102,.14);
+  font-size:11px;font-weight:500;color:#4ade80;
+}
 
-  /* Social proof stats */
-  .pl-social-row { flex-direction: column; gap: 24px; }
-  .pl-stats-row { flex-wrap: wrap; }
-  .pl-stat-tile { flex: 1 1 calc(50% - 1px); min-width: 0; }
+/* ── VIDEO ── */
+#pl-video{padding:100px 0;border-top:1px solid var(--ln)}
+.video-layout{
+  display:grid;grid-template-columns:1fr 380px;
+  gap:80px;align-items:center;
+}
+.video-left .sec-h2{font-size:clamp(36px,5vw,64px)}
+.vwrap{
+  position:relative;
+  border-radius:var(--r16);overflow:hidden;
+  border:1px solid var(--ln2);background:var(--bg2);
+  aspect-ratio:9/16;
+  width:100%;max-width:380px;
+  margin:0 auto;cursor:pointer;
+  box-shadow:0 0 80px rgba(37,99,235,.08),0 24px 60px rgba(0,0,0,.4);
+}
+.vwrap video{width:100%;height:100%;object-fit:cover;display:block}
+.v-overlay{
+  position:absolute;inset:0;
+  background:rgba(7,8,10,.42);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;
+  transition:opacity .25s cubic-bezier(.16,1,.3,1);
+}
+.v-play{
+  width:64px;height:64px;border-radius:50%;
+  background:var(--t1);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 48px rgba(0,0,0,.55);
+  transition:transform .15s cubic-bezier(.16,1,.3,1);
+}
+.v-play:hover{transform:scale(1.08)}
+.v-play:active{transform:scale(.93)}
+.v-label{font-size:12px;color:rgba(255,255,255,.65);font-weight:500}
+.vwrap.playing .v-overlay{opacity:0;pointer-events:none}
 
-  /* Pricing */
-  .pl-price-table { grid-template-columns: 1fr; max-width: 320px; }
-  .pl-pt { padding: 20px 18px; }
-  .pl-pt-price { font-size: 34px; }
-  .pl-price-anchor { flex-direction: column; gap: 8px; }
-  .pl-anchor-sep { display: none; }
+/* ── CÓMO FUNCIONA ── */
+#pl-como{padding:100px 0;border-top:1px solid var(--ln)}
+.como-layout{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:80px;align-items:start;margin-top:60px;
+}
+.steps-col{display:flex;flex-direction:column}
+.step{
+  display:grid;grid-template-columns:28px 1fr;
+  gap:18px;padding:24px 0;
+  border-bottom:1px solid var(--ln);
+  transition:border-color .2s;
+}
+.step:first-child{border-top:1px solid var(--ln)}
+.step:hover{border-color:var(--ln2)}
+.step-n{
+  font-family:'Instrument Serif',serif;font-style:italic;
+  font-size:22px;color:var(--t3);
+  text-align:right;padding-top:2px;flex-shrink:0;
+}
+.step h3{font-size:14px;font-weight:500;margin-bottom:6px;line-height:1.3}
+.step p{font-size:13px;line-height:1.65;color:var(--t2)}
+.step-time{
+  display:inline-flex;align-items:center;gap:5px;
+  margin-top:10px;font-size:10px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--grh);
+}
+/* Panel maestro mockup */
+.master-panel{
+  position:sticky;top:72px;
+  background:var(--bg1);border:1px solid var(--ln2);
+  border-radius:var(--r16);overflow:hidden;
+}
+.mp-top{
+  padding:14px 18px;border-bottom:1px solid var(--ln);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;font-weight:500;color:var(--t2);
+}
+.mp-body{padding:16px 18px}
+.mp-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:var(--r8);
+  background:var(--bg2);margin-bottom:7px;border:1px solid var(--ln);
+}
+.mp-av{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  font-size:10.5px;color:#fff;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.mp-name{font-size:12.5px;font-weight:500}
+.mp-sub{font-size:10px;color:var(--t3);margin-top:1px}
+.mp-code{
+  margin-top:12px;padding:12px 14px;border-radius:var(--r8);
+  background:rgba(0,0,0,.35);border:1px solid var(--ln);
+  font-family:'Geist Mono',monospace;font-size:10px;
+  color:#86efac;line-height:1.65;
+}
 
-  /* Video */
-  .pl-video-layout { gap: 28px; }
-  .pl-vwrap { max-width: 240px; }
+/* ── FEATURES BENTO ── */
+#pl-feat{padding:100px 0;border-top:1px solid var(--ln)}
+.feat-head{margin-bottom:60px}
+.bento{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  grid-template-rows:auto auto;
+  gap:1px;background:var(--ln);
+  border:1px solid var(--ln2);border-radius:var(--r16);overflow:hidden;
+}
+/* Layout bento: top row span distinto */
+.bc{background:var(--bg1);padding:30px 28px;transition:background .2s;position:relative;overflow:hidden}
+.bc:hover{background:var(--bg2)}
+/* Span definidos */
+.bc1{grid-column:1/8}   /* Marca blanca — ancho */
+.bc2{grid-column:8/13}  /* Notificaciones */
+.bc3{grid-column:1/5}   /* Pipeline */
+.bc4{grid-column:5/9}   /* PWA */
+.bc5{grid-column:9/13;grid-row:2/4}  /* Panel maestro — alto */
+.bc6{grid-column:1/5;grid-row:3}  /* WhatsApp API */
+.bc7{grid-column:5/9;grid-row:3}  /* Soporte */
+.bc-label{
+  font-size:9px;font-weight:700;letter-spacing:.10em;
+  text-transform:uppercase;color:var(--t3);margin-bottom:16px;display:block;
+}
+.bc h3{font-size:15px;font-weight:500;letter-spacing:-.01em;margin-bottom:9px}
+.bc p{font-size:13px;line-height:1.65;color:var(--t2)}
+.bc-tag{
+  display:inline-flex;margin-top:16px;
+  padding:4px 11px;border-radius:var(--rpill);
+  font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  background:rgba(245,158,11,.07);color:var(--ambh);
+  border:1px solid rgba(245,158,11,.12);
+}
+/* Mini bars dentro de bc5 */
+.mini-bars{margin-top:auto;padding-top:28px;display:flex;flex-direction:column;gap:9px}
+.mbar{display:flex;align-items:center;gap:10px;font-size:11.5px}
+.mbar-label{color:var(--t3);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mbar-wrap{flex:2;height:3px;background:var(--ln2);border-radius:2px;overflow:hidden}
+.mbar-fill{height:100%;border-radius:2px;background:var(--blh)}
+.mbar-val{font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;color:var(--t2);min-width:22px;text-align:right}
+/* bc5 es columna flexbox para mini-bars abajo */
+.bc5{display:flex;flex-direction:column}
 
-  /* Tipografía secciones */
-  #pl-root h2 { font-size: clamp(26px, 7.5vw, 36px); }
-  .pl-sub { font-size: 14px; }
+/* ── PRICING ── */
+#pl-prices{padding:100px 0;border-top:1px solid var(--ln)}
+.price-head{text-align:center;margin-bottom:60px}
+.price-head .sec-sub{margin:16px auto 0;text-align:center}
+.price-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:1px;background:var(--ln);
+  border:1px solid var(--ln2);border-radius:var(--r16);
+  overflow:hidden;max-width:900px;margin:0 auto;
+}
+.pt{background:var(--bg1);padding:32px 24px;position:relative;transition:background .2s}
+.pt:hover{background:var(--bg2)}
+.pt.feat{background:linear-gradient(160deg,rgba(37,99,235,.07) 0%,var(--bg1) 55%)}
+.pt-pop{
+  display:inline-flex;padding:4px 10px;border-radius:var(--rpill);
+  margin-bottom:16px;font-size:9.5px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;background:var(--bl);color:#fff;
+}
+.pt-tier{
+  font-size:10.5px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--t3);margin-bottom:16px;
+}
+.pt-price{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(38px,4.2vw,50px);font-weight:400;
+  letter-spacing:-.04em;line-height:1;
+}
+.pt-price sup{font-size:18px;vertical-align:super;margin-right:1px;font-family:'Geist',sans-serif;font-weight:300}
+.pt-price sub{font-size:13px;font-family:'Geist',sans-serif;font-weight:300;color:var(--t3);vertical-align:bottom}
+.pt-range{margin-top:11px;font-size:12.5px;color:var(--t2);line-height:1.5}
+.pt-from{
+  margin-top:16px;padding-top:16px;border-top:1px solid var(--ln);
+  font-size:11.5px;color:var(--t3);line-height:1.6;
+}
+.pt-from strong{color:var(--t2);font-weight:500}
+.price-anchor{
+  max-width:900px;margin:20px auto 0;padding:18px 22px;
+  border-radius:var(--r12);background:var(--bg1);border:1px solid var(--ln2);
+  font-size:13px;color:var(--t2);line-height:1.65;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.price-anchor strong{color:var(--t1);font-weight:500}
+.anchor-sep{flex-shrink:0;font-size:18px;color:var(--t3)}
 
-  /* Demo credenciales */
-  .pl-demo-creds { grid-template-columns: 1fr; }
+/* ── DEMO ── */
+#pl-demo{padding:100px 0;border-top:1px solid var(--ln)}
+.demo-layout{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start}
+.demo-creds{
+  margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:12px;
+}
+.cred{
+  background:var(--bg1);border:1px solid var(--ln2);
+  border-radius:var(--r12);padding:16px 18px;
+}
+.cred-k{
+  font-size:9.5px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--t3);margin-bottom:8px;
+}
+.cred-v{font-family:'Geist Mono',monospace;font-size:15px;font-weight:500;letter-spacing:.01em}
+.demo-action{margin-top:22px}
+.btn-outline{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:12px 24px;border-radius:var(--rpill);
+  border:1px solid var(--ln2);font-size:13px;font-weight:400;color:var(--t2);
+  transition:border-color .15s,color .15s;
+}
+.btn-outline:hover{border-color:var(--ln3);color:var(--t1)}
+/* Demo screen mockup */
+.demo-screen{
+  background:var(--bg1);border:1px solid var(--ln2);
+  border-radius:var(--r16);overflow:hidden;
+}
+.ds-top{
+  padding:14px 18px;border-bottom:1px solid var(--ln);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;font-weight:500;color:var(--t2);
+}
+.ds-stats{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:1px;background:var(--ln);border-bottom:1px solid var(--ln);
+}
+.ds-s{background:var(--bg1);padding:16px}
+.ds-n{
+  font-family:'Instrument Serif',serif;
+  font-size:30px;font-weight:400;letter-spacing:-.035em;line-height:1;
+}
+.ds-l{font-size:9.5px;color:var(--t3);margin-top:3px;letter-spacing:.05em;text-transform:uppercase}
+.ds-chg{font-size:11px;color:var(--grh);margin-top:2px}
+.ds-body{padding:14px 16px}
+.ds-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--ln);
+}
+.ds-row:last-child{border:none}
+.ds-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-b{background:var(--blh);box-shadow:0 0 6px var(--blh)}
+.dot-g{background:var(--grh);box-shadow:0 0 5px var(--grh)}
+.dot-a{background:var(--ambh)}
+.ds-nm{font-size:12px;font-weight:500;flex:1}
+.ds-hr{font-size:10.5px;color:var(--t3)}
+
+/* ── FAQ ── */
+#pl-faq{padding:100px 0;border-top:1px solid var(--ln)}
+.faq-layout{display:grid;grid-template-columns:320px 1fr;gap:100px;align-items:start}
+.faq-left{position:sticky;top:72px}
+.faq-items{display:flex;flex-direction:column}
+details.fq{border-bottom:1px solid var(--ln)}
+details.fq:first-child{border-top:1px solid var(--ln)}
+details[open].fq{border-color:var(--ln2)}
+.fq summary{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:20px 0;cursor:pointer;list-style:none;
+  font-size:14px;font-weight:400;line-height:1.4;
+  transition:color .15s;user-select:none;
+}
+.fq summary::-webkit-details-marker{display:none}
+.fq-arrow{
+  width:16px;height:16px;flex-shrink:0;color:var(--t3);
+  transition:transform .2s cubic-bezier(.16,1,.3,1),color .15s;
+}
+details[open] .fq-arrow{transform:rotate(45deg);color:var(--t2)}
+.fq-a{
+  padding:0 0 20px;font-size:13.5px;line-height:1.72;color:var(--t2);
+  animation:fadeUp .2s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ── CTA FINAL ── */
+#pl-cta{
+  padding:120px max(32px,env(safe-area-inset-left,0px));
+  text-align:center;position:relative;overflow:hidden;
+  border-top:1px solid var(--ln);
+}
+#pl-cta::before{
+  content:'';position:absolute;
+  width:800px;height:500px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(37,99,235,.06) 0%,transparent 65%);
+  top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;
+}
+.cta-h2{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(40px,6vw,78px);
+  font-weight:400;line-height:.98;letter-spacing:-.035em;
+  max-width:800px;margin:0 auto 24px;
+  text-wrap:balance;
+}
+.cta-h2 em{font-style:italic;color:var(--t2)}
+#pl-cta .sec-sub{margin:0 auto 48px;font-size:17px;text-align:center;max-width:460px}
+.cta-micro{
+  margin-top:32px;display:flex;align-items:center;
+  justify-content:center;gap:24px;flex-wrap:wrap;
+}
+.cta-micro-item{
+  font-size:12.5px;color:var(--t3);
+  display:flex;align-items:center;gap:5px;
+}
+.cta-micro-item::before{content:'✓';color:var(--grh);font-size:11px}
+.cta-note{margin-top:18px;font-size:12px;color:var(--t3)}
+
+/* ── FOOTER ── */
+#pl-footer{
+  padding:28px max(32px,env(safe-area-inset-left,0px));
+  border-top:1px solid var(--ln);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+.foot-l{font-size:12px;color:var(--t3)}
+.foot-l a{transition:color .15s}.foot-l a:hover{color:var(--t2)}
+.foot-r{font-size:11px;color:var(--t3);display:flex;gap:16px;flex-wrap:wrap}
+
+/* ── FLOAT WA ── */
+.wa-float{
+  position:fixed;bottom:22px;right:22px;z-index:400;
+  display:flex;align-items:center;gap:9px;
+  padding:12px 22px;border-radius:var(--rpill);
+  background:#25D366;color:#fff;
+  font-size:13px;font-weight:600;
+  box-shadow:0 4px 28px rgba(37,211,102,.3);
+  transition:transform .12s cubic-bezier(.16,1,.3,1),box-shadow .15s;
+  animation:fadeUp .6s 1.5s cubic-bezier(.16,1,.3,1) both;
+}
+.wa-float:hover{transform:translateY(-2px);box-shadow:0 8px 36px rgba(37,211,102,.4)}
+.wa-float:active{transform:scale(.95)}
+
+/* ════════════════════════════════════════
+   RESPONSIVE — MOBILE FIRST
+   ════════════════════════════════════════ */
+
+/* ── TABLET ≤ 900px ── */
+@media(max-width:900px){
+  .w{
+    padding-left:max(24px,env(safe-area-inset-left,0px));
+    padding-right:max(24px,env(safe-area-inset-right,0px));
+  }
+  /* Hero: 1 columna */
+  .hero-wrap{
+    grid-template-columns:1fr;
+    min-height:auto;
+  }
+  .hero-left{
+    padding-top:52px;padding-bottom:40px;
+    padding-right:0;
+  }
+  .hero-right{
+    padding-top:0;
+    align-items:center;
+    max-width:480px;
+    margin:0 auto;
+    width:100%;
+  }
+  .browser-chrome{max-width:100%}
+  /* Layouts 2-col a 1-col */
+  .prob-layout{grid-template-columns:1fr;gap:52px}
+  .compare-box{position:static}
+  .video-layout{grid-template-columns:1fr;gap:40px}
+  .video-left .sec-h2{max-width:100%}
+  .vwrap{max-width:280px}
+  .como-layout{grid-template-columns:1fr;gap:40px}
+  .master-panel{position:static;display:none}
+  .demo-layout{grid-template-columns:1fr;gap:40px}
+  .faq-layout{grid-template-columns:1fr;gap:40px}
+  .faq-left{position:static}
+  /* Bento a 2-col */
+  .bento{grid-template-columns:1fr 1fr}
+  .bc1,.bc2,.bc3,.bc4,.bc5,.bc6,.bc7{
+    grid-column:auto;grid-row:auto;
+  }
+  .bc1{grid-column:1/-1}
+  /* Pricing 2-col */
+  .price-grid{grid-template-columns:1fr 1fr}
+  /* Numbers 3 en fila */
+  .numbers-grid{grid-template-columns:repeat(3,1fr)}
+  /* Sections padding */
+  .sec-pad,.sec-border{padding-top:72px;padding-bottom:72px}
+  #pl-cta{padding-top:88px;padding-bottom:88px}
+}
+
+/* ── MOBILE ≤ 600px ── */
+@media(max-width:600px){
+  .w{
+    padding-left:max(20px,env(safe-area-inset-left,0px));
+    padding-right:max(20px,env(safe-area-inset-right,0px));
+  }
+  /* NAV */
+  .nav-links .nav-link{display:none}
+
+  /* HERO */
+  .hero-left{padding-top:40px;padding-bottom:32px}
+  .hero-h1{font-size:clamp(44px,11vw,58px);letter-spacing:-.03em}
+  .hero-sub{font-size:15px;margin-top:18px}
+  .hero-stats{gap:16px;margin-top:28px}
+  .hstat-n{font-size:clamp(26px,8vw,34px)}
+  .hstat-l{font-size:9.5px}
+  .hero-actions{flex-direction:column;align-items:stretch;gap:11px;margin-top:28px}
+  .btn-primary,.btn-ghost{width:100%;justify-content:center;padding:16px 24px}
+  .hero-agencies{margin-top:22px}
+  .hero-right{max-width:360px}
+  .vwrap{max-width:220px}
+
+  /* NUMBERS */
+  .numbers-grid{grid-template-columns:1fr}
+  .number-card{padding:28px 24px}
+  .number-big{font-size:clamp(44px,13vw,60px)}
+
+  /* SECTIONS */
+  #pl-numbers{padding:60px 0}
+  #pl-prob,#pl-video,#pl-como,#pl-feat,#pl-prices,#pl-demo,#pl-faq{
+    padding-top:72px;padding-bottom:72px;
+  }
+  #pl-cta{padding:80px max(20px,env(safe-area-inset-left,0px))}
+
+  /* H2 */
+  .sec-h2{font-size:clamp(28px,8.5vw,40px)}
+  .sec-sub{font-size:14px}
+
+  /* BENTO: 1-col */
+  .bento{grid-template-columns:1fr}
+  .bc1,.bc2,.bc3,.bc4,.bc5,.bc6,.bc7{grid-column:1}
+
+  /* PANEL shell: ocultar sidebar en mobile */
+  .panel-shell{grid-template-columns:1fr}
+  .panel-side{display:none}
+
+  /* HERO BROWSER: ajuste */
+  .browser-chrome{border-radius:12px 12px 0 0}
+
+  /* PRICING: 1-col */
+  .price-grid{grid-template-columns:1fr;max-width:340px}
+  .price-anchor{flex-direction:column;gap:8px}
+  .anchor-sep{display:none}
+
+  /* DEMO */
+  .demo-creds{grid-template-columns:1fr}
+  .ds-stats{grid-template-columns:1fr 1fr}
+  .ds-s:last-child{grid-column:1/-1}
 
   /* FAQ */
-  .pl-fq summary { font-size: 13px; padding: 16px 0; }
+  .fq summary{font-size:13.5px;padding:17px 0}
+
+  /* CTA */
+  .cta-h2{font-size:clamp(36px,10.5vw,52px)}
+  #pl-cta .sec-sub{font-size:15px}
+  .cta-micro{gap:16px}
+
+  /* FLOAT */
+  .wa-float{bottom:16px;right:16px;padding:10px 18px;font-size:12px}
+}
+
+/* ── ULTRA NARROW ≤ 380px ── */
+@media(max-width:380px){
+  .hero-h1{font-size:clamp(38px,11.5vw,48px)}
+  .w{
+    padding-left:max(16px,env(safe-area-inset-left,0px));
+    padding-right:max(16px,env(safe-area-inset-right,0px));
+  }
 }
 `;
 
-// SVG WA inline
-const WaSvg = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+// ── SVG WhatsApp ──
+const WaIcon = ({size=12}:{size?:number}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.555 4.122 1.528 5.858L.057 23.986l6.294-1.648A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.213-3.733.978 1.001-3.64-.234-.374A9.818 9.818 0 0112 2.182c5.426 0 9.818 4.392 9.818 9.818 0 5.427-4.392 9.818-9.818 9.818z"/>
   </svg>
 );
 
+// ── LEADS DEMO DATA ──
+const DEMO_LEADS = [
+  {n:'María González', t:'ahora',      c:'Promo Verano',   h:'09:41', b:'b-new', bl:'Nuevo'},
+  {n:'Carlos Mendoza', t:'hace 4 min', c:'Remarketing',    h:'09:37', b:'b-hot', bl:'Interesado'},
+  {n:'Ana Pérez',      t:'hace 19 min',c:'Video Ads',      h:'09:22', b:'b-won', bl:'Vendido'},
+  {n:'Luis Ramírez',   t:'hace 32 min',c:'Promo Verano',   h:'09:09', b:'b-trk', bl:'Seguimiento'},
+];
+
+// ── TICKER ITEMS ──
+const TICKER_ITEMS = [
+  'Restaurante El Fogón · ahora',
+  'Clínica DentalPro · 1 min',
+  'Gym PowerFit · 2 min',
+  'Academia de Inglés · 3 min',
+  'Inmobiliaria Sur · 5 min',
+  'Autoservicio Mérida · 7 min',
+  'Estética Canina · 9 min',
+];
+
 export default function PanelLeadsContent() {
   return (
-    <div id="pl-root">
+    <div id="pl">
       <style dangerouslySetInnerHTML={{ __html: css }} />
 
-      {/* NAV */}
+      {/* ═══ NAV ═══ */}
       <nav id="pl-nav">
-        <div className="pl-wrap pl-nav-inner">
-          <a href="/" className="pl-nav-brand">
-            <span className="pl-nav-dot" />
-            <span className="pl-nav-name">Agentia</span>
+        <div className="w nav-in">
+          <a href="/" className="nav-logo">
+            <span className="nav-dot" />
+            <span className="nav-name">Agentia</span>
           </a>
-          <div className="pl-nav-actions">
-            <a href="#pl-demo" className="pl-nav-link">Demo</a>
-            <a href="#pl-prices" className="pl-nav-link">Precios</a>
-            <a href="https://wa.me/529844927769?text=Quiero%20demo%20del%20Panel%20de%20Leads" className="pl-nav-cta" target="_blank" rel="noopener noreferrer">
+          <div className="nav-links">
+            <a href="#pl-numbers" className="nav-link">Resultados</a>
+            <a href="#pl-prices"  className="nav-link">Precios</a>
+            <a href="#pl-demo"    className="nav-link">Demo</a>
+            <a
+              href="https://wa.me/529844927769?text=Quiero%20demo%20del%20Panel%20de%20Leads"
+              className="nav-cta"
+              target="_blank" rel="noopener noreferrer"
+            >
               Agendar demo
             </a>
           </div>
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* ═══ HERO ═══ */}
       <section id="pl-hero">
-        <div className="pl-hero-body pl-wrap">
-          <div className="pl-proof-badge">
-            <span className="pl-proof-eyebrow">Usado por agencias en México</span>
-            <div className="pl-proof-logos">
-              <span className="pl-proof-logo-pill">Puntillo Agency</span>
-              <span className="pl-proof-logo-pill">Nexo Digital</span>
-              <span className="pl-proof-logo-pill">Rojo Tráfico</span>
-              <span className="pl-proof-count">+49 agencias más</span>
+        <div className="w hero-wrap">
+
+          {/* ── Texto ── */}
+          <div className="hero-left">
+
+            <div className="hero-eyebrow">
+              <span className="hero-eyebrow-dot" />
+              <span className="hero-eyebrow-txt">Panel de leads · marca blanca para agencias</span>
             </div>
-          </div>
 
-          <h1>Tus clientes ven<br />sus leads. <em>Al instante.</em></h1>
+            <h1 className="hero-h1">
+              Tus clientes<br />
+              ven sus leads.<br />
+              <em>Al instante.</em>
+            </h1>
 
-          <p className="pl-hero-sub">
-            Panel con marca blanca para agencias de Facebook Ads. Cada lead llega al celular de tu cliente en segundos — con nombre, número y un tap para contactar.
-          </p>
+            <p className="hero-sub">
+              Panel con tu marca para agencias de Facebook Ads. Cada lead llega al celular de tu cliente en segundos — con nombre, número y un tap para contactar.
+            </p>
 
-          <div className="pl-hero-stats">
-            <div className="pl-hstat">
-              <span className="pl-hstat-n">+15k</span>
-              <span className="pl-hstat-l">Leads gestionados</span>
-            </div>
-            <div className="pl-hstat">
-              <span className="pl-hstat-n">+3,700</span>
-              <span className="pl-hstat-l">Último mes</span>
-            </div>
-            <div className="pl-hstat">
-              <span className="pl-hstat-n">24 h</span>
-              <span className="pl-hstat-l">Primer panel</span>
-            </div>
-          </div>
-
-          <div className="pl-hero-actions">
-            <a href="https://wa.me/529844927769?text=Quiero%20demo%20del%20Panel%20de%20Leads%20para%20mi%20agencia" className="pl-btn-primary" target="_blank" rel="noopener noreferrer">
-              <WaSvg /> Agendar demo
-            </a>
-            <a href="#pl-demo" className="pl-btn-secondary">Ver acceso demo →</a>
-          </div>
-        </div>
-
-        {/* Panel screenshot */}
-        <div className="pl-hero-screen pl-wrap">
-          <div className="pl-screen-chrome">
-            <div className="pl-chrome-bar">
-              <div className="pl-chrome-dots">
-                <span className="pl-cd pl-cd-r" /><span className="pl-cd pl-cd-y" /><span className="pl-cd pl-cd-g" />
+            {/* Stats */}
+            <div className="hero-stats">
+              <div>
+                <div className="hstat-n">+15k</div>
+                <div className="hstat-l">Leads gestionados</div>
               </div>
-              <span className="pl-chrome-url">agentia.software / panel · demo-agencia</span>
+              <div className="hstat-sep" />
+              <div>
+                <div className="hstat-n">+3,700</div>
+                <div className="hstat-l">Último mes</div>
+              </div>
+              <div className="hstat-sep" />
+              <div>
+                <div className="hstat-n">24 h</div>
+                <div className="hstat-l">Primer panel</div>
+              </div>
             </div>
-            <div className="pl-panel-shell">
-              <nav className="pl-p-sidebar">
-                <span className="pl-psec">Panel</span>
-                <div className="pl-pitem on"><span className="pl-pitem-dot" />Leads</div>
-                <div className="pl-pitem"><span className="pl-pitem-dot" />Clientes</div>
-                <div className="pl-pitem"><span className="pl-pitem-dot" />WhatsApp</div>
-                <span className="pl-psec">Reportes</span>
-                <div className="pl-pitem"><span className="pl-pitem-dot" />Campañas</div>
-                <div className="pl-pitem"><span className="pl-pitem-dot" />Resultados</div>
-              </nav>
-              <div className="pl-p-main">
-                <div className="pl-pmain-header">
-                  <span className="pl-pmain-title">Leads — hoy</span>
-                  <div className="pl-pmain-chips">
-                    <span className="pl-chip pl-chip-live">En vivo</span>
-                    <span className="pl-chip pl-chip-date">Nov 5, 2026</span>
-                  </div>
+
+            {/* CTAs */}
+            <div className="hero-actions">
+              <a
+                href="https://wa.me/529844927769?text=Quiero%20demo%20del%20Panel%20de%20Leads%20para%20mi%20agencia"
+                className="btn-primary"
+                target="_blank" rel="noopener noreferrer"
+              >
+                <WaIcon size={13} /> Agendar demo
+              </a>
+              <a href="#pl-demo" className="btn-ghost">Ver panel demo →</a>
+            </div>
+
+            {/* Agency trust */}
+            <div className="hero-agencies">
+              <span className="agency-pill">Puntillo Agency</span>
+              <span className="agency-pill">Nexo Digital</span>
+              <span className="agency-pill">Rojo Tráfico</span>
+              <span className="agency-more">+49 agencias más</span>
+            </div>
+          </div>
+
+          {/* ── Panel Demo Screenshot ── */}
+          <div className="hero-right">
+            <div className="browser-chrome">
+              <div className="browser-bar">
+                <div className="b-dots">
+                  <span className="b-dot b-r"/><span className="b-dot b-y"/><span className="b-dot b-g"/>
                 </div>
-                <table className="pl-ltable">
-                  <thead>
-                    <tr><th>Nombre</th><th>Campaña</th><th>Hora</th><th>Estado</th><th /></tr>
-                  </thead>
-                  <tbody id="pl-leads-body">
-                    {[
-                      { n: 'María González', t: 'ahora', c: 'Promo Verano', h: '09:41', b: 'pl-b-new', bl: 'Nuevo' },
-                      { n: 'Carlos Mendoza', t: 'hace 4 min', c: 'Remarketing', h: '09:37', b: 'pl-b-hot', bl: 'Interesado' },
-                      { n: 'Ana Pérez', t: 'hace 19 min', c: 'Video Ads', h: '09:22', b: 'pl-b-won', bl: 'Vendido' },
-                      { n: 'Luis Ramírez', t: 'hace 32 min', c: 'Promo Verano', h: '09:09', b: 'pl-b-trk', bl: 'Seguimiento' },
-                    ].map((r) => (
-                      <tr key={r.n}>
-                        <td><div className="pl-lead-name">{r.n}</div><div className="pl-lead-time">{r.t}</div></td>
-                        <td><span className="pl-lead-src">{r.c}</span></td>
-                        <td className="pl-lead-time">{r.h}</td>
-                        <td><span className={`pl-badge ${r.b}`}>{r.bl}</span></td>
-                        <td><span className="pl-wa-btn"><WaSvg /> Llamar</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <span className="b-url">agentia.software / panel · demo-agencia</span>
+              </div>
+              <div className="panel-shell">
+                <nav className="panel-side">
+                  <span className="p-sec">Panel</span>
+                  <div className="p-item on"><span className="p-item-dot"/>Leads</div>
+                  <div className="p-item"><span className="p-item-dot"/>Clientes</div>
+                  <div className="p-item"><span className="p-item-dot"/>WhatsApp</div>
+                  <span className="p-sec">Reportes</span>
+                  <div className="p-item"><span className="p-item-dot"/>Campañas</div>
+                  <div className="p-item"><span className="p-item-dot"/>Resultados</div>
+                </nav>
+                <div className="panel-main">
+                  <div className="panel-hdr">
+                    <span className="panel-title">Leads — hoy</span>
+                    <div className="panel-chips">
+                      <span className="chip chip-live">En vivo</span>
+                      <span className="chip chip-date">Nov 5, 2026</span>
+                    </div>
+                  </div>
+                  <table className="ltable">
+                    <thead>
+                      <tr><th>Nombre</th><th>Campaña</th><th>Hora</th><th>Estado</th><th/></tr>
+                    </thead>
+                    <tbody id="pl-leads-body">
+                      {DEMO_LEADS.map(r => (
+                        <tr key={r.n}>
+                          <td><div className="lead-name">{r.n}</div><div className="lead-time">{r.t}</div></td>
+                          <td><span className="lead-src">{r.c}</span></td>
+                          <td className="lead-time">{r.h}</td>
+                          <td><span className={`badge ${r.b}`}>{r.bl}</span></td>
+                          <td><span className="wa-btn"><WaIcon/> Llamar</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Ticker */}
-        <div className="pl-ticker">
-          <div className="pl-ticker-track">
-            {['Restaurante El Fogón · ahora','Clínica DentalPro · 1 min','Gym PowerFit · 2 min','Academia de Inglés · 3 min','Inmobiliaria Sur · 5 min','Autoservicio Mérida · 7 min','Estética Canina · 9 min'].flatMap((item, i) => [
-              <span key={`a${i}`} className="pl-ticker-item"><b>Lead nuevo</b> · {item}<span className="pl-ticker-dot" /></span>,
-              <span key={`b${i}`} className="pl-ticker-item"><b>Contactado</b> · {item}<span className="pl-ticker-dot" /></span>,
+        <div className="ticker">
+          <div className="ticker-track">
+            {TICKER_ITEMS.flatMap((item,i) => [
+              <span key={`a${i}`} className="ticker-item"><b>Lead nuevo</b> · {item}<span className="ticker-dot"/></span>,
+              <span key={`b${i}`} className="ticker-item"><b>Contactado</b> · {item}<span className="ticker-dot"/></span>,
             ])}
           </div>
         </div>
       </section>
 
-      {/* PRUEBA SOCIAL */}
-      <section id="pl-social">
-        <div className="pl-wrap">
-          <div className="pl-social-row">
-            <div className="pl-social-left pl-rv">
-              <span className="pl-sec-label">Producto en uso real</span>
-              <p>Estos números son los de hoy. <strong>+15,000 leads procesados</strong> por negocios reales en México — restaurantes, clínicas, gimnasios, escuelas — que usan el panel para dar seguimiento a sus prospectos de Facebook Ads sin depender de su agencia para ver qué llegó.</p>
-            </div>
-            <div className="pl-stats-row pl-rv pl-rv-d2">
-              <div className="pl-stat-tile"><div className="pl-st-n">+15k</div><div className="pl-st-l">Leads gestionados</div><div className="pl-st-delta">↑ en curso</div></div>
-              <div className="pl-stat-tile"><div className="pl-st-n">+3,700</div><div className="pl-st-l">Últimos 30 días</div><div className="pl-st-delta">↑ mes activo</div></div>
-              <div className="pl-stat-tile"><div className="pl-st-n">52</div><div className="pl-st-l">Negocios activos</div><div className="pl-st-delta">↑ este mes</div></div>
-            </div>
+      {/* ═══ NÚMEROS REALES ═══ */}
+      <section id="pl-numbers">
+        <div className="w">
+          <span className="sec-label rv">Producto en uso real</span>
+          <div className="numbers-grid" style={{marginTop:'28px'}}>
+            {[
+              {n:'+15,000', l:'Leads procesados',    d:'↑ en curso'},
+              {n:'+3,700',  l:'Últimos 30 días',     d:'↑ mes activo'},
+              {n:'52',      l:'Negocios activos hoy',d:'↑ este mes'},
+            ].map((s,i) => (
+              <div key={s.l} className={`number-card rv${i>0?` d${i}`:''}`}>
+                <div className="number-big">{s.n}</div>
+                <div className="number-label">{s.l}</div>
+                <div className="number-delta">{s.d}</div>
+              </div>
+            ))}
           </div>
+          <p className="sec-sub rv d2" style={{marginTop:'28px',maxWidth:'600px'}}>
+            Estos números son los de hoy. Restaurantes, clínicas, gimnasios y escuelas en México que usan el panel para dar seguimiento a sus prospectos de Facebook Ads — sin depender de un Excel o de su agencia para ver qué llegó.
+          </p>
         </div>
       </section>
 
-      {/* PROBLEMA */}
-      <section id="pl-prob">
-        <div className="pl-wrap">
-          <div className="pl-prob-grid">
+      {/* ═══ PROBLEMA ═══ */}
+      <section id="pl-prob" className="sec-border">
+        <div className="w">
+          <div className="prob-layout">
             <div>
-              <span className="pl-sec-label pl-rv">El problema</span>
-              <h2 className="pl-rv pl-rv-d1">Tu agencia trabaja bien.<br />Los leads llegan mal.</h2>
-              <p className="pl-sub pl-rv pl-rv-d2">El trafficker optimiza. Las campañas convierten. Y después de todo eso, el lead le llega al cliente una semana después en un Excel.</p>
-              <div className="pl-pain-items">
+              <span className="sec-label rv">El problema</span>
+              <h2 className="sec-h2 rv d1">Tu agencia trabaja bien.<br/>Los leads llegan mal.</h2>
+              <p className="sec-sub rv d2">El trafficker optimiza. Las campañas convierten. Y después de todo eso, el lead le llega al cliente una semana después en un Excel.</p>
+              <div className="pain-list" style={{marginTop:'48px'}}>
                 {[
-                  { n:'01', t:'Excel desactualizado', p:'Exportas leads a mano. El cliente pregunta cuántos llegaron ayer y tú buscas el archivo.' },
-                  { n:'02', t:'Screenshots por WhatsApp', p:'Mandas capturas del Ads Manager. El cliente no sabe qué significa CTR ni le importa.' },
-                  { n:'03', t:'Lead frío al día siguiente', p:'Llegó a las 3pm. Tu cliente lo vio el lunes. Para entonces ya compró con la competencia.' },
-                  { n:'04', t:'Automatizaciones que se rompen', p:'Zapier caído, leads perdidos. Y cuando falla, la culpa la carga la agencia.' },
-                ].map((item, i) => (
-                  <div key={item.n} className={`pl-pain pl-rv${i > 0 ? ` pl-rv-d${i}` : ''}`}>
-                    <span className="pl-pain-n">{item.n}</span>
-                    <div><h3>{item.t}</h3><p>{item.p}</p></div>
+                  {n:'01', t:'Excel desactualizado',         p:'Exportas leads a mano. El cliente pregunta cuántos llegaron ayer y tú buscas el archivo.'},
+                  {n:'02', t:'Screenshots por WhatsApp',     p:'Mandas capturas del Ads Manager. El cliente no sabe qué significa CTR ni le importa.'},
+                  {n:'03', t:'Lead frío al día siguiente',   p:'Llegó a las 3pm. Tu cliente lo vio el lunes. Para entonces ya compró con la competencia.'},
+                  {n:'04', t:'Automatizaciones que se rompen',p:'Zapier caído, leads perdidos. Y cuando falla, la culpa la carga la agencia.'},
+                ].map((item,i) => (
+                  <div key={item.n} className={`pain-item rv${i>0?` d${i}`:''}`}>
+                    <span className="pain-num">{item.n}</span>
+                    <div>
+                      <h3>{item.t}</h3>
+                      <p>{item.p}</p>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="pl-rv pl-rv-d2">
-              <div className="pl-compare">
-                <div className="pl-compare-tabs">
-                  <div className="pl-ctab on" onClick={() => {
-                    const tabs = document.querySelectorAll('.pl-ctab');
-                    const panes = document.querySelectorAll('.pl-cpane');
-                    tabs.forEach(t => t.classList.remove('on'));
-                    panes.forEach(p => p.classList.remove('on'));
-                    (tabs[0] as HTMLElement).classList.add('on');
-                    document.getElementById('pl-cp-excel')?.classList.add('on');
+            <div className="rv d2">
+              <div className="compare-box">
+                <div className="compare-tabs">
+                  <div className="ctab on" id="ctab-0" onClick={()=>{
+                    document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));
+                    document.querySelectorAll('.cpane').forEach(p=>p.classList.remove('on'));
+                    document.getElementById('ctab-0')?.classList.add('on');
+                    document.getElementById('cpane-0')?.classList.add('on');
                   }}>Sin panel</div>
-                  <div className="pl-ctab" onClick={() => {
-                    const tabs = document.querySelectorAll('.pl-ctab');
-                    const panes = document.querySelectorAll('.pl-cpane');
-                    tabs.forEach(t => t.classList.remove('on'));
-                    panes.forEach(p => p.classList.remove('on'));
-                    (tabs[1] as HTMLElement).classList.add('on');
-                    document.getElementById('pl-cp-panel')?.classList.add('on');
+                  <div className="ctab" id="ctab-1" onClick={()=>{
+                    document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));
+                    document.querySelectorAll('.cpane').forEach(p=>p.classList.remove('on'));
+                    document.getElementById('ctab-1')?.classList.add('on');
+                    document.getElementById('cpane-1')?.classList.add('on');
                   }}>Con panel</div>
                 </div>
-                <div className="pl-cpane on" id="pl-cp-excel">
-                  <div className="pl-xrow pl-xhead"><span className="pl-xcell">Nombre</span><span className="pl-xcell">Tel</span><span className="pl-xcell">Fecha</span><span className="pl-xcell">Status</span></div>
-                  {['María G.','Carlos M.','Ana P.'].map(n => (
-                    <div key={n} className="pl-xrow"><span className="pl-xcell">{n}</span><span className="pl-xcell" style={{color:'var(--t3)'}}>—</span><span className="pl-xcell" style={{color:'var(--t3)'}}>28/oct</span><span className="pl-xcell" style={{color:'var(--t3)'}}>pendiente</span></div>
+                <div className="cpane on" id="cpane-0">
+                  <div className="xrow xhead">
+                    <span className="xcell">Nombre</span><span className="xcell">Tel</span>
+                    <span className="xcell">Fecha</span><span className="xcell">Status</span>
+                  </div>
+                  {['María G.','Carlos M.','Ana P.'].map(n=>(
+                    <div key={n} className="xrow">
+                      <span className="xcell">{n}</span>
+                      <span className="xcell" style={{color:'var(--t3)'}}>—</span>
+                      <span className="xcell" style={{color:'var(--t3)'}}>28/oct</span>
+                      <span className="xcell" style={{color:'var(--t3)'}}>pendiente</span>
+                    </div>
                   ))}
-                  <div className="pl-xwarn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{flexShrink:0,marginTop:'1px'}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <div className="xwarn">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{flexShrink:0,marginTop:'1px'}}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     8 días sin contactar. El cliente no sabe que llegaron.
                   </div>
                 </div>
-                <div className="pl-cpane" id="pl-cp-panel">
-                  <div className="pl-notif">
-                    <div className="pl-notif-ic pl-notif-ic-blue">🔔</div>
+                <div className="cpane" id="cpane-1">
+                  <div className="notif">
+                    <div className="notif-ic ni-blue">🔔</div>
                     <div>
-                      <div className="pl-notif-title">Lead nuevo — María González</div>
-                      <div className="pl-notif-body">Promo Verano · +52 999 123 4567</div>
-                      <div className="pl-notif-t">hace 4 segundos</div>
-                      <div className="pl-notif-wa"><WaSvg />Llamar ahora</div>
+                      <div className="notif-title">Lead nuevo — María González</div>
+                      <div className="notif-body">Promo Verano · +52 999 123 4567</div>
+                      <div className="notif-t">hace 4 segundos</div>
+                      <div className="notif-wa"><WaIcon/>Llamar ahora</div>
                     </div>
                   </div>
-                  <div className="pl-notif">
-                    <div className="pl-notif-ic pl-notif-ic-green">✓</div>
+                  <div className="notif">
+                    <div className="notif-ic ni-green">✓</div>
                     <div>
-                      <div className="pl-notif-title">Carlos Mendoza — Contactado</div>
-                      <div className="pl-notif-body">Remarketing · respondido en 3 min</div>
-                      <div className="pl-notif-t">hace 11 minutos</div>
+                      <div className="notif-title">Carlos Mendoza — Contactado</div>
+                      <div className="notif-body">Remarketing · respondido en 3 min</div>
+                      <div className="notif-t">hace 11 minutos</div>
                     </div>
                   </div>
                 </div>
@@ -769,67 +1264,82 @@ export default function PanelLeadsContent() {
         </div>
       </section>
 
-      {/* VIDEO */}
-      <section id="pl-video">
-        <div className="pl-wrap">
-          <div className="pl-video-layout">
-            <div className="pl-video-left">
-              <span className="pl-sec-label pl-rv">En acción</span>
-              <h2 className="pl-rv pl-rv-d1">Míralo en<br />60 segundos</h2>
-              <p className="pl-sub pl-rv pl-rv-d2">El panel funcionando con un cliente real. Sin demo fabricada — el mismo que usan las 52 agencias activas hoy.</p>
+      {/* ═══ VIDEO ═══ */}
+      <section id="pl-video" className="sec-border">
+        <div className="w">
+          <div className="video-layout">
+            <div className="video-left">
+              <span className="sec-label rv">En acción</span>
+              <h2 className="sec-h2 rv d1">Míralo en<br/>60 segundos.</h2>
+              <p className="sec-sub rv d2">
+                El panel funcionando con un cliente real. Sin demo fabricada — el mismo que usan las 52 agencias activas hoy.
+              </p>
+              <div style={{marginTop:'36px'}} className="rv d3">
+                <a
+                  href="https://wa.me/529844927769?text=Quiero%20demo%20del%20Panel%20de%20Leads"
+                  className="btn-primary"
+                  target="_blank" rel="noopener noreferrer"
+                >
+                  <WaIcon size={13}/> Agendar demo
+                </a>
+              </div>
             </div>
-            <div className="pl-vwrap pl-rv pl-rv-d2" id="pl-vwrap">
+            <div className="vwrap rv d2" id="pl-vwrap">
               <video id="pl-vid" src="/anuncio-agentia-MX-subtitulado.mp4" preload="metadata" playsInline />
-              <div className="pl-voverlay" id="pl-voverlay">
-                <div className="pl-vplay-btn" id="pl-vplay">
+              <div className="v-overlay" id="pl-voverlay">
+                <div className="v-play" id="pl-vplay">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--bg)"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 </div>
-                <span className="pl-voverlay-label">Ver video — 60 seg</span>
+                <span className="v-label">Ver video — 60 seg</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CÓMO FUNCIONA */}
-      <section id="pl-como">
-        <div className="pl-wrap">
-          <span className="pl-sec-label pl-rv">Cómo funciona</span>
-          <h2 className="pl-rv pl-rv-d1">Tres pasos. Listo en 24 horas.</h2>
-          <div className="pl-como-grid">
-            <div className="pl-steps">
+      {/* ═══ CÓMO FUNCIONA ═══ */}
+      <section id="pl-como" className="sec-border">
+        <div className="w">
+          <span className="sec-label rv">Cómo funciona</span>
+          <h2 className="sec-h2 rv d1">Tres pasos.<br/>Listo en 24 horas.</h2>
+          <div className="como-layout">
+            <div className="steps-col">
               {[
-                { n:'1', t:'Conectas la campaña', p:'Enlazas el formulario de Facebook Ads. Menos de 5 minutos con la guía de Agentia.', time:'⏱ 5 min' },
-                { n:'2', t:'Tu cliente recibe su acceso', p:'Le mandas un link. Entra al panel con tu logo. No ve nada de Agentia — tú eres el proveedor.', time:'⏱ 24 h después del alta' },
-                { n:'3', t:'Leads en tiempo real', p:'Cada lead dispara una notificación push al celular. Un tap abre WhatsApp con el número del prospecto.', time:'⏱ segundos por lead' },
-              ].map((s, i) => (
-                <div key={s.n} className={`pl-step pl-rv${i > 0 ? ` pl-rv-d${i}` : ''}`}>
-                  <span className="pl-step-n">{s.n}</span>
-                  <div><h3>{s.t}</h3><p>{s.p}</p><span className="pl-step-time">{s.time}</span></div>
+                {n:'1', t:'Conectas la campaña',       p:'Enlazas el formulario de Facebook Ads. Menos de 5 minutos con la guía de Agentia.',          time:'⏱ 5 min'},
+                {n:'2', t:'Tu cliente recibe su acceso',p:'Le mandas un link. Entra al panel con tu logo. No ve nada de Agentia — tú eres el proveedor.',time:'⏱ 24 h después del alta'},
+                {n:'3', t:'Leads en tiempo real',       p:'Cada lead dispara una notificación push al celular. Un tap abre WhatsApp con el número del prospecto.',time:'⏱ segundos por lead'},
+              ].map((s,i) => (
+                <div key={s.n} className={`step rv${i>0?` d${i}`:''}`}>
+                  <span className="step-n">{s.n}</span>
+                  <div>
+                    <h3>{s.t}</h3>
+                    <p>{s.p}</p>
+                    <span className="step-time">{s.time}</span>
+                  </div>
                 </div>
               ))}
             </div>
-            <div className="pl-step-vis pl-rv pl-rv-d2">
-              <div className="pl-sv-top">
+            <div className="master-panel rv d2">
+              <div className="mp-top">
                 <span>Clientes activos — panel maestro</span>
-                <span className="pl-chip pl-chip-live">En vivo</span>
+                <span className="chip chip-live">En vivo</span>
               </div>
-              <div className="pl-sv-body">
+              <div className="mp-body">
                 {[
-                  { av:'RF', name:'Restaurante El Fogón', sub:'14 leads · activo hoy', bg:'linear-gradient(135deg,#2563eb,#60a5fa)', badge:'pl-b-new', bl:'Activo' },
-                  { av:'DP', name:'Clínica DentalPro', sub:'8 leads · activo hoy', bg:'linear-gradient(135deg,#16a34a,#4ade80)', badge:'pl-b-won', bl:'Activo' },
-                  { av:'GP', name:'Gym PowerFit', sub:'22 leads · activo hoy', bg:'linear-gradient(135deg,#d97706,#fbbf24)', badge:'pl-b-hot', bl:'Activo' },
+                  {av:'RF', name:'Restaurante El Fogón', sub:'14 leads · activo hoy', bg:'linear-gradient(135deg,#2563eb,#60a5fa)', badge:'b-new', bl:'Activo'},
+                  {av:'DP', name:'Clínica DentalPro',    sub:'8 leads · activo hoy',  bg:'linear-gradient(135deg,#16a34a,#4ade80)', badge:'b-won', bl:'Activo'},
+                  {av:'GP', name:'Gym PowerFit',         sub:'22 leads · activo hoy', bg:'linear-gradient(135deg,#d97706,#fbbf24)', badge:'b-hot', bl:'Activo'},
                 ].map(r => (
-                  <div key={r.av} className="pl-sv-row">
-                    <div className="pl-sv-av" style={{background: r.bg}}>{r.av}</div>
-                    <div><div className="pl-sv-name">{r.name}</div><div className="pl-sv-sub">{r.sub}</div></div>
-                    <span className={`pl-badge ${r.badge}`} style={{marginLeft:'auto',fontSize:'9px'}}>{r.bl}</span>
+                  <div key={r.av} className="mp-row">
+                    <div className="mp-av" style={{background:r.bg}}>{r.av}</div>
+                    <div><div className="mp-name">{r.name}</div><div className="mp-sub">{r.sub}</div></div>
+                    <span className={`badge ${r.badge}`} style={{marginLeft:'auto',fontSize:'9px'}}>{r.bl}</span>
                   </div>
                 ))}
-                <div className="pl-sv-code">
-                  → lead.nombre: &quot;María González&quot;<br />
-                  → lead.telefono: &quot;+52 999 123 4567&quot;<br />
-                  → notif.push: ✓ enviada<br />
+                <div className="mp-code">
+                  → lead.nombre: &quot;María González&quot;<br/>
+                  → lead.telefono: &quot;+52 999 123 4567&quot;<br/>
+                  → notif.push: ✓ enviada<br/>
                   → tiempo_respuesta: 3 min
                 </div>
               </div>
@@ -838,116 +1348,164 @@ export default function PanelLeadsContent() {
         </div>
       </section>
 
-      {/* FEATURES */}
-      <section id="pl-feat">
-        <div className="pl-wrap">
-          <div className="pl-feat-intro">
-            <span className="pl-sec-label pl-rv">Funciones</span>
-            <h2 className="pl-rv pl-rv-d1">Todo lo que necesita<br />tu agencia para escalar</h2>
+      {/* ═══ FEATURES BENTO ═══ */}
+      <section id="pl-feat" className="sec-border">
+        <div className="w">
+          <div className="feat-head">
+            <span className="sec-label rv">Funciones</span>
+            <h2 className="sec-h2 rv d1">Todo lo que necesita<br/>tu agencia para escalar.</h2>
           </div>
-          <div className="pl-bento pl-rv pl-rv-d2">
-            <div className="pl-bc span2"><span className="pl-bc-label">Marca blanca</span><h3>Tu marca, no la nuestra</h3><p>El panel lleva tu logo y el nombre de tu agencia. El cliente nunca ve &quot;Agentia&quot;. Tú eres el proveedor de tecnología.</p></div>
-            <div className="pl-bc"><span className="pl-bc-label">Notificaciones</span><h3>Push al celular</h3><p>Vibra en el momento exacto. Sin abrir apps, sin esperar reportes semanales.</p></div>
-            <div className="pl-bc tall">
-              <span className="pl-bc-label">Panel maestro</span>
+          <div className="bento rv d2">
+            <div className="bc bc1">
+              <span className="bc-label">Marca blanca</span>
+              <h3>Tu marca, no la nuestra</h3>
+              <p>El panel lleva tu logo y el nombre de tu agencia. El cliente nunca ve &quot;Agentia&quot;. Tú eres el proveedor de tecnología para tus clientes.</p>
+            </div>
+            <div className="bc bc2">
+              <span className="bc-label">Notificaciones</span>
+              <h3>Push al celular</h3>
+              <p>Vibra en el momento exacto que llega el lead. Sin abrir apps, sin esperar reportes semanales.</p>
+            </div>
+            <div className="bc bc3">
+              <span className="bc-label">Pipeline</span>
+              <h3>Seguimiento de ventas</h3>
+              <p>Nuevo → Seguimiento → Interesado → Vendido. El cliente actualiza el estatus y tú ves qué campañas convierten.</p>
+            </div>
+            <div className="bc bc4">
+              <span className="bc-label">PWA · Sin App Store</span>
+              <h3>Se instala desde el navegador</h3>
+              <p>Android e iPhone, 2 taps. Funciona como app nativa. Sin descargas, sin aprobaciones de tienda.</p>
+            </div>
+            <div className="bc bc5">
+              <span className="bc-label">Panel maestro</span>
               <h3>Todos tus clientes, una vista</h3>
               <p>Desde tu acceso de agencia ves qué paneles están activos, cuántos leads llegaron hoy y qué cuentas necesitan atención.</p>
-              <div className="pl-mini-bars">
-                {[{l:'El Fogón',w:'78%',v:'14'},{l:'DentalPro',w:'52%',v:'8',c:' style="background:var(--green-hi)"'},{l:'PowerFit',w:'95%',v:'22'},{l:'Inglés Pro',w:'36%',v:'6'}].map(b => (
-                  <div key={b.l} className="pl-mbar-row">
-                    <span className="pl-mbar-label">{b.l}</span>
-                    <div className="pl-mbar-wrap"><div className="pl-mbar-fill" style={{width: b.w}} /></div>
-                    <span className="pl-mbar-val">{b.v}</span>
+              <div className="mini-bars">
+                {[
+                  {l:'El Fogón',   w:'78%', v:'14'},
+                  {l:'DentalPro', w:'52%', v:'8'},
+                  {l:'PowerFit',  w:'95%', v:'22'},
+                  {l:'Inglés Pro',w:'36%', v:'6'},
+                ].map(b=>(
+                  <div key={b.l} className="mbar">
+                    <span className="mbar-label">{b.l}</span>
+                    <div className="mbar-wrap"><div className="mbar-fill" style={{width:b.w}}/></div>
+                    <span className="mbar-val">{b.v}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="pl-bc"><span className="pl-bc-label">Pipeline</span><h3>Seguimiento de ventas</h3><p>Nuevo → Seguimiento → Interesado → Vendido. El cliente actualiza el estatus y tú ves qué campañas convierten.</p></div>
-            <div className="pl-bc"><span className="pl-bc-label">PWA · Sin App Store</span><h3>Se instala desde el navegador</h3><p>Android e iPhone, 2 taps. Funciona como app nativa. Sin descargas, sin aprobaciones.</p></div>
-            <div className="pl-bc"><span className="pl-bc-label">API oficial · WhatsApp Business</span><h3>Bandeja de WhatsApp</h3><p>Integración con la API oficial de WhatsApp Business. Responde conversaciones y lanza campañas desde el mismo panel.</p><span className="pl-bc-tag">Add-on disponible</span></div>
+            <div className="bc bc6">
+              <span className="bc-label">API oficial · WhatsApp Business</span>
+              <h3>Bandeja de WhatsApp</h3>
+              <p>Integración con la API oficial de WhatsApp Business. Responde conversaciones y lanza campañas desde el mismo panel.</p>
+              <span className="bc-tag">Add-on disponible</span>
+            </div>
+            <div className="bc bc7">
+              <span className="bc-label">Soporte</span>
+              <h3>Humano, por WhatsApp</h3>
+              <p>Soporte directo con el equipo de Agentia. No hay bot — hablas con la persona que configuró tu cuenta.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* PRECIOS */}
-      <section id="pl-prices">
-        <div className="pl-wrap">
-          <div className="pl-price-intro pl-rv">
-            <span className="pl-sec-label">Precios</span>
-            <h2>Paga por paneles activos.<br />Escala sin límite.</h2>
-            <p className="pl-sub">Por panel al mes. Entre más clientes tengas, menos pagas por cada uno.</p>
+      {/* ═══ PRECIOS ═══ */}
+      <section id="pl-prices" className="sec-border">
+        <div className="w">
+          <div className="price-head rv">
+            <span className="sec-label">Precios</span>
+            <h2 className="sec-h2">Paga por paneles activos.<br/>Escala sin límite.</h2>
+            <p className="sec-sub">Por panel al mes. Entre más clientes tengas, menos pagas por cada uno.</p>
           </div>
-          <div className="pl-price-table pl-rv pl-rv-d1">
-            <div className="pl-pt">
-              <div className="pl-pt-tier">Starter</div>
-              <div className="pl-pt-price"><sup>$</sup>12<sub> usd</sub></div>
-              <div className="pl-pt-range">por panel / mes<br />mínimo 5 paneles</div>
-              <div className="pl-pt-from">Desde <strong>$60 usd / mes</strong><br />1–9 clientes</div>
+          <div className="price-grid rv d1">
+            <div className="pt">
+              <div className="pt-tier">Starter</div>
+              <div className="pt-price"><sup>$</sup>12<sub> usd</sub></div>
+              <div className="pt-range">por panel / mes<br/>mínimo 5 paneles</div>
+              <div className="pt-from">Desde <strong>$60 usd / mes</strong><br/>1–9 clientes</div>
             </div>
-            <div className="pl-pt featured">
-              <div className="pl-pt-pop">Más popular</div>
-              <div className="pl-pt-tier">Growth</div>
-              <div className="pl-pt-price"><sup>$</sup>10<sub> usd</sub></div>
-              <div className="pl-pt-range">por panel / mes</div>
-              <div className="pl-pt-from">Desde <strong>$100 usd / mes</strong><br />10–29 clientes</div>
+            <div className="pt feat">
+              <div className="pt-pop">Más popular</div>
+              <div className="pt-tier">Growth</div>
+              <div className="pt-price"><sup>$</sup>10<sub> usd</sub></div>
+              <div className="pt-range">por panel / mes</div>
+              <div className="pt-from">Desde <strong>$100 usd / mes</strong><br/>10–29 clientes</div>
             </div>
-            <div className="pl-pt">
-              <div className="pl-pt-tier">Scale</div>
-              <div className="pl-pt-price"><sup>$</sup>8<span style={{fontFamily:'Geist,sans-serif',fontSize:'.6em',fontWeight:300}}>.50</span><sub> usd</sub></div>
-              <div className="pl-pt-range">por panel / mes</div>
-              <div className="pl-pt-from">Desde <strong>$255 usd / mes</strong><br />30–55 clientes</div>
+            <div className="pt">
+              <div className="pt-tier">Scale</div>
+              <div className="pt-price"><sup>$</sup>8<span style={{fontFamily:'Geist,sans-serif',fontSize:'.55em',fontWeight:300}}>.50</span><sub> usd</sub></div>
+              <div className="pt-range">por panel / mes</div>
+              <div className="pt-from">Desde <strong>$255 usd / mes</strong><br/>30–55 clientes</div>
             </div>
-            <div className="pl-pt">
-              <div className="pl-pt-tier">Enterprise</div>
-              <div className="pl-pt-price" style={{fontFamily:'Geist,sans-serif',fontSize:'28px',fontWeight:300,letterSpacing:'-.02em'}}>Cotiza</div>
-              <div className="pl-pt-range">56 o más paneles</div>
-              <div className="pl-pt-from">Desde <strong>$400 usd / mes</strong><br />precio por volumen</div>
+            <div className="pt">
+              <div className="pt-tier">Enterprise</div>
+              <div className="pt-price" style={{fontFamily:'Geist,sans-serif',fontSize:'28px',fontWeight:300,letterSpacing:'-.02em'}}>Cotiza</div>
+              <div className="pt-range">56 o más paneles</div>
+              <div className="pt-from">Desde <strong>$400 usd / mes</strong><br/>precio por volumen</div>
             </div>
           </div>
-          <div className="pl-price-anchor pl-rv pl-rv-d2">
+          <div className="price-anchor rv d2">
             <span>¿Cuánto cuesta <strong>no tener panel</strong>?</span>
-            <span className="pl-anchor-sep">→</span>
-            <span>Zapier (~$50/mes) + tiempo de exportar Excels (~2h/semana) + leads perdidos por respuesta tardía. <strong>$10 por cliente activo al mes es menos que un café a la semana.</strong></span>
+            <span className="anchor-sep">→</span>
+            <span>Zapier (~$50/mes) + tiempo de exportar Excels (~2h/semana) + leads perdidos. <strong>$10 por cliente activo al mes es menos que un café a la semana.</strong></span>
           </div>
-          <div style={{textAlign:'center',marginTop:'28px'}} className="pl-rv pl-rv-d3">
-            <a href="https://wa.me/529844927769?text=Quiero%20cotizar%20el%20Panel%20de%20Leads" className="pl-btn-primary" style={{fontSize:'14px'}} target="_blank" rel="noopener noreferrer">Cotizar por WhatsApp</a>
-            <p style={{marginTop:'12px',fontSize:'12px',color:'var(--t3)'}}>Sin contrato anual · Sin prueba gratis · Activo en 24 horas</p>
+          <div style={{textAlign:'center',marginTop:'32px'}} className="rv d3">
+            <a
+              href="https://wa.me/529844927769?text=Quiero%20cotizar%20el%20Panel%20de%20Leads"
+              className="btn-primary"
+              style={{fontSize:'14px'}}
+              target="_blank" rel="noopener noreferrer"
+            >
+              Cotizar por WhatsApp
+            </a>
+            <p style={{marginTop:'13px',fontSize:'12px',color:'var(--t3)'}}>
+              Sin contrato anual · Sin prueba gratis · Activo en 24 horas
+            </p>
           </div>
         </div>
       </section>
 
-      {/* DEMO */}
-      <section id="pl-demo">
-        <div className="pl-wrap">
-          <div className="pl-demo-layout">
+      {/* ═══ DEMO ═══ */}
+      <section id="pl-demo" className="sec-border">
+        <div className="w">
+          <div className="demo-layout">
             <div>
-              <span className="pl-sec-label pl-rv">Demo</span>
-              <h2 className="pl-rv pl-rv-d1">Entra ahora.<br />Sin registrarte.</h2>
-              <p className="pl-sub pl-rv pl-rv-d2">Panel de demostración con datos reales de prueba. Ve exactamente lo que vería uno de tus clientes.</p>
-              <div className="pl-demo-creds pl-rv pl-rv-d2">
-                <div className="pl-cred"><div className="pl-cred-k">Usuario</div><div className="pl-cred-v">demo-agencia</div></div>
-                <div className="pl-cred"><div className="pl-cred-k">Contraseña</div><div className="pl-cred-v">demo2026</div></div>
+              <span className="sec-label rv">Demo</span>
+              <h2 className="sec-h2 rv d1">Entra ahora.<br/>Sin registrarte.</h2>
+              <p className="sec-sub rv d2">Panel de demostración con datos reales de prueba. Ve exactamente lo que vería uno de tus clientes.</p>
+              <div className="demo-creds rv d2">
+                <div className="cred"><div className="cred-k">Usuario</div><div className="cred-v">demo-agencia</div></div>
+                <div className="cred"><div className="cred-k">Contraseña</div><div className="cred-v">demo2026</div></div>
               </div>
-              <div className="pl-demo-action pl-rv pl-rv-d3">
-                <a href="/agentia-panel?demo=1" className="pl-btn-outline" target="_blank" rel="noopener noreferrer">
+              <div className="demo-action rv d3">
+                <a href="/agentia-panel?demo=1" className="btn-outline" target="_blank" rel="noopener noreferrer">
                   Abrir panel demo
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 </a>
               </div>
             </div>
-            <div className="pl-demo-screen pl-rv pl-rv-d2">
-              <div className="pl-ds-top"><span>Resumen del día</span><span className="pl-chip pl-chip-date">demo-agencia</span></div>
-              <div className="pl-ds-stats">
-                <div className="pl-ds-s"><div className="pl-ds-n">47</div><div className="pl-ds-l">Leads hoy</div><div className="pl-ds-chg">↑ +12 vs ayer</div></div>
-                <div className="pl-ds-s"><div className="pl-ds-n">23%</div><div className="pl-ds-l">Tasa contacto</div><div className="pl-ds-chg">↑ vs 18%</div></div>
-                <div className="pl-ds-s"><div className="pl-ds-n">4</div><div className="pl-ds-l">Paneles activos</div><div className="pl-ds-chg">↑ estable</div></div>
+            <div className="demo-screen rv d2">
+              <div className="ds-top">
+                <span>Resumen del día</span>
+                <span className="chip chip-date">demo-agencia</span>
               </div>
-              <div className="pl-ds-body">
-                {[{dot:'b',n:'María González',h:'09:41'},{dot:'g',n:'Carlos Mendoza',h:'09:35'},{dot:'a',n:'Ana Pérez',h:'09:23'},{dot:'b',n:'Luis Ramírez',h:'09:10'}].map(r=>(
-                  <div key={r.n} className="pl-ds-row">
-                    <span className={`pl-ds-dot pl-ds-dot-${r.dot}`} />
-                    <span className="pl-ds-nm">{r.n}</span>
-                    <span className="pl-ds-hr">{r.h}</span>
+              <div className="ds-stats">
+                <div className="ds-s"><div className="ds-n">47</div><div className="ds-l">Leads hoy</div><div className="ds-chg">↑ +12 vs ayer</div></div>
+                <div className="ds-s"><div className="ds-n">23%</div><div className="ds-l">Tasa contacto</div><div className="ds-chg">↑ vs 18%</div></div>
+                <div className="ds-s"><div className="ds-n">4</div><div className="ds-l">Paneles activos</div><div className="ds-chg">↑ estable</div></div>
+              </div>
+              <div className="ds-body">
+                {[
+                  {dot:'dot-b',n:'María González',h:'09:41'},
+                  {dot:'dot-g',n:'Carlos Mendoza', h:'09:35'},
+                  {dot:'dot-a',n:'Ana Pérez',       h:'09:23'},
+                  {dot:'dot-b',n:'Luis Ramírez',    h:'09:10'},
+                ].map(r=>(
+                  <div key={r.n} className="ds-row">
+                    <span className={`ds-dot ${r.dot}`}/>
+                    <span className="ds-nm">{r.n}</span>
+                    <span className="ds-hr">{r.h}</span>
                   </div>
                 ))}
               </div>
@@ -956,30 +1514,30 @@ export default function PanelLeadsContent() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="pl-faq">
-        <div className="pl-wrap">
-          <div className="pl-faq-layout">
-            <div className="pl-faq-left">
-              <span className="pl-sec-label pl-rv">FAQ</span>
-              <h2 className="pl-rv pl-rv-d1">Preguntas<br />frecuentes</h2>
-              <p className="pl-sub pl-rv pl-rv-d2">Las que llegan antes de contratar.</p>
+      {/* ═══ FAQ ═══ */}
+      <section id="pl-faq" className="sec-border">
+        <div className="w">
+          <div className="faq-layout">
+            <div className="faq-left">
+              <span className="sec-label rv">FAQ</span>
+              <h2 className="sec-h2 rv d1">Preguntas<br/>frecuentes.</h2>
+              <p className="sec-sub rv d2">Las que llegan antes de contratar.</p>
             </div>
-            <div className="pl-faq-items pl-rv pl-rv-d1">
+            <div className="faq-items rv d1">
               {[
-                { q:'¿Mis clientes saben que usan Agentia?', a:'No. El panel lleva tu marca — tu logo, tu nombre. Para tu cliente, tú eres el proveedor. Agentia es la infraestructura invisible.' },
-                { q:'¿Cómo conecta con Facebook Ads?', a:'Integración nativa con Meta Lead Ads. En menos de 5 minutos enlazas la página de Facebook del cliente. Sin Zapier, sin webhooks, sin código.' },
-                { q:'¿Funciona en iPhone sin App Store?', a:'Sí. Es una PWA. Se instala desde Safari o Chrome en dos taps. Aparece en la pantalla de inicio y recibe notificaciones push como una app nativa.' },
-                { q:'¿Cuánto tarda el primer panel?', a:'Entre 24 y 48 horas desde que confirmas. Recibes el acceso al panel maestro y una guía paso a paso. No instalas nada.' },
-                { q:'¿Qué pasa si un cliente cancela?', a:'Solo pagas paneles activos ese mes. Sin penalizaciones, sin contratos anuales.' },
-                { q:'¿Incluye soporte?', a:'Sí. Soporte directo por WhatsApp con el equipo de Agentia. No hay bot — hablas con la persona que configuró tu cuenta.' },
-              ].map(item => (
-                <details key={item.q} className="pl-fq">
+                {q:'¿Mis clientes saben que usan Agentia?',           a:'No. El panel lleva tu marca — tu logo, tu nombre. Para tu cliente, tú eres el proveedor. Agentia es la infraestructura invisible.'},
+                {q:'¿Cómo conecta con Facebook Ads?',                 a:'Integración nativa con Meta Lead Ads. En menos de 5 minutos enlazas la página de Facebook del cliente. Sin Zapier, sin webhooks, sin código.'},
+                {q:'¿Funciona en iPhone sin App Store?',              a:'Sí. Es una PWA. Se instala desde Safari o Chrome en dos taps. Aparece en la pantalla de inicio y recibe notificaciones push como una app nativa.'},
+                {q:'¿Cuánto tarda el primer panel?',                  a:'Entre 24 y 48 horas desde que confirmas. Recibes el acceso al panel maestro y una guía paso a paso. No instalas nada.'},
+                {q:'¿Qué pasa si un cliente cancela?',                a:'Solo pagas paneles activos ese mes. Sin penalizaciones, sin contratos anuales.'},
+                {q:'¿Incluye soporte?',                               a:'Sí. Soporte directo por WhatsApp con el equipo de Agentia. No hay bot — hablas con la persona que configuró tu cuenta.'},
+              ].map(item=>(
+                <details key={item.q} className="fq">
                   <summary>
                     {item.q}
-                    <svg className="pl-fq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                    <svg className="fq-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
                   </summary>
-                  <div className="pl-fq-a">{item.a}</div>
+                  <div className="fq-a">{item.a}</div>
                 </details>
               ))}
             </div>
@@ -987,87 +1545,104 @@ export default function PanelLeadsContent() {
         </div>
       </section>
 
-      {/* CTA FINAL */}
+      {/* ═══ CTA FINAL ═══ */}
       <section id="pl-cta">
-        <h2 className="pl-rv">¿Lista tu agencia para<br />dejar de mandar Excels?</h2>
-        <p className="pl-sub pl-rv pl-rv-d1">Una demo en vivo con tus datos, no un genérico.</p>
-        <a href="https://wa.me/529844927769?text=Quiero%20agendar%20demo%20del%20Panel%20de%20Leads" className="pl-btn-primary pl-rv pl-rv-d2" style={{fontSize:'15px',padding:'14px 32px'}} target="_blank" rel="noopener noreferrer">
-          <WaSvg /> Agendar demo por WhatsApp
+        <h2 className="cta-h2 rv">¿Lista tu agencia para<br/>dejar de mandar <em>Excels?</em></h2>
+        <p className="sec-sub rv d1">Una demo en vivo con tus datos, no un genérico.</p>
+        <a
+          href="https://wa.me/529844927769?text=Quiero%20agendar%20demo%20del%20Panel%20de%20Leads"
+          className="btn-primary rv d2"
+          style={{fontSize:'15px',padding:'16px 36px'}}
+          target="_blank" rel="noopener noreferrer"
+        >
+          <WaIcon size={14}/> Agendar demo por WhatsApp
         </a>
-        <div className="pl-cta-micro pl-rv pl-rv-d3">
-          <span className="pl-cta-micro-item">Sin contrato anual</span>
-          <span className="pl-cta-micro-item">Activo en 24 horas</span>
-          <span className="pl-cta-micro-item">API oficial de WhatsApp Business</span>
-          <span className="pl-cta-micro-item">Tu marca, no la nuestra</span>
+        <div className="cta-micro rv d3">
+          <span className="cta-micro-item">Sin contrato anual</span>
+          <span className="cta-micro-item">Activo en 24 horas</span>
+          <span className="cta-micro-item">API oficial de WhatsApp Business</span>
+          <span className="cta-micro-item">Tu marca, no la nuestra</span>
         </div>
-        <p className="pl-cta-note pl-rv pl-rv-d4">+52 984 492 7769 · Respondemos en menos de 2 horas</p>
+        <p className="cta-note rv d4">+52 984 492 7769 · Respondemos en menos de 2 horas</p>
       </section>
 
-      {/* FOOTER */}
+      {/* ═══ FOOTER ═══ */}
       <footer id="pl-footer">
-        <div className="pl-foot-left">© 2026 <a href="https://agentia.software">Agentia Software</a> · <a href="/legal">Privacidad</a></div>
-        <div className="pl-foot-right">
+        <div className="foot-l">
+          © 2026 <a href="https://agentia.software">Agentia Software</a> · <a href="/legal">Privacidad</a>
+        </div>
+        <div className="foot-r">
           <span>panel de leads facebook ads</span>
           <span>crm para agencias</span>
           <span>crm para traffickers</span>
         </div>
       </footer>
 
-      {/* WA flotante */}
-      <a href="https://wa.me/529844927769?text=Info%20Panel%20de%20Leads" className="pl-wa-float" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+      {/* ═══ FLOAT WA ═══ */}
+      <a
+        href="https://wa.me/529844927769?text=Info%20Panel%20de%20Leads"
+        className="wa-float"
+        target="_blank" rel="noopener noreferrer"
+        aria-label="WhatsApp"
+      >
         <svg width="17" height="17" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.555 4.122 1.528 5.858L.057 23.986l6.294-1.648A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.213-3.733.978 1.001-3.64-.234-.374A9.818 9.818 0 0112 2.182c5.426 0 9.818 4.392 9.818 9.818 0 5.427-4.392 9.818-9.818 9.818z"/></svg>
         WhatsApp
       </a>
 
-      {/* Scripts */}
+      {/* ═══ SCRIPTS ═══ */}
       <script dangerouslySetInnerHTML={{ __html: `
-        // Scroll reveal
-        var rv=new IntersectionObserver(function(e){
-          e.forEach(function(i){if(i.isIntersecting){i.target.classList.add('in');rv.unobserve(i.target)}})
-        },{threshold:0.08,rootMargin:'0px 0px -24px 0px'});
-        document.querySelectorAll('.pl-rv').forEach(function(el){rv.observe(el)});
+        // ── Scroll reveal ──
+        (function(){
+          var o=new IntersectionObserver(function(e){
+            e.forEach(function(i){
+              if(i.isIntersecting){i.target.classList.add('in');o.unobserve(i.target)}
+            })
+          },{threshold:0.07,rootMargin:'0px 0px -20px 0px'});
+          document.querySelectorAll('.rv').forEach(function(el){o.observe(el)});
+        })();
 
-        // Video
-        var vid=document.getElementById('pl-vid');
-        var vwrap=document.getElementById('pl-vwrap');
-        if(vid){
+        // ── Video ──
+        (function(){
+          var vid=document.getElementById('pl-vid');
+          var wrap=document.getElementById('pl-vwrap');
+          if(!vid)return;
           document.getElementById('pl-vplay').addEventListener('click',function(){
-            vid.play();vwrap.classList.add('playing');
+            vid.play();wrap.classList.add('playing');
           });
           vid.addEventListener('click',function(){
-            if(vid.paused){vid.play();vwrap.classList.add('playing')}
-            else{vid.pause();vwrap.classList.remove('playing')}
+            if(vid.paused){vid.play();wrap.classList.add('playing')}
+            else{vid.pause();wrap.classList.remove('playing')}
           });
-          vid.addEventListener('ended',function(){vwrap.classList.remove('playing')});
-        }
+          vid.addEventListener('ended',function(){wrap.classList.remove('playing')});
+        })();
 
-        // Live leads simulator
-        var PLN=['Roberto A.','Sofía L.','Miguel T.','Carmen V.','Diego F.','Valeria S.','Héctor R.','Laura M.'];
-        var PLC=['Promo Verano','Remarketing','Video Ads','Nuevos clientes','Stories'];
-        var PLB=[['pl-b-new','Nuevo'],['pl-b-trk','Seguimiento'],['pl-b-hot','Interesado']];
-        function plPad(n){return n<10?'0'+n:n}
-        var PLH=['09:','10:','11:'];
-        var waIco='<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.555 4.122 1.528 5.858L.057 23.986l6.294-1.648A11.942 11.942 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.006-1.37l-.36-.213-3.733.978 1.001-3.64-.234-.374A9.818 9.818 0 0112 2.182c5.426 0 9.818 4.392 9.818 9.818 0 5.427-4.392 9.818-9.818 9.818z"/></svg>';
-        function plAddRow(){
-          var tb=document.getElementById('pl-leads-body');if(!tb)return;
-          var n=PLN[Math.floor(Math.random()*PLN.length)];
-          var c=PLC[Math.floor(Math.random()*PLC.length)];
-          var b=PLB[Math.floor(Math.random()*PLB.length)];
-          var h=PLH[Math.floor(Math.random()*PLH.length)]+plPad(Math.floor(Math.random()*59));
-          var tr=document.createElement('tr');tr.className='pl-row-new';
-          tr.innerHTML='<td><div class="pl-lead-name">'+n+'</div><div class="pl-lead-time">ahora</div></td><td><span class="pl-lead-src">'+c+'</span></td><td class="pl-lead-time">'+h+'</td><td><span class="pl-badge '+b[0]+'">'+b[1]+'</span></td><td><span class="pl-wa-btn">'+waIco+' Llamar</span></td>';
-          tb.insertBefore(tr,tb.firstChild);
-          if(tb.rows.length>5)tb.deleteRow(tb.rows.length-1);
-        }
-        setInterval(plAddRow,5200);
-
-        // Smooth scroll
-        document.querySelectorAll('a[href^="#pl-"]').forEach(function(a){
-          a.addEventListener('click',function(e){
-            var t=document.querySelector(a.getAttribute('href'));
-            if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth',block:'start'})}
-          });
-        });
+        // ── Live leads simulator ──
+        (function(){
+          var NAMES=['Roberto A.','Sofía L.','Miguel T.','Carmen V.','Diego F.','Valeria S.','Héctor R.','Laura M.','Fernanda Q.','Andrés B.'];
+          var CAMPS=['Promo Verano','Remarketing','Video Ads','Nuevos clientes','Stories'];
+          var BADGES=[['b-new','Nuevo'],['b-trk','Seguimiento'],['b-hot','Interesado']];
+          function pad(n){return n<10?'0'+n:n}
+          function addRow(){
+            var tbody=document.getElementById('pl-leads-body');
+            if(!tbody)return;
+            var rows=tbody.querySelectorAll('tr');
+            if(rows.length>=6){tbody.removeChild(rows[rows.length-1])}
+            var n=NAMES[Math.floor(Math.random()*NAMES.length)];
+            var c=CAMPS[Math.floor(Math.random()*CAMPS.length)];
+            var b=BADGES[Math.floor(Math.random()*BADGES.length)];
+            var now=new Date();
+            var h=pad(now.getHours())+':'+pad(now.getMinutes());
+            var tr=document.createElement('tr');
+            tr.className='row-new';
+            tr.innerHTML='<td><div class="lead-name">'+n+'</div><div class="lead-time">ahora</div></td>'
+              +'<td><span class="lead-src">'+c+'</span></td>'
+              +'<td class="lead-time">'+h+'</td>'
+              +'<td><span class="badge '+b[0]+'">'+b[1]+'</span></td>'
+              +'<td><span class="wa-btn">Llamar</span></td>';
+            tbody.insertBefore(tr,tbody.firstChild);
+          }
+          setInterval(addRow,5400);
+        })();
       `}} />
     </div>
   );
