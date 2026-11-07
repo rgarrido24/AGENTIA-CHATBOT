@@ -2,7 +2,7 @@ const { MongoClient } = require('mongodb');
 const crypto = require('crypto');
 const APPLY = process.env.APPLY === '1';
 const SLUG = process.argv[2];
-const SINCE = process.env.SINCE ? new Date(process.env.SINCE + 'T00:00:00-06:00') : null; // opcional: SINCE=2026-11-02 solo trae leads desde esa fecha
+const SINCE = process.env.SINCE && process.env.SINCE !== 'todo' ? new Date(process.env.SINCE + 'T00:00:00-06:00') : null; // opcional: SINCE=2026-11-02 solo trae leads desde esa fecha
 const FORM = process.argv[3];
 if (!SLUG || !FORM) { console.log('Uso: npm run recuperar:leads -- <clientSlug> <formId>   (APPLY=1 para insertar)'); process.exit(0); }
 const GRAPH = 'https://graph.facebook.com/v21.0';
@@ -89,6 +89,7 @@ MongoClient.connect(process.env.MONGODB_URI).then(async client => {
     console.log(' ', d.createdAt.toISOString().slice(0, 16), '|', (d.nombre || '(sin nombre)').padEnd(26), '|', String(d._tel_original || '(sin tel)').padEnd(15), '->', d.telefono || '(sin tel)'));
   if (nuevos[0]) { const ej = Object.assign({}, nuevos[0]); delete ej._tel_original; console.log('Ejemplo:', JSON.stringify(ej, null, 2)); }
 
+  if (APPLY && !process.env.SINCE) { console.log('\n⛔ Para insertar hay que indicar la fecha en el MISMO comando: APPLY=1 SINCE=AAAA-MM-DD npm run recuperar:leads -- ' + SLUG + ' ' + FORM + '   (o SINCE=todo para traer todo el historial)'); client.close(); return; }
   if (!APPLY) { console.log('\nENSAYO: no se escribio nada. Para insertar: APPLY=1 npm run recuperar:leads -- ' + SLUG + ' ' + FORM + ''); client.close(); return; }
   if (!nuevos.length) { console.log('Nada para insertar'); client.close(); return; }
   const aInsertar = nuevos.map(d => { const c = Object.assign({}, d); delete c._tel_original; return c; });
