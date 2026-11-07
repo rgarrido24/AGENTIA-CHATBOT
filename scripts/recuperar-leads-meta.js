@@ -2,6 +2,7 @@ const { MongoClient } = require('mongodb');
 const crypto = require('crypto');
 const APPLY = process.env.APPLY === '1';
 const SLUG = process.argv[2];
+const SINCE = process.env.SINCE ? new Date(process.env.SINCE + 'T00:00:00-06:00') : null; // opcional: SINCE=2026-11-02 solo trae leads desde esa fecha
 const FORM = process.argv[3];
 if (!SLUG || !FORM) { console.log('Uso: npm run recuperar:leads -- <clientSlug> <formId>   (APPLY=1 para insertar)'); process.exit(0); }
 const GRAPH = 'https://graph.facebook.com/v21.0';
@@ -46,8 +47,9 @@ MongoClient.connect(process.env.MONGODB_URI).then(async client => {
   if (!cli) { console.log('ABORTO: no existe el cliente ' + SLUG); client.close(); return; }
   if (!fb.page_access_token || !fb.page_id) { console.log('ABORTO: sin token/page'); client.close(); return; }
   const PAGE = String(fb.page_id);
-  const metaLeads = await fetchAll(dec(fb.page_access_token));
+  let metaLeads = await fetchAll(dec(fb.page_access_token));
   console.log('Leads en Meta para el formulario:', metaLeads.length);
+  if (SINCE) { metaLeads = metaLeads.filter(L => new Date(L.created_time) >= SINCE); console.log('Desde ' + process.env.SINCE + ':', metaLeads.length); }
 
   const docs = metaLeads.map(L => {
     const fd = {};
