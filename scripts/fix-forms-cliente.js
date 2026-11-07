@@ -3,7 +3,8 @@
  * Por defecto es DRY-RUN (no escribe nada). Con --apply guarda el cambio (y un respaldo).
  *
  * Uso (Render shell):
- *   node scripts/fix-forms-cliente.js <resellerId> <slugOParteDelNombre> <formId> [--apply]
+ *   node scripts/fix-forms-cliente.js <resellerId> <slugOParteDelNombre> <formId> [--apply] [--solo]
+ *   (sin --solo: activa ese formulario y deja los demás como están; con --solo: apaga los demás)
  * Ejemplo:
  *   node scripts/fix-forms-cliente.js luciano carla 1153502800472590
  *   node scripts/fix-forms-cliente.js luciano carla-zonas 1153502800472590 --apply
@@ -13,6 +14,7 @@ const crypto = require('crypto');
 const GRAPH = 'https://graph.facebook.com/v21.0';
 const args = process.argv.slice(2).filter(a => !a.startsWith('--'));
 const APPLY = process.argv.includes('--apply');
+const SOLO = process.argv.includes('--solo'); // con --solo se apagan los demás; sin él solo se ACTIVA el indicado
 const [resellerId, pat, formId] = args;
 if (!resellerId || !pat || !formId) {
   console.log('Uso: node scripts/fix-forms-cliente.js <resellerId> <slugOParteDelNombre> <formId> [--apply]');
@@ -87,7 +89,7 @@ MongoClient.connect(process.env.MONGODB_URI).then(async client => {
   }
 
   // 4) Plan
-  const nuevo = prev.map(f => ({ ...f, activo: String(f.formId) === String(formId) }));
+  const nuevo = prev.map(f => ({ ...f, activo: String(f.formId) === String(formId) ? true : (SOLO ? false : !!f.activo) }));
   if (!nuevo.some(f => String(f.formId) === String(formId))) {
     nuevo.push({ formId: String(formId), formName: (metaForm && metaForm.name) || String(formId), plataforma: 'fb/ig', activo: true });
   }
