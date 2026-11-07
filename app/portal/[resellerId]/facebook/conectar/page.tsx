@@ -6,6 +6,7 @@ import {
   loadOauthSession,
 } from '@/lib/facebook-lead-connect';
 import { cookies } from 'next/headers';
+import { getMongoDb } from '@/lib/mongodb';
 import FacebookPageSelector from './FacebookPageSelector';
 
 export const dynamic = 'force-dynamic';
@@ -39,11 +40,49 @@ export default async function FacebookConectarPage({
     );
   }
 
+  // Pista de cuál es la página de este cliente: la última conectada o la de sus leads recientes.
+  let clientNombre = '';
+  let hintPageId = '';
+  let hintFrom: 'conexion' | 'leads' | '' = '';
+  try {
+    const db = await getMongoDb();
+    const col = db.collection('leads');
+    const cli = await col.findOne(
+      { _collection_type: 'reseller_client', resellerId, clientSlug: session.clientSlug },
+      { projection: { nombre: 1, fb_connection: 1 } },
+    );
+    clientNombre = String(cli?.nombre || '');
+    const prevId = String(cli?.fb_connection?.page_id || '');
+    if (prevId) {
+      hintPageId = prevId;
+      hintFrom = 'conexion';
+    } else {
+      const last = await col.findOne(
+        { resellerId, clientSlug: session.clientSlug, _collection_type: { $ne: 'reseller_client' }, es_prueba: { $ne: true }, pageId: { $exists: true, $ne: '' } },
+        { sort: { createdAt: -1 }, projection: { pageId: 1 } },
+      );
+      if (last?.pageId) {
+        hintPageId = String(last.pageId);
+        hintFrom = 'leads';
+      }
+    }
+  } catch {
+    /* sin pista: el usuario elige a mano */
+  }
+  const pages = session.pages.map((p) => ({ id: p.id, name: p.name }));
+  if (!pages.some((p) => p.id === hintPageId)) {
+    hintPageId = '';
+    hintFrom = '';
+  }
+
   return (
     <FacebookPageSelector
       resellerId={resellerId}
       clientSlug={session.clientSlug}
-      pages={session.pages.map((p) => ({ id: p.id, name: p.name }))}
+      clientNombre={clientNombre}
+      hintPageId={hintPageId}
+      hintFrom={hintFrom}
+      pages={pages}
     />
   );
 }

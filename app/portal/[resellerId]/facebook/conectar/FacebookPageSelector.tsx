@@ -6,19 +6,28 @@ import { LucianoPortalThemeProvider, useLucianoPortalThemeOptional } from '../..
 
 type PageOpt = { id: string; name: string };
 
+type HintFrom = 'conexion' | 'leads' | '';
+
 function SelectorInner({
   resellerId,
   clientSlug,
+  clientNombre,
+  hintPageId,
+  hintFrom,
   pages,
 }: {
   resellerId: string;
   clientSlug: string;
+  clientNombre: string;
+  hintPageId: string;
+  hintFrom: HintFrom;
   pages: PageOpt[];
 }) {
   const router = useRouter();
   const ctx = useLucianoPortalThemeOptional();
   const light = ctx?.light ?? false;
-  const [pageId, setPageId] = useState(pages[0]?.id ?? '');
+  // Si sabemos cuál es la página del cliente se preselecciona; si no, hay que elegir a propósito.
+  const [pageId, setPageId] = useState(hintPageId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -76,6 +85,19 @@ function SelectorInner({
         <p className="text-sm font-bold" style={{ color: titleColor }}>
           Elegí la página de Facebook
         </p>
+        <p className="text-xs font-semibold rounded-lg px-3 py-2" style={{ background: light ? '#f0fdfa' : '#111', color: titleColor }}>
+          Cliente: {clientNombre || clientSlug}
+          {hintPageId && (
+            <span className="block font-normal mt-0.5" style={{ color: muted }}>
+              {hintFrom === 'conexion' ? 'Ya tenía conectada la página marcada con ★.' : 'Sus leads recientes vienen de la página marcada con ★.'}
+            </span>
+          )}
+          {!hintPageId && (
+            <span className="block font-normal mt-0.5" style={{ color: muted }}>
+              No tengo registrada su página: elige la correcta con cuidado.
+            </span>
+          )}
+        </p>
         <p className="text-xs" style={{ color: muted }}>
           Esta cuenta tiene varias páginas. Seleccioná la del cliente para recibir los leads.
         </p>
@@ -97,7 +119,7 @@ function SelectorInner({
                 onChange={() => setPageId(p.id)}
               />
               <span className="text-sm font-medium" style={{ color: titleColor }}>
-                {p.name}
+                {p.id === hintPageId ? '★ ' : ''}{p.name}
               </span>
             </label>
           ))}
@@ -136,15 +158,21 @@ function SelectorInner({
 export default function FacebookPageSelector({
   resellerId,
   clientSlug,
+  clientNombre,
+  hintPageId,
+  hintFrom,
   pages,
 }: {
   resellerId: string;
   clientSlug: string;
+  clientNombre: string;
+  hintPageId: string;
+  hintFrom: HintFrom;
   pages: PageOpt[];
 }) {
   return (
     <LucianoPortalThemeProvider resellerId={resellerId}>
-      <SelectorInner resellerId={resellerId} clientSlug={clientSlug} pages={pages} />
+      <SelectorInner resellerId={resellerId} clientSlug={clientSlug} clientNombre={clientNombre} hintPageId={hintPageId} hintFrom={hintFrom} pages={pages} />
     </LucianoPortalThemeProvider>
   );
 }
