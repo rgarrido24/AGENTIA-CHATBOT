@@ -28,13 +28,17 @@ MongoClient.connect(process.env.MONGODB_URI).then(async c => {
       pagina: nativo ? cli.fb_connection.page_name : (conPagina[0] && conPagina[0].page_name) || '(sin dato)',
       formularios: forms.map(f => (f.formName || f.formId)).join(' + ') || '(ninguno activo)',
       ultimo: ult[0] ? new Date(ult[0].createdAt).toISOString().slice(0, 10) : '-',
+      dias: ult[0] ? Math.floor((Date.now() - new Date(ult[0].createdAt)) / 864e5) : 999,
       n30,
     });
   }
-  const pend = filas.filter(f => !f.nativo).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const pend = filas.filter(f => !f.nativo).sort((a, b) => b.n30 - a.n30 || a.nombre.localeCompare(b.nombre));
   const ok = filas.filter(f => f.nativo).sort((a, b) => a.nombre.localeCompare(b.nombre));
   console.log('\n=== PENDIENTES DE MIGRAR (' + pend.length + ') — cliente | pagina | formulario activo | ultimo lead | leads 30d');
-  pend.forEach(f => console.log(' ', f.nombre, '|', f.pagina, '|', f.formularios, '|', f.ultimo, '|', f.n30));
+  pend.forEach(f => console.log(' ', f.nombre, '|', f.slug, '|', f.pagina, '|', f.formularios, '|', f.ultimo, '(hace ' + f.dias + ' d) |', f.n30));
+  const caidos = pend.filter(f => f.dias >= 2 && f.dias < 999);
+  console.log('\n=== SIN CONEXIÓN NATIVA Y SIN LEADS HACE 2+ DÍAS (' + caidos.length + ') — prioridad: conectar ya');
+  caidos.sort((a, b) => a.dias - b.dias).forEach(f => console.log(' ', f.nombre, '|', f.slug, '|', f.pagina, '| último lead', f.ultimo, '(hace ' + f.dias + ' d)'));
   console.log('\n=== YA CONECTADOS (' + ok.length + ') — cliente | pagina | ultimo lead | leads 30d');
   ok.forEach(f => console.log(' ', f.nombre, '|', f.pagina, '|', f.ultimo, '|', f.n30));
   c.close();

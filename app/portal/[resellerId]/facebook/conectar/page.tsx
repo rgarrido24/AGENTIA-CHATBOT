@@ -58,12 +58,21 @@ export default async function FacebookConectarPage({
       hintFrom = 'conexion';
     } else {
       const last = await col.findOne(
-        { resellerId, clientSlug: session.clientSlug, _collection_type: { $ne: 'reseller_client' }, es_prueba: { $ne: true }, pageId: { $exists: true, $ne: '' } },
-        { sort: { createdAt: -1 }, projection: { pageId: 1 } },
+        { resellerId, clientSlug: session.clientSlug, _collection_type: { $ne: 'reseller_client' }, es_prueba: { $ne: true }, $or: [{ pageId: { $exists: true, $ne: '' } }, { page_name: { $exists: true, $ne: '' } }] },
+        { sort: { createdAt: -1 }, projection: { pageId: 1, page_name: 1 } },
       );
       if (last?.pageId) {
         hintPageId = String(last.pageId);
         hintFrom = 'leads';
+      } else if (last?.page_name) {
+        // Leads que entraron por Zapier: solo traen el nombre de la página; se compara con la lista.
+        const norm = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+        const target = norm(String(last.page_name));
+        const match = session.pages.find((pg) => norm(pg.name) === target) || session.pages.find((pg) => norm(pg.name).includes(target) || target.includes(norm(pg.name)));
+        if (match) {
+          hintPageId = match.id;
+          hintFrom = 'leads';
+        }
       }
     }
   } catch {
