@@ -81,7 +81,18 @@ MongoClient.connect(process.env.MONGODB_URI).then(async client => {
   const ids = docs.map(d => d.leadgen_id), lids = docs.map(d => d.leadId);
   const ya = await col.find({ $or: [{ leadgen_id: { $in: ids } }, { leadId: { $in: lids } }] }, { projection: { leadgen_id: 1, leadId: 1, clientSlug: 1 } }).toArray();
   const yaI = new Set(ya.map(x => x.leadgen_id)), yaL = new Set(ya.map(x => x.leadId));
-  const nuevos = docs.filter(d => !yaI.has(d.leadgen_id) && !yaL.has(d.leadId));
+  // Además: si el cliente ya tiene un lead con el mismo teléfono (últimos 10 dígitos) cerca de esa fecha, es el mismo
+  // lead que entró antes por Zapier u otra vía con otro formato de id: se saltea para no duplicar.
+  const last10 = t => String(t || '').replace(/\D/g, '').slice(-10);
+  const minFecha = docs.length ? new Date(Math.min(...docs.map(d => d.createdAt)) - 3 * 864e5) : new Date();
+  const previos = await col.find({ clientSlug: SLUG, _collection_type: { $ne: 'reseller_client' }, createdAt: { $gte: minFecha } }, { projection: { telefono: 1, senderId: 1, createdAt: 1 } }).toArray();
+  const telPrevio = new Map();
+  previos.forEach(x => { [x.telefono, x.senderId].forEach(t => { const k = last10(t); if (k.length >= 8) telPrevio.set(k, (telPrevio.get(k) || []).concat(new Date(x.createdAt).getTime())); }); });
+  const mismoTel = d => { const k = last10(d.telefono); return k.length >= 8 && (telPrevio.get(k) || []).some(t => Math.abs(t - d.createdAt.getTime()) <= 2 * 864e5); };
+  const nuevosBase = docs.filter(d => !yaI.has(d.leadgen_id) && !yaL.has(d.leadId));
+  const porTel = nuevosBase.filter(mismoTel);
+  const nuevos = nuevosBase.filter(d => !mismoTel(d));
+  if (porTel.length) console.log('Ya están en el panel por teléfono/fecha (se saltean):', porTel.length);
   console.log('Ya existentes (se saltean):', docs.length - nuevos.length, '| a insertar:', nuevos.length);
   if (ya.length) console.log('Existentes:', JSON.stringify(ya));
 
