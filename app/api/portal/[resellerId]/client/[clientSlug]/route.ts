@@ -109,11 +109,15 @@ export async function DELETE(
   }
 
   const db = await getMongoDb();
-  const result = await db.collection('leads').deleteOne({
-    _collection_type: 'reseller_client',
-    resellerId,
-    clientSlug,
-  });
+  const clientFilter = { _collection_type: 'reseller_client', resellerId, clientSlug };
+  // Respaldo antes de borrar: permite restaurar el cliente (los leads no se tocan).
+  const previo = await db.collection('leads').findOne(clientFilter);
+  if (previo) {
+    await db
+      .collection('client_reassign_backups')
+      .insertOne({ tipo: 'eliminado_desde_panel', fecha: new Date(), resellerId, clientSlug, doc: previo });
+  }
+  const result = await db.collection('leads').deleteOne(clientFilter);
 
   if (result.deletedCount === 0) {
     return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
