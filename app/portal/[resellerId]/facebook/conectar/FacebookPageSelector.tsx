@@ -6,7 +6,7 @@ import { LucianoPortalThemeProvider, useLucianoPortalThemeOptional } from '../..
 
 type PageOpt = { id: string; name: string };
 
-type HintFrom = 'conexion' | 'leads' | '';
+type HintFrom = 'conexion' | 'leads' | 'formulario' | '';
 
 function SelectorInner({
   resellerId,
@@ -89,7 +89,11 @@ function SelectorInner({
           Cliente: {clientNombre || clientSlug}
           {hintPageId && (
             <span className="block font-normal mt-0.5" style={{ color: muted }}>
-              {hintFrom === 'conexion' ? 'Ya tenía conectada la página marcada con ★.' : 'Sus leads recientes vienen de la página marcada con ★.'}
+              {hintFrom === 'conexion'
+                ? 'Ya tenía conectada la página marcada con ★.'
+                : hintFrom === 'formulario'
+                  ? 'La página marcada con ★ es la dueña de sus formularios (confirmado con Meta).'
+                  : 'Sus leads recientes vienen de la página marcada con ★.'}
             </span>
           )}
           {!hintPageId && (

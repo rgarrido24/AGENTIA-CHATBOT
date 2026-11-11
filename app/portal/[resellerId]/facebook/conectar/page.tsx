@@ -3,10 +3,12 @@ import { requireResellerAuth } from '@/lib/reseller-auth';
 import {
   FB_OAUTH_SESSION_COOKIE,
   fbConnectUserMessage,
+  listPageLeadgenForms,
   loadOauthSession,
 } from '@/lib/facebook-lead-connect';
 import { cookies } from 'next/headers';
 import { getMongoDb } from '@/lib/mongodb';
+import { decryptFbToken } from '@/lib/fb-token-crypto';
 import FacebookPageSelector from './FacebookPageSelector';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +45,8 @@ export default async function FacebookConectarPage({
   // Pista de cuál es la página de este cliente: la última conectada o la de sus leads recientes.
   let clientNombre = '';
   let hintPageId = '';
-  let hintFrom: 'conexion' | 'leads' | '' = '';
+  let hintFrom: 'conexion' | 'leads' | 'formulario' | '' = '';
+  let formIds: string[] = [];
   try {
     const db = await getMongoDb();
     const col = db.collection('leads');
@@ -52,6 +55,8 @@ export default async function FacebookConectarPage({
       { projection: { nombre: 1, fb_connection: 1 } },
     );
     clientNombre = String(cli?.nombre || '');
+    const cliForms = await col.findOne({ _collection_type: 'reseller_client', resellerId, clientSlug: session.clientSlug }, { projection: { formularios: 1 } });
+    formIds = ((cliForms?.formularios as Array<{ formId?: string }> | undefined) || []).map((f) => String(f.formId || '')).filter(Boolean);
     const prevId = String(cli?.fb_connection?.page_id || '');
     if (prevId) {
       hintPageId = prevId;
@@ -77,6 +82,25 @@ export default async function FacebookConectarPage({
     }
   } catch {
     /* sin pista: el usuario elige a mano */
+  }
+  // Pista definitiva: la página que es dueña de los formularios que el cliente ya tiene en Agentia.
+  if (formIds.length && hintFrom !== 'conexion') {
+    const withTimeout = <T,>(pr: Promise<T>, ms: number) =>
+      Promise.race([pr, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+    const results = await Promise.allSettled(
+      session.pages.map(async (pg) => {
+        const forms = await withTimeout(listPageLeadgenForms(pg.id, decryptFbToken(pg.access_token_enc)), 8000);
+        return { id: pg.id, ids: forms.map((f) => f.id) };
+      }),
+    );
+    const owners = results
+      .filter((r): r is PromiseFulfilledResult<{ id: string; ids: string[] }> => r.status === 'fulfilled')
+      .map((r) => r.value)
+      .filter((v) => v.ids.some((id) => formIds.includes(id)));
+    if (owners.length === 1) {
+      hintPageId = owners[0].id;
+      hintFrom = 'formulario';
+    }
   }
   const pages = session.pages.map((p) => ({ id: p.id, name: p.name }));
   if (!pages.some((p) => p.id === hintPageId)) {
