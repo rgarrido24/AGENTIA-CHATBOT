@@ -51,6 +51,8 @@ export interface ResellerClient {
     page_access_token?: string;
     connected_at?:      Date;
   };
+  /** Caso extraordinario: el cliente quiere varios formularios activos a la vez. Por defecto se deja UNO solo. */
+  multi_formulario?:   boolean;
   alertNumber?:        string;
   clientPasswordHash?: string;
   /** true mientras la clave es la temporal del alta (nadie la vio): la primera conexion de Facebook la reemplaza. */

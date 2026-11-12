@@ -34,6 +34,7 @@ export type FbLeadForm = {
   id: string;
   name: string;
   status?: string;
+  created_time?: string;
 };
 
 export type FbOauthSessionDoc = {
@@ -149,10 +150,55 @@ export function isActiveLeadgenStatus(status: string | undefined): boolean {
   return String(status || '').toUpperCase() === 'ACTIVE';
 }
 
+function formTime(f: FbLeadForm): number {
+  const t = f.created_time ? Date.parse(f.created_time) : NaN;
+  return Number.isFinite(t) ? t : 0;
+}
+
+/**
+ * Regla por defecto: UN solo formulario activo por cliente.
+ *  - Si el cliente ya tenia uno activo que sigue ACTIVE en Meta, se conserva...
+ *  - ...salvo que haya un formulario ACTIVE nuevo (que no conocíamos) y más reciente que el activo: ese pasa a ser el único.
+ *  - Si no tenia ninguno activo, se activa el ACTIVE más reciente.
+ *  - multi=true (caso extraordinario): se activan todos los ACTIVE, como antes.
+ */
+export function pickActiveFormIds(
+  existing: ResellerFormulario[] | undefined,
+  incoming: FbLeadForm[],
+  multi = false,
+): Set<string> {
+  const activeMeta = incoming.filter((f) => isActiveLeadgenStatus(f.status));
+  if (multi) return new Set(activeMeta.map((f) => String(f.id)));
+  if (activeMeta.length === 0) return new Set();
+
+  const metaById = new Map(activeMeta.map((f) => [String(f.id), f]));
+  const known = new Set((existing ?? []).map((f) => String(f.formId || '').trim()));
+  const keptIds = (existing ?? [])
+    .filter((f) => f.activo && metaById.has(String(f.formId || '').trim()))
+    .map((f) => String(f.formId).trim());
+
+  // Más reciente primero (si Meta no da fecha, se respeta el orden en que llegó, que es del más nuevo al más viejo).
+  const ordered = [...activeMeta].sort((a, b) => formTime(b) - formTime(a));
+  const newest = ordered[0];
+
+  if (keptIds.length === 0) return new Set([String(newest.id)]);
+
+  const newestKnown = known.has(String(newest.id));
+  const keptNewestTime = Math.max(...keptIds.map((id) => formTime(metaById.get(id)!)));
+  if (!newestKnown && formTime(newest) > keptNewestTime) return new Set([String(newest.id)]);
+  // Conserva solo el más reciente de los que ya estaban activos (deja de ser multi si venia de varios).
+  const keepOne = keptIds
+    .map((id) => metaById.get(id)!)
+    .sort((a, b) => formTime(b) - formTime(a))[0];
+  return new Set([String(keepOne.id)]);
+}
+
 export function mergeFormularios(
   existing: ResellerFormulario[] | undefined,
   incoming: FbLeadForm[],
+  multi = false,
 ): ResellerFormulario[] {
+  const activeIds = pickActiveFormIds(existing, incoming, multi);
   const map = new Map<string, ResellerFormulario>();
   for (const f of existing ?? []) {
     const id = String(f.formId || '').trim();
@@ -171,7 +217,7 @@ export function mergeFormularios(
       formId: id,
       formName: (form.name || '').trim() || prev?.formName || id,
       plataforma: prev?.plataforma || 'fb/ig',
-      activo: isActiveLeadgenStatus(form.status),
+      activo: activeIds.has(id),
     });
   }
   return Array.from(map.values());
@@ -509,16 +555,17 @@ export async function listUserPages(userToken: string): Promise<FbPageChoice[]> 
 export async function listPageLeadgenForms(pageId: string, pageToken: string): Promise<FbLeadForm[]> {
   const url =
     `https://graph.facebook.com/${FB_GRAPH_VERSION}/${encodeURIComponent(pageId)}/leadgen_forms` +
-    `?fields=id,name,status` +
+    `?fields=id,name,status,created_time` +
     `&limit=50` +
     `&access_token=${encodeURIComponent(pageToken)}`;
-  const rows = await graphCollect<{ id?: string; name?: string; status?: string }>(url);
+  const rows = await graphCollect<{ id?: string; name?: string; status?: string; created_time?: string }>(url);
   return rows
     .filter((f) => f.id)
     .map((f) => ({
       id: String(f.id),
       name: String(f.name || f.id),
       status: f.status ? String(f.status).toUpperCase() : undefined,
+      created_time: f.created_time ? String(f.created_time) : undefined,
     }));
 }
 
@@ -665,6 +712,7 @@ export async function completeFacebookPageConnection(opts: {
   );
   const persistable = listed.filter((f) => !LEADGEN_DELETED_STATUS.has(String(f.status || '').toUpperCase()));
   const forms = usableLeadgenForms(persistable);
+  const activeForms = persistable.filter((f) => pickActiveFormIds(client.formularios, persistable, client.multi_formulario === true).has(f.id));
   const wasConnected = client.fb_connection?.status === 'connected';
 
   if (forms.length === 0 && !wasConnected) {
@@ -684,7 +732,7 @@ export async function completeFacebookPageConnection(opts: {
     }
   }
 
-  const formularios = mergeFormularios(client.formularios, persistable);
+  const formularios = mergeFormularios(client.formularios, persistable, client.multi_formulario === true);
   let encrypted: string;
   try {
     encrypted = encryptFbToken(page.access_token);
@@ -719,11 +767,14 @@ export async function completeFacebookPageConnection(opts: {
       password,
       portalUrl: `${getPublicOrigin()}/portal/${resellerId}/cliente/${clientSlug}`,
       pageName: page.name,
-      formsCount: forms.length,
+      formsCount: activeForms.length,
     };
   }
 
   await db.collection('leads').updateOne(filter, { $set });
+  if (forms.length > activeForms.length) {
+    console.log('[fb-connect] formularios ACTIVE en Meta sin enrutar (regla de 1 formulario):', clientSlug, forms.length - activeForms.length);
+  }
   console.log(
     '[fb-connect] saved',
     clientSlug,
@@ -737,7 +788,7 @@ export async function completeFacebookPageConnection(opts: {
     ok: true,
     reveal,
     pageName: page.name,
-    formsCount: forms.length,
+    formsCount: activeForms.length,
     pausedForms: forms.length === 0,
   };
 }
