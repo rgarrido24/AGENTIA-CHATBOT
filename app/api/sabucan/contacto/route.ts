@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { registrarContacto } from '@/lib/sabucan-clientes';
 
+import { requireSabucanApi } from '@/lib/sabucan-security';
+
 export const dynamic = 'force-dynamic';
 
 /** POST /api/sabucan/contacto — { telefono, plantilla, mensaje? } · deja constancia de un contacto de reactivación */
 export async function POST(req: Request) {
+  const denied = await requireSabucanApi();
+  if (denied) return denied;
   try {
     const body = (await req.json()) as {
       telefono?: string;

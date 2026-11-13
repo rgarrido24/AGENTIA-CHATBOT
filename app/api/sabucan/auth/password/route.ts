@@ -13,6 +13,13 @@ import {
   getSabucanAdminPassword,
   sabucanAuthToken,
 } from '@/lib/sabucan-auth';
+import {
+  clearFailedLogins,
+  isTenantPanelActive,
+  lockMinutesLeft,
+  recordFailedLogin,
+  requestIp,
+} from '@/lib/sabucan-security';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +51,18 @@ export async function getEffectiveSabucanPassword(): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = requestIp(request);
+  const locked = await lockMinutesLeft(ip);
+  if (locked > 0) {
+    return NextResponse.json(
+      { error: `Demasiados intentos. Intenta de nuevo en ${locked} min.` },
+      { status: 429 },
+    );
+  }
+  if (!(await isTenantPanelActive())) {
+    return NextResponse.json({ error: 'Servicio suspendido.', suspendido: true }, { status: 403 });
+  }
+
   const body = await request.json().catch(() => ({}));
   const username = typeof body?.username === 'string' ? body.username.trim() : '';
   const currentPassword = typeof body?.currentPassword === 'string' ? body.currentPassword : '';
@@ -63,8 +82,16 @@ export async function POST(request: NextRequest) {
   const effectivePassword = await getEffectiveSabucanPassword();
 
   if (username !== expectedUser || currentPassword !== effectivePassword) {
+    const r = await recordFailedLogin(ip, request.headers.get('user-agent') ?? '', username, 'cambio-password');
+    if (r.locked) {
+      return NextResponse.json(
+        { error: 'Demasiados intentos. Acceso bloqueado por 30 min.' },
+        { status: 429 },
+      );
+    }
     return NextResponse.json({ error: 'Contraseña actual incorrecta' }, { status: 401 });
   }
+  await clearFailedLogins(ip);
 
   await setSabucanPasswordOverride(newPassword);
 

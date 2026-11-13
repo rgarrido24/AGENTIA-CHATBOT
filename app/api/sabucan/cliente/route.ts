@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { findSabucanByTelefono, normalizeSabucanTelefono } from '@/lib/sabucan-clientes';
 
+import { requireSabucanApi } from '@/lib/sabucan-security';
+
 export const dynamic = 'force-dynamic';
 
 /** GET /api/sabucan/cliente?telefono=9991234567 */
 export async function GET(req: NextRequest) {
+  const denied = await requireSabucanApi();
+  if (denied) return denied;
   try {
     const telefono = normalizeSabucanTelefono(req.nextUrl.searchParams.get('telefono') ?? '');
     if (telefono.length < 10) {

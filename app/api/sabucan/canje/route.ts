@@ -3,10 +3,14 @@ import { canjearPuntosSabucan } from '@/lib/sabucan-clientes';
 import { syncSabucanWalletPuntos } from '@/lib/wallet-sabucan';
 import { formatPuntos } from '@/lib/wallet-sabucan-points';
 
+import { requireSabucanApi } from '@/lib/sabucan-security';
+
 export const dynamic = 'force-dynamic';
 
 /** POST /api/sabucan/canje — { telefono, puntos, skipWalletSync? } · 1 punto = $1 MXN */
 export async function POST(req: Request) {
+  const denied = await requireSabucanApi();
+  if (denied) return denied;
   try {
     const body = (await req.json()) as {
       telefono?: string;
