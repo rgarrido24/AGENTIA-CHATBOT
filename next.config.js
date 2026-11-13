@@ -98,13 +98,17 @@ const nextConfig = {
   },
 
   async rewrites() {
-    return [
+    return {
+      // Landing nueva de /lealtad (HTML estático en public/). La anterior (React) sigue en app/lealtad.
+      beforeFiles: [{ source: '/lealtad', destination: '/lealtad-landing.html' }],
+      afterFiles: [
       // Demo de fotos-escuela: URLs limpias sin .html
       { source: '/demo/fotos-escuela',                    destination: '/demo-fotos-escuela/index.html' },
       { source: '/demo/fotos-escuela/anuario',            destination: '/demo-fotos-escuela/anuario.html' },
       { source: '/demo/fotos-escuela/fiesta',             destination: '/demo-fotos-escuela/fiesta.html' },
       { source: '/demo/fotos-escuela/plantilla-kinder',   destination: '/demo-fotos-escuela/plantilla-kinder.html' },
-    ];
+      ],
+    };
   },
 
   async headers() {
