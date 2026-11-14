@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getMongoDb } from '@/lib/mongodb';
 import { SOLICITUDES } from '@/lib/lealtad-provision';
 import { AutoRefresh } from './AutoRefresh';
+import { SPEI, WA_VENTAS } from '@/lib/lealtad-pago';
 import { TRIAL_DIAS } from '@/lib/lealtad-suscripcion';
 
 export const dynamic = 'force-dynamic';
@@ -60,7 +61,28 @@ export default async function GraciasPage({ searchParams }: Props) {
           {!renovacion && !sol.logoUrl && <p className="mt-4 text-sm text-[#5E646B]">Mándanos tu logo por WhatsApp para ponerlo en tu tarjeta.</p>}
         </>
       )}
-      {sol && !activa && (
+      {sol && !activa && sol.estado === 'pendiente_spei' && (
+        <>
+          <AutoRefresh ms={15000} />
+          <h1 className="text-3xl font-bold">Haz tu transferencia SPEI</h1>
+          <p className="mt-3 text-[#5E646B]">En cuanto veamos tu depósito activamos tu tarjeta y te mandamos los accesos.</p>
+          <div className="mt-6 rounded-2xl border border-[#E8E5DD] bg-[#F6F5F0] p-5 text-left">
+            <p><b>Banco:</b> {SPEI.banco}</p>
+            <p className="mt-1"><b>CLABE:</b> <code className="select-all text-lg">{SPEI.clabe}</code></p>
+            <p className="mt-1"><b>Beneficiario:</b> {SPEI.beneficiario}</p>
+            <p className="mt-1"><b>Monto exacto:</b> ${Number(sol.total).toLocaleString('es-MX')} MXN</p>
+            <p className="mt-1"><b>Concepto / referencia:</b> <code className="select-all text-lg">{sol.concepto}</code></p>
+          </div>
+          <a
+            className="mt-6 inline-block rounded-xl bg-[#22C55E] px-6 py-3 font-semibold text-black"
+            href={`https://wa.me/${WA_VENTAS}?text=${encodeURIComponent(`Hola, ya hice mi transferencia SPEI de Agentia Lealtad. Negocio: ${sol.negocio}. Monto: $${sol.total}. Concepto: ${sol.concepto}.`)}`}
+          >
+            Ya pagué — avisar por WhatsApp
+          </a>
+          <p className="mt-3 text-sm text-[#5E646B]">Guarda esta página: aquí aparecerán tus accesos cuando se confirme el pago.</p>
+        </>
+      )}
+      {sol && !activa && sol.estado !== 'pendiente_spei' && (
         <>
           <AutoRefresh />
           <h1 className="text-3xl font-bold">{pendienteEfectivo ? 'Esperando tu pago' : renovacion ? 'Confirmando tu pago…' : 'Estamos activando tu tarjeta…'}</h1>

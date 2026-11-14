@@ -5,6 +5,7 @@ import { calcularTotal, type MetodoPago, type Periodo } from '@/lib/lealtad-pric
 import { crearPreferencia, mpToken } from '@/lib/mercadopago';
 import { publicBase, SOLICITUDES } from '@/lib/lealtad-provision';
 import { notifyOwner } from '@/lib/loyalty-security';
+import { conceptoSpei } from '@/lib/lealtad-pago';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,6 +79,13 @@ async function manejar(req: Request) {
   const db = await getMongoDb();
   await db.collection(SOLICITUDES).insertOne(doc);
 
+  // SPEI directo: sin Mercado Pago. Se muestra la CLABE y se confirma a mano en /admin/lealtad.
+  if (pago === 'SPEI') {
+    await db.collection(SOLICITUDES).updateOne({ ref }, { $set: { estado: 'pendiente_spei', concepto: conceptoSpei(ref) } });
+    await notifyOwner(`🏦 SPEI pendiente: ${negocio} (${giro}) — $${precio.total}. Concepto ${conceptoSpei(ref)}. Confírmalo en ${publicBase()}/admin/lealtad cuando veas el depósito.`);
+    return NextResponse.json({ ok: true, url: `/lealtad/gracias?ref=${ref}`, ref });
+  }
+
   try {
     const base = publicBase();
     const pref = await crearPreferencia({
@@ -86,7 +94,7 @@ async function manejar(req: Request) {
       reference: ref,
       notificationUrl: `${base}/api/lealtad/mp-webhook`,
       backUrl: `${base}/lealtad/gracias?ref=${ref}`,
-      metodo: pago === 'Mercado Pago' ? 'tarjeta' : 'efectivo_transferencia',
+      metodo: pago === 'Mercado Pago' ? 'tarjeta' : 'oxxo',
       payerName: negocio,
     });
     await db.collection(SOLICITUDES).updateOne({ ref }, { $set: { mpPreferenceId: pref.id } });
