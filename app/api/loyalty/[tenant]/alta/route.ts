@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { altaCliente } from '@/lib/sabucan-clientes';
 import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
+import { isPanelActive } from '@/lib/loyalty-session';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,8 +10,12 @@ type Ctx = { params: Promise<{ tenant: string }> };
 export async function POST(req: Request, ctx: Ctx) {
   try {
     const { tenant } = await ctx.params;
-    if (!(await getLoyaltyTenant(tenant))) {
+    const cfgAlta = await getLoyaltyTenant(tenant);
+    if (!cfgAlta) {
       return NextResponse.json({ error: 'Tenant inválido' }, { status: 404 });
+    }
+    if (!(await isPanelActive(cfgAlta.id))) {
+      return NextResponse.json({ error: 'Servicio suspendido' }, { status: 403 });
     }
 
     const body = (await req.json()) as {

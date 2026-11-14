@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireTenantApi } from '@/lib/loyalty-session';
 import {
   findClienteByTelefono,
   normalizeSabucanTelefono,
@@ -12,6 +13,8 @@ type Ctx = { params: Promise<{ tenant: string }> };
 export async function GET(req: NextRequest, ctx: Ctx) {
   try {
     const { tenant } = await ctx.params;
+    const denied = await requireTenantApi(tenant);
+    if (denied) return denied;
     if (!(await getLoyaltyTenant(tenant))) {
       return NextResponse.json({ error: 'Tenant inválido' }, { status: 404 });
     }

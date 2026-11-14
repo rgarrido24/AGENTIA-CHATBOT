@@ -45,7 +45,7 @@ export function sabucanObjectId(issuerId: string, clienteId: string): string {
   return `${issuerId}.sabucan-${safe}`;
 }
 
-async function getWalletAccessToken(): Promise<string | null> {
+export async function getWalletAccessToken(): Promise<string | null> {
   const sa = getWalletServiceAccount();
   if (!sa) return null;
   try {

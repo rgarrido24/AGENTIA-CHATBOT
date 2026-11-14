@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireTenantApi } from '@/lib/loyalty-session';
 import { resetClientesCollection } from '@/lib/sabucan-clientes';
 import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
 
@@ -10,6 +11,8 @@ type Ctx = { params: Promise<{ tenant: string }> };
 export async function POST(_req: Request, ctx: Ctx) {
   try {
     const { tenant } = await ctx.params;
+    const denied = await requireTenantApi(tenant);
+    if (denied) return denied;
     const cfg = await getLoyaltyTenant(tenant);
     if (!cfg) return NextResponse.json({ error: 'Tenant inválido' }, { status: 404 });
     if (!cfg.isDemo) {
