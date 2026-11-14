@@ -69,7 +69,7 @@ async function manejar(req: Request) {
     return NextResponse.json({ ok: true, url: pref.initPoint });
   } catch (e) {
     console.error('[lealtad/renovar]', e);
-    return NextResponse.json({ error: 'No se pudo crear el pago', fallback: true }, { status: 502 });
+    return NextResponse.json({ error: 'No se pudo crear el pago', fallback: true }, { status: 424 });
   }
 }
 

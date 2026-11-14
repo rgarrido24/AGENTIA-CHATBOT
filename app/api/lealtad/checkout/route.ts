@@ -95,7 +95,7 @@ async function manejar(req: Request) {
   } catch (e) {
     console.error('[lealtad/checkout]', e);
     await db.collection(SOLICITUDES).updateOne({ ref }, { $set: { estado: 'error_checkout', error: String(e).slice(0, 200) } });
-    return NextResponse.json({ error: 'No se pudo crear el pago', fallback: true }, { status: 502 });
+    return NextResponse.json({ error: 'No se pudo crear el pago', fallback: true }, { status: 424 });
   }
 }
 

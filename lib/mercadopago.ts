@@ -4,7 +4,9 @@ import { createHmac, timingSafeEqual } from 'crypto';
 const API = 'https://api.mercadopago.com';
 
 export function mpToken(): string | null {
-  return process.env.MP_ACCESS_TOKEN?.trim() || null;
+  // Tolera comillas o espacios pegados por error en Render.
+  const t = process.env.MP_ACCESS_TOKEN?.trim().replace(/^["']|["']$/g, '').trim();
+  return t || null;
 }
 
 export type MpPreferenceInput = {
@@ -27,6 +29,11 @@ export async function crearPreferencia(i: MpPreferenceInput): Promise<{ id: stri
       ? [{ id: 'ticket' }, { id: 'bank_transfer' }, { id: 'atm' }]
       : [{ id: 'credit_card' }, { id: 'debit_card' }];
 
+  if (!token.startsWith('APP_USR-')) {
+    throw new Error(
+      `MP_ACCESS_TOKEN no parece un Access Token de producción (empieza con "${token.slice(0, 5)}…", longitud ${token.length}). Debe empezar con APP_USR-`,
+    );
+  }
   const res = await fetch(`${API}/checkout/preferences`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
