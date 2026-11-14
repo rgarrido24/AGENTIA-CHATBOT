@@ -16,7 +16,7 @@ export type MpPreferenceInput = {
   notificationUrl: string;
   backUrl: string;
   /** 'oxxo': solo efectivo. 'tarjeta': solo tarjetas (y saldo MP). */
-  metodo: 'oxxo' | 'tarjeta';
+  metodo: 'oxxo' | 'oxxo_suave' | 'tarjeta';
   payerName?: string;
 };
 
@@ -27,16 +27,9 @@ export async function crearPreferencia(i: MpPreferenceInput): Promise<{ id: stri
   const excluded =
     i.metodo === 'tarjeta'
       ? [{ id: 'ticket' }, { id: 'bank_transfer' }, { id: 'atm' }]
-      : [
-          { id: 'credit_card' },
-          { id: 'debit_card' },
-          { id: 'prepaid_card' },
-          { id: 'bank_transfer' },
-          { id: 'atm' },
-          { id: 'account_money' },
-          { id: 'digital_currency' },
-          { id: 'digital_wallet' },
-        ];
+      : i.metodo === 'oxxo'
+        ? [{ id: 'credit_card' }, { id: 'debit_card' }, { id: 'bank_transfer' }, { id: 'atm' }, { id: 'account_money' }]
+        : [{ id: 'credit_card' }, { id: 'debit_card' }, { id: 'bank_transfer' }];
 
   if (!token.startsWith('APP_USR-')) {
     throw new Error(

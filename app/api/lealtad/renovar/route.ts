@@ -64,20 +64,30 @@ async function manejar(req: Request) {
 
   try {
     const base = publicBase();
-    const pref = await crearPreferencia({
+    const armar = (metodo: 'oxxo' | 'oxxo_suave' | 'tarjeta') => crearPreferencia({
       title: `Agentia Lealtad ${periodo} — ${t.nombre}`.slice(0, 120),
       amount: precio.total,
       reference: ref,
       notificationUrl: `${base}/api/lealtad/mp-webhook`,
       backUrl: `${base}/lealtad/gracias?ref=${ref}`,
-      metodo: pago === 'Mercado Pago' ? 'tarjeta' : 'oxxo',
+      metodo,
       payerName: String(t.nombre),
     });
+    let pref;
+    if (pago === 'Mercado Pago') pref = await armar('tarjeta');
+    else {
+      try {
+        pref = await armar('oxxo');
+      } catch (e1) {
+        console.error('[lealtad] OXXO estricto falló, reintento suave:', e1);
+        pref = await armar('oxxo_suave');
+      }
+    }
     await db.collection(SOLICITUDES).updateOne({ ref }, { $set: { mpPreferenceId: pref.id } });
     return NextResponse.json({ ok: true, url: pref.initPoint });
   } catch (e) {
     console.error('[lealtad/renovar]', e);
-    return NextResponse.json({ error: 'No se pudo crear el pago', fallback: true }, { status: 424 });
+    return NextResponse.json({ error: 'No se pudo crear el pago', detalle: String(e instanceof Error ? e.message : e).slice(0, 220), fallback: true }, { status: 424 });
   }
 }
 

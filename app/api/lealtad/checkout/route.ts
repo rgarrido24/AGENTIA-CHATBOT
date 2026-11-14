@@ -88,22 +88,32 @@ async function manejar(req: Request) {
 
   try {
     const base = publicBase();
-    const pref = await crearPreferencia({
+    const armar = (metodo: 'oxxo' | 'oxxo_suave' | 'tarjeta') => crearPreferencia({
       title: `Agentia Lealtad ${periodo} — ${negocio}`.slice(0, 120),
       amount: precio.total,
       reference: ref,
       notificationUrl: `${base}/api/lealtad/mp-webhook`,
       backUrl: `${base}/lealtad/gracias?ref=${ref}`,
-      metodo: pago === 'Mercado Pago' ? 'tarjeta' : 'oxxo',
+      metodo,
       payerName: negocio,
     });
+    let pref;
+    if (pago === 'Mercado Pago') pref = await armar('tarjeta');
+    else {
+      try {
+        pref = await armar('oxxo');
+      } catch (e1) {
+        console.error('[lealtad] OXXO estricto falló, reintento suave:', e1);
+        pref = await armar('oxxo_suave');
+      }
+    }
     await db.collection(SOLICITUDES).updateOne({ ref }, { $set: { mpPreferenceId: pref.id } });
     await notifyOwner(`🛒 Checkout iniciado: ${negocio} (${giro}) — $${precio.total} ${periodo}, ${pago}. WhatsApp: ${whatsapp}`);
     return NextResponse.json({ ok: true, url: pref.initPoint, ref });
   } catch (e) {
     console.error('[lealtad/checkout]', e);
     await db.collection(SOLICITUDES).updateOne({ ref }, { $set: { estado: 'error_checkout', error: String(e).slice(0, 200) } });
-    return NextResponse.json({ error: 'No se pudo crear el pago', fallback: true }, { status: 424 });
+    return NextResponse.json({ error: 'No se pudo crear el pago', detalle: String(e instanceof Error ? e.message : e).slice(0, 220), fallback: true }, { status: 424 });
   }
 }
 
