@@ -20,8 +20,8 @@ export function BannerTenant({ tenantId }: { tenantId: string }) {
   const [logoOk, setLogoOk] = useState(true);
 
   useEffect(() => {
-    setUrl(`${window.location.origin}/n/${tenantId}/alta`);
-  }, [tenantId]);
+    setUrl(`${window.location.origin}${tenant?.basePath ?? `/n/${tenantId}`}/alta`);
+  }, [tenantId, tenant?.basePath]);
 
   useEffect(() => {
     if (!url) return;

@@ -30,7 +30,7 @@ export function LoyaltyShell({ tenantId, tenant: tenantProp, children }: Props) 
     { href: `${basePath}/caja`, label: 'Caja', icon: ShoppingCart },
     { href: `${basePath}/buscar`, label: 'Buscar', icon: Search },
     { href: `${basePath}/clientes`, label: 'Clientes', icon: Users },
-    ...(tenant.isDemo || isCarnitas || tenantId === 'sabucan'
+    ...(tenant.isDemo || tenantId === 'sabucan'
       ? []
       : [{ href: `${basePath}/banner`, label: 'Banner', icon: ImageIcon }]),
   ];
