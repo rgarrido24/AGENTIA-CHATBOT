@@ -33,7 +33,10 @@ export async function POST(req: Request) {
 
   const periodo: Periodo = b.periodo === 'anual' ? 'anual' : 'mensual';
   const pago: MetodoPago = b.pago === 'OXXO' ? 'OXXO' : b.pago === 'Mercado Pago' ? 'Mercado Pago' : 'SPEI';
-  const precio = calcularTotal(periodo, Number(b.sucursales) || Number(t.sucursales) || 1, pago);
+  const precioReal = calcularTotal(periodo, Number(b.sucursales) || Number(t.sucursales) || 1, pago);
+  // SOLO PARA PRUEBAS: LEALTAD_PRECIO_TEST=20 cobra $20 en vez del total. Quitar la variable al terminar.
+  const test = Number(process.env.LEALTAD_PRECIO_TEST);
+  const precio = test > 0 ? { ...precioReal, total: test } : precioReal;
   const ref = randomBytes(12).toString('hex');
 
   await db.collection(SOLICITUDES).insertOne({
