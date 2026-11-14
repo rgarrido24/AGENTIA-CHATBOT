@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getMongoDb } from '@/lib/mongodb';
 import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
 import { isPanelActive } from '@/lib/loyalty-session';
-import { ENLACES_VACIOS, type Enlaces } from '@/lib/lealtad-enlaces';
+import { ENLACES_VACIOS, limpiarEnlaces, type Enlaces } from '@/lib/lealtad-enlaces';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +17,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function LinkNegocioPage({ params }: Props) {
   const t = await getLoyaltyTenant(params.negocio);
   if (!t || t.isDemo) notFound();
-  const doc = await (await getMongoDb()).collection('loyalty_tenants').findOne({ key: t.id });
-  const e: Enlaces = { ...ENLACES_VACIOS, ...((doc?.enlaces as Partial<Enlaces>) ?? {}) };
+  const doc = await (await getMongoDb()).collection('loyalty_enlaces').findOne({ key: t.id });
+  const e: Enlaces = { ...ENLACES_VACIOS, ...limpiarEnlaces((doc as Record<string, unknown>) ?? {}) };
   const activo = await isPanelActive(t.id);
 
   const botones: { href: string; texto: string; principal?: boolean }[] = [];

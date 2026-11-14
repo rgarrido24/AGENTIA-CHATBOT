@@ -33,7 +33,7 @@ export function LoyaltyShell({ tenantId, tenant: tenantProp, children }: Props) 
     ...(tenant.isDemo || tenantId === 'sabucan'
       ? []
       : [{ href: `${basePath}/banner`, label: 'Banner', icon: ImageIcon }]),
-    ...(tenant.isDemo || !basePath.startsWith('/n/')
+    ...(tenant.isDemo || tenantId === 'sabucan'
       ? []
       : [{ href: `${basePath}/enlaces`, label: 'Mi link', icon: Link2 }]),
   ];

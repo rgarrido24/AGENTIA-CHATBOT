@@ -84,6 +84,11 @@ export function EnlacesForm({ tenantId }: { tenantId: string }) {
           <div key={c.k}>
             <label className={label}>{c.label}</label>
             <input className={input} value={v[c.k] ?? ''} placeholder={c.ph} onChange={(e) => setV({ ...v, [c.k]: e.target.value })} />
+            {c.k === 'menuUrl' ? (
+              <p className="mt-1 text-xs text-white/45">
+                ¿Tu menú es un PDF o foto en Google Drive? Ábrelo, toca Compartir, elige «Cualquier persona con el enlace» y pega aquí ese link.
+              </p>
+            ) : null}
           </div>
         ))}
         <p className="text-xs text-white/45">Lo que dejes vacío no aparece en tu página. El botón de tu tarjeta de lealtad siempre aparece.</p>

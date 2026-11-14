@@ -14,8 +14,8 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (denied) return denied;
   const cfg = await getLoyaltyTenant(tenant);
   if (!cfg) return NextResponse.json({ error: 'Tenant inválido' }, { status: 404 });
-  const doc = await (await getMongoDb()).collection('loyalty_tenants').findOne({ key: cfg.id });
-  return NextResponse.json({ enlaces: { ...ENLACES_VACIOS, ...((doc?.enlaces as object) ?? {}) } });
+  const doc = await (await getMongoDb()).collection('loyalty_enlaces').findOne({ key: cfg.id });
+  return NextResponse.json({ enlaces: { ...ENLACES_VACIOS, ...limpiarEnlaces((doc as Record<string, unknown>) ?? {}) } });
 }
 
 export async function POST(req: Request, ctx: Ctx) {
@@ -27,7 +27,7 @@ export async function POST(req: Request, ctx: Ctx) {
     if (!cfg) return NextResponse.json({ error: 'Tenant inválido' }, { status: 404 });
     const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
     const enlaces = limpiarEnlaces(body);
-    await (await getMongoDb()).collection('loyalty_tenants').updateOne({ key: cfg.id }, { $set: { enlaces } });
+    await (await getMongoDb()).collection('loyalty_enlaces').updateOne({ key: cfg.id }, { $set: { key: cfg.id, ...enlaces, updatedAt: new Date() } }, { upsert: true });
     return NextResponse.json({ ok: true, enlaces });
   } catch (e) {
     console.error('[api/loyalty/enlaces]', e);
