@@ -5,7 +5,7 @@ import { RenovarForm } from './RenovarForm';
 export const dynamic = 'force-dynamic';
 
 export default async function RenovarPage({ params }: { params: { negocio: string } }) {
-  const t = await (await getMongoDb()).collection('loyalty_tenants').findOne({ key: params.negocio, origen: 'self-serve' });
+  const t = await (await getMongoDb()).collection('loyalty_tenants').findOne({ key: params.negocio, isDemo: { $ne: true }, plan: { $ne: 'demo' } });
   if (!t) notFound();
   return (
     <RenovarForm

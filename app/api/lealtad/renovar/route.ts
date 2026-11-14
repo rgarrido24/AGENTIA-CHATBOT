@@ -30,7 +30,7 @@ async function manejar(req: Request) {
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const key = String(b.negocio ?? '').trim().toLowerCase();
   const db = await getMongoDb();
-  const t = (await db.collection('loyalty_tenants').findOne({ key, origen: 'self-serve' })) as Record<string, any> | null;
+  const t = (await db.collection('loyalty_tenants').findOne({ key, isDemo: { $ne: true }, plan: { $ne: 'demo' } })) as Record<string, any> | null;
   if (!t) return NextResponse.json({ error: 'Negocio no encontrado' }, { status: 404 });
 
   const periodo: Periodo = b.periodo === 'anual' ? 'anual' : 'mensual';
