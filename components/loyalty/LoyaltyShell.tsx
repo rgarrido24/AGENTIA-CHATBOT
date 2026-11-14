@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import type { CSSProperties, ReactNode } from 'react';
 import { useState } from 'react';
-import { Search, ShoppingCart, Users } from 'lucide-react';
+import { Image as ImageIcon, Search, ShoppingCart, Users } from 'lucide-react';
 import { getTenant, type TenantConfig } from '@/lib/wallet-tenant';
 import { LoyaltyTenantProvider } from './tenant-context';
 
@@ -16,6 +17,8 @@ type Props = {
 export function LoyaltyShell({ tenantId, tenant: tenantProp, children }: Props) {
   const tenant = tenantProp ?? getTenant(tenantId);
   const [logoOk, setLogoOk] = useState(true);
+  const pathname = usePathname() ?? '';
+  const esRegistroPublico = /\/alta\/?$/.test(pathname);
 
   if (!tenant) return null;
 
@@ -27,7 +30,10 @@ export function LoyaltyShell({ tenantId, tenant: tenantProp, children }: Props) 
     { href: `${basePath}/caja`, label: 'Caja', icon: ShoppingCart },
     { href: `${basePath}/buscar`, label: 'Buscar', icon: Search },
     { href: `${basePath}/clientes`, label: 'Clientes', icon: Users },
-  ] as const;
+    ...(tenant.isDemo || isCarnitas || tenantId === 'sabucan'
+      ? []
+      : [{ href: `${basePath}/banner`, label: 'Banner', icon: ImageIcon }]),
+  ];
 
   const rootStyle = {
     backgroundColor: colorPrimario,
@@ -103,6 +109,7 @@ export function LoyaltyShell({ tenantId, tenant: tenantProp, children }: Props) 
               </p>
             </div>
           </Link>
+          {esRegistroPublico ? null : (
           <nav className="flex flex-wrap justify-end gap-1.5">
             {nav.map(({ href, label, icon: Icon }) => (
               <Link
@@ -115,6 +122,7 @@ export function LoyaltyShell({ tenantId, tenant: tenantProp, children }: Props) 
               </Link>
             ))}
           </nav>
+          )}
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">{children}</main>
