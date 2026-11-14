@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 import { firmaValida, obtenerPago } from '@/lib/mercadopago';
 import { activarSolicitud, SOLICITUDES } from '@/lib/lealtad-provision';
+import { aplicarRenovacion } from '@/lib/lealtad-renovaciones';
 import { notifyOwner } from '@/lib/loyalty-security';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +44,8 @@ async function manejar(req: Request) {
     { $set: { estado: 'pagado', pagadoAt: new Date() } },
   );
   if (marcado.modifiedCount === 1 || ['pagado', 'error_activacion'].includes(String(sol.estado))) {
-    const r = await activarSolicitud(String(sol.ref));
+    const r =
+      sol.tipo === 'renovacion' ? await aplicarRenovacion(String(sol.ref)) : await activarSolicitud(String(sol.ref));
     return NextResponse.json({ ok: r.ok });
   }
   return NextResponse.json({ ok: true });

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
 import { setSessionCookie, verifyPassword } from '@/lib/loyalty-session';
+import { vigenciaVencida } from '@/lib/lealtad-suscripcion';
 import { clearFails, lockMinutesLeft, notifyOwner, recordFail, requestIp } from '@/lib/loyalty-security';
 
 export const dynamic = 'force-dynamic';
@@ -39,10 +40,16 @@ export async function POST(req: Request) {
   }
 
   await clearFails(negocio, ip);
+  if (doc!.panelActivo !== false && vigenciaVencida(doc as { vigenteHasta?: Date; plan?: string })) {
+    return NextResponse.json(
+      { error: `Tu periodo terminó y la tarjeta está en pausa. Reactívala en agentia.software/n/${negocio}/renovar`, suspendido: true },
+      { status: 403 },
+    );
+  }
   if (doc!.panelActivo === false) {
     await notifyOwner(`🔒 ${nombre} — intento de entrada con el panel SUSPENDIDO.\nIP: ${ip}`);
     return NextResponse.json(
-      { error: 'Servicio suspendido. Contacta a Agentia para reactivarlo.', suspendido: true },
+      { error: `Servicio suspendido. Para reactivarlo entra a agentia.software/n/${negocio}/renovar o contacta a Agentia.`, suspendido: true },
       { status: 403 },
     );
   }

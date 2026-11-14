@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getMongoDb } from '@/lib/mongodb';
 import { SOLICITUDES } from '@/lib/lealtad-provision';
 import { AutoRefresh } from './AutoRefresh';
+import { TRIAL_DIAS } from '@/lib/lealtad-suscripcion';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
@@ -18,6 +19,11 @@ export default async function GraciasPage({ searchParams }: Props) {
   const activa = sol?.estado === 'activada';
   const cred =
     activa && sol?.credTemp && new Date(sol.credTemp.hasta) > new Date() ? (sol.credTemp as { user: string; pass: string; panelUrl: string }) : null;
+  const renovacion = sol?.tipo === 'renovacion';
+  const trial = sol?.trial === true;
+  const finPrueba = sol?.activadaAt
+    ? new Date(new Date(sol.activadaAt).getTime() + TRIAL_DIAS * 86400000).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', timeZone: 'America/Mexico_City' })
+    : '';
   const pendienteEfectivo = !activa && sol && ['SPEI', 'OXXO'].includes(String(sol.pago)) && sol.mpStatus !== 'approved';
 
   return (
@@ -30,12 +36,20 @@ export default async function GraciasPage({ searchParams }: Props) {
       )}
       {sol && activa && (
         <>
-          <h1 className="text-3xl font-bold">¡Tu tarjeta ya está activa! 🎉</h1>
-          <p className="mt-3 text-[#5E646B]">
+          <h1 className="text-3xl font-bold">
+            {renovacion ? '¡Pago recibido! Tu tarjeta sigue activa 🎉' : trial ? `¡Tu prueba de ${TRIAL_DIAS} días ya está activa! 🎉` : '¡Tu tarjeta ya está activa! 🎉'}
+          </h1>
+          {trial && finPrueba && <p className="mt-2 font-semibold">Termina el {finPrueba}. Te avisamos antes para que decidas.</p>}
+          {renovacion && (
+            <p className="mt-3 text-[#5E646B]">
+              Ya puedes volver a tu panel: <a className="underline" href={`/n/${sol.tenantKey}/login`}>entrar a mi caja</a>.
+            </p>
+          )}
+          {!renovacion && <p className="mt-3 text-[#5E646B]">
             {sol.whatsappEnviado
               ? 'Te mandamos tus accesos por WhatsApp. Aquí también los tienes:'
               : 'Estos son tus accesos (guárdalos):'}
-          </p>
+          </p>}
           {cred && (
             <div className="mt-6 rounded-2xl border border-[#E8E5DD] bg-[#F6F5F0] p-5 text-left">
               <p><b>Panel:</b> <a className="underline" href={cred.panelUrl}>{cred.panelUrl}</a></p>
@@ -43,13 +57,13 @@ export default async function GraciasPage({ searchParams }: Props) {
               <p className="mt-1"><b>Contraseña:</b> <code>{cred.pass}</code></p>
             </div>
           )}
-          {!sol.logoUrl && <p className="mt-4 text-sm text-[#5E646B]">Mándanos tu logo por WhatsApp para ponerlo en tu tarjeta.</p>}
+          {!renovacion && !sol.logoUrl && <p className="mt-4 text-sm text-[#5E646B]">Mándanos tu logo por WhatsApp para ponerlo en tu tarjeta.</p>}
         </>
       )}
       {sol && !activa && (
         <>
           <AutoRefresh />
-          <h1 className="text-3xl font-bold">{pendienteEfectivo ? 'Esperando tu pago' : 'Estamos activando tu tarjeta…'}</h1>
+          <h1 className="text-3xl font-bold">{pendienteEfectivo ? 'Esperando tu pago' : renovacion ? 'Confirmando tu pago…' : 'Estamos activando tu tarjeta…'}</h1>
           <p className="mt-3 text-[#5E646B]">
             {pendienteEfectivo
               ? 'En cuanto se acredite tu pago por SPEI u OXXO (puede tardar unas horas), activamos tu tarjeta y te mandamos los accesos por WhatsApp. No tienes que hacer nada más.'

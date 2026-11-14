@@ -11,6 +11,7 @@ import { loyaltyDocToConfig, invalidateLoyaltyTenantCache } from '@/lib/loyalty-
 import { asegurarClaseWallet } from '@/lib/wallet-class-admin';
 import { hashPassword, randomPassword } from '@/lib/loyalty-session';
 import { notifyOwner } from '@/lib/loyalty-security';
+import { TRIAL_DIAS } from '@/lib/lealtad-suscripcion';
 
 export const SOLICITUDES = 'lealtad_solicitudes';
 const RESERVADOS = new Set([
@@ -83,7 +84,8 @@ export async function activarSolicitud(ref: string): Promise<{ ok: boolean; key?
     const password = randomPassword(10);
     const now = new Date();
     const vigente = new Date(now);
-    if (sol.periodo === 'anual') vigente.setFullYear(vigente.getFullYear() + 1);
+    if (sol.trial) vigente.setDate(vigente.getDate() + TRIAL_DIAS);
+    else if (sol.periodo === 'anual') vigente.setFullYear(vigente.getFullYear() + 1);
     else vigente.setMonth(vigente.getMonth() + 1);
 
     const doc = {
@@ -92,7 +94,8 @@ export async function activarSolicitud(ref: string): Promise<{ ok: boolean; key?
       logoUrl,
       colorPrimario: color,
       colorAcento: '#F2C14E',
-      plan: 'base',
+      plan: sol.trial ? 'trial' : 'base',
+      estadoSuscripcion: sol.trial ? 'trial' : 'activa',
       isDemo: false,
       panelActivo: true,
       origen: 'self-serve',
@@ -123,12 +126,16 @@ export async function activarSolicitud(ref: string): Promise<{ ok: boolean; key?
     const qrUrl = `${publicBase()}/api/loyalty/${key}/alta-qr`;
     const altaUrl = `${publicBase()}/n/${key}/alta`;
 
+    const fin = vigente.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', timeZone: 'America/Mexico_City' });
     const mensaje =
-      `¡Listo, ${nombre}! Tu tarjeta de lealtad ya está activa 🎉\n\n` +
+      `¡Listo, ${nombre}! Tu tarjeta de lealtad ya está activa 🎉\n` +
+      (sol.trial ? `Tienes ${TRIAL_DIAS} días de prueba gratis (hasta el ${fin}).\n` : '') +
+      `\n` +
       `🖥️ Panel de caja: ${panelUrl}\nUsuario: ${usuario}\nContraseña: ${password}\n\n` +
       `📲 Para que tus clientes se registren y guarden su tarjeta en Google Wallet:\n` +
       `• Link: ${altaUrl}\n• QR para imprimir: ${qrUrl}\n\n` +
       (sol.logoUrl ? '' : '📎 Mándanos tu logo por este chat y lo ponemos en tu tarjeta.\n\n') +
+      (sol.trial ? `Para seguir después de la prueba: ${publicBase()}/n/${key}/renovar\n\n` : '') +
       `Cualquier duda, responde este mensaje.`;
 
     let enviado = false;
@@ -160,7 +167,7 @@ export async function activarSolicitud(ref: string): Promise<{ ok: boolean; key?
     );
 
     await notifyOwner(
-      `✅ Nuevo cliente Agentia Lealtad: ${nombre}\nGiro: ${sol.giro} · ${sol.sucursales} suc · ${sol.periodo} · $${sol.total}\n` +
+      `${sol.trial ? '🧪 Nueva PRUEBA de 7 días' : '✅ Nuevo cliente Agentia Lealtad'}: ${nombre}\nGiro: ${sol.giro} · ${sol.sucursales} suc · ${sol.periodo} · $${sol.total}\n` +
         `Panel: ${panelUrl}\nWallet: ${wallet.ok ? 'clase lista' : '⚠️ ' + wallet.detalle}\n` +
         `Credenciales al cliente: ${enviado ? 'enviadas por WhatsApp' : '⚠️ NO se pudieron enviar (bridge caído) — se muestran en la página de gracias'}` +
         (sol.logoUrl ? '' : '\nSin logo: pedirlo por WhatsApp.'),

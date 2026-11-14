@@ -13,6 +13,7 @@ import { getLoyaltyTenant } from '@/lib/loyalty-tenants';
 import { DEMO_AUTH_COOKIE, expectedDemoAuthToken } from '@/lib/demo-auth';
 import { CARNITAS_AUTH_COOKIE, expectedCarnitasAuthToken } from '@/lib/carnitas-auth';
 import { hasValidSabucanSession } from '@/lib/sabucan-security';
+import { vigenciaVencida } from '@/lib/lealtad-suscripcion';
 
 export const LTY_COOKIE = 'lty_session';
 export const LTY_MAX_AGE = 60 * 60 * 12;
@@ -93,7 +94,10 @@ export async function isPanelActive(key: string): Promise<boolean> {
     const db = await getMongoDb();
     const doc = await db.collection('loyalty_tenants').findOne({ key });
     if (!doc) return true;
-    return doc.panelActivo !== false;
+    if (doc.panelActivo === false) return false;
+    // Prueba / suscripción vencida: se corta al instante aunque el cron no haya corrido.
+    if (vigenciaVencida(doc as { vigenteHasta?: Date; plan?: string })) return false;
+    return true;
   } catch (e) {
     console.error('[loyalty-session] isPanelActive', e);
     return false;
