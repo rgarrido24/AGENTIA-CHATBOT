@@ -22,7 +22,7 @@ function limited(ip: string): boolean {
 const clean = (v: unknown, max = 160) => String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
 
 /** POST /api/lealtad/checkout — crea la solicitud y el link de pago de Mercado Pago. */
-export async function POST(req: Request) {
+async function manejar(req: Request) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'x';
   if (limited(ip)) return NextResponse.json({ error: 'Demasiados intentos, espera unos minutos.' }, { status: 429 });
   if (!mpToken()) return NextResponse.json({ error: 'Pago en línea no disponible', fallback: true }, { status: 503 });
@@ -96,5 +96,14 @@ export async function POST(req: Request) {
     console.error('[lealtad/checkout]', e);
     await db.collection(SOLICITUDES).updateOne({ ref }, { $set: { estado: 'error_checkout', error: String(e).slice(0, 200) } });
     return NextResponse.json({ error: 'No se pudo crear el pago', fallback: true }, { status: 502 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    return await manejar(req);
+  } catch (e) {
+    console.error('[checkout] error no controlado', e);
+    return NextResponse.json({ error: 'Error del servidor. Intenta de nuevo o usa WhatsApp.', fallback: true }, { status: 500 });
   }
 }

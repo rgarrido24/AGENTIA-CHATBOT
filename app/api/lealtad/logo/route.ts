@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import sharp from 'sharp';
 import { uploadPanelAttachment } from '@/lib/cloudinary-panel';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +27,7 @@ export async function POST(req: Request) {
     if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) {
       return NextResponse.json({ error: 'Usa PNG, JPG o WebP' }, { status: 400 });
     }
+    const sharp = (await import('sharp')).default;
     const png = await sharp(Buffer.from(await file.arrayBuffer()))
       .rotate()
       .resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })

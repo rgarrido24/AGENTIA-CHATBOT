@@ -20,7 +20,7 @@ function limited(ip: string): boolean {
 }
 
 /** POST { negocio, periodo, pago, sucursales? } — link de pago para renovar o convertir la prueba. */
-export async function POST(req: Request) {
+async function manejar(req: Request) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'x';
   if (limited(ip)) return NextResponse.json({ error: 'Demasiados intentos, espera unos minutos.' }, { status: 429 });
   if (!mpToken()) return NextResponse.json({ error: 'Pago en línea no disponible', fallback: true }, { status: 503 });
@@ -70,5 +70,14 @@ export async function POST(req: Request) {
   } catch (e) {
     console.error('[lealtad/renovar]', e);
     return NextResponse.json({ error: 'No se pudo crear el pago', fallback: true }, { status: 502 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    return await manejar(req);
+  } catch (e) {
+    console.error('[renovar] error no controlado', e);
+    return NextResponse.json({ error: 'Error del servidor. Intenta de nuevo o usa WhatsApp.', fallback: true }, { status: 500 });
   }
 }

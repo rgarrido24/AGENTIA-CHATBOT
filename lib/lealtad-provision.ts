@@ -3,7 +3,6 @@
  * Crea tenant en `loyalty_tenants`, clase de Google Wallet, credenciales del panel
  * y manda todo por WhatsApp. Idempotente: solo corre una vez por solicitud.
  */
-import sharp from 'sharp';
 import { getMongoDb } from '@/lib/mongodb';
 import { bridgeSendMessage } from '@/lib/baileys-bridge-client';
 import { uploadPanelAttachment } from '@/lib/cloudinary-panel';
@@ -48,6 +47,7 @@ async function slugLibre(nombre: string): Promise<string> {
 async function logoProvisional(nombre: string, color: string): Promise<string> {
   const letra = (nombre.trim().charAt(0) || 'L').toUpperCase().replace(/[<>&]/g, '');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><circle cx="256" cy="256" r="250" fill="#FFFFFF" fill-opacity="0.95"/><text x="256" y="330" font-family="DejaVu Sans, Arial, sans-serif" font-size="260" font-weight="700" text-anchor="middle" fill="${color}">${letra}</text></svg>`;
+  const sharp = (await import('sharp')).default;
   const png = await sharp(Buffer.from(svg)).png().toBuffer();
   const up = await uploadPanelAttachment(png, { folder: 'lealtad-logos', fileName: 'logo-provisional.png', mimeType: 'image/png' });
   return up.url;

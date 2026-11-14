@@ -1507,7 +1507,7 @@
       if (f.size > 4*1024*1024){ st.textContent = "El archivo pesa más de 4 MB. Elige uno más ligero."; wLogo.value = ""; return; }
       st.textContent = "Subiendo logo…";
       var fd = new FormData(); fd.append("file", f);
-      fetch("/api/lealtad/logo", { method: "POST", body: fd }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); }).then(function(x){
+      fetch("/api/lealtad/logo", { method: "POST", body: fd }).then(function(r){ return r.text().then(function(t){ var j = {}; try { j = JSON.parse(t); } catch(e) { j = { error: "Error del servidor (HTTP " + r.status + "). Intenta de nuevo o usa WhatsApp." }; } return { ok: r.ok, j: j }; }); }).then(function(x){
         if (x.ok && x.j.url){
           window.__logoUrl = x.j.url; st.textContent = "Logo listo ✓";
           $("lcLogo").innerHTML = '<img src="' + x.j.url + '" alt="" style="width:100%;height:100%;object-fit:contain;border-radius:10px;" />';
@@ -1529,7 +1529,7 @@
       err.classList.remove("show"); err.textContent = "";
       trialBtn.disabled = true; var old = trialBtn.textContent; trialBtn.textContent = "Creando tu tarjeta… (unos segundos)";
       fetch("/api/lealtad/prueba", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-        .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+        .then(function(r){ return r.text().then(function(t){ var j = {}; try { j = JSON.parse(t); } catch(e) { j = { error: "Error del servidor (HTTP " + r.status + "). Intenta de nuevo o usa WhatsApp." }; } return { ok: r.ok, j: j }; }); })
         .then(function(x){
           if (x.ok && x.j.ref){ window.location.href = "/lealtad/gracias?ref=" + x.j.ref; return; }
           err.textContent = (x.j && x.j.error) || "No pudimos iniciar tu prueba. Intenta de nuevo o usa WhatsApp.";
@@ -1550,7 +1550,7 @@
         modelo: d.modelo, parametro: parametro, recompensa: d.recompensa, color: d.color, logoUrl: window.__logoUrl || "",
         sucursales: d.sucursales, periodo: d.periodo, pago: d.pago };
       fetch("/api/lealtad/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-        .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+        .then(function(r){ return r.text().then(function(t){ var j = {}; try { j = JSON.parse(t); } catch(e) { j = { error: "Error del servidor (HTTP " + r.status + "). Intenta de nuevo o usa WhatsApp." }; } return { ok: r.ok, j: j }; }); })
         .then(function(x){
           if (x.ok && x.j.url){ window.location.href = x.j.url; return; }
           err.textContent = (x.j && x.j.fallback) ? "El pago en línea no está disponible ahora mismo. Usa el botón de WhatsApp de abajo y te ayudamos a pagar." : ((x.j && x.j.error) || "No pudimos crear el pago. Intenta de nuevo o usa WhatsApp.");

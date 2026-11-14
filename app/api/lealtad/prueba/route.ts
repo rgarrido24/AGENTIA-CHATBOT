@@ -11,7 +11,7 @@ export const maxDuration = 60;
 const clean = (v: unknown, max = 160) => String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
 
 /** POST /api/lealtad/prueba — arranca la prueba gratis de 7 días (una por WhatsApp, máx. 2 por IP al día). */
-export async function POST(req: Request) {
+async function manejar(req: Request) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'x';
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const negocio = clean(b.negocio, 80);
@@ -75,4 +75,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'No pudimos activar tu prueba. Ya nos avisó el sistema; te contactamos por WhatsApp.' }, { status: 500 });
   }
   return NextResponse.json({ ok: true, ref });
+}
+
+export async function POST(req: Request) {
+  try {
+    return await manejar(req);
+  } catch (e) {
+    console.error('[prueba] error no controlado', e);
+    return NextResponse.json({ error: 'Error del servidor. Intenta de nuevo o usa WhatsApp.', fallback: true }, { status: 500 });
+  }
 }
