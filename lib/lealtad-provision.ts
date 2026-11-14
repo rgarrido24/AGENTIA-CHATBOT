@@ -134,6 +134,7 @@ export async function activarSolicitud(ref: string): Promise<{ ok: boolean; key?
       `🖥️ Panel de caja: ${panelUrl}\nUsuario: ${usuario}\nContraseña: ${password}\n\n` +
       `📲 Para que tus clientes se registren y guarden su tarjeta en Google Wallet:\n` +
       `• Link: ${altaUrl}\n• QR para imprimir: ${qrUrl}\n\n` +
+      `🔗 Tu link para Instagram/Facebook/TikTok (tarjeta, menú, ubicación): ${publicBase()}/l/${key}\nPersonalízalo en ${panelUrl.replace(/\/login.*$/, '')}/enlaces\n\n` +
       (sol.logoUrl ? '' : '📎 Mándanos tu logo por este chat y lo ponemos en tu tarjeta.\n\n') +
       (sol.trial ? `Para seguir después de la prueba: ${publicBase()}/n/${key}/renovar\n\n` : '') +
       `Cualquier duda, responde este mensaje.`;

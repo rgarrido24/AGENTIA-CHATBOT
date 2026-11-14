@@ -168,6 +168,9 @@ export function BannerTenant({ tenantId }: { tenantId: string }) {
           <strong className="text-white">Tú los registras:</strong> en Caja capturas su celular y nombre al hacer la primera venta.
         </p>
         <p className="mt-3 break-all text-xs text-white/45">Tu link: {url}</p>
+        <p className="mt-2 text-xs text-white/45">
+          Para Instagram, Facebook y TikTok usa tu <a className="underline" href={`/n/${tenantId}/enlaces`}>link para redes</a>.
+        </p>
       </div>
     </div>
   );

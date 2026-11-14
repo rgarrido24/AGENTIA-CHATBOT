@@ -12,7 +12,7 @@ export default async function TenantAuthGuard({
 }: {
   children: ReactNode;
   negocio: string;
-  seccion: 'caja' | 'buscar' | 'clientes' | 'banner';
+  seccion: 'caja' | 'buscar' | 'clientes' | 'banner' | 'enlaces';
 }) {
   const tenant = await getLoyaltyTenant(negocio);
   if (!tenant) redirect(`/n/${negocio}/login`);

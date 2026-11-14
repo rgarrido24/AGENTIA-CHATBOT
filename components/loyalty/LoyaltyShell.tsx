@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { CSSProperties, ReactNode } from 'react';
 import { useState } from 'react';
-import { Image as ImageIcon, Search, ShoppingCart, Users } from 'lucide-react';
+import { Image as ImageIcon, Link2, Search, ShoppingCart, Users } from 'lucide-react';
 import { getTenant, type TenantConfig } from '@/lib/wallet-tenant';
 import { LoyaltyTenantProvider } from './tenant-context';
 
@@ -33,6 +33,9 @@ export function LoyaltyShell({ tenantId, tenant: tenantProp, children }: Props) 
     ...(tenant.isDemo || tenantId === 'sabucan'
       ? []
       : [{ href: `${basePath}/banner`, label: 'Banner', icon: ImageIcon }]),
+    ...(tenant.isDemo || !basePath.startsWith('/n/')
+      ? []
+      : [{ href: `${basePath}/enlaces`, label: 'Mi link', icon: Link2 }]),
   ];
 
   const rootStyle = {
