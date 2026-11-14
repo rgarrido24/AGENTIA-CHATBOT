@@ -21,7 +21,8 @@ async function bridgeFetch(
   if (secret) headers.Authorization = `Bearer ${secret}`;
 
   const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
-  return fetch(url, { ...init, headers });
+  // Si el bridge está caído no dejamos colgada la petición (activaciones, webhooks, alertas).
+  return fetch(url, { signal: AbortSignal.timeout(15000), ...init, headers });
 }
 
 export async function bridgeSendMessage(clientId: string, phone: string, message: string) {
