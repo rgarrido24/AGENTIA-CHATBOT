@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
+import { promoParaNegocio } from '@/lib/lealtad-promo';
 import { calcularTotal, type MetodoPago, type Periodo } from '@/lib/lealtad-pricing';
 import { crearPreferencia, mpToken } from '@/lib/mercadopago';
 import { publicBase, SOLICITUDES } from '@/lib/lealtad-provision';
@@ -35,7 +36,9 @@ async function manejar(req: Request) {
 
   const periodo: Periodo = b.periodo === 'anual' ? 'anual' : 'mensual';
   const pago: MetodoPago = b.pago === 'OXXO' ? 'OXXO' : b.pago === 'Mercado Pago' ? 'Mercado Pago' : 'SPEI';
-  const precioReal = calcularTotal(periodo, Number(b.sucursales) || Number(t.sucursales) || 1, pago);
+  // Buen Mes: solo anual, con cupo y una vez por negocio.
+  const promo = periodo === 'anual' && (await promoParaNegocio(key));
+  const precioReal = calcularTotal(periodo, Number(b.sucursales) || Number(t.sucursales) || 1, pago, promo);
   // SOLO PARA PRUEBAS: LEALTAD_PRECIO_TEST=20 cobra $20 en vez del total. Quitar la variable al terminar.
   const test = Number(process.env.LEALTAD_PRECIO_TEST);
   const precio = test > 0 ? { ...precioReal, total: test } : precioReal;
@@ -50,6 +53,7 @@ async function manejar(req: Request) {
     whatsapp: t.whatsapp,
     periodo,
     pago,
+    promo,
     sucursales: precio.sucursales,
     total: precio.total,
     ip,

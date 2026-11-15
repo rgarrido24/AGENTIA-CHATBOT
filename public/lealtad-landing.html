@@ -424,9 +424,35 @@
     *, *::before, *::after{ animation-duration:.001s !important; transition-duration:.001s !important; }
     .rv.in, .ad-after.in li{ animation:none; }
   }
+
+  /* ---------- Oferta Buen Mes ---------- */
+  .promo-bar{ background:linear-gradient(90deg,#9E0019,#D90429 50%,#9E0019); color:#fff; text-align:center; font-size:13.5px; font-weight:700; padding:9px 14px; }
+  .promo-bar a{ color:#FFD23F; text-decoration:underline; font-weight:800; }
+  .promo-bar b{ color:#FFD23F; }
+  #buenmes{ padding:34px 0 8px; }
+  .bm-card{ position:relative; overflow:hidden; border-radius:24px; padding:34px 30px; color:#fff; background:radial-gradient(120% 140% at 100% 0%,#FF3B30 0%,transparent 55%),linear-gradient(135deg,#7A0012,#D90429 70%); box-shadow:0 18px 50px rgba(217,4,41,.28); }
+  .bm-tag{ display:inline-block; background:#FFD23F; color:#3B0008; font-weight:900; font-size:12px; letter-spacing:.08em; text-transform:uppercase; padding:6px 12px; border-radius:999px; }
+  .bm-card h2{ margin:14px 0 6px; font-size:clamp(26px,5vw,40px); line-height:1.08; color:#fff; }
+  .bm-price{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin:10px 0 4px; }
+  .bm-price .now{ font-size:clamp(46px,9vw,72px); font-weight:900; color:#FFD23F; line-height:1; }
+  .bm-price .was{ font-size:22px; text-decoration:line-through; opacity:.7; }
+  .bm-card p{ margin:6px 0; color:#FFE9EC; font-size:15px; max-width:640px; }
+  .bm-meter{ margin:18px 0 6px; max-width:420px; }
+  .bm-meter .bar{ height:10px; background:rgba(255,255,255,.22); border-radius:999px; overflow:hidden; }
+  .bm-meter .bar i{ display:block; height:100%; background:#FFD23F; border-radius:999px; }
+  .bm-meter small{ display:block; margin-top:6px; font-weight:800; color:#FFD23F; }
+  .bm-cta{ display:inline-block; margin-top:16px; background:#FFD23F; color:#3B0008; font-weight:900; padding:14px 22px; border-radius:14px; text-decoration:none; }
+  .bm-fine{ font-size:12px !important; opacity:.8; margin-top:14px !important; }
+  #caso{ padding:30px 0 6px; }
+  .caso-card{ display:grid; gap:22px; grid-template-columns:1fr; border:1.5px solid var(--line); border-radius:22px; padding:24px; background:var(--surface2); }
+  .caso-card img{ width:100%; max-height:460px; object-fit:cover; border-radius:16px; }
+  .caso-card blockquote{ margin:0; font-size:19px; font-weight:700; line-height:1.35; }
+  @media(min-width:760px){ .caso-card.has-img{ grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); align-items:center; } }
 </style>
 </head>
 <body>
+
+<div class="promo-bar" id="promoBar" hidden>🔥 <b>Oferta del Buen Mes:</b> plan anual a <b>$1,990</b> (antes $3,990) · <span id="promoBarCount"></span> · <a href="#buenmes">Ver oferta</a></div>
 
 <div class="announce">Precio final con <b>IVA incluido</b> y factura CFDI &nbsp;·&nbsp; Paga por SPEI u OXXO al precio publicado &nbsp;·&nbsp; <a href="#precio">Ver planes</a></div>
 <header class="topbar">
@@ -712,6 +738,35 @@
   </section>
 
   <!-- PRECIO -->
+  <!-- OFERTA BUEN MES (se muestra solo si el servidor confirma cupo y vigencia) -->
+  <section id="buenmes" hidden>
+    <div class="wrap">
+      <div class="bm-card">
+        <span class="bm-tag">Oferta del Buen Mes · cupo limitado</span>
+        <h2>Tu tarjeta de lealtad todo el año por $1,990</h2>
+        <div class="bm-price"><span class="now">$1,990</span><span class="was">$3,990</span><span>MXN / año · IVA incluido</span></div>
+        <p>Plan anual de 1 sucursal, con panel de caja, banner con QR, link para redes y factura CFDI. Equivale a $165.83 al mes.</p>
+        <div class="bm-meter" id="bmMeter">
+          <div class="bar"><i id="bmBar" style="width:0%"></i></div>
+          <small id="bmLeft"></small>
+        </div>
+        <a class="bm-cta" href="#contratar" id="bmCta">Quiero mi lugar — contratar anual</a>
+        <p class="bm-fine">Solo los primeros <span id="bmCupo">50</span> negocios y hasta <span id="bmFin">el 30 de noviembre</span>, lo que ocurra primero. El precio aplica al primer año; al renovar se cobra el precio vigente. Con tarjeta vía Mercado Pago se suma 5% de comisión. El lugar se asegura al pagar: la prueba gratis no lo reserva.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CASO REAL (se llena desde /lealtad-caso.json cuando "activo" es true) -->
+  <section id="caso" hidden>
+    <div class="wrap">
+      <div class="sec-head"><h2 id="casoTitulo"></h2></div>
+      <div class="caso-card" id="casoCard">
+        <img id="casoFoto" alt="" hidden />
+        <div><blockquote id="casoTexto"></blockquote><p id="casoAutor" style="margin-top:10px;color:var(--muted);font-weight:700;"></p></div>
+      </div>
+    </div>
+  </section>
+
   <section id="precio" style="padding-top:0;">
     <div class="wrap">
       <div class="sec-head rv">
@@ -1271,13 +1326,14 @@
         $("payOxxoPrice").innerHTML='$399 <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
         $("payMpPrice").innerHTML='$419 <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
       } else {
-        $("mainPrice").textContent="$3,990"; $("mainPricePer").textContent="MXN / año";
-        $("pricePeriodLabel").textContent="por año · paga 10, usa 12";
-        $("priceSub").textContent="Equivale a $332.50/mes. Precio final por SPEI u OXXO. Factura CFDI incluida.";
+        var pm = !!(window.__promo && window.__promo.activa);
+        $("mainPrice").textContent= pm ? "$1,990" : "$3,990"; $("mainPricePer").textContent="MXN / año";
+        $("pricePeriodLabel").textContent= pm ? "por año · oferta Buen Mes (antes $3,990)" : "por año · paga 10, usa 12";
+        $("priceSub").textContent= pm ? "Oferta Buen Mes, cupo limitado. Equivale a $165.83/mes. Factura CFDI incluida." : "Equivale a $332.50/mes. Precio final por SPEI u OXXO. Factura CFDI incluida.";
         $("extraSucursal").innerHTML='Sucursal adicional: <strong>+$1,500/año IVA incluido</strong> (o +$150/mes). Mismo panel, su propia caja.';
-        $("paySpeiPrice").innerHTML='$3,990 <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
-        $("payOxxoPrice").innerHTML='$3,990 <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
-        $("payMpPrice").innerHTML='$4,190 <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
+        $("paySpeiPrice").innerHTML=(pm?'$1,990':'$3,990')+' <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
+        $("payOxxoPrice").innerHTML=(pm?'$1,990':'$3,990')+' <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
+        $("payMpPrice").innerHTML=(pm?'$2,090':'$4,190')+' <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
       }
       // sync wizard period if user toggled here
       if(window.__setWizAnnual) window.__setWizAnnual(v);
@@ -1286,6 +1342,7 @@
     if(tm) tm.addEventListener("click",function(){ setAnnual(false); });
     if(ta) ta.addEventListener("click",function(){ setAnnual(true); });
     window.__setPriceAnnual=setAnnual;
+    window.__refreshPrice=function(){ setAnnual(isAnnual); };
   })();
   /* marquee duplicate for loop + sticky CTA + tilt */
   (function(){
@@ -1316,7 +1373,8 @@
 
     function modelo(){ return form.querySelector('input[name="wModelo"]:checked').value; }
     function pagoMetodo(){ var s=$("wPago"); return s? s.value : "SPEI"; }
-    function basePrice(){ return isAnnual? 3990 : 399; }
+    function promoOn(){ return !!(window.__promo && window.__promo.activa); }
+    function basePrice(){ return isAnnual? (promoOn()? 1990 : 3990) : 399; }
     function extraPrice(){ return isAnnual? 1500*(sucursales-1) : 150*(sucursales-1); }
     function subtotal(){ return basePrice()+extraPrice(); }
     function fee(){ return pagoMetodo()==="Mercado Pago"? Math.round(subtotal()*0.05) : 0; }
@@ -1326,11 +1384,16 @@
       isAnnual=v;
       var mb=$("wizMonthlyBtn"), ab=$("wizAnnualBtn");
       if(mb&&ab){ mb.classList.toggle("active",!v); ab.classList.toggle("active",v); }
-      $("wizPeriodHint").textContent = v? "Anual: pagas 10 meses y usas 12. Equivale a $332.50/mes, IVA incluido." : "Mensual, sin permanencia. IVA incluido y con factura.";
+      $("wizPeriodHint").textContent = v? (promoOn()? "Oferta Buen Mes: $1,990 el primer año (antes $3,990). Equivale a $165.83/mes, IVA incluido." : "Anual: pagas 10 meses y usas 12. Equivale a $332.50/mes, IVA incluido.") : "Mensual, sin permanencia. IVA incluido y con factura.";
       updateTotals();
       if(!fromPrice && window.__setPriceAnnual) { /* avoid loop: price section syncs wizard via __setWizAnnual, not reverse */ }
     }
     window.__setWizAnnual=function(v){ setAnnual(v,true); };
+    window.__refreshWizard=function(){
+      var ab2=$("wizAnnualBtn");
+      if(ab2) ab2.innerHTML = promoOn()? 'Anual — $1,990 <small>Buen Mes</small>' : 'Anual — $3,990 <small>−17%</small>';
+      setAnnual(isAnnual,true);
+    };
     var mb=$("wizMonthlyBtn"), ab=$("wizAnnualBtn");
     if(mb) mb.addEventListener("click",function(){ setAnnual(false); if(window.__setPriceAnnual) window.__setPriceAnnual(false); });
     if(ab) ab.addEventListener("click",function(){ setAnnual(true); if(window.__setPriceAnnual) window.__setPriceAnnual(true); });
@@ -1390,7 +1453,7 @@
     function updateTotals(){
       $("sucVal").textContent = sucursales;
       var baseEl=$("sumBase"); if(baseEl) baseEl.textContent = money(basePrice());
-      var baseLab=$("sumBaseLabel"); if(baseLab) baseLab.textContent = (isAnnual? "Plan base anual (1 sucursal) — IVA incluido" : "Plan base mensual (1 sucursal) — IVA incluido");
+      var baseLab=$("sumBaseLabel"); if(baseLab) baseLab.textContent = (isAnnual? (promoOn()? "Plan anual Buen Mes (1 sucursal) — IVA incluido" : "Plan base anual (1 sucursal) — IVA incluido") : "Plan base mensual (1 sucursal) — IVA incluido");
       $("sumExtra").textContent = money(extraPrice());
       var fr=$("sumFeeRow");
       if(fee()>0){ fr.style.display=""; $("sumFee").textContent = money(fee()); } else { fr.style.display="none"; }
@@ -1434,7 +1497,7 @@
         ["Modelo", detalle],
         ["Recompensa", recompensa],
         ["Sucursales", String(sucursales)],
-        ["Periodo", isAnnual ? "Anual — $3,990 (2 meses gratis)" : "Mensual — $399"],
+        ["Periodo", isAnnual ? (promoOn() ? "Anual — $1,990 (oferta Buen Mes)" : "Anual — $3,990 (2 meses gratis)") : "Mensual — $399"],
         ["Forma de pago", pagoMetodo() + (fee()>0 ? " (+" + money(fee()) + " por procesamiento)" : " — sin comisión")],
         ["Total (IVA incluido)", money(total()) + (isAnnual ? " / año" : " / mes")]
       ];
@@ -1569,6 +1632,35 @@
     });
   })();
 })();
+
+  /* ---------- Oferta Buen Mes + caso real (datos del servidor) ---------- */
+  (function(){
+    function $(id){ return document.getElementById(id); }
+    function show(id,on){ var el=$(id); if(el) el.hidden=!on; }
+    fetch("/api/lealtad/promo",{cache:"no-store"}).then(function(r){ return r.json(); }).then(function(p){
+      window.__promo = p && p.activa ? p : null;
+      if(!window.__promo) return;
+      var left=p.restantes, cupo=p.cupo||50;
+      var fin=new Date(p.fin).toLocaleDateString("es-MX",{day:"numeric",month:"long",timeZone:"America/Mexico_City"});
+      var txt = left<=10 ? "¡Últimos "+left+" lugares!" : "Quedan "+left+" de "+cupo+" lugares";
+      $("promoBarCount").textContent=txt;
+      $("bmLeft").textContent=txt;
+      $("bmBar").style.width=Math.max(4,Math.round((cupo-left)/cupo*100))+"%";
+      $("bmCupo").textContent=cupo; $("bmFin").textContent="el "+fin;
+      show("promoBar",true); show("buenmes",true);
+      var cta=$("bmCta"); if(cta) cta.addEventListener("click",function(){ if(window.__setPriceAnnual) window.__setPriceAnnual(true); });
+      if(window.__refreshPrice) window.__refreshPrice();
+      if(window.__refreshWizard) window.__refreshWizard();
+    }).catch(function(e){ console.error("promo", e && e.message); });
+    fetch("/lealtad-caso.json",{cache:"no-store"}).then(function(r){ return r.ok? r.json() : null; }).then(function(c){
+      if(!c || !c.activo || !c.texto) return;
+      $("casoTitulo").textContent=c.titulo||"Un negocio real ya la usa";
+      $("casoTexto").textContent="“"+c.texto+"”";
+      $("casoAutor").textContent=c.autor||"";
+      if(c.foto && /^\/lealtad-assets\/[\w.\-]+$/.test(c.foto)){ var im=$("casoFoto"); im.src=c.foto; im.alt=c.fotoAlt||""; im.hidden=false; $("casoCard").classList.add("has-img"); }
+      show("caso",true);
+    }).catch(function(){});
+  })();
 </script>
 </body>
 </html>

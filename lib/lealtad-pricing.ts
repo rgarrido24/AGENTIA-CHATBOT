@@ -5,10 +5,13 @@ export type MetodoPago = 'SPEI' | 'OXXO' | 'Mercado Pago';
 export const PRECIO_BASE = { mensual: 399, anual: 3990 } as const;
 export const PRECIO_SUCURSAL = { mensual: 150, anual: 1500 } as const;
 export const COMISION_TARJETA = 0.05;
+/** Oferta "Buen Mes": anual de la 1ª sucursal a este precio (cupo y vigencia en lealtad-promo.ts). */
+export const PRECIO_PROMO_ANUAL = 1990;
 
-export function calcularTotal(periodo: Periodo, sucursales: number, pago: MetodoPago) {
+export function calcularTotal(periodo: Periodo, sucursales: number, pago: MetodoPago, promo = false) {
   const suc = Math.min(20, Math.max(1, Math.round(sucursales) || 1));
-  const subtotal = PRECIO_BASE[periodo] + PRECIO_SUCURSAL[periodo] * (suc - 1);
+  const base = promo && periodo === 'anual' ? PRECIO_PROMO_ANUAL : PRECIO_BASE[periodo];
+  const subtotal = base + PRECIO_SUCURSAL[periodo] * (suc - 1);
   const comision = pago === 'Mercado Pago' ? Math.round(subtotal * COMISION_TARJETA) : 0;
   return { sucursales: suc, subtotal, comision, total: subtotal + comision };
 }
