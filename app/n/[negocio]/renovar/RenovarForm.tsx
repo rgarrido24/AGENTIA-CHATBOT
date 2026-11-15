@@ -9,20 +9,22 @@ export function RenovarForm({
   sucursales,
   enPrueba,
   vigenteHasta,
-  promo,
+  promoAnual,
+  promoMes,
 }: {
   negocio: string;
   nombre: string;
   sucursales: number;
   enPrueba: boolean;
   vigenteHasta: string | null;
-  promo: boolean;
+  promoAnual: boolean;
+  promoMes: boolean;
 }) {
   const [periodo, setPeriodo] = useState<Periodo>('mensual');
   const [pago, setPago] = useState<MetodoPago>('SPEI');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const precio = calcularTotal(periodo, sucursales, pago, promo);
+  const precio = calcularTotal(periodo, sucursales, pago, periodo === 'anual' ? (promoAnual ? 'anual' : null) : promoMes ? 'mes' : null);
   const vencida = vigenteHasta ? new Date(vigenteHasta) < new Date() : false;
 
   async function pagar() {
@@ -57,8 +59,8 @@ export function RenovarForm({
 
       <label className="mt-6 block text-sm text-white/70">Periodo</label>
       <select className={box} value={periodo} onChange={(e) => setPeriodo(e.target.value as Periodo)}>
-        <option value="mensual" className="text-black">Mensual — $399 (+$150 por sucursal adicional)</option>
-        <option value="anual" className="text-black">{promo ? 'Anual — $1,990 · oferta Buen Mes (antes $3,990)' : 'Anual — $3,990 (paga 10, usa 12)'}</option>
+        <option value="mensual" className="text-black">{promoMes ? 'Mensual — primer mes $199, después $399 (+$150 por sucursal adicional)' : 'Mensual — $399 (+$150 por sucursal adicional)'}</option>
+        <option value="anual" className="text-black">{promoAnual ? 'Anual — $1,990 · oferta Buen Mes (antes $3,990)' : 'Anual — $3,990 (paga 10, usa 12)'}</option>
       </select>
 
       <label className="mt-4 block text-sm text-white/70">Forma de pago</label>

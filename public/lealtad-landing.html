@@ -452,7 +452,7 @@
 </head>
 <body>
 
-<div class="promo-bar" id="promoBar" hidden>🔥 <b>Oferta del Buen Mes:</b> plan anual a <b>$1,990</b> (antes $3,990) · <span id="promoBarCount"></span> · <a href="#buenmes">Ver oferta</a></div>
+<div class="promo-bar" id="promoBar" hidden>🔥 <b>Oferta del Buen Mes:</b> <span id="promoBarText"></span> · <a href="#buenmes">Ver ofertas</a></div>
 
 <div class="announce">Precio final con <b>IVA incluido</b> y factura CFDI &nbsp;·&nbsp; Paga por SPEI u OXXO al precio publicado &nbsp;·&nbsp; <a href="#precio">Ver planes</a></div>
 <header class="topbar">
@@ -740,8 +740,16 @@
   <!-- PRECIO -->
   <!-- OFERTA BUEN MES (se muestra solo si el servidor confirma cupo y vigencia) -->
   <section id="buenmes" hidden>
-    <div class="wrap">
-      <div class="bm-card">
+    <div class="wrap" style="display:grid;gap:18px;">
+      <div class="bm-card" id="bmMesCard" hidden>
+        <span class="bm-tag">Buen Mes · solo hasta el <span id="bmMesFin">17 de noviembre</span></span>
+        <h2>Tu primer mes a $199</h2>
+        <div class="bm-price"><span class="now">$199</span><span class="was">$399</span><span>MXN · primer mes · IVA incluido</span></div>
+        <p>Empieza con tu tarjeta de lealtad, panel de caja, banner con QR y link para redes. Después de tu primer mes se cobra $399 al mes, sin permanencia.</p>
+        <a class="bm-cta" href="#contratar" id="bmMesCta">Quiero mi primer mes a $199</a>
+        <p class="bm-fine">Una vez por negocio. Con tarjeta vía Mercado Pago se suma 5% de comisión. Aplica a quien paga dentro de las fechas de la oferta; la prueba gratis no congela el precio.</p>
+      </div>
+      <div class="bm-card" id="bmAnualCard" hidden>
         <span class="bm-tag">Oferta del Buen Mes · cupo limitado</span>
         <h2>Tu tarjeta de lealtad todo el año por $1,990</h2>
         <div class="bm-price"><span class="now">$1,990</span><span class="was">$3,990</span><span>MXN / año · IVA incluido</span></div>
@@ -1318,13 +1326,14 @@
       var tm=$("toggleMonthly"), ta=$("toggleAnnual");
       if(tm&&ta){ tm.classList.toggle("active",!v); ta.classList.toggle("active",v); }
       if(!v){
-        $("mainPrice").textContent="$399"; $("mainPricePer").textContent="MXN / mes";
-        $("pricePeriodLabel").textContent="por mes · sin permanencia";
-        $("priceSub").textContent="Precio final por SPEI u OXXO. Factura CFDI incluida.";
+        var mm = !!window.__promoMes;
+        $("mainPrice").textContent= mm ? "$199" : "$399"; $("mainPricePer").textContent= mm ? "MXN · primer mes" : "MXN / mes";
+        $("pricePeriodLabel").textContent= mm ? "primer mes, después $399/mes · sin permanencia" : "por mes · sin permanencia";
+        $("priceSub").textContent= mm ? "Oferta Buen Mes: solo hasta el 17 de noviembre. Después de tu primer mes, $399/mes. Factura CFDI incluida." : "Precio final por SPEI u OXXO. Factura CFDI incluida.";
         $("extraSucursal").innerHTML='Sucursal adicional: <strong>+$150/mes IVA incluido</strong> (o +$1,500/año). Mismo panel, su propia caja.';
-        $("paySpeiPrice").innerHTML='$399 <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
-        $("payOxxoPrice").innerHTML='$399 <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
-        $("payMpPrice").innerHTML='$419 <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
+        $("paySpeiPrice").innerHTML=(mm?'$199':'$399')+' <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
+        $("payOxxoPrice").innerHTML=(mm?'$199':'$399')+' <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
+        $("payMpPrice").innerHTML=(mm?'$209':'$419')+' <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
       } else {
         var pm = !!(window.__promo && window.__promo.activa);
         $("mainPrice").textContent= pm ? "$1,990" : "$3,990"; $("mainPricePer").textContent="MXN / año";
@@ -1374,7 +1383,8 @@
     function modelo(){ return form.querySelector('input[name="wModelo"]:checked').value; }
     function pagoMetodo(){ var s=$("wPago"); return s? s.value : "SPEI"; }
     function promoOn(){ return !!(window.__promo && window.__promo.activa); }
-    function basePrice(){ return isAnnual? (promoOn()? 1990 : 3990) : 399; }
+    function promoMesOn(){ return !!window.__promoMes; }
+    function basePrice(){ return isAnnual? (promoOn()? 1990 : 3990) : (promoMesOn()? 199 : 399); }
     function extraPrice(){ return isAnnual? 1500*(sucursales-1) : 150*(sucursales-1); }
     function subtotal(){ return basePrice()+extraPrice(); }
     function fee(){ return pagoMetodo()==="Mercado Pago"? Math.round(subtotal()*0.05) : 0; }
@@ -1384,13 +1394,15 @@
       isAnnual=v;
       var mb=$("wizMonthlyBtn"), ab=$("wizAnnualBtn");
       if(mb&&ab){ mb.classList.toggle("active",!v); ab.classList.toggle("active",v); }
-      $("wizPeriodHint").textContent = v? (promoOn()? "Oferta Buen Mes: $1,990 el primer año (antes $3,990). Equivale a $165.83/mes, IVA incluido." : "Anual: pagas 10 meses y usas 12. Equivale a $332.50/mes, IVA incluido.") : "Mensual, sin permanencia. IVA incluido y con factura.";
+      $("wizPeriodHint").textContent = v? (promoOn()? "Oferta Buen Mes: $1,990 el primer año (antes $3,990). Equivale a $165.83/mes, IVA incluido." : "Anual: pagas 10 meses y usas 12. Equivale a $332.50/mes, IVA incluido.") : (promoMesOn()? "Oferta Buen Mes: primer mes $199, después $399/mes. Sin permanencia, IVA incluido." : "Mensual, sin permanencia. IVA incluido y con factura.");
       updateTotals();
       if(!fromPrice && window.__setPriceAnnual) { /* avoid loop: price section syncs wizard via __setWizAnnual, not reverse */ }
     }
     window.__setWizAnnual=function(v){ setAnnual(v,true); };
     window.__refreshWizard=function(){
       var ab2=$("wizAnnualBtn");
+      var mb2=$("wizMonthlyBtn");
+      if(mb2) mb2.innerHTML = promoMesOn()? 'Mensual — $199 <small>1er mes</small>' : 'Mensual — $399';
       if(ab2) ab2.innerHTML = promoOn()? 'Anual — $1,990 <small>Buen Mes</small>' : 'Anual — $3,990 <small>−17%</small>';
       setAnnual(isAnnual,true);
     };
@@ -1453,7 +1465,7 @@
     function updateTotals(){
       $("sucVal").textContent = sucursales;
       var baseEl=$("sumBase"); if(baseEl) baseEl.textContent = money(basePrice());
-      var baseLab=$("sumBaseLabel"); if(baseLab) baseLab.textContent = (isAnnual? (promoOn()? "Plan anual Buen Mes (1 sucursal) — IVA incluido" : "Plan base anual (1 sucursal) — IVA incluido") : "Plan base mensual (1 sucursal) — IVA incluido");
+      var baseLab=$("sumBaseLabel"); if(baseLab) baseLab.textContent = (isAnnual? (promoOn()? "Plan anual Buen Mes (1 sucursal) — IVA incluido" : "Plan base anual (1 sucursal) — IVA incluido") : (promoMesOn()? "Plan mensual Buen Mes: primer mes (1 sucursal) — IVA incluido" : "Plan base mensual (1 sucursal) — IVA incluido"));
       $("sumExtra").textContent = money(extraPrice());
       var fr=$("sumFeeRow");
       if(fee()>0){ fr.style.display=""; $("sumFee").textContent = money(fee()); } else { fr.style.display="none"; }
@@ -1462,6 +1474,7 @@
       var tl=$("sumTotalLabel"); if(tl) tl.textContent = isAnnual? "Total anual · IVA incluido" : "Total mensual · IVA incluido";
       var tlf=$("sumTotalFinalLabel"); if(tlf) tlf.textContent = isAnnual? "Total anual · IVA incluido" : "Total mensual · IVA incluido";
       var note = pagoMetodo()==="Mercado Pago" ? "Incluye 5% de procesamiento de Mercado Pago. Por SPEI/OXXO serían " + money(subtotal()) + " final." : "Precio final por " + pagoMetodo() + ". Con factura CFDI, IVA incluido.";
+      if(!isAnnual && promoMesOn()) note += " Es el precio del primer mes; después $399/mes.";
       var sn=$("sumTotalNote"); if(sn) sn.textContent = note;
       var fn=$("sumFinalNote"); if(fn) fn.textContent = "Pagas " + money(total()) + " final (" + periodLabel() + ", IVA incluido) por " + pagoMetodo() + ". Factura incluida.";
     }
@@ -1497,7 +1510,7 @@
         ["Modelo", detalle],
         ["Recompensa", recompensa],
         ["Sucursales", String(sucursales)],
-        ["Periodo", isAnnual ? (promoOn() ? "Anual — $1,990 (oferta Buen Mes)" : "Anual — $3,990 (2 meses gratis)") : "Mensual — $399"],
+        ["Periodo", isAnnual ? (promoOn() ? "Anual — $1,990 (oferta Buen Mes)" : "Anual — $3,990 (2 meses gratis)") : (promoMesOn() ? "Mensual — primer mes $199, después $399" : "Mensual — $399")],
         ["Forma de pago", pagoMetodo() + (fee()>0 ? " (+" + money(fee()) + " por procesamiento)" : " — sin comisión")],
         ["Total (IVA incluido)", money(total()) + (isAnnual ? " / año" : " / mes")]
       ];
@@ -1638,17 +1651,29 @@
     function $(id){ return document.getElementById(id); }
     function show(id,on){ var el=$(id); if(el) el.hidden=!on; }
     fetch("/api/lealtad/promo",{cache:"no-store"}).then(function(r){ return r.json(); }).then(function(p){
+      var fmt=function(iso){ return new Date(iso).toLocaleDateString("es-MX",{day:"numeric",month:"long",timeZone:"America/Mexico_City"}); };
+      var partes=[];
       window.__promo = p && p.activa ? p : null;
-      if(!window.__promo) return;
-      var left=p.restantes, cupo=p.cupo||50;
-      var fin=new Date(p.fin).toLocaleDateString("es-MX",{day:"numeric",month:"long",timeZone:"America/Mexico_City"});
-      var txt = left<=10 ? "¡Últimos "+left+" lugares!" : "Quedan "+left+" de "+cupo+" lugares";
-      $("promoBarCount").textContent=txt;
-      $("bmLeft").textContent=txt;
-      $("bmBar").style.width=Math.max(4,Math.round((cupo-left)/cupo*100))+"%";
-      $("bmCupo").textContent=cupo; $("bmFin").textContent="el "+fin;
+      window.__promoMes = p && p.mes && p.mes.activa ? p.mes : null;
+      if(window.__promoMes){
+        $("bmMesFin").textContent=fmt(window.__promoMes.fin);
+        show("bmMesCard",true);
+        partes.push("primer mes <b>$199</b> (hasta el "+fmt(window.__promoMes.fin)+")");
+        var c2=$("bmMesCta"); if(c2) c2.addEventListener("click",function(){ if(window.__setPriceAnnual) window.__setPriceAnnual(false); });
+      }
+      if(window.__promo){
+        var left=p.restantes, cupo=p.cupo||50;
+        var txt = left<=10 ? "¡últimos "+left+" lugares!" : "quedan "+left+" de "+cupo+" lugares";
+        $("bmLeft").textContent=txt.charAt(0).toUpperCase()+txt.slice(1);
+        $("bmBar").style.width=Math.max(4,Math.round((cupo-left)/cupo*100))+"%";
+        $("bmCupo").textContent=cupo; $("bmFin").textContent="el "+fmt(p.fin);
+        show("bmAnualCard",true);
+        partes.push("anual <b>$1,990</b> ("+txt+")");
+        var cta=$("bmCta"); if(cta) cta.addEventListener("click",function(){ if(window.__setPriceAnnual) window.__setPriceAnnual(true); });
+      }
+      if(!partes.length) return;
+      $("promoBarText").innerHTML=partes.join(" · ");
       show("promoBar",true); show("buenmes",true);
-      var cta=$("bmCta"); if(cta) cta.addEventListener("click",function(){ if(window.__setPriceAnnual) window.__setPriceAnnual(true); });
       if(window.__refreshPrice) window.__refreshPrice();
       if(window.__refreshWizard) window.__refreshWizard();
     }).catch(function(e){ console.error("promo", e && e.message); });
