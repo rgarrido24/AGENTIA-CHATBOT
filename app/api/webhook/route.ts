@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveBusinessConfigByPageId } from '@/src/lib/business-config';
+import { getMongoDb } from '@/lib/mongodb';
 
 function getEnv(name: string): string | undefined {
   const value = process.env[name];
@@ -95,6 +96,45 @@ async function replyToComment(params: {
   }
 }
 
+/** Respuesta privada a un comentario: Meta exige recipient.comment_id (no el id del usuario). */
+async function sendPrivateReplyToComment(params: {
+  accessToken: string;
+  commentId: string;
+  text: string;
+}) {
+  const url = `https://graph.facebook.com/v20.0/me/messages?access_token=${encodeURIComponent(params.accessToken)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipient: { comment_id: params.commentId },
+      message: { text: params.text },
+    }),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`Private reply failed: ${res.status} ${res.statusText} ${t}`);
+  }
+}
+
+/** Meta reintenta webhooks: evita contestar dos veces el mismo evento. true = ya procesado. */
+async function alreadyProcessed(key: string): Promise<boolean> {
+  try {
+    const db = await getMongoDb();
+    const col = db.collection('webhook_events_social');
+    await col.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 3 }).catch(() => {});
+    const r = await col.updateOne(
+      { _id: key as any },
+      { $setOnInsert: { createdAt: new Date() } },
+      { upsert: true }
+    );
+    return r.upsertedCount === 0;
+  } catch (e) {
+    console.log('[webhook][dedupe] error (se procesa igual):', e);
+    return false;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -125,6 +165,34 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
+    const entries: any[] = Array.isArray(body?.entry) && body.entry.length ? body.entry : [undefined];
+    let last: any = { received: true };
+    for (const entry of entries) {
+      for (const item of splitEntry(entry)) {
+        const r = await handleEvent(request, { ...body, entry: [item] });
+        if (r) last = r;
+      }
+    }
+    return NextResponse.json({ status: 'EVENT_RECEIVED', ...last });
+  } catch (err) {
+    console.log('[webhook] unhandled error:', err);
+    return NextResponse.json({ status: 'EVENT_RECEIVED', received: true });
+  }
+}
+
+/** Meta agrupa varios eventos en un mismo entry: los separa para procesar cada uno. */
+function splitEntry(entry: any): any[] {
+  if (!entry) return [entry];
+  const out: any[] = [];
+  const msgs: any[] = Array.isArray(entry.messaging) ? entry.messaging : [];
+  const chs: any[] = Array.isArray(entry.changes) ? entry.changes : [];
+  for (const m of msgs) out.push({ ...entry, messaging: [m], changes: undefined });
+  for (const c of chs) out.push({ ...entry, changes: [c], messaging: undefined });
+  return out.length ? out : [entry];
+}
+
+async function handleEvent(request: NextRequest, body: any): Promise<any> {
+  try {
     const summary: any = { received: true };
 
     const entry0 = body?.entry?.[0];
@@ -149,8 +217,19 @@ export async function POST(request: NextRequest) {
     const textComment = pickFirstString(changeValue?.message, changeValue?.text);
     const commenterId = pickFirstString(changeValue?.from?.id);
 
-    const isComment = Boolean(commentId && textComment);
-    const isDm = Boolean(senderId && (textDm || imageUrl));
+    const isEcho = Boolean(messaging0?.message?.is_echo);
+    const isOwn = Boolean((commenterId && pageId && commenterId === pageId) || (senderId && pageId && senderId === pageId));
+    const notNewComment = Boolean(changeValue?.item && changeValue.item !== 'comment') || Boolean(changeValue?.verb && changeValue.verb !== 'add');
+    const isComment = Boolean(commentId && textComment) && !notNewComment;
+    const isDm = Boolean(senderId && (textDm || imageUrl)) && !isEcho;
+    if (isEcho || isOwn) {
+      // Evita que el bot conteste sus propios mensajes/comentarios (bucle)
+      return summary;
+    }
+    const dedupeKey = isComment ? `c:${commentId}` : messaging0?.message?.mid ? `m:${messaging0.message.mid}` : undefined;
+    if (dedupeKey && (await alreadyProcessed(dedupeKey))) {
+      return summary;
+    }
 
     if (pageId) summary.pageId = pageId;
     if (senderId) summary.senderId = senderId;
@@ -159,7 +238,7 @@ export async function POST(request: NextRequest) {
     if (!textDm && textComment) summary.text = textComment;
 
     if (!pageId || (!isDm && !isComment)) {
-      return NextResponse.json({ status: 'EVENT_RECEIVED', ...summary });
+      return summary;
     }
 
     let cfg = null;
@@ -167,12 +246,12 @@ export async function POST(request: NextRequest) {
       cfg = await resolveBusinessConfigByPageId(pageId);
     } catch (dbErr) {
       console.log('[webhook][db] error:', dbErr);
-      return NextResponse.json({ status: 'EVENT_RECEIVED', ...summary });
+      return summary;
     }
 
     if (!cfg?.accessToken) {
       console.log('[webhook] No accessToken for pageId:', pageId);
-      return NextResponse.json({ status: 'EVENT_RECEIVED', ...summary });
+      return summary;
     }
 
     const platform = inferPlatform(body);
@@ -181,7 +260,7 @@ export async function POST(request: NextRequest) {
 
     if (isComment && !dmRecipientId) {
       console.log('[webhook] Comentario sin commenterId (from.id), no se puede enviar DM');
-      return NextResponse.json({ status: 'EVENT_RECEIVED', ...summary });
+      return summary;
     }
 
     let senderName: string | undefined;
@@ -230,7 +309,7 @@ export async function POST(request: NextRequest) {
     const replyText = String(chatJson?.reply ?? '').trim();
     if (!chatRes.ok || !replyText) {
       console.log('[webhook] /api/chat failed:', chatRes.status, chatJson);
-      return NextResponse.json({ status: 'EVENT_RECEIVED', ...summary });
+      return summary;
     }
 
     const COMMENT_REPLY_FIXED = '¡Hola! Te envié la información por mensaje privado 📩';
@@ -238,9 +317,7 @@ export async function POST(request: NextRequest) {
     try {
       if (isComment && commentId) {
         await replyToComment({ accessToken: cfg.accessToken, commentId, text: COMMENT_REPLY_FIXED });
-        if (dmRecipientId) {
-          await sendMessengerReply({ accessToken: cfg.accessToken, recipientId: dmRecipientId, text: replyText });
-        }
+        await sendPrivateReplyToComment({ accessToken: cfg.accessToken, commentId, text: replyText });
       } else if (dmRecipientId) {
         await sendMessengerReply({ accessToken: cfg.accessToken, recipientId: dmRecipientId, text: replyText });
       }
@@ -248,9 +325,9 @@ export async function POST(request: NextRequest) {
       console.log('[webhook][send] error:', sendErr);
     }
 
-    return NextResponse.json({ status: 'EVENT_RECEIVED', ...summary });
+    return summary;
   } catch (err) {
     console.log('[webhook] unhandled error:', err);
-    return NextResponse.json({ status: 'EVENT_RECEIVED', received: true });
+    return { received: true };
   }
 }
