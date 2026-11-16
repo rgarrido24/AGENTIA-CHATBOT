@@ -855,7 +855,7 @@ export async function fetchMetaLeadById(leadgenId: string, pageId: string): Prom
       `&access_token=${encodeURIComponent(token)}`;
     return await graphRequest<MetaLeadRecord>(url);
   } catch (err) {
-    console.error('[fb-connect] GET leadgen', leadgenId, (err as Error).message);
+    console.error('[fb-connect] GET leadgen', leadgenId, 'page', pageId, (err as Error).message);
     return null;
   }
 }
