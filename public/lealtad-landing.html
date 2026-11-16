@@ -742,7 +742,7 @@
   <section id="buenmes" hidden>
     <div class="wrap" style="display:grid;gap:18px;">
       <div class="bm-card" id="bmMesCard" hidden>
-        <span class="bm-tag">Buen Mes · solo hasta el <span id="bmMesFin">17 de noviembre</span></span>
+        <span class="bm-tag">Buen Mes · solo hasta el <span id="bmMesFin">30 de noviembre</span></span>
         <h2>Tu primer mes a $199</h2>
         <div class="bm-price"><span class="now">$199</span><span class="was">$399</span><span>MXN · primer mes · IVA incluido</span></div>
         <p>Empieza con tu tarjeta de lealtad, panel de caja, banner con QR y link para redes. Después de tu primer mes se cobra $399 al mes, sin permanencia.</p>
@@ -1329,7 +1329,7 @@
         var mm = !!window.__promoMes;
         $("mainPrice").textContent= mm ? "$199" : "$399"; $("mainPricePer").textContent= mm ? "MXN · primer mes" : "MXN / mes";
         $("pricePeriodLabel").textContent= mm ? "primer mes, después $399/mes · sin permanencia" : "por mes · sin permanencia";
-        $("priceSub").textContent= mm ? "Oferta Buen Mes: solo hasta el 17 de noviembre. Después de tu primer mes, $399/mes. Factura CFDI incluida." : "Precio final por SPEI u OXXO. Factura CFDI incluida.";
+        $("priceSub").textContent= mm ? "Oferta Buen Mes: solo hasta el 30 de noviembre. Después de tu primer mes, $399/mes. Factura CFDI incluida." : "Precio final por SPEI u OXXO. Factura CFDI incluida.";
         $("extraSucursal").innerHTML='Sucursal adicional: <strong>+$150/mes IVA incluido</strong> (o +$1,500/año). Mismo panel, su propia caja.';
         $("paySpeiPrice").innerHTML=(mm?'$199':'$399')+' <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';
         $("payOxxoPrice").innerHTML=(mm?'$199':'$399')+' <small style="font-size:13px;font-weight:600;color:var(--muted);">IVA incluido</small>';

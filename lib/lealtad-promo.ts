@@ -52,7 +52,7 @@ export async function promoParaNegocio(tenantKey: string): Promise<boolean> {
 
 /**
  * Primer mes a $199 (Buen Mes). Solo por fechas, sin cupo.
- * LEALTAD_PROMO_MES_INICIO / LEALTAD_PROMO_MES_FIN (ISO). Default: 14-nov-2026 00:00 a 17-nov-2026 23:59:59 CDMX.
+ * LEALTAD_PROMO_MES_INICIO / LEALTAD_PROMO_MES_FIN (ISO). Default: 14-nov-2026 00:00 a 30-nov-2026 23:59:59 CDMX.
  * LEALTAD_PROMO_MES_ACTIVA=0 la apaga.
  */
 function fecha(raw: string | undefined, def: string): Date {
@@ -63,7 +63,7 @@ export type EstadoPromoMes = { activa: boolean; precio: number; inicio: string; 
 
 export function estadoPromoMes(): EstadoPromoMes {
   const inicio = fecha(process.env.LEALTAD_PROMO_MES_INICIO, '2026-11-14T00:00:00-06:00');
-  const fin = fecha(process.env.LEALTAD_PROMO_MES_FIN, '2026-11-17T23:59:59-06:00');
+  const fin = fecha(process.env.LEALTAD_PROMO_MES_FIN, '2026-11-30T23:59:59-06:00');
   const ahora = Date.now();
   const activa = process.env.LEALTAD_PROMO_MES_ACTIVA !== '0' && ahora >= inicio.getTime() && ahora <= fin.getTime();
   return { activa, precio: PRECIO_PROMO_MES, inicio: inicio.toISOString(), fin: fin.toISOString() };
