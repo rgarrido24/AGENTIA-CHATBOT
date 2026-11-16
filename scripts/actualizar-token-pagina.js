@@ -51,8 +51,21 @@ async function gj(url, opts) { const r = await fetch(url, opts); return { ok: r.
   console.log("business_configs actualizado:", r.matchedCount ? "OK" : "NO ENCONTRADO (no hay doc con ese pageId)");
 
   const t = q(page.access_token);
-  const s = await gj(`${G}/${pageId}/subscribed_apps?subscribed_fields=messages,messaging_postbacks,feed,leadgen&access_token=${t}`, { method: "POST" });
+  // leadgen exige leads_retrieval: si el token no lo tiene, se suscribe solo a mensajes/feed
+  // y se conserva leadgen unicamente si la pagina ya lo tenia.
+  const cur = await gj(`${G}/${pageId}/subscribed_apps?access_token=${t}`);
+  const mine = (cur.j?.data || []).find((a) => String(a.id) === String(appId));
+  const have = new Set(mine?.subscribed_fields || []);
+  console.log("Campos actuales de la pagina:", [...have].join(",") || "(ninguno)");
+  const want = new Set(["messages", "messaging_postbacks", "feed", ...have]);
+  let s = await gj(`${G}/${pageId}/subscribed_apps?subscribed_fields=${[...want].join(",")}&access_token=${t}`, { method: "POST" });
+  if (!s.ok && /leadgen/i.test(JSON.stringify(s.j))) {
+    want.delete("leadgen");
+    s = await gj(`${G}/${pageId}/subscribed_apps?subscribed_fields=${[...want].join(",")}&access_token=${t}`, { method: "POST" });
+  }
   console.log("Suscripcion pagina:", JSON.stringify(s.j));
+  const after = await gj(`${G}/${pageId}/subscribed_apps?access_token=${t}`);
+  console.log("Despues:", JSON.stringify(after.j));
   if (igId) {
     const ig = await gj(`${G}/${igId}/subscribed_apps?subscribed_fields=comments,messages&access_token=${t}`, { method: "POST" });
     console.log("Suscripcion Instagram:", JSON.stringify(ig.j));
