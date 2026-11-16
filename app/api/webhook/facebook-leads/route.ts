@@ -79,6 +79,32 @@ export async function POST(req: NextRequest) {
   console.log('[fb-leads] keys:', Object.keys(payload).join(', '));
   console.log('[fb-leads] Payload:', JSON.stringify(payload).slice(0, 500));
 
+  // Meta solo permite UNA URL de callback por objeto (Page): los DMs y comentarios de
+  // Facebook/Instagram llegan aquí junto con los leads, así que se reenvían al handler social.
+  try {
+    const entries = Array.isArray(payload.entry) ? (payload.entry as Array<Record<string, any>>) : [];
+    const social = entries
+      .map((e) => ({
+        ...e,
+        messaging: Array.isArray(e?.messaging) ? e.messaging : undefined,
+        changes: Array.isArray(e?.changes) ? e.changes.filter((c: any) => c?.field !== 'leadgen') : undefined,
+      }))
+      .filter((e) => (e.messaging && e.messaging.length) || (e.changes && e.changes.length));
+    if (social.length) {
+      const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+      const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+      const base = host ? `${proto}://${host}` : 'https://agentia.software';
+      console.log('[fb-leads] reenviando evento social a /api/webhook:', social.length);
+      await fetch(`${base}/api/webhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ object: payload.object ?? 'page', entry: social }),
+      }).catch((e) => console.error('[fb-leads] reenvío social falló:', e));
+    }
+  } catch (e) {
+    console.error('[fb-leads] error al reenviar evento social:', e);
+  }
+
   // Procesar antes de responder: en serverless el handler se corta al devolver 200
   // y notifyPortalNewLead nunca llegaba a ejecutarse en leads reales.
   try {
