@@ -22,8 +22,9 @@ async function gj(url, opts) { const r = await fetch(url, opts); return { ok: r.
 
   // 1) token de usuario de larga duración -> los page tokens derivados no expiran
   const ex = await gj(`${G}/oauth/access_token?grant_type=fb_exchange_token&client_id=${q(appId)}&client_secret=${q(secret)}&fb_exchange_token=${q(userTok)}`);
-  if (!ex.ok) { console.log("No se pudo extender el token de usuario:", JSON.stringify(ex.j)); return; }
-  const longUser = ex.j.access_token;
+  // Los tokens de System User ya no expiran y no se pueden "extender": se usan tal cual.
+  let longUser = ex.ok ? ex.j.access_token : userTok;
+  if (!ex.ok) console.log("(No se pudo extender el token; se usa tal cual. Normal si es de System User.)", ex.j?.error?.message || "");
 
   // 2) token de la página
   const acc = await gj(`${G}/me/accounts?fields=id,name,access_token,instagram_business_account&limit=100&access_token=${q(longUser)}`);
