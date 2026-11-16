@@ -234,6 +234,9 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
       return summary;
     }
 
+    console.log(
+      `[SOCIAL] evento recibido platform=${inferPlatform(body)} pageId=${pageId ?? '-'} tipo=${isComment ? 'comentario' : isDm ? 'dm' : 'otro'}`
+    );
     if (pageId) summary.pageId = pageId;
     if (senderId) summary.senderId = senderId;
     if (commentId) summary.commentId = commentId;
@@ -302,30 +305,49 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
       chatBody.mimeType = mimeType;
     }
 
-    const chatRes = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(chatBody),
-    });
-
-    const chatJson = await chatRes.json().catch(() => ({}));
-    const replyText = String(chatJson?.reply ?? '').trim();
-    if (!chatRes.ok || !replyText) {
-      console.log('[webhook] /api/chat failed:', chatRes.status, chatJson);
-      return summary;
+    const FALLBACK_REPLY = '¡Hola! Gracias por escribirnos 🙌 En breve una asesora te responde con toda la información.';
+    let replyText = '';
+    try {
+      const chatRes = await fetch(`${baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(chatBody),
+      });
+      const chatJson = await chatRes.json().catch(() => ({}));
+      replyText = String(chatJson?.reply ?? '').trim();
+      if (!chatRes.ok || !replyText) {
+        console.log('[SOCIAL] /api/chat FALLO status=' + chatRes.status, JSON.stringify(chatJson).slice(0, 300));
+        replyText = '';
+      }
+    } catch (chatErr) {
+      console.log('[SOCIAL] /api/chat EXCEPCION', chatErr);
     }
+    if (!replyText) replyText = FALLBACK_REPLY;
 
     const COMMENT_REPLY_FIXED = '¡Hola! Te envié la información por mensaje privado 📩';
 
-    try {
-      if (isComment && commentId) {
+    if (isComment && commentId) {
+      let publicOk = false;
+      try {
         await replyToComment({ accessToken: cfg.accessToken, commentId, text: COMMENT_REPLY_FIXED, platform });
-        await sendPrivateReplyToComment({ accessToken: cfg.accessToken, commentId, text: replyText });
-      } else if (dmRecipientId) {
-        await sendMessengerReply({ accessToken: cfg.accessToken, recipientId: dmRecipientId, text: replyText });
+        publicOk = true;
+        console.log(`[SOCIAL] respuesta publica OK platform=${platform} comment=${commentId}`);
+      } catch (e) {
+        console.log(`[SOCIAL] respuesta publica FALLO platform=${platform} comment=${commentId}:`, e);
       }
-    } catch (sendErr) {
-      console.log('[webhook][send] error:', sendErr);
+      try {
+        await sendPrivateReplyToComment({ accessToken: cfg.accessToken, commentId, text: replyText });
+        console.log(`[SOCIAL] DM privado OK comment=${commentId} publica=${publicOk}`);
+      } catch (e) {
+        console.log(`[SOCIAL] DM privado FALLO comment=${commentId}:`, e);
+      }
+    } else if (dmRecipientId) {
+      try {
+        await sendMessengerReply({ accessToken: cfg.accessToken, recipientId: dmRecipientId, text: replyText });
+        console.log(`[SOCIAL] DM OK platform=${platform}`);
+      } catch (e) {
+        console.log(`[SOCIAL] DM FALLO platform=${platform}:`, e);
+      }
     }
 
     return summary;

@@ -53,7 +53,8 @@ export async function GET(
     );
   }
 
-  const state = signOauthState(resellerId, clientSlug);
+  const addPage = req.nextUrl.searchParams.get('add') === '1' && client.fb_connection?.status === 'connected';
+  const state = signOauthState(resellerId, clientSlug, addPage);
   try {
     return NextResponse.redirect(buildFacebookOauthUrl(state));
   } catch (err) {

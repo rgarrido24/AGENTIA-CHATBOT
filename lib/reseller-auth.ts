@@ -41,6 +41,8 @@ export interface ResellerClient {
     formName:    string;
     plataforma:  string;
     activo:      boolean;
+    /** Página de Facebook a la que pertenece el formulario (clientes con varias páginas). */
+    page_id?:    string;
   }>;
   /** Conexión nativa Meta (OAuth). Independiente de Zapier. */
   fb_connection?: {
@@ -51,6 +53,14 @@ export interface ResellerClient {
     page_access_token?: string;
     connected_at?:      Date;
   };
+  /** Páginas adicionales de Facebook (caso extraordinario, p. ej. 2 formularios de 2 páginas en un mismo panel). */
+  fb_extra_pages?: Array<{
+    status:             'connected';
+    page_id:            string;
+    page_name?:         string;
+    page_access_token:  string;
+    connected_at?:      Date;
+  }>;
   /** Caso extraordinario: el cliente quiere varios formularios activos a la vez. Por defecto se deja UNO solo. */
   multi_formulario?:   boolean;
   alertNumber?:        string;

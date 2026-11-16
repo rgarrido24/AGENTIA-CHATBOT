@@ -58,6 +58,24 @@ export function FbConnectLink({
   );
 }
 
+/** Caso extraordinario: suma una 2.ª página de Facebook (y sus formularios) al mismo panel. */
+export function FbAddPageLink({ resellerId, clientSlug, light }: { resellerId: string; clientSlug: string; light?: boolean }) {
+  return (
+    <a
+      href={`/api/portal/${resellerId}/client/${clientSlug}/facebook/connect?add=1`}
+      title="Agregar otra página de Facebook a este mismo panel"
+      className="text-[10px] font-semibold rounded-lg px-2 py-0.5 whitespace-nowrap"
+      style={{
+        background: light ? '#f5f3ff' : '#160f28',
+        color: light ? '#6d28d9' : '#c4b5fd',
+        border: `1px solid ${light ? '#ddd6fe' : '#3b2a66'}`,
+      }}
+    >
+      + Otra página
+    </a>
+  );
+}
+
 type TestForm = {
   formId: string;
   formName: string;

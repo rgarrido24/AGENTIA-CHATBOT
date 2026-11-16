@@ -58,6 +58,7 @@ export async function POST(
     resellerId,
     clientSlug,
     page: { id: chosen.id, name: chosen.name, access_token: pageToken },
+    addPage: session.addPage === true,
   });
 
   if (!result.ok) {

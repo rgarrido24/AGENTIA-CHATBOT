@@ -42,6 +42,8 @@ export type FbOauthSessionDoc = {
   resellerId: string;
   clientSlug: string;
   pages: Array<{ id: string; name: string; access_token_enc: string }>;
+  /** true = agregar una página extra al cliente (no reemplaza la principal). */
+  addPage?: boolean;
   expiresAt: Date;
   createdAt: Date;
 };
@@ -79,10 +81,11 @@ function signPayload(payload: string): string {
   return crypto.createHmac('sha256', hmacSecret()).update(payload).digest('base64url');
 }
 
-export function signOauthState(resellerId: string, clientSlug: string): string {
+export function signOauthState(resellerId: string, clientSlug: string, addPage = false): string {
   const body = JSON.stringify({
     r: resellerId,
     c: clientSlug,
+    a: addPage ? 1 : 0,
     n: crypto.randomBytes(8).toString('hex'),
     e: Date.now() + STATE_MAX_AGE_MS,
   });
@@ -90,7 +93,7 @@ export function signOauthState(resellerId: string, clientSlug: string): string {
   return `${payload}.${signPayload(payload)}`;
 }
 
-export function verifyOauthState(state: string): { resellerId: string; clientSlug: string } | null {
+export function verifyOauthState(state: string): { resellerId: string; clientSlug: string; addPage: boolean } | null {
   const idx = state.lastIndexOf('.');
   if (idx < 1) return null;
   const payload = state.slice(0, idx);
@@ -103,10 +106,11 @@ export function verifyOauthState(state: string): { resellerId: string; clientSlu
     const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as {
       r?: string;
       c?: string;
+      a?: number;
       e?: number;
     };
     if (!parsed.r || !parsed.c || !parsed.e || Date.now() > parsed.e) return null;
-    return { resellerId: parsed.r, clientSlug: parsed.c };
+    return { resellerId: parsed.r, clientSlug: parsed.c, addPage: parsed.a === 1 };
   } catch {
     return null;
   }
@@ -197,12 +201,18 @@ export function mergeFormularios(
   existing: ResellerFormulario[] | undefined,
   incoming: FbLeadForm[],
   multi = false,
+  pageId?: string,
 ): ResellerFormulario[] {
   const activeIds = pickActiveFormIds(existing, incoming, multi);
   const map = new Map<string, ResellerFormulario>();
   for (const f of existing ?? []) {
     const id = String(f.formId || '').trim();
     if (!id) continue;
+    // Formularios de OTRA página del mismo cliente: no se tocan.
+    if (pageId && f.page_id && f.page_id !== pageId) {
+      map.set(id, { ...f, formId: id });
+      continue;
+    }
     map.set(id, {
       ...f,
       formId: id,
@@ -218,6 +228,7 @@ export function mergeFormularios(
       formName: (form.name || '').trim() || prev?.formName || id,
       plataforma: prev?.plataforma || 'fb/ig',
       activo: activeIds.has(id),
+      ...(pageId ? { page_id: pageId } : {}),
     });
   }
   return Array.from(map.values());
@@ -676,10 +687,52 @@ export type CompleteFbConnectionResult =
   | { ok: true; reveal: FbConnectReveal | null; pageName: string; formsCount: number; pausedForms: boolean }
   | { ok: false; code: FbConnectErrorCode; message: string };
 
+/** Cliente con 2+ páginas: guarda la página extra, suscribe leadgen y activa sus formularios (multi_formulario). */
+async function addExtraPage(a: {
+  db: Awaited<ReturnType<typeof getMongoDb>>;
+  filter: Record<string, unknown>;
+  client: ResellerClient;
+  page: FbPageChoice;
+  persistable: FbLeadForm[];
+  forms: FbLeadForm[];
+}): Promise<CompleteFbConnectionResult> {
+  const { db, filter, client, page, persistable, forms } = a;
+  if (forms.length === 0) {
+    return { ok: false, code: 'no_forms', message: fbConnectUserMessage('no_forms') };
+  }
+  try {
+    await subscribePageToLeadgen(page.id, page.access_token);
+  } catch (err) {
+    console.error('[fb-connect] extra subscribed_apps FAIL', page.id, (err as Error).message);
+    return { ok: false, code: 'subscribe', message: fbConnectUserMessage('subscribe') };
+  }
+  let encrypted: string;
+  try {
+    encrypted = encryptFbToken(page.access_token);
+  } catch {
+    return { ok: false, code: 'config', message: fbConnectUserMessage('config') };
+  }
+  // La página principal conserva sus formularios: se etiquetan con su page_id si aún no lo tenían.
+  const primaryId = client.fb_connection?.page_id;
+  const existing = (client.formularios ?? []).map((f) => (f.page_id || !primaryId ? f : { ...f, page_id: primaryId }));
+  const formularios = mergeFormularios(existing, persistable, true, page.id);
+  const now = new Date();
+  const extras = (client.fb_extra_pages ?? []).filter((p) => p.page_id !== page.id);
+  extras.push({ status: 'connected', page_id: page.id, page_name: page.name, page_access_token: encrypted, connected_at: now });
+  await db.collection('leads').updateOne(filter, {
+    $set: { fb_extra_pages: extras, formularios, multi_formulario: true, updatedAt: now },
+  });
+  const activeCount = formularios.filter((f) => f.page_id === page.id && f.activo).length;
+  console.log('[fb-connect] pagina extra guardada', client.clientSlug, page.id, 'forms activos', activeCount);
+  return { ok: true, reveal: null, pageName: page.name, formsCount: activeCount, pausedForms: false };
+}
+
 export async function completeFacebookPageConnection(opts: {
   resellerId: string;
   clientSlug: string;
   page: FbPageChoice;
+  /** Agrega la página como EXTRA (sin reemplazar la principal). */
+  addPage?: boolean;
 }): Promise<CompleteFbConnectionResult> {
   const { resellerId, clientSlug, page } = opts;
   const db = await getMongoDb();
@@ -692,6 +745,9 @@ export async function completeFacebookPageConnection(opts: {
   if (!client) {
     return { ok: false, code: 'generic', message: 'No encontramos ese cliente. Volvé al listado e intentá de nuevo.' };
   }
+
+  const primaryId = client.fb_connection?.status === 'connected' ? client.fb_connection.page_id : undefined;
+  const addExtra = opts.addPage === true && !!primaryId && primaryId !== page.id;
 
   let listed: FbLeadForm[];
   try {
@@ -712,6 +768,7 @@ export async function completeFacebookPageConnection(opts: {
   );
   const persistable = listed.filter((f) => !LEADGEN_DELETED_STATUS.has(String(f.status || '').toUpperCase()));
   const forms = usableLeadgenForms(persistable);
+  if (addExtra) return addExtraPage({ db, filter, client, page, persistable, forms });
   const activeForms = persistable.filter((f) => pickActiveFormIds(client.formularios, persistable, client.multi_formulario === true).has(f.id));
   const wasConnected = client.fb_connection?.status === 'connected';
 
@@ -732,7 +789,12 @@ export async function completeFacebookPageConnection(opts: {
     }
   }
 
-  const formularios = mergeFormularios(client.formularios, persistable, client.multi_formulario === true);
+  const formularios = mergeFormularios(
+    client.formularios,
+    persistable,
+    client.multi_formulario === true,
+    client.multi_formulario === true ? page.id : undefined,
+  );
   let encrypted: string;
   try {
     encrypted = encryptFbToken(page.access_token);
@@ -800,12 +862,16 @@ export async function resolvePageAccessToken(pageId: string): Promise<string | n
     const client = await db.collection<ResellerClient>('leads').findOne(
       {
         _collection_type: 'reseller_client',
-        'fb_connection.page_id': pageId,
-        'fb_connection.status': 'connected',
+        $or: [
+          { 'fb_connection.page_id': pageId, 'fb_connection.status': 'connected' },
+          { 'fb_extra_pages.page_id': pageId },
+        ],
       },
-      { projection: { 'fb_connection.page_access_token': 1 } },
+      { projection: { 'fb_connection.page_access_token': 1, 'fb_connection.page_id': 1, fb_extra_pages: 1 } },
     );
-    const packed = client?.fb_connection?.page_access_token;
+    const extra = client?.fb_extra_pages?.find((p) => p.page_id === pageId);
+    const packed =
+      client?.fb_connection?.page_id === pageId ? client.fb_connection.page_access_token : extra?.page_access_token;
     if (packed) {
       try {
         return decryptFbToken(packed);

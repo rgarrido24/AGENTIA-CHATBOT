@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(clientesUrl(fallback, { fb_error: 'expired' }));
   }
 
-  const { resellerId, clientSlug } = parsed;
+  const { resellerId, clientSlug, addPage } = parsed;
   if (!reseller || reseller.resellerId !== resellerId) {
     return NextResponse.redirect(new URL(`${getPublicOrigin()}/portal/${resellerId}`));
   }
@@ -103,6 +103,7 @@ export async function GET(req: NextRequest) {
         resellerId,
         clientSlug,
         page: pages[0],
+        addPage,
       });
       if (!result.ok) {
         return NextResponse.redirect(clientesUrl(resellerId, { fb_error: result.code }));
@@ -127,6 +128,7 @@ export async function GET(req: NextRequest) {
       sessionId,
       resellerId,
       clientSlug,
+      addPage,
       pages: pages.map((p) => ({
         id: p.id,
         name: p.name,
