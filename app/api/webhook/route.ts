@@ -83,8 +83,11 @@ async function replyToComment(params: {
   accessToken: string;
   commentId: string;
   text: string;
+  platform?: 'facebook' | 'instagram' | 'whatsapp';
 }) {
-  const url = `https://graph.facebook.com/v20.0/${encodeURIComponent(params.commentId)}/comments?access_token=${encodeURIComponent(params.accessToken)}`;
+  // Facebook: /{comment}/comments · Instagram: /{comment}/replies
+  const edge = params.platform === 'instagram' ? 'replies' : 'comments';
+  const url = `https://graph.facebook.com/v20.0/${encodeURIComponent(params.commentId)}/${edge}?access_token=${encodeURIComponent(params.accessToken)}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -316,7 +319,7 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
 
     try {
       if (isComment && commentId) {
-        await replyToComment({ accessToken: cfg.accessToken, commentId, text: COMMENT_REPLY_FIXED });
+        await replyToComment({ accessToken: cfg.accessToken, commentId, text: COMMENT_REPLY_FIXED, platform });
         await sendPrivateReplyToComment({ accessToken: cfg.accessToken, commentId, text: replyText });
       } else if (dmRecipientId) {
         await sendMessengerReply({ accessToken: cfg.accessToken, recipientId: dmRecipientId, text: replyText });

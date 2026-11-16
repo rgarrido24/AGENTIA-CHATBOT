@@ -81,9 +81,11 @@ export async function getBusinessConfigByPageId(pageId: string): Promise<Busines
 
   const db = await getMongoDb();
   const doc = await db.collection<BusinessConfig>("business_configs").findOne({ pageId: pid });
+  // Instagram manda el ID de la cuenta de IG (no el de la página): se busca también por igAccountId
+  const docFinal = doc ?? (await db.collection<BusinessConfig>("business_configs").findOne({ igAccountId: pid } as any));
 
-  cache.set(cacheKey, { value: doc ?? null, expiresAtMs: now + 60_000 });
-  return doc ?? null;
+  cache.set(cacheKey, { value: docFinal ?? null, expiresAtMs: now + 60_000 });
+  return docFinal ?? null;
 }
 
 function mergeConfig(base: BusinessConfig, override: BusinessConfig): BusinessConfig {
