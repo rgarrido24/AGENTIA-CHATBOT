@@ -22,7 +22,7 @@ async function guardados(): Promise<Record<string, string>> {
 }
 
 export async function pinOk(rol: Rol, pin: unknown): Promise<boolean> {
-  if (typeof pin !== 'string' || !/^\d{4}$/.test(pin)) return false;
+  if (typeof pin !== 'string' || !/^\d{4,8}$/.test(pin)) return false;
   const g = (await guardados())[rol];
   return g ? g === hash(pin) : pin === (env(rol) || inicial[rol]);
 }
@@ -36,4 +36,12 @@ export async function pinPorDefecto(rol: Rol): Promise<boolean> {
 export async function cambiarPin(rol: Rol, nuevo: string): Promise<void> {
   const db = await getMongoDb();
   await db.collection<any>('demo_tostichelas_estado').updateOne({ _id: 'main' }, { $set: { ['pins.' + rol]: hash(nuevo) } }, { upsert: true });
+}
+
+/** Rechaza PINs obvios: repetidos, secuencias, los iniciales y los típicos. */
+export function pinDebil(pin: string): boolean {
+  if (/^(\d)\1+$/.test(pin)) return true;
+  const asc = '0123456789012345678901', desc = '9876543210987654321';
+  if (asc.includes(pin) || desc.includes(pin)) return true;
+  return ['1111', '2222', '3333', '4444', '1234', '0000', '2580', '1212', '2020', '2026', '123456', '654321', '000000'].includes(pin);
 }

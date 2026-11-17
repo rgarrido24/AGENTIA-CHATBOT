@@ -161,3 +161,27 @@
 .tos-root.nuevo .nv-who.ask span{opacity:.75}
 .tos-root.nuevo .nv-who input{flex:1;min-width:0}
 .tos-root.nuevo .nv-who a{color:inherit;text-decoration:underline;opacity:.8}
+
+/* ---- v2: destacado, mosaico, combos ---- */
+.tos-root.nuevo .nv-feat{position:relative;overflow:hidden;margin:12px 0;padding:18px 16px;border-radius:26px;background:linear-gradient(135deg,var(--c),#241610 135%);color:#FFF6E6;display:grid;grid-template-columns:42% 1fr;gap:10px;align-items:center;box-shadow:0 16px 34px -14px rgba(36,22,16,.6);animation:nvIn .6s cubic-bezier(.2,.8,.2,1) both}
+.tos-root.nuevo .nv-feat-art{filter:drop-shadow(0 10px 14px rgba(0,0,0,.35));animation:nvFloat 4s ease-in-out infinite}
+.tos-root.nuevo .nv-feat-k{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;opacity:.9}
+.tos-root.nuevo .nv-feat h2{margin:4px 0;font-size:1.25rem;line-height:1.1}
+.tos-root.nuevo .nv-feat p{margin:0 0 8px;font-size:.8rem;opacity:.85}
+.tos-root.nuevo .nv-feat .b1,.tos-root.nuevo .nv-feat .b2{position:absolute;border-radius:50%;background:rgba(255,255,255,.16);animation:nvBub 6s ease-in infinite}
+.tos-root.nuevo .nv-feat .b1{width:14px;height:14px;left:10%;bottom:-10px}.tos-root.nuevo .nv-feat .b2{width:9px;height:9px;left:30%;bottom:-10px;animation-delay:2s}
+.tos-root.nuevo .nv-mosaic{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:104px;gap:10px}
+.tos-root.nuevo .nv-tile{position:relative;overflow:hidden;border:3px solid #241610;border-radius:22px;background:var(--c);text-align:left;padding:12px;display:flex;flex-direction:column;justify-content:flex-end;box-shadow:4px 4px 0 #241610;transition:transform .2s;animation:nvIn .5s calc(var(--i)*70ms) both;cursor:pointer;color:#241610}
+.tos-root.nuevo .nv-tile:active{transform:scale(.96)}
+.tos-root.nuevo .nv-tile.t0{grid-row:span 2}
+.tos-root.nuevo .nv-tile b{font-size:1.05rem;position:relative}.tos-root.nuevo .nv-tile em{font-style:normal;font-size:.72rem;opacity:.75;position:relative}
+.tos-root.nuevo .nv-tile-art{position:absolute;right:-6px;top:-4px;width:64px;height:64px;transform:rotate(-8deg);transition:transform .3s}
+.tos-root.nuevo .nv-tile.t0 .nv-tile-art{width:110px;height:110px;right:0;top:6px}
+.tos-root.nuevo .nv-tile:hover .nv-tile-art{transform:rotate(6deg) scale(1.1)}
+.tos-root.nuevo .nv-combo{flex:0 0 190px;padding:12px;border:3px solid #241610;border-radius:20px;background:#FFF6E6;box-shadow:4px 4px 0 #241610;display:flex;flex-direction:column;gap:6px}
+.tos-root.nuevo .nv-combo-art{display:flex;align-items:center;gap:2px}.tos-root.nuevo .nv-combo-art span{width:56px;height:56px;display:block}.tos-root.nuevo .nv-combo-art i{font-style:normal;font-weight:900}
+.tos-root.nuevo .nv-ilus{position:absolute;left:10px;bottom:8px;font-size:.62rem;padding:2px 8px;border-radius:99px;background:rgba(36,22,16,.7);color:#FFF6E6}
+@keyframes nvFloat{50%{transform:translateY(-6px) rotate(2deg)}}
+@keyframes nvBub{to{transform:translateY(-120px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.tos-root.nuevo .nv-feat-art,.tos-root.nuevo .nv-feat .b1,.tos-root.nuevo .nv-feat .b2{animation:none}}
+@keyframes nvIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}

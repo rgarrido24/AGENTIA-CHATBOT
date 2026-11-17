@@ -114,7 +114,7 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 
 function seed(){
  S={seq:101,tseq:2001,role:'cliente',sound:S?S.sound:false,modal:null,
-  settings:{radio:50,cap:500,envio:25,pedMesa:false,pedLlevar:false,pedEntrega:false,aprobar:true,lat:null,lng:null,diasMes:26,costoPct:35,comisionPct:2,metaPuntos:0,premioTxt:''},
+  settings:{radio:50,cap:500,envio:25,pedMesa:true,pedLlevar:false,pedEntrega:false,aprobar:true,lat:null,lng:null,diasMes:26,costoPct:35,comisionPct:2,metaPuntos:0,premioTxt:''},
   inv:INS0.map(r=>({id:r[0],name:r[1],unit:r[2],stock:r[3],min:r[4],cost:r[5],count:''})),
   orders:[],tickets:[],cuenta:{},mermas:[],cust:[],cancelados:1,gastos:[],fin:{cat:'Renta',con:'',monto:'',freq:'mensual'},invNew:{name:'',unit:'kg',stock:'',min:'',cost:''},
   soc:{likes:{},liked:{},rate:{},reviews:[],mine:{}},
@@ -173,14 +173,28 @@ const ordersInit=()=>seed();
 
 /* ilustraciones planas con el trazo grueso del logo */
 const SK='stroke="#241610" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"';
+const BEER={cor:['#F5B83D','#2F6FB5','#F7E27A'],vic:['#C98A2B','#C0392B','#F3D9A4'],pac:['#E7B04A','#1F9AD6','#FFFFFF'],xx:['#B8721E','#2E8B57','#F5B83D'],ult:['#F2C14E','#3FA9F5','#E8EEF2'],mod:['#E5A82F','#E5B73B','#241610'],leo:['#5B2A14','#8C3B1B','#F2D6A0']};
+const DRINK={boi:['#9BD34A','#F5D45E'],coc:['#3B1F18','#D0312D'],min:['#CFE9F7','#FFFFFF'],sue:['#EAF6FB','#3FA9F5'],sug:['#EAF6FB','#2E7DD1'],cln:['#C9473A','#8CC152']};
+const bottle=(c,big)=>'<path d="M26 4h12v4h-3v8c0 4 7 8 7 15v23a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V31c0-7 7-11 7-15V8h-3z" fill="'+c[0]+'"/><rect x="23" y="'+(big?30:34)+'" width="18" height="'+(big?22:16)+'" fill="'+c[1]+'" stroke-width="2"/><circle cx="32" cy="'+(big?41:42)+'" r="4" fill="'+c[2]+'" stroke-width="2"/><rect x="27" y="2" width="10" height="5" rx="2" fill="#241610"/>';
+const TACO={tbi:['#8B4A2B','<path d="M18 40l8-6M28 41l8-7M38 40l7-5" stroke="#4A2412" stroke-width="2.5" fill="none"/>'],tpo:['#EBCB9C','<path d="M17 40q5-4 10 0t10 0 8-1M20 35q5-3 10 0t8 0" stroke="#B88B54" stroke-width="2.2" fill="none"/>'],tlo:['#B0342B','<circle cx="22" cy="39" r="4" fill="#7E1F1A"/><circle cx="32" cy="35" r="4" fill="#7E1F1A"/><circle cx="42" cy="39" r="4" fill="#7E1F1A"/>'],tmi:['#DDA845','<path d="M14 42l36-6" stroke="#B9822A" stroke-width="7"/><circle cx="22" cy="40" r="1.4" fill="#fff"/><circle cx="36" cy="37" r="1.4" fill="#fff"/><circle cx="46" cy="35" r="1.4" fill="#fff"/>'],tca:['#9A4A2A','<path d="M14 42a18 18 0 0 1 18-16v17z" fill="#B0342B"/><path d="M32 43V26a18 18 0 0 1 18 16z" fill="#8B4A2B"/>'],tar:['#5E2F1E','<path d="M17 41l7-5M27 42l8-7M38 41l7-5" stroke="#241610" stroke-width="3" fill="none"/><path d="M45 28l10 6-9 6z" fill="#C5E063"/>'],tcm:['#F08A3E','<path d="M18 41q4-8 9-3M30 40q4-9 9-3M41 41q3-6 8-2" stroke="#B85A1C" stroke-width="3" fill="none"/>'],tcc:['#8B4A2B','<path d="M14 40q6 5 12 0t12 0 10 0v4H14z" fill="#F5D45E"/><path d="M20 37l6-5M33 36l6-5" stroke="#4A2412" stroke-width="3" fill="none"/><circle cx="46" cy="34" r="4" fill="#F08A3E"/>']};
 function artSvg(p){
  const id=p.id,cat=p.cat;let b='';
- if(cat==='Cervezas')b='<path d="M14 24h28v28a5 5 0 0 1-5 5H19a5 5 0 0 1-5-5z" fill="#F5B83D"/><path d="M42 30h5a5 5 0 0 1 5 5v7a5 5 0 0 1-5 5h-5" fill="none"/><path d="M20 30v22M28 30v22" stroke-width="2" opacity=".35"/><circle cx="21" cy="19" r="7" fill="#fff"/><circle cx="31" cy="15" r="8" fill="#fff"/><circle cx="40" cy="21" r="6" fill="#fff"/>';
- else if(cat==='Tostadas')b='<circle cx="32" cy="34" r="23" fill="#E9C27E"/><circle cx="32" cy="34" r="17" fill="#D94F3A"/><circle cx="25" cy="30" r="4.5" fill="#fff"/><circle cx="37" cy="38" r="4.5" fill="#fff"/><circle cx="38" cy="28" r="3.5" fill="#fff"/><path d="M28 18q12 4 9 18-11-2-9-18z" fill="#8CC152"/><path d="M16 42a16 16 0 0 0 32 0z" fill="#C5E063"/>';
- else if(cat==='Tacos')b='<path d="M6 46a26 26 0 0 1 52 0z" fill="#F2C76B"/><path d="M13 46a19 19 0 0 1 38 0" fill="#C9473A"/><circle cx="24" cy="38" r="4.5" fill="#8CC152"/><circle cx="34" cy="33" r="4.5" fill="#fff"/><circle cx="43" cy="40" r="4" fill="#F5B83D"/>';
- else if(cat==='Bebidas')b='<path d="M26 6h12v11l6 10v27a4 4 0 0 1-4 4H24a4 4 0 0 1-4-4V27l6-10z" fill="#7FB2E5"/><rect x="21" y="34" width="22" height="14" fill="#fff"/>';
- else if(id==='pf'||id==='pr')b='<rect x="17" y="10" width="6" height="26" fill="#F5D45E"/><rect x="26" y="6" width="6" height="30" fill="#F5D45E"/><rect x="35" y="10" width="6" height="26" fill="#F5D45E"/><rect x="43" y="14" width="5" height="22" fill="#F5D45E"/><path d="M14 32h36l-4 26H18z" fill="#E2573A"/>';
- else b='<path d="M9 30a23 19 0 0 1 46 0z" fill="#E8A24A"/><path d="M7 33h50l-4 5H11z" fill="#8CC152"/><rect x="10" y="39" width="44" height="8" rx="4" fill="#7A4A2B"/><path d="M12 49h40a4 4 0 0 1-4 8H16a4 4 0 0 1-4-8z" fill="#E8A24A"/>';
+ if(cat==='Cervezas')b=bottle(BEER[id]||['#F5B83D','#C0392B','#fff']);
+ else if(cat==='Tostadas'){
+  const ag=id==='tag';
+  b='<circle cx="32" cy="34" r="23" fill="#E9C27E"/><circle cx="32" cy="34" r="18" fill="'+(ag?'#DDEBB4':'#F07A4D')+'"/>'
+   +(ag?'<circle cx="24" cy="29" r="6" fill="#8CC152"/><circle cx="24" cy="29" r="3" fill="#E7F2C2" stroke-width="1.5"/><circle cx="38" cy="38" r="6" fill="#8CC152"/><circle cx="38" cy="38" r="3" fill="#E7F2C2" stroke-width="1.5"/><path d="M30 22q8 1 12 7-7 3-12-7z" fill="#B14B8A"/><path d="M20 40q4 5 9 4" fill="none" stroke="#B14B8A" stroke-width="3"/><path d="M40 24q5 1 6 6-5 1-6-6z" fill="#F08A3E"/>'
+    :'<path d="M22 30q4-6 9-2-1 6-9 2zM33 36q5-5 10-1-2 6-10 1zM26 41q4-3 8 0" fill="#F5A04A"/><path d="M28 20q12 4 10 15-10-2-10-15z" fill="#8CC152"/><circle cx="41" cy="28" r="3" fill="#fff"/><path d="M16 42a16 16 0 0 0 32 0z" fill="#C5E063"/>')}
+ else if(cat==='Tacos'){const t=TACO[id]||['#8B4A2B',''];const harina=id==='tcm'||id==='tcc';
+  b='<path d="M6 46a26 26 0 0 1 52 0z" fill="'+(harina?'#F6E8C8':'#F2C76B')+'"/><path d="M13 46a19 19 0 0 1 38 0z" fill="'+t[0]+'"/>'+t[1]+'<circle cx="22" cy="29" r="2.5" fill="#8CC152"/><circle cx="41" cy="27" r="2.5" fill="#8CC152"/><circle cx="32" cy="24" r="2.5" fill="#fff"/><path d="M8 50h48" stroke-width="2.5" opacity=".4"/>'}
+ else if(cat==='Bebidas'){const c=DRINK[id]||['#7FB2E5','#fff'];
+  if(id==='cln')b='<path d="M16 12h32l-4 44a4 4 0 0 1-4 4H24a4 4 0 0 1-4-4z" fill="'+c[0]+'"/><path d="M42 4l-6 16" stroke="'+c[1]+'" stroke-width="4"/><circle cx="46" cy="14" r="6" fill="#C5E063"/>';
+  else if(id==='boi')b='<path d="M20 8h24l3 10v36a4 4 0 0 1-4 4H21a4 4 0 0 1-4-4V18z" fill="'+c[0]+'"/><circle cx="32" cy="36" r="9" fill="'+c[1]+'"/><path d="M26 36h12" stroke-width="2.5"/>';
+  else b=bottle([c[0],c[1],id==='coc'?'#fff':c[0]],id==='sug')}
+ else if(id==='pf')b='<rect x="17" y="10" width="6" height="26" fill="#F5D45E"/><rect x="26" y="6" width="6" height="30" fill="#F5D45E"/><rect x="35" y="10" width="6" height="26" fill="#F5D45E"/><rect x="43" y="14" width="5" height="22" fill="#F5D45E"/><path d="M14 32h36l-4 26H18z" fill="#E2573A"/><path d="M20 38q6 4 12 0t12 0" stroke="#fff" stroke-width="3" fill="none"/>'
+ else if(id==='pr')b='<path d="M12 28l4 28h32l4-28z" fill="#E8C27E"/><path d="M16 28l-3-16M26 28l-1-20M36 28l2-18M46 28l5-14" stroke="#F5D45E" stroke-width="6" fill="none"/>'
+ else if(id==='hp')b='<path d="M6 26a20 16 0 0 1 40 0z" fill="#E8A24A"/><path d="M5 28h42l-3 4H8z" fill="#8CC152"/><rect x="7" y="33" width="38" height="7" rx="3" fill="#7A4A2B"/><path d="M8 42h36a4 4 0 0 1-4 7H12a4 4 0 0 1-4-7z" fill="#E8A24A"/><rect x="40" y="38" width="5" height="16" fill="#F5D45E"/><rect x="47" y="34" width="5" height="20" fill="#F5D45E"/><rect x="54" y="40" width="5" height="14" fill="#F5D45E"/><path d="M38 52h24l-3 8H41z" fill="#E2573A"/>'
+ else b='<path d="M9 30a23 19 0 0 1 46 0z" fill="#E8A24A"/><circle cx="24" cy="23" r="1.5" fill="#fff"/><circle cx="34" cy="19" r="1.5" fill="#fff"/><path d="M7 33h50l-4 5H11z" fill="#8CC152"/><path d="M10 38h44v3H10z" fill="#F5D45E"/><rect x="10" y="41" width="44" height="8" rx="4" fill="#7A4A2B"/><path d="M12 49h40a4 4 0 0 1-4 8H16a4 4 0 0 1-4-8z" fill="#E8A24A"/>';
  return '<svg viewBox="0 0 64 64" width="100%" height="100%" '+SK+' aria-hidden="true">'+b+'</svg>'}
 const artHtml=p=>p.img?'<img src="'+esc(p.img)+'" alt="" loading="lazy">':artSvg(p);
 
@@ -350,7 +364,7 @@ function modalHtml(){
   h+='<div class="row between"><h2>Pasar a producción</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><p class="small">Se borran las ventas, reseñas, clientes y pedidos de ejemplo. Se conservan tu menú, tus fotos y tus precios. No se puede deshacer.</p><label class="f">Escribe EMPEZAR para confirmar<input type="text" data-in="ptxt" value="'+esc(md.txt||'')+'" autocomplete="off"></label><button class="btn pri" data-a="prodgo">Borrar ejemplos y empezar</button></div>';
  }
  if(md.type==='pin'){
-  h+='<div class="row between"><h2>Acceso de '+({caja:'Caja',dueno:'Dueño',mesero:'Mesero',cocina:'Cocina y barra'}[md.role]||'Equipo')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">PIN de 4 dígitos<input type="password" inputmode="numeric" maxlength="4" data-in="pin" value="'+esc(md.pin)+'" placeholder="••••"></label><div class="xs muted">'+(PROD?'':'PIN de la demo: '+S.pins[md.role]+'. ')+'Cada perfil tiene el suyo, así nadie entra a la caja ni a las ganancias sin permiso.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
+  h+='<div class="row between"><h2>Acceso de '+({caja:'Caja',dueno:'Dueño',mesero:'Mesero',cocina:'Cocina y barra'}[md.role]||'Equipo')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">Contraseña (números)<input type="password" inputmode="numeric" maxlength="8" autocomplete="off" data-in="pin" value="'+esc(md.pin)+'" placeholder="••••"></label><div class="xs muted">'+(PROD?'':'PIN de la demo: '+S.pins[md.role]+'. ')+'Cada perfil tiene el suyo, así nadie entra a la caja ni a las ganancias sin permiso.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
  }
  if(md.type==='ticket'){
   const t=S.tickets.find(x=>x.id===md.id);
@@ -507,7 +521,7 @@ function dSeg(){
 /* ================= NUEVO (?nuevo=1): experiencia premium del cliente ================= */
 const NUEVO=(()=>{try{return !/[?&]clasico=1(&|$)/.test(root.ownerDocument.defaultView.location.search)}catch(e){return true}})();
 let TOP=[];
-const NV={guest:(()=>{try{return lsGet('tos_guest')==='1'}catch(e){return false}})(),splash:(()=>{try{return !root.ownerDocument.defaultView.sessionStorage.getItem('tos_splash')}catch(e){return true}})(),q:'',cele:null,bump:0,fav:false};
+const NV={guest:(()=>{try{return lsGet('tos_guest')==='1'}catch(e){return false}})(),splash:(()=>{try{return Date.now()-Number(lsGet('tos_splash_ts')||0)>30*60000}catch(e){return true}})(),q:'',cele:null,bump:0,fav:false};
 if(NUEVO)root.classList.add('nuevo');
 const nvRestoreMe=()=>{try{const me=JSON.parse(lsGet('tos_me')||'{}');if(me.tel)S.me.tel=String(me.tel).replace(/\D/g,'').slice(0,10);if(me.name)S.me.name=String(me.name).slice(0,60)}catch(e){}};
 const saveMe=()=>lsSet('tos_me',JSON.stringify({name:S.me.name,tel:S.me.tel}));
@@ -524,7 +538,7 @@ function nvSuggest(p,exclude){
 function nvPairHtml(p,title){
  const sg=nvSuggest(p,2);if(!sg.length)return'';
  return'<div class="nv-pair"><div class="nv-pair-t">'+esc(title||PAIR_TXT[p.cat]||'Completa tu pedido')+'</div><div class="nv-pair-row">'+sg.map(x=>'<div class="nv-pair-c" style="--c:'+CATCOL[x.cat]+'"><div class="nv-mini">'+artHtml(x)+'</div><div class="grow"><div class="b small">'+esc(x.name)+'</div><div class="xs muted num">'+fromPrice(x)+'</div></div><button class="nv-plus sm" data-a="qadd" data-p="'+x.id+'" aria-label="Agregar '+esc(x.name)+'">+</button></div>').join('')+'</div></div>'}
-function nvHero(p){return'<div class="nv-hero" style="--c:'+CATCOL[p.cat]+'" data-tilt><div class="nv-hero-art">'+artHtml(p)+'</div><i class="nv-b b1"></i><i class="nv-b b2"></i><i class="nv-b b3"></i>'+(topN(p.id)?'<span class="nv-tag">'+topN(p.id)+' hoy</span>':'')+'</div>'+(p.desc?'<div class="nv-sheet-desc">'+esc(p.desc)+'</div>':'')}
+function nvHero(p){return'<div class="nv-hero" style="--c:'+CATCOL[p.cat]+'" data-tilt><div class="nv-hero-art">'+artHtml(p)+'</div><i class="nv-b b1"></i><i class="nv-b b2"></i><i class="nv-b b3"></i>'+(topN(p.id)?'<span class="nv-tag">'+topN(p.id)+' hoy</span>':'')+(p.img?'':'<span class="nv-ilus">Ilustración · foto próximamente</span>')+'</div>'+(p.desc?'<div class="nv-sheet-desc">'+esc(p.desc)+'</div>':'')}
 /* lealtad real: saldo del cliente + lo que gana con este pedido + meta configurada por el dueño */
 function nvLoy(sub){
  const d=S.loy.data,found=!!(d&&d.found),saldo=found?Number(d.cliente.puntos||0):0;
@@ -574,13 +588,29 @@ function nvWho(){
  if(tel.length===10){const L=S.loy.data;const sal=L&&L.found&&L.saldo!=null?' · saldo <b>'+m(L.saldo)+'</b>':'';if(!L&&!S.loy.loading)setTimeout(loadMe,50);return'<div class="nv-who ok">Hola'+(S.me.name?', <b>'+esc(S.me.name.split(' ')[0])+'</b>':'')+sal+' <a href="#" data-a="nvchg">Cambiar</a></div>'}
  if(NV.guest)return'<div class="nv-who">Navegando como invitado · <a href="#" data-a="nvchg">Identificarme</a></div>';
  return'<div class="nv-who ask"><b>¿Ya viniste antes?</b><span>Pon tu WhatsApp para ver lo que has pedido y tu saldo. Es opcional.</span><div class="row" style="gap:8px"><input type="tel" inputmode="numeric" data-in="tel" value="" placeholder="10 dígitos"><button class="btn sm pri" data-a="nvid">Entrar</button></div><a href="#" data-a="nvguest">Seguir como invitado</a></div>'}
+
+const COMBOS=[['tag','vic','Aguachile + Victoria'],['tcc','cor','Camachera + Corona'],['tar','mod','Arrachera + Modelo']];
+function nvFeatured(top){
+ const t=top&&top[0],p=t?t.p:PM('tcm');if(!p||soldOut(p))return'';
+ const ok=canOrderAny();
+ return'<section class="nv-feat" style="--c:'+CATCOL[p.cat]+'" data-tilt><div class="nv-feat-art">'+artHtml(p)+'</div><i class="nv-b b1"></i><i class="nv-b b2"></i><div class="nv-feat-t"><span class="nv-feat-k">'+(t?'Lo más pedido hoy · '+t.n+(t.n===1?' pedido':' pedidos'):'Recomendado de la casa')+'</span><h2>'+esc(p.name)+'</h2><p>'+esc(p.desc||'')+'</p><div class="row" style="gap:8px;align-items:center"><b class="num">'+fromPrice(p)+'</b>'+(ok?'<button class="btn pri sm" data-a="add" data-p="'+p.id+'">Personalizar y agregar</button>':'')+'</div></div></section>'}
+function nvMosaic(){
+ return'<section class="nv-sec"><div class="nv-h"><h2>¿Qué se te antoja?</h2></div><div class="nv-mosaic">'+CATS.map((k,i)=>{const items=MENU.filter(x=>x.cat===k&&!soldOut(x));const rep=items[0]||MENU.find(x=>x.cat===k);return rep?'<button class="nv-tile t'+i+'" style="--c:'+CATCOL[k]+';--i:'+i+'" data-a="cat" data-v="'+k+'"><span class="nv-tile-art">'+artHtml(rep)+'</span><b>'+k+'</b><em>'+items.length+' opciones</em></button>':''}).join('')+'</div></section>'}
+function nvCombos(){
+ const ok=canOrderAny();
+ const cs=COMBOS.map(c=>({ids:[c[0],c[1]],ps:[PM(c[0]),PM(c[1])],n:c[2]})).filter(c=>c.ps.every(x=>x&&!soldOut(x)));
+ if(!cs.length)return'';
+ return'<section class="nv-sec"><div class="nv-h"><h2>Va muy bien con una chela</h2></div><div class="strip nv-strip">'+cs.map(c=>{const tot=c.ps.reduce((a,x)=>a+x.v[0].p,0);return'<div class="nv-combo"><div class="nv-combo-art"><span>'+artHtml(c.ps[0])+'</span><i>+</i><span>'+artHtml(c.ps[1])+'</span></div><div class="b small">'+esc(c.n)+'</div><div class="row between"><b class="num">'+m(tot)+'</b>'+(ok?'<button class="nv-plus" data-a="combo" data-ids="'+c.ids.join(',')+'" aria-label="Agregar combo">+</button>':'')+'</div></div>'}).join('')+'</div></section>'}
 function nvMenu(){
  const c=S.cli;let h=presence()+nvWho();
  if(!canOrderAny())h+='<div class="banner warn"><b>Menú de consulta.</b> Por ahora los pedidos los toma tu mesero. Mira, califica y recomienda tus favoritos.</div>';
  const top=TOP.map(t=>({p:PM(t.pid),n:t.n})).filter(x=>x.p&&!soldOut(x.p)).slice(0,5);
+ const home=c.cat==='Todo'&&!NV.q.trim()&&!NV.fav;
+ if(home)h+=nvFeatured(top);
  if(top.length)h+='<section class="nv-sec"><div class="nv-h"><h2>Lo más pedido hoy</h2><span class="nv-live"><i></i>en vivo</span></div><div class="strip nv-strip">'+top.map((x,i)=>'<button class="nv-top" style="--c:'+CATCOL[x.p.cat]+';--i:'+i+'" data-a="'+(canOrderAny()?'add':'noop')+'" data-p="'+x.p.id+'"><div class="nv-mini big">'+artHtml(x.p)+'</div><span class="nv-rank">#'+(i+1)+'</span><div class="b small">'+esc(x.p.name)+'</div><div class="xs nv-hot">'+x.n+(x.n===1?' pedido':' pedidos')+' hoy</div></button>').join('')+'</div></section>';
  const hist=histGet()[0];
  if(hist&&canOrderAny()){const ls=hist.lines.map(nvRebuild).filter(Boolean);if(ls.length){const tot=sumLines(ls);h+='<section class="nv-again"><div><div class="nv-again-k">Pide lo de siempre</div><div class="b">'+ls.slice(0,3).map(l=>l.qty+' × '+esc(l.name)).join(' · ')+(ls.length>3?' …':'')+'</div></div><button class="btn pri" data-a="rep">Repetir · '+m(tot)+'</button></section>'}}
+ if(home)h+=nvMosaic()+nvCombos();
  h+='<div class="nv-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" data-in="nvq" value="'+esc(NV.q)+'" placeholder="Busca tostadas, chelas, tacos…" aria-label="Buscar en el menú" autocomplete="off"></div>';
  h+='<div class="chips scroll nv-cats">'+['Todo'].concat(CATS).map(x=>'<button class="chip" data-a="cat" data-v="'+x+'" aria-pressed="'+(c.cat===x)+'">'+esc(x)+'</button>').join('')+'<button class="chip fav" data-a="nvfav" aria-pressed="'+NV.fav+'">♥ Favoritos</button></div>';
  return h+'<div id="nvList">'+nvList()+'</div>'}
@@ -800,7 +830,7 @@ async function verifyPin(){
 }
 function dPwCfg(){
  const pw=S.pw||(S.pw={dueno:'',caja:'',mesero:'',cocina:''});
- const f=(k,l)=>'<label class="f">'+l+'<input type="password" inputmode="numeric" maxlength="4" autocomplete="off" data-in="pw_'+k+'" value="'+esc(pw[k])+'" placeholder="Nueva (4 números)"></label>';
+ const f=(k,l)=>'<label class="f">'+l+'<input type="password" inputmode="numeric" maxlength="8" autocomplete="off" data-in="pw_'+k+'" value="'+esc(pw[k])+'" placeholder="Nueva (4 a 8 números)"></label>';
  return '<div class="card stack"><h3>Contraseñas del equipo</h3><div class="small muted">Cada perfil entra con su contraseña de 4 números. Escribe solo las que quieras cambiar; las demás se quedan igual.</div><div class="grid2" style="gap:8px">'+f('mesero','Mesero')+f('cocina','Cocina y barra')+f('caja','Caja')+f('dueno','Dueño (tú)')+'</div><button class="btn pri" data-a="savepw">Guardar contraseñas</button></div>'}
 function dAjustes(){
  let h=dPedidosCfg()+dQuickCfg()+dPwCfg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
@@ -1026,7 +1056,7 @@ root.addEventListener('click',e=>{
   case'sound':S.sound=!S.sound;if(S.sound)beep();break;
   case'tab':c.tab=g('v');if(c.tab==='puntos'&&S.me.tel.length===10&&!S.loy.data&&!S.loy.loading)loadMe();break;
   case'geo':c.geo=g('v');if(c.geo==='fuera'&&c.canal==='mesa')c.canal='llevar';if(c.geo==='dentro')c.canal='mesa';break;
-  case'cat':c.cat=g('v');break;
+  case'cat':c.cat=g('v');if(NUEVO)setTimeout(()=>{const e=root.querySelector('.nv-cats');if(e&&e.scrollIntoView)e.scrollIntoView({behavior:'smooth',block:'start'})},60);break;
   case'sort':c.sort=g('v');break;
   case'like':{const p=g('p');if(S.soc.liked[p]){delete S.soc.liked[p];S.soc.likes[p]--}else{S.soc.liked[p]=true;S.soc.likes[p]++}break}
   case'togrev':c.open[g('p')]=!c.open[g('p')];break;
@@ -1096,13 +1126,14 @@ root.addEventListener('click',e=>{
   case'nvid':if(S.me.tel.length===10){NV.guest=false;lsSet('tos_guest','0');saveMe();S.loy.data=null;loadMe();toast('Listo')}else toast('Escribe tus 10 dígitos o sigue como invitado');break
   case'nvguest':NV.guest=true;lsSet('tos_guest','1');break
   case'nvchg':S.me.tel='';S.loy.data=null;NV.guest=false;lsSet('tos_guest','0');saveMe();break
-  case'nvgo':NV.splash=false;try{root.ownerDocument.defaultView.sessionStorage.setItem('tos_splash','1')}catch(e){}break;
+  case'nvgo':NV.splash=false;lsSet('tos_splash_ts',String(Date.now()));break;
   case'celeclose':NV.cele=null;S.cli.tab='pedido';break;
+  case'combo':{const ids=String(g('ids')).split(',');let n=0;ids.forEach(id=>{const q=PM(id);if(q&&!soldOut(q)){S.cli.cart.push(lineFrom(q,0,[],1,''));n++}});if(n){NV.bump++;toast('Combo agregado')}break}
   case'qadd':nvQuickAdd(g('p'));break;
   case'rep':nvRepeat();break;
   case'nvfav':NV.fav=!NV.fav;break;
   case'noop':return;
-  case'savepw':{const n={};Object.entries(S.pw||{}).forEach(([r,v])=>{if(v)n[r]=v});if(Object.keys(n).some(r=>n[r].length!==4)){toast('Cada contraseña debe ser de 4 números');return}if(!Object.keys(n).length){toast('Escribe al menos una contraseña nueva');return}
+  case'savepw':{const n={};Object.entries(S.pw||{}).forEach(([r,v])=>{if(v)n[r]=v});if(Object.keys(n).some(r=>n[r].length<4||n[r].length>8)){toast('Cada contraseña debe ser de 4 a 8 números');return}if(!Object.keys(n).length){toast('Escribe al menos una contraseña nueva');return}
    fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'setpin',nuevos:n})}).then(r=>r.json().then(j=>({r,j}))).then(({r,j})=>{if(r.ok&&j.ok){if(n.dueno)S.dpin=n.dueno;S.pinDef=!!j.defecto;S.pw={dueno:'',caja:'',mesero:'',cocina:''};toast('Contraseñas guardadas');}else toast(j.error||'No se pudo guardar');render()}).catch(()=>{toast('Sin conexión, intenta de nuevo');render()});return}
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
@@ -1143,6 +1174,7 @@ const iv2=setInterval(kdsTick,3000);
 seed();Object.keys(TOKS).forEach(r=>{S.auth[r]=true});loadMesaTok();
 if(NUEVO){nvRestoreMe();if(S.me.tel.length===10)setTimeout(()=>{try{loadMe()}catch(e){}},400)}
 try{const qs=new URLSearchParams(root.ownerDocument.defaultView.location.search),mm=qs.get('mesa');if(mm&&MESAS.some(x=>x.k===mm)&&/^[\w]{4,20}$/.test(qs.get('t')||'')){QRMESA=mm;QRT=qs.get('t');S.cli.mt=QRT;S.cli.mesa=mm;S.cli.geo='dentro';S.cli.canal='mesa'}}catch(e){}
+try{if(STAFF){const rr=new URLSearchParams(root.ownerDocument.defaultView.location.search).get('rol');if(['mesero','cocina','barra','caja','dueno'].includes(rr)){const k=authKey(rr);if(S.auth[k])S.role=rr;else S.modal={type:'pin',role:k,target:rr,pin:''}}}}catch(e){}
 render();LAST=snapNow();tick();
 const iv3=setInterval(tick,2500);
 return()=>{ctl.abort();clearInterval(iv);clearInterval(iv2);clearInterval(iv3)};

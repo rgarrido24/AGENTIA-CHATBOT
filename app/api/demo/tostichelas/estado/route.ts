@@ -12,7 +12,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
-import { pinOk, pinPorDefecto, cambiarPin, ROLES_PIN, type Rol } from '@/lib/tostichelas-pins';
+import { pinOk, pinPorDefecto, cambiarPin, pinDebil, ROLES_PIN, type Rol } from '@/lib/tostichelas-pins';
 import { firmarToken, perfilDeRequest, puede, tokenMesa, bloqueado, registrarFallo, limpiarFallos, ipDe, type Perfil } from '@/lib/tostichelas-auth';
 
 export const dynamic = 'force-dynamic';
@@ -191,11 +191,14 @@ export async function POST(req: NextRequest) {
       for (const r of ROLES_PIN) {
         const v = nuevos[r];
         if (v === undefined || v === '') continue;
-        if (typeof v !== 'string' || !/^\d{4}$/.test(v)) return NextResponse.json({ error: 'Cada contraseña debe ser de 4 números' }, { status: 400 });
+        if (typeof v !== 'string' || !/^\d{4,8}$/.test(v)) return NextResponse.json({ error: 'Cada contraseña debe ser de 4 a 8 números' }, { status: 400 });
+        if (pinDebil(v)) return NextResponse.json({ error: 'Esa contraseña es muy fácil de adivinar (repetidos, secuencias o la inicial). Elige otra' }, { status: 400 });
       }
+      const nv = ROLES_PIN.map((r) => nuevos[r]).filter((x) => typeof x === 'string' && x);
+      if (new Set(nv).size !== nv.length) return NextResponse.json({ error: 'Cada perfil debe tener una contraseña distinta' }, { status: 400 });
       for (const r of ROLES_PIN) {
         const v = nuevos[r];
-        if (typeof v === 'string' && /^\d{4}$/.test(v)) await cambiarPin(r, v);
+        if (typeof v === 'string' && /^\d{4,8}$/.test(v)) await cambiarPin(r, v);
       }
       const defecto = await Promise.all(ROLES_PIN.map((r) => pinPorDefecto(r)));
       return NextResponse.json({ ok: true, defecto: defecto.some(Boolean) });
