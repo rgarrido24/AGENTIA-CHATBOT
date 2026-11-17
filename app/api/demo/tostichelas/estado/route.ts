@@ -21,7 +21,7 @@ const COLL = 'demo_tostichelas_estado';
 const ID = 'main';
 const COLS = ['orders', 'tickets', 'mermas', 'movs', 'reviews', 'gastos'] as const;
 const KV_DUENO = /^(menu|avail\||settings\|)/; // solo el dueño puede cambiarlas
-const PUB_SETTINGS = /^settings\|(pedMesa|pedLlevar|pedEntrega|aprobar|lat|lng|radio|cap|envio)$/;
+const PUB_SETTINGS = /^settings\|(pedMesa|pedLlevar|pedEntrega|aprobar|lat|lng|radio|cap|envio|metaPuntos|premioTxt)$/;
 const pubKv = (k: string) => k === 'menu' || k.startsWith('avail|') || k.startsWith('likes|') || k.startsWith('rate|') || PUB_SETTINGS.test(k);
 const MAX_ENTRIES = 400;
 const MAX_BYTES = 200_000;
@@ -60,6 +60,20 @@ function colVisible(name: string, e: { d: any }, v: Vista): boolean {
   return true;
 }
 
+/** Lo más pedido hoy (hora de México), calculado con pedidos reales de todos los clientes. */
+function topHoy(doc: Doc) {
+  const dia = (t: number) => new Date(t - 6 * 3600_000).toISOString().slice(0, 10);
+  const hoy = dia(Date.now());
+  const cuenta: Record<string, number> = {};
+  for (const e of Object.values(doc.cols?.orders || {})) {
+    const d = e.d;
+    if (!d || d.cancel || dia(Number(d.created) || e.u) !== hoy) continue;
+    if (d.hold && !d.aprobar) continue; // pago pendiente: aún no cuenta
+    for (const l of d.lines || []) if (l?.pid && Number.isFinite(l.qty)) cuenta[l.pid] = (cuenta[l.pid] || 0) + l.qty;
+  }
+  return Object.entries(cuenta).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([pid, n]) => ({ pid, n }));
+}
+
 function delta(doc: Doc, since: number, v: Vista) {
   const cols: Record<string, { k: string; u: number; d: unknown }[]> = {};
   for (const name of COLS) {
@@ -70,7 +84,7 @@ function delta(doc: Doc, since: number, v: Vista) {
   }
   const kv: Record<string, { u: number; v: unknown }> = {};
   for (const [k, e] of Object.entries(doc.kv || {})) if (e.r > since && (v.perfil || pubKv(k))) kv[k] = { u: e.u, v: e.v };
-  return { rev: doc.rev, epoch: doc.epoch, prod: doc.prod, cols, kv };
+  return { rev: doc.rev, epoch: doc.epoch, prod: doc.prod, cols, kv, top: topHoy(doc) };
 }
 
 const vistaDe = (req: NextRequest): Vista => {

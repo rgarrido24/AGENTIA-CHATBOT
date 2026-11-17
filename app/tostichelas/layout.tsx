@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Baloo_2, Nunito } from 'next/font/google';
 import './tostichelas.css';
+import './nuevo.css';
 
 /** Fuentes variables: sin `weight` (bug del loader de next/font en Next 14). */
 const baloo = Baloo_2({ subsets: ['latin'], variable: '--font-baloo', display: 'swap' });
