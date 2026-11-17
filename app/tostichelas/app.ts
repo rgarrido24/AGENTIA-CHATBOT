@@ -4,6 +4,16 @@ import QRCode from 'qrcode';
 export function initTostichelas(root: HTMLElement, opts?: { staff?: boolean }): () => void {
 'use strict';
 const STAFF=!!(opts&&opts.staff);let SYNCED=false;const authKey=r=>r==='barra'?'cocina':r;
+const LS=(()=>{try{return root.ownerDocument.defaultView.localStorage}catch(e){return null}})();
+const lsGet=k=>{try{return LS?LS.getItem(k):null}catch(e){return null}},lsSet=(k,v)=>{try{LS&&LS.setItem(k,v)}catch(e){}};
+const CID=(()=>{let c=lsGet('tos_cid');if(!c||!/^[\w-]{8,40}$/.test(c)){c='c'+Math.random().toString(36).slice(2,12)+Date.now().toString(36);lsSet('tos_cid',c)}return c})();
+const custId=()=>100000+Math.floor(Math.random()*8999999);
+const tokExp=t=>Number(String(t||'').split('.')[1])||0;
+let TOKS={};try{TOKS=JSON.parse(lsGet('tos_toks')||'{}')}catch(e){TOKS={}}
+Object.keys(TOKS).forEach(r=>{if(tokExp(TOKS[r])<Date.now()+60000)delete TOKS[r]});
+const anyTok=()=>TOKS.dueno||TOKS.caja||TOKS.mesero||TOKS.cocina||'';
+const hdr=()=>{const t=anyTok();return t?{'Content-Type':'application/json','x-tos-token':t}:{'Content-Type':'application/json'}};
+const saveToks=()=>lsSet('tos_toks',JSON.stringify(TOKS));
 /* ---------- utilidades ---------- */
 const $=(s)=>root.querySelector(s);
 const ctl=new AbortController();
@@ -79,15 +89,15 @@ function lineCost(l){const p=PM(l.pid);let c=0;Object.keys(p.use).forEach(k=>{co
 const lineTot=l=>l.unit*l.qty;
 const sumLines=ls=>ls.reduce((a,l)=>a+lineTot(l),0);
 const soldOut=p=>!p.avail||Object.keys(p.use).some(k=>{const it=ins(k);return it&&it.stock<p.use[k]*p.v[0].f});
-function deduct(o,sign){o.lines.forEach(l=>{const p=PM(l.pid);Object.keys(p.use).forEach(k=>{const i=ins(k);if(!i)return;i.stock=Math.round((i.stock-(sign||1)*p.use[k]*l.f*l.qty)*100)/100})})}
-function newOrder(x){const o=Object.assign({id:S.seq++,mesa:null,canal:'mesa',lines:[],cliente:{},hold:false,porConfirmar:false,src:'mesero',addr:'',envio:0,created:Date.now(),closed:false,cancel:false,stage:'cocina',done:false},x);S.orders.push(o);if(!o.hold)deduct(o);return o}
+function deduct(o,sign){const use={};o.lines.forEach(l=>{const p=PM(l.pid);Object.keys(p.use).forEach(k=>{const i=ins(k);if(!i)return;const q=p.use[k]*l.f*l.qty;use[k]=Math.round(((use[k]||0)+q)*100)/100;i.stock=Math.round((i.stock-(sign||1)*q)*100)/100})});if(!sign&&o.src==='cliente'&&!anyTok())o.dedo=use}
+function newOrder(x){const cl=x&&x.src==='cliente';const o=Object.assign({id:cl?custId():S.seq++,mesa:null,canal:'mesa',lines:[],cliente:{},hold:false,porConfirmar:false,src:'mesero',addr:'',envio:0,created:Date.now(),closed:false,cancel:false,stage:'cocina',done:false},x,cl?{cid:CID,mt:(S.cli&&S.cli.mt)||''}:{});S.orders.push(o);if(!o.hold)deduct(o);return o}
 function release(o){o.hold=false;o.created=Date.now();deduct(o);beep()}
 const live=()=>S.orders.filter(o=>!o.hold&&!o.cancel);
 const mesaOrders=k=>S.orders.filter(o=>o.mesa===k&&!o.closed&&!o.cancel&&!o.hold);
 const orderSub=o=>sumLines(o.lines);
 const mesaTotal=k=>mesaOrders(k).reduce((a,o)=>a+orderSub(o),0);
 function addPoints(c,sub,disc){return;let cu=S.cust.find(x=>x.tel===c.tel);if(!cu){cu={tel:c.tel,name:c.name||'Cliente',pts:0,visits:0,last:0};S.cust.push(cu)}if(c.name&&cu.name==='Cliente')cu.name=c.name;cu.pts+=Math.floor((sub-disc)/10);cu.visits++;cu.last=0}
-function closeTicket(orders,o2){const lines=[];orders.forEach(o=>o.lines.forEach(l=>lines.push(Object.assign({},l,{cost:lineCost(l)}))));const sub=sumLines(lines);const t=Object.assign({id:S.tseq++,ts:Date.now(),lines,sub,disc:0,tip:0,method:'Efectivo',cliente:{},canal:'mesa',mesa:null,orderIds:orders.map(o=>o.id)},o2);t.total=sub-t.disc+t.tip+(t.envio||0);S.tickets.push(t);orders.forEach(o=>{o.closed=true});if(t.mesa)delete S.cuenta[t.mesa];addPoints(t.cliente,sub,t.disc);return t}
+function closeTicket(orders,o2){const lines=[];orders.forEach(o=>o.lines.forEach(l=>lines.push(Object.assign({},l,{cost:lineCost(l)}))));const sub=sumLines(lines);const t=Object.assign({id:(o2&&o2.method==='Link de pago'&&!anyTok())?custId():S.tseq++,ts:Date.now(),lines,sub,disc:0,tip:0,method:'Efectivo',cliente:{},canal:'mesa',mesa:null,orderIds:orders.map(o=>o.id)},o2);t.total=sub-t.disc+t.tip+(t.envio||0);S.tickets.push(t);orders.forEach(o=>{o.closed=true});if(t.mesa)delete S.cuenta[t.mesa];addPoints(t.cliente,sub,t.disc);return t}
 function restockCancel(o){if(!o.hold)deduct(o,-1);o.cancel=true}
 function beep(){if(!S||!S.sound)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.4);o.start();o.stop(ac.currentTime+.4)}catch(e){}}
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;$('#toast').appendChild(d);setTimeout(()=>d.remove(),3200)}
@@ -505,8 +515,8 @@ function render(){
 
 /* ---------- lealtad real (mismo motor que Sabucan y Carnitas) ---------- */
 const LAPI='/api/demo/tostichelas/lealtad';
-async function lget(q){const r=await fetch(LAPI+'?'+q,{cache:'no-store'});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Sin conexión con lealtad');return j}
-async function lpost(b){const r=await fetch(LAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Sin conexión con lealtad');return j}
+async function lget(q){const r=await fetch(LAPI+'?'+q,{cache:'no-store',headers:hdr()});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Sin conexión con lealtad');return j}
+async function lpost(b){const r=await fetch(LAPI,{method:'POST',headers:hdr(),body:JSON.stringify(b)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Sin conexión con lealtad');return j}
 const unidad=lc=>!lc?'':lc.modelo==='sellos'?'sellos':lc.modelo==='puntos'?'puntos':'de saldo';
 const fmtSaldo=(lc,n)=>lc&&lc.modelo==='cashback'?m2(n):String(Math.round(n*100)/100);
 function loadCajaCliente(tel){
@@ -555,7 +565,7 @@ async function uploadImg(file){
  const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(bmp.width*sc));cv.height=Math.max(1,Math.round(bmp.height*sc));
  cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
  let q=.82,data=cv.toDataURL('image/jpeg',q);while(data.length>900000&&q>.4){q-=.12;data=cv.toDataURL('image/jpeg',q)}
- const r=await fetch(IAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:S.dpin||'',data})});
+ const r=await fetch(IAPI,{method:'POST',headers:hdr(),body:JSON.stringify({data})});
  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo subir la foto');return j.url;
 }
 function openPedit(pid){
@@ -617,7 +627,7 @@ function snapNow(){
  const k=kvNow();Object.keys(k).forEach(x=>{kv[x]=JSON.stringify(k[x])});
  return{cols,kv};
 }
-function reseedKeep(){const k={role:S.role,auth:S.auth,dpin:S.dpin,me:S.me};seed();Object.assign(S,k);if(QRMESA)S.cli.mesa=QRMESA}
+function reseedKeep(){const k={role:S.role,auth:S.auth,dpin:S.dpin,me:S.me,mesaTok:S.mesaTok};seed();Object.assign(S,k);if(QRMESA){S.cli.mesa=QRMESA;S.cli.mt=QRT}}
 function softRender(){const a=root.ownerDocument.activeElement;if(a&&root.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){dirty=true;return}dirty=false;render()}
 function applyResp(r){
  if(!r||r.error)return;
@@ -629,7 +639,7 @@ function applyResp(r){
  Object.keys(r.kv||{}).sort((a,b)=>a==='menu'?-1:b==='menu'?1:0).forEach(k=>{const e=r.kv[k];if(UU['kv|'+k]!==undefined&&UU['kv|'+k]>=e.u)return;applyKv(k,e.v);UU['kv|'+k]=e.u;inc.kv.push(k);changed=true});
  if(inc.cols.length||inc.kv.length){const cur=snapNow();inc.cols.forEach(x=>{LAST.cols[x[0]]=LAST.cols[x[0]]||{};LAST.cols[x[0]][x[1]]=cur.cols[x[0]][x[1]]});inc.kv.forEach(k=>{LAST.kv[k]=cur.kv[k]})}
  REV=r.rev||REV;
- S.orders.forEach(o=>{if(o.id>=S.seq)S.seq=o.id+1});S.tickets.forEach(t=>{if(t.id>=S.tseq)S.tseq=t.id+1});
+ S.orders.forEach(o=>{if(o.id<100000&&o.id>=S.seq)S.seq=o.id+1});S.tickets.forEach(t=>{if(t.id<100000&&t.id>=S.tseq)S.tseq=t.id+1});
  if(changed)softRender();
 }
 async function tick(){
@@ -640,21 +650,24 @@ async function tick(){
   Object.keys(cur.kv).forEach(k=>{if(LAST.kv[k]===cur.kv[k])return;push.kv[k]={u:now,v:JSON.parse(cur.kv[k])};n++});
   let resp;
   if(n){
-   const r=await fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({since:REV,epoch:EPOCH,pin:S.dpin||'',cols:push.cols,kv:push.kv})});
+   const r=await fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({since:REV,epoch:EPOCH,cid:CID,cols:push.cols,kv:push.kv})});
+   if(r.status===401&&anyTok()){TOKS={};saveToks();S.auth={};S.role='cliente';toast('Tu sesión caducó. Entra de nuevo con tu contraseña.');render()}
    if(!r.ok)throw new Error('sync');resp=await r.json();
    Object.keys(push.cols).forEach(name=>push.cols[name].forEach(e=>{LAST.cols[name]=LAST.cols[name]||{};LAST.cols[name][e.k]=cur.cols[name][e.k];UU[name+'|'+e.k]=e.u}));
    Object.keys(push.kv).forEach(k=>{LAST.kv[k]=cur.kv[k];UU['kv|'+k]=push.kv[k].u});
   }else{
-   const r=await fetch(SAPI+'?since='+REV+'&epoch='+EPOCH,{cache:'no-store'});if(!r.ok)throw new Error('sync');resp=await r.json();
+   const r=await fetch(SAPI+'?since='+REV+'&epoch='+EPOCH+'&cid='+CID,{cache:'no-store',headers:hdr()});if(!r.ok)throw new Error('sync');resp=await r.json();
   }
-  online=true;fails=0;applyResp(resp);
+  online=true;fails=0;
+  if(resp&&resp.rech&&resp.rech.length){const bad=resp.rech.map(String);S.orders=S.orders.filter(o=>bad.indexOf(String(o.id))<0);LAST=snapNow();toast('No pudimos validar tu pedido. Escanea de nuevo el QR de tu mesa.');dirty=true}
+  applyResp(resp);
  }catch(e){fails++;if(fails>=2&&online){online=false;render()}}
  syncBusy=false;
  if(dirty)softRender();
 }
 async function resetServer(accion){
  try{
-  const r=await fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion,pin:S.dpin||''})});
+  const r=await fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion})});
   const j=await r.json().catch(()=>({}));
   if(!r.ok){toast(j.error||'No se pudo');return}
   applyResp(j);toast(accion==='produccion'?'Listo: ya estás en producción, con datos limpios':'Demo reiniciada');
@@ -665,10 +678,10 @@ async function verifyPin(){
  const md=S.modal;
  try{
   const r=await fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'pin',rol:md.role,pin:md.pin})});
-  const j=await r.json();
-  if(j.ok){S.auth[md.role]=true;if(md.role==='dueno'){S.dpin=md.pin;S.pinDef=!!j.defecto}S.role=md.target||md.role;S.modal=null}else toast('PIN incorrecto');
+  const j=await r.json().catch(()=>({}));
+  if(j.ok&&j.token){TOKS[md.role]=j.token;saveToks();S.auth[md.role]=true;if(md.role==='dueno'){S.dpin=md.pin;S.pinDef=!!j.defecto}S.role=md.target||md.role;S.modal=null;loadMesaTok()}else toast(r.status===429?(j.error||'Demasiados intentos'):'PIN incorrecto');
  }catch(e){
-  if(!PROD&&md.pin===S.pins[md.role]){S.auth[md.role]=true;if(md.role==='dueno')S.dpin=md.pin;S.role=md.target||md.role;S.modal=null}else toast('Sin conexión para validar el PIN');
+  toast('Sin conexión para validar el PIN');
  }
  render();
 }
@@ -689,7 +702,7 @@ function dQuickCfg(){
  return'<div class="card stack"><h3>Opciones rápidas para personalizar</h3><div class="small muted">Son los botones que ve el cliente y el mesero al elegir un platillo ("Sin chile", "Sin cebolla"…). Separa con comas. Siempre pueden escribir una nota libre.</div>'+CATS.map(c=>'<label class="f">'+c+'<input type="text" data-in="qk" data-c="'+c+'" value="'+esc((MCFG.quick&&MCFG.quick[c]!==undefined)?MCFG.quick[c]:(QDEF[c]||''))+'"></label>').join('')+'</div>'}
 
 /* ---------- control de pedidos desde el celular ---------- */
-let QRMESA=null,GEOOK=null;
+let QRMESA=null,QRT='',GEOOK=null;
 const canOrderAny=()=>!!(S.settings.pedMesa||S.settings.pedLlevar||S.settings.pedEntrega);
 const canalOk=e=>e==='mesa'?!!S.settings.pedMesa:e==='llevar'?!!S.settings.pedLlevar:!!S.settings.pedEntrega;
 const allowedCanales=dentro=>[].concat(dentro&&S.settings.pedMesa?['mesa']:[],S.settings.pedLlevar?['llevar']:[],S.settings.pedEntrega?['entrega']:[]);
@@ -722,7 +735,8 @@ function presenceReal(){
 const QRC={};
 const baseUrl=()=>{try{return root.ownerDocument.defaultView.location.origin}catch(e){return''}};
 const menuUrl=()=>baseUrl()+'/tostichelas';
-const mesaUrl=k=>menuUrl()+'?mesa='+k+'&t='+tokenOf(k);
+const mesaUrl=k=>menuUrl()+'?mesa='+k+'&t='+((S.mesaTok&&S.mesaTok[k])||'');
+async function loadMesaTok(){if(!anyTok())return;try{const r=await fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'mesatok',mesas:MESAS.map(x=>x.k)})});const j=await r.json();if(j&&j.tokens)S.mesaTok=j.tokens}catch(e){}}
 const altaUrl=()=>baseUrl()+'/tostichelas/alta';
 function qrImg(url,px,cls){
  if(QRC[url])return'<img class="'+(cls||'qrimg')+'" src="'+QRC[url]+'" width="'+px+'" height="'+px+'" alt="Código QR">';
@@ -747,7 +761,7 @@ function printMesas(){
 }
 async function lcbSave(){
  const v=Number(S.lcb);if(!(v>0)){toast('Escribe un porcentaje');return}
- try{const r=await fetch(LAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'config',pin:S.dpin||'',parametro:v})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo');S.real=null;S.lcb=undefined;toast('Cashback actualizado')}catch(e){toast(e.message)}
+ try{const r=await fetch(LAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'config',parametro:v})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo');S.real=null;S.lcb=undefined;toast('Cashback actualizado')}catch(e){toast(e.message)}
  render();
 }
 function dLealtad(){
@@ -886,7 +900,7 @@ root.addEventListener('click',e=>{
  const a=el.getAttribute('data-a'),g=n=>el.getAttribute('data-'+n);
  const c=S.cli;
  switch(a){
-  case'role':{const r=g('v');const k=authKey(r);if(r!=='cliente'&&PROD&&!S.auth[k]||(!PROD&&(k==='caja'||k==='dueno')&&!S.auth[k])){S.modal={type:'pin',role:k,target:r,pin:''}}else S.role=r;break}
+  case'role':{const r=g('v');const k=authKey(r);if(r!=='cliente'&&!S.auth[k]){S.modal={type:'pin',role:k,target:r,pin:''}}else S.role=r;break}
   case'reset':{if(!S.dpin){toast('Solo el dueño puede reiniciar: entra a Dueño con tu PIN');break}resetServer('reset');return}
   case'sound':S.sound=!S.sound;if(S.sound)beep();break;
   case'tab':c.tab=g('v');if(c.tab==='puntos'&&S.me.tel.length===10&&!S.loy.data&&!S.loy.loading)loadMe();break;
@@ -957,7 +971,7 @@ root.addEventListener('click',e=>{
   case'movadd':{const mo=S.caja,mt=parseFloat(mo.mm);if(!(mt>0)||!mo.mo.trim()){toast('Escribe monto y motivo');return}mo.movs.push({tipo:mo.mt,monto:mt,motivo:mo.mo.trim(),ts:Date.now(),por:'Caja'});mo.mm='';mo.mo='';toast('Movimiento registrado');break}
   case'pinok':verifyPin();return;
   case'savepw':{const n={};Object.entries(S.pw||{}).forEach(([r,v])=>{if(v)n[r]=v});if(Object.keys(n).some(r=>n[r].length!==4)){toast('Cada contraseña debe ser de 4 números');return}if(!Object.keys(n).length){toast('Escribe al menos una contraseña nueva');return}
-   fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'setpin',pin:S.dpin||'',nuevos:n})}).then(r=>r.json().then(j=>({r,j}))).then(({r,j})=>{if(r.ok&&j.ok){if(n.dueno)S.dpin=n.dueno;S.pinDef=!!j.defecto;S.pw={dueno:'',caja:'',mesero:'',cocina:''};toast('Contraseñas guardadas');}else toast(j.error||'No se pudo guardar');render()}).catch(()=>{toast('Sin conexión, intenta de nuevo');render()});return}
+   fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'setpin',nuevos:n})}).then(r=>r.json().then(j=>({r,j}))).then(({r,j})=>{if(r.ok&&j.ok){if(n.dueno)S.dpin=n.dueno;S.pinDef=!!j.defecto;S.pw={dueno:'',caja:'',mesero:'',cocina:''};toast('Contraseñas guardadas');}else toast(j.error||'No se pudo guardar');render()}).catch(()=>{toast('Sin conexión, intenta de nuevo');render()});return}
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
   case'ctab':S.caja.tab=g('v');break;
@@ -993,8 +1007,8 @@ function kdsPedal(){
 (root.ownerDocument||document).addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter'||e.key==='PageDown')&&kdsPedal()){e.preventDefault()}},{signal:ctl.signal});
 const iv=setInterval(()=>{if(!S.kds.screen&&(S.role==='cocina'||S.role==='barra'))render()},20000);
 const iv2=setInterval(kdsTick,3000);
-seed();
-try{const qs=new URLSearchParams(root.ownerDocument.defaultView.location.search),mm=qs.get('mesa');if(mm&&MESAS.some(x=>x.k===mm)&&qs.get('t')===tokenOf(mm)){QRMESA=mm;S.cli.mesa=mm;S.cli.geo='dentro';S.cli.canal='mesa'}}catch(e){}
+seed();Object.keys(TOKS).forEach(r=>{S.auth[r]=true});loadMesaTok();
+try{const qs=new URLSearchParams(root.ownerDocument.defaultView.location.search),mm=qs.get('mesa');if(mm&&MESAS.some(x=>x.k===mm)&&/^[\w]{4,20}$/.test(qs.get('t')||'')){QRMESA=mm;QRT=qs.get('t');S.cli.mt=QRT;S.cli.mesa=mm;S.cli.geo='dentro';S.cli.canal='mesa'}}catch(e){}
 render();LAST=snapNow();tick();
 const iv3=setInterval(tick,2500);
 return()=>{ctl.abort();clearInterval(iv);clearInterval(iv2);clearInterval(iv3)};

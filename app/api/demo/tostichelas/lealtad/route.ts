@@ -24,7 +24,7 @@ import {
   TOSTICHELAS_KEY,
 } from '@/lib/tostichelas-tenant';
 
-import { pinOk } from '@/lib/tostichelas-pins';
+import { perfilDeRequest, puede } from '@/lib/tostichelas-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
     if (!cfg) return NextResponse.json({ error: 'Lealtad no disponible' }, { status: 503 });
 
     if (req.nextUrl.searchParams.get('lista')) {
+      if (!puede(perfilDeRequest(req), 'caja')) return NextResponse.json({ error: 'Inicia sesión' }, { status: 401 });
       const clientes = await listClientes(TOSTICHELAS_KEY);
       return NextResponse.json({
         ...info(cfg),
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
     const telefono = String(body.telefono ?? '');
 
     if (body.accion === 'config') {
-      if (!(await pinOk('dueno', body.pin))) return NextResponse.json({ error: 'PIN incorrecto' }, { status: 403 });
+      if (perfilDeRequest(req) !== 'dueno') return NextResponse.json({ error: 'Solo el dueño' }, { status: 403 });
       const pct = Number(body.parametro);
       if (!Number.isFinite(pct) || pct <= 0) return NextResponse.json({ error: 'Porcentaje inválido' }, { status: 400 });
       const nuevo = await actualizarCashbackTostichelas(pct);
@@ -107,6 +108,10 @@ export async function POST(req: NextRequest) {
         fechaNacimiento: String(body.fechaNacimiento ?? ''),
       });
       return NextResponse.json({ ...info(cfg), ...r });
+    }
+
+    if ((body.accion === 'venta' || body.accion === 'canje') && !puede(perfilDeRequest(req), 'caja')) {
+      return NextResponse.json({ error: 'Inicia sesión en Caja' }, { status: 401 });
     }
 
     if (body.accion === 'venta') {

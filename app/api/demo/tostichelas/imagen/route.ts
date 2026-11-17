@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Binary, ObjectId } from 'mongodb';
 import { getMongoDb } from '@/lib/mongodb';
 
-import { pinOk } from '@/lib/tostichelas-pins';
+import { perfilDeRequest } from '@/lib/tostichelas-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,7 @@ const MAX_BYTES = 700_000;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    if (!(await pinOk('dueno', body.pin))) return NextResponse.json({ error: 'PIN incorrecto' }, { status: 403 });
+    if (perfilDeRequest(req) !== 'dueno') return NextResponse.json({ error: 'PIN incorrecto' }, { status: 403 });
     const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(body.data || ''));
     if (!m) return NextResponse.json({ error: 'Imagen no válida' }, { status: 400 });
     const buf = Buffer.from(m[2], 'base64');
