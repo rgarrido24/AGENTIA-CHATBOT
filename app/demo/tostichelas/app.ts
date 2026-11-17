@@ -73,7 +73,7 @@ const tokenOf=k=>String(1000+((k.charCodeAt(0)*31+parseInt(k.slice(1),10)*977)%9
 const ins=k=>S.inv.find(i=>i.id===k);
 
 function lineFrom(p,vi,mods,qty,note){const v=p.v[vi];let unit=v.p;mods.forEach(x=>unit+=x.p);return{uid:uid(),pid:p.id,name:p.name,v:v.l,s:v.s,f:v.f,mods,unit,qty,note:note||'',station:p.station,status:'nuevo'}}
-function lineCost(l){const p=PM(l.pid);let c=0;Object.keys(p.use).forEach(k=>{c+=p.use[k]*l.f*l.qty*ins(k).cost});return c}
+function lineCost(l){const p=PM(l.pid);let c=0;Object.keys(p.use).forEach(k=>{c+=p.use[k]*l.f*l.qty*ins(k).cost});if(p.cost)c+=p.cost*l.f*l.qty;return c}
 const lineTot=l=>l.unit*l.qty;
 const sumLines=ls=>ls.reduce((a,l)=>a+lineTot(l),0);
 const soldOut=p=>!p.avail||Object.keys(p.use).some(k=>ins(k).stock<p.use[k]*p.v[0].f);
@@ -103,6 +103,8 @@ function seed(){
   auth:{},pins:{caja:'1111',dueno:'2222'},
   loy:{tel:'',data:null,loading:false,nom:'',nac:''},real:null,kds:{screen:false},
   own:{tab:'resumen'}};
+ applyMenu();
+ if(PROD){MENU.forEach(q=>{S.soc.likes[q.id]=0;S.soc.rate[q.id]={n:0,sum:0}});return}
  const LK={tag:128,tce:96,tcc:84,tcm:77,cor:71,vic:64,tar:58,pac:49,ha:44,hp:40,tca:39,tmi:37,tbi:33,xx:30,mod:31,leo:25,tlo:26,pf:22,tpo:21,ult:18,pr:19,sue:15,coc:14,cln:12,boi:9,sug:8,min:6};
  const RT={tag:[4.8,64],tce:[4.7,52],tcc:[4.9,48],tcm:[4.8,41],cor:[4.5,39],vic:[4.6,35],tar:[4.7,30],pac:[4.4,22],ha:[4.3,25],hp:[4.4,21],tca:[4.5,19],tmi:[4.5,17],tbi:[4.3,15],xx:[4.4,16],mod:[4.4,15],leo:[4.5,13],tlo:[4.4,12],pf:[4.2,14],tpo:[4.2,10],ult:[4.3,9],pr:[4.1,9],sue:[4.6,8],coc:[4.5,7],cln:[4.2,6],boi:[4.3,5],sug:[4.5,4],min:[4.2,3]};
  MENU.forEach(p=>{S.soc.likes[p.id]=LK[p.id]||5;const r=RT[p.id]||[4.3,3];S.soc.rate[p.id]={n:r[1],sum:Math.round(r[0]*r[1]*10)/10}});
@@ -157,6 +159,7 @@ function artSvg(p){
  else if(id==='pf'||id==='pr')b='<rect x="17" y="10" width="6" height="26" fill="#F5D45E"/><rect x="26" y="6" width="6" height="30" fill="#F5D45E"/><rect x="35" y="10" width="6" height="26" fill="#F5D45E"/><rect x="43" y="14" width="5" height="22" fill="#F5D45E"/><path d="M14 32h36l-4 26H18z" fill="#E2573A"/>';
  else b='<path d="M9 30a23 19 0 0 1 46 0z" fill="#E8A24A"/><path d="M7 33h50l-4 5H11z" fill="#8CC152"/><rect x="10" y="39" width="44" height="8" rx="4" fill="#7A4A2B"/><path d="M12 49h40a4 4 0 0 1-4 8H16a4 4 0 0 1-4-8z" fill="#E8A24A"/>';
  return '<svg viewBox="0 0 64 64" width="100%" height="100%" '+SK+' aria-hidden="true">'+b+'</svg>'}
+const artHtml=p=>p.img?'<img src="'+esc(p.img)+'" alt="" loading="lazy">':artSvg(p);
 
 /* ---------- pantalla cliente (menú social) ---------- */
 const avgOf=id=>{const r=S.soc.rate[id];return r.n?r.sum/r.n:0};
@@ -166,7 +169,7 @@ function fromPrice(p){const min=Math.min.apply(null,p.v.map(v=>v.p));return(p.v.
 function prodCard(p){
  const a=avgOf(p.id),r=S.soc.rate[p.id],out=soldOut(p),open=S.cli.open[p.id],liked=S.soc.liked[p.id];
  const revs=S.soc.reviews.filter(x=>x.pid===p.id).sort((x,y)=>y.ts-x.ts);
- let h='<article class="prod'+(out?' out':'')+'"><div class="art" style="--c:'+CATCOL[p.cat]+'" aria-hidden="true">'+artSvg(p)+'</div><div class="stack" style="gap:6px">';
+ let h='<article class="prod'+(out?' out':'')+'"><div class="art" style="--c:'+CATCOL[p.cat]+'" aria-hidden="true">'+artHtml(p)+'</div><div class="stack" style="gap:6px">';
  h+='<div><h3>'+esc(p.name)+'</h3>'+(p.desc?'<div class="small muted">'+esc(p.desc)+'</div>':'')+'</div>';
  h+='<div class="soc">'+starsHtml(a)+'<span class="num">'+a.toFixed(1)+' ('+r.n+')</span><span class="num" style="color:var(--accent)">'+ICON.heart+' '+S.soc.likes[p.id]+'</span></div>';
  h+='<div class="row between"><span class="b num">'+fromPrice(p)+'</span>'+(out?'<span class="status s-bad">Agotado hoy</span>':'')+'</div>';
@@ -192,7 +195,7 @@ function presence(){
 function cMenu(){
  const c=S.cli;let h=presence();
  const top=MENU.filter(p=>!soldOut(p)).sort((a,b)=>scoreOf(b.id)-scoreOf(a.id)).slice(0,5);
- h+='<div><span class="pill-title" style="margin-top:4px">La comunidad recomienda</span><div class="strip">'+top.map((p,i)=>'<div class="top-card"><div class="art" style="--c:'+CATCOL[p.cat]+'">'+artSvg(p)+'</div><div class="rank">#'+(i+1)+'</div><div class="b small">'+esc(p.name)+'</div><div class="xs">'+starsHtml(avgOf(p.id))+' <span class="num">'+avgOf(p.id).toFixed(1)+'</span></div><div class="xs num" style="color:var(--accent)">'+ICON.heart+' '+S.soc.likes[p.id]+'</div></div>').join('')+'</div></div>';
+ h+='<div><span class="pill-title" style="margin-top:4px">La comunidad recomienda</span><div class="strip">'+top.map((p,i)=>'<div class="top-card"><div class="art" style="--c:'+CATCOL[p.cat]+'">'+artHtml(p)+'</div><div class="rank">#'+(i+1)+'</div><div class="b small">'+esc(p.name)+'</div><div class="xs">'+starsHtml(avgOf(p.id))+' <span class="num">'+avgOf(p.id).toFixed(1)+'</span></div><div class="xs num" style="color:var(--accent)">'+ICON.heart+' '+S.soc.likes[p.id]+'</div></div>').join('')+'</div></div>';
  h+='<div class="chips scroll">'+['Todo'].concat(CATS).map(x=>'<button class="chip" data-a="cat" data-v="'+x+'" aria-pressed="'+(c.cat===x)+'">'+x+'</button>').join('')+'</div>';
  h+='<div class="chips"><button class="chip" data-a="sort" data-v="pop" aria-pressed="'+(c.sort==='pop')+'">Más queridos</button><button class="chip" data-a="sort" data-v="rate" aria-pressed="'+(c.sort==='rate')+'">Mejor calificados</button><button class="chip" data-a="sort" data-v="menu" aria-pressed="'+(c.sort==='menu')+'">Orden del menú</button></div>';
  let list=MENU.filter(p=>c.cat==='Todo'||p.cat===c.cat);
@@ -304,8 +307,20 @@ function modalHtml(){
   h+='<div class="row between"><h2>Pago con link</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="banner warn">Simulación del pago. En producción abre Mercado Pago (SPEI, OXXO o tarjeta) y confirma solo.</div><div class="row between"><span>Total a pagar</span><b class="num" style="font-size:22px">'+m(md.total)+'</b></div><button class="btn pri" data-a="payok">Simular pago exitoso</button></div>';
  }
 
+ if(md.type==='pedit'){
+  const f=md.f,q=md.pid?PM(md.pid):null;
+  h+='<div class="row between"><h2>'+(md.pid?'Editar producto':'Producto nuevo')+'</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="row" style="align-items:center"><div class="art pimg" style="--c:'+CATCOL[f.cat]+'">'+(f.img?'<img src="'+esc(f.img)+'" alt="">':'<span class="xs muted">Sin foto</span>')+'</div><div class="stack" style="gap:6px"><label class="btn sm" style="cursor:pointer">'+(md.up?'Subiendo…':'Subir foto')+'<input type="file" accept="image/*" data-file="pe" hidden></label>'+(f.img?'<button class="btn ghost sm" data-a="peimgx">Quitar foto</button>':'')+'<div class="xs muted">Se ajusta sola a un tamaño ligero.</div></div></div>'
+  +'<label class="f">Nombre<input type="text" data-in="pe_name" value="'+esc(f.name)+'"></label><label class="f">Descripción<input type="text" data-in="pe_desc" value="'+esc(f.desc)+'" placeholder="Qué lleva"></label>'
+  +'<div class="grid2" style="gap:8px"><label class="f">Categoría<select data-in="pe_cat">'+CATS.map(c=>'<option'+(c===f.cat?' selected':'')+'>'+c+'</option>').join('')+'</select></label><label class="f">Se prepara en<select data-in="pe_station"><option value="cocina"'+(f.station==='cocina'?' selected':'')+'>Cocina</option><option value="barra"'+(f.station==='barra'?' selected':'')+'>Barra</option></select></label></div>'
+  +(q&&!q.custom&&q.v.length>1?q.v.map((x,i)=>'<label class="f">Precio · '+esc(x.l)+'<input type="number" inputmode="decimal" data-in="pe_p" data-i="'+i+'" value="'+esc(f.price[i])+'"></label>').join(''):(md.pid?'':'<label class="f">Presentación<input type="text" data-in="pe_label" value="'+esc(f.label)+'"></label>')+'<label class="f">Precio<input type="number" inputmode="decimal" data-in="pe_p" data-i="0" value="'+esc(f.price[0]||'')+'"></label>')
+  +'<label class="f">Costo por pieza (opcional)<input type="number" inputmode="decimal" data-in="pe_cost" value="'+esc(f.cost)+'" placeholder="Lo que te cuesta prepararlo"></label>'
+  +'<div class="row between"><button class="btn pri" data-a="pesave"'+(md.up?' disabled':'')+'>Guardar</button>'+(q&&q.custom?'<button class="btn" data-a="pedel">Eliminar producto</button>':'')+'</div></div>';
+ }
+ if(md.type==='prodask'){
+  h+='<div class="row between"><h2>Pasar a producción</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><p class="small">Se borran las ventas, reseñas, clientes y pedidos de ejemplo. Se conservan tu menú, tus fotos y tus precios. No se puede deshacer.</p><label class="f">Escribe EMPEZAR para confirmar<input type="text" data-in="ptxt" value="'+esc(md.txt||'')+'" autocomplete="off"></label><button class="btn pri" data-a="prodgo">Borrar ejemplos y empezar</button></div>';
+ }
  if(md.type==='pin'){
-  h+='<div class="row between"><h2>Acceso de '+(md.role==='caja'?'Caja':'Dueño')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">PIN de 4 dígitos<input type="password" inputmode="numeric" maxlength="4" data-in="pin" value="'+esc(md.pin)+'" placeholder="••••"></label><div class="xs muted">PIN de la demo: '+S.pins[md.role]+'. Cada perfil tiene el suyo, así el mesero no entra a la caja ni a las ganancias.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
+  h+='<div class="row between"><h2>Acceso de '+(md.role==='caja'?'Caja':'Dueño')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">PIN de 4 dígitos<input type="password" inputmode="numeric" maxlength="4" data-in="pin" value="'+esc(md.pin)+'" placeholder="••••"></label><div class="xs muted">'+(PROD?'':'PIN de la demo: '+S.pins[md.role]+'. ')+'Cada perfil tiene el suyo, así el mesero no entra a la caja ni a las ganancias.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
  }
  if(md.type==='ticket'){
   const t=S.tickets.find(x=>x.id===md.id);
@@ -425,9 +440,9 @@ function stats(){
  ts.forEach(t=>{const sub=t.sub-t.disc;rev+=sub;tips+=t.tip;canal[t.canal]=(canal[t.canal]||0)+sub;t.lines.forEach(l=>{const cs=l.cost!=null?l.cost:lineCost(l);cost+=cs;const x=prod[l.pid]||(prod[l.pid]={pid:l.pid,qty:0,rev:0,cost:0});x.qty+=l.qty;x.rev+=lineTot(l);x.cost+=cs});const hr=new Date(t.ts).getHours();hours[hr]=(hours[hr]||0)+sub});
  return{ts,rev,cost,tips,prod:Object.keys(prod).map(k=>prod[k]),hours,canal}}
 function vDueno(){
- const o=S.own;const tabs=[['resumen','Resumen'],['inventario','Inventario'],['menu','Menú y márgenes'],['clientes','Clientes'],['seguridad','Seguridad']];
+ const o=S.own;const tabs=[['resumen','Resumen'],['inventario','Inventario'],['menu','Menú y márgenes'],['clientes','Clientes'],['ajustes','Ajustes'],['seguridad','Seguridad']];
  let h='<div class="stack" style="margin-top:12px"><div class="chips scroll">'+tabs.map(t=>'<button class="chip" data-a="otab" data-v="'+t[0]+'" aria-pressed="'+(o.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div>';
- if(o.tab==='resumen')h+=dResumen();else if(o.tab==='inventario')h+=dInv();else if(o.tab==='menu')h+=dMenu();else if(o.tab==='clientes')h+=dClientes();else h+=dSeg();
+ if(o.tab==='resumen')h+=dResumen();else if(o.tab==='inventario')h+=dInv();else if(o.tab==='menu')h+=dMenu();else if(o.tab==='clientes')h+=dClientes();else if(o.tab==='ajustes')h+=dAjustes();else h+=dSeg();
  return h+'</div>'}
 function dResumen(){
  const s=stats(),n=s.ts.length,avg=n?s.rev/n:0,prof=s.rev-s.cost;
@@ -443,11 +458,11 @@ function dResumen(){
 function dInv(){
  const low=S.inv.filter(i=>i.stock<=i.min).length;
  let h='<div class="banner '+(low?'warn':'good')+'">'+(low?low+' insumos por debajo del mínimo. Cada venta descuenta inventario sola.':'Inventario en orden. Cada venta descuenta inventario sola.')+'</div>';
- h+='<div class="card stack"><h3>Inventario</h3><div class="scrollx"><table class="tbl"><thead><tr><th>Insumo</th><th>Nivel</th><th class="r">Sistema</th><th class="r">Costo</th><th>Conteo físico</th></tr></thead><tbody>'+S.inv.map(i=>{const pct=Math.min(100,Math.max(0,i.stock/(i.min*3)*100));const cls=i.stock<=0?'zero':i.stock<=i.min?'low':'';return'<tr><td>'+esc(i.name)+'</td><td><div class="meter '+cls+'"><i style="width:'+pct+'%"></i></div></td><td class="r num">'+(Math.round(i.stock*100)/100)+' '+i.unit+'</td><td class="r num">'+m2(i.cost)+'</td><td><div class="row" style="flex-wrap:nowrap"><input type="number" inputmode="decimal" style="width:80px;min-height:32px;padding:2px 6px" data-in="cnt" data-i="'+i.id+'" value="'+esc(i.count)+'" aria-label="Conteo de '+esc(i.name)+'"><button class="btn sm" data-a="cnt" data-i="'+i.id+'">Registrar</button></div></td></tr>'}).join('')+'</tbody></table></div></div>';
+ h+='<div class="card stack"><h3>Inventario</h3><div class="scrollx"><table class="tbl"><thead><tr><th>Insumo</th><th>Nivel</th><th class="r">Sistema</th><th class="r">Costo</th><th>Conteo físico</th></tr></thead><tbody>'+S.inv.map(i=>{const pct=Math.min(100,Math.max(0,i.stock/(i.min*3)*100));const cls=i.stock<=0?'zero':i.stock<=i.min?'low':'';return'<tr><td>'+esc(i.name)+'</td><td><div class="meter '+cls+'"><i style="width:'+pct+'%"></i></div></td><td class="r num">'+(Math.round(i.stock*100)/100)+' '+i.unit+'</td><td class="r"><input type="number" inputmode="decimal" step="0.01" style="width:80px;min-height:32px;padding:2px 6px" data-in="icost" data-i="'+i.id+'" value="'+esc(i.cost)+'" aria-label="Costo de '+esc(i.name)+'"></td><td><div class="row" style="flex-wrap:nowrap"><input type="number" inputmode="decimal" style="width:80px;min-height:32px;padding:2px 6px" data-in="cnt" data-i="'+i.id+'" value="'+esc(i.count)+'" aria-label="Conteo de '+esc(i.name)+'"><button class="btn sm" data-a="cnt" data-i="'+i.id+'">Registrar</button></div></td></tr>'}).join('')+'</tbody></table></div></div>';
  h+='<div class="card stack"><h3>Mermas y diferencias</h3><div class="small muted">Si el conteo no coincide con lo que dice el sistema, queda registrado aquí con su valor en pesos.</div>'+(S.mermas.length?S.mermas.slice().reverse().map(x=>'<div class="row between small"><span>'+esc(x.name)+' · '+(x.diff>0?'sobran ':'faltan ')+Math.abs(Math.round(x.diff*100)/100)+' '+x.unit+'</span><span><b class="num" style="color:'+(x.diff<0?'var(--bad)':'var(--good)')+'">'+m(Math.abs(x.val))+'</b> <span class="xs muted">'+ago(x.ts)+'</span></span></div>').join(''):'<div class="small muted">Sin diferencias registradas.</div>')+'</div>';
  return h}
 function dMenu(){
- return '<div class="card stack"><h3>Disponibilidad y margen por producto</h3><div class="small muted">Apaga un producto cuando se acabe y desaparece del menú del cliente y del mesero. Los costos son de ejemplo, edítalos con los reales.</div><div class="scrollx"><table class="tbl"><thead><tr><th>Producto</th><th class="r">Precio</th><th class="r">Costo</th><th class="r">Margen</th><th>Hoy</th></tr></thead><tbody>'+MENU.map(p=>{const l=lineFrom(p,0,[],1);const c=lineCost(l),pr=p.v[0].p;return'<tr><td>'+esc(p.name)+' <span class="xs muted">'+esc(p.v[0].l)+'</span></td><td class="r num">'+m(pr)+'</td><td class="r num">'+m(c)+'</td><td class="r num">'+Math.round((pr-c)/pr*100)+'%</td><td><button class="chip" data-a="avail" data-p="'+p.id+'" aria-pressed="'+p.avail+'">'+(p.avail?'Disponible':'Apagado')+'</button></td></tr>'}).join('')+'</tbody></table></div></div>'}
+ return '<div class="card stack"><div class="row between"><h3>Tu menú</h3><button class="btn pri sm" data-a="pnew">Agregar producto</button></div><div class="small muted">Edita nombre, precio y foto de cada producto. Apaga uno cuando se acabe y desaparece del menú del cliente y del mesero. En el costo de producto escribe lo que te cuesta prepararlo para ver tu margen real.</div><div class="scrollx"><table class="tbl"><thead><tr><th>Producto</th><th class="r">Precio</th><th class="r">Costo</th><th class="r">Margen</th><th>Hoy</th><th></th></tr></thead><tbody>'+MENU.map(p=>{const l=lineFrom(p,0,[],1);const c=lineCost(l),pr=p.v[0].p;return'<tr><td><div class="row" style="flex-wrap:nowrap;gap:8px"><span class="art mini" style="--c:'+CATCOL[p.cat]+'">'+artHtml(p)+'</span><span>'+esc(p.name)+' <span class="xs muted">'+esc(p.v[0].l)+'</span></span></div></td><td class="r num">'+m(pr)+'</td><td class="r num">'+m(c)+'</td><td class="r num">'+(c?Math.round((pr-c)/pr*100)+'%':'—')+'</td><td><button class="chip" data-a="avail" data-p="'+p.id+'" aria-pressed="'+p.avail+'">'+(p.avail?'Disponible':'Apagado')+'</button></td><td><button class="btn sm" data-a="pedit" data-p="'+p.id+'">Editar</button></td></tr>'}).join('')+'</tbody></table></div></div>'}
 function dClientes(){
  const R=S.real;
  if(!R){loadLista();return'<div class="card small muted">Cargando clientes de la tarjeta…</div>'}
@@ -470,7 +485,7 @@ function render(){
  const v={cliente:vCliente,mesero:vMesero,cocina:()=>vKds('cocina'),barra:()=>vKds('barra'),caja:vCaja,dueno:vDueno}[S.role]();
  $('#app').innerHTML=v;
  $('#modal').innerHTML=modalHtml();
- $('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no');
+ $('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no')+' · '+(online?'en línea':'sin conexión');const rb=root.querySelector('[data-a=reset]');if(rb)rb.style.display=PROD?'none':'';
 }
 
 
@@ -509,6 +524,143 @@ async function doCobro(){
  S.modal={type:'ticket',id:t.id};S.real=null;render();
 }
 
+
+/* ---------- menú editable por el dueño ---------- */
+let PROD=false,MCFG={edits:{},custom:[]};
+function applyMenu(){
+ const ids=new Set(MCFG.custom.map(c=>c.id));
+ for(let i=MENU.length-1;i>=0;i--)if(MENU[i].custom&&!ids.has(MENU[i].id))MENU.splice(i,1);
+ MCFG.custom.forEach(c=>{let q=PM(c.id);if(!q){q=P(Object.assign({custom:true},c));MENU.push(q)}else{const a=q.avail;Object.assign(q,c);q.avail=a}});
+ Object.keys(MCFG.edits).forEach(id=>{const q=PM(id),e=MCFG.edits[id];if(!q||q.custom)return;['name','desc','cat','station','img','cost'].forEach(k=>{if(e[k]!==undefined)q[k]=e[k]});if(e.price)e.price.forEach((x,i)=>{if(q.v[i]&&x>0)q.v[i].p=x})});
+ if(S)MENU.forEach(q=>{if(S.soc.likes[q.id]==null)S.soc.likes[q.id]=0;if(!S.soc.rate[q.id])S.soc.rate[q.id]={n:0,sum:0}});
+}
+const IAPI='/api/demo/tostichelas/imagen';
+async function uploadImg(file){
+ const bmp=await createImageBitmap(file);
+ const sc=Math.min(1,900/Math.max(bmp.width,bmp.height));
+ const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(bmp.width*sc));cv.height=Math.max(1,Math.round(bmp.height*sc));
+ cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+ let q=.82,data=cv.toDataURL('image/jpeg',q);while(data.length>900000&&q>.4){q-=.12;data=cv.toDataURL('image/jpeg',q)}
+ const r=await fetch(IAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:S.dpin||'',data})});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo subir la foto');return j.url;
+}
+function openPedit(pid){
+ const q=pid?PM(pid):null;
+ S.modal={type:'pedit',pid,up:false,f:q?{name:q.name,desc:q.desc||'',cat:q.cat,station:q.station,img:q.img||'',price:q.v.map(x=>x.p),label:q.v[0].l,cost:q.cost||''}:{name:'',desc:'',cat:'Tostadas',station:'cocina',img:'',price:[0],label:'Pieza',cost:''}};
+}
+function savePedit(){
+ const md=S.modal,f=md.f;
+ if(!f.name.trim()){toast('Ponle nombre al producto');return}
+ if(f.price.some(x=>!(Number(x)>0))){toast('Revisa los precios');return}
+ const price=f.price.map(Number),cost=Number(f.cost)||0;
+ if(md.pid){
+  const q=PM(md.pid);
+  if(q.custom){const c=MCFG.custom.find(x=>x.id===md.pid);Object.assign(c,{name:f.name.trim(),desc:f.desc.trim(),cat:f.cat,station:f.station,img:f.img,cost});c.v=[{l:f.label||'Pieza',p:price[0],f:1,s:0}]}
+  else MCFG.edits[md.pid]={name:f.name.trim(),desc:f.desc.trim(),cat:f.cat,station:f.station,img:f.img,price,cost};
+ }else{
+  const id='x'+Date.now().toString(36);
+  MCFG.custom.push({id,cat:f.cat,name:f.name.trim(),desc:f.desc.trim(),emoji:'🍽️',station:f.station,v:[{l:f.label||'Pieza',p:price[0],f:1,s:0}],use:{},mods:[],img:f.img,cost});
+ }
+ MCFG=JSON.parse(JSON.stringify(MCFG));applyMenu();S.modal=null;toast('Producto guardado');
+}
+
+/* ---------- sincronización entre dispositivos (MongoDB) ---------- */
+const SAPI='/api/demo/tostichelas/estado';
+let EPOCH=0,REV=0,LAST={cols:{},kv:{}},UU={},syncBusy=false,dirty=false,online=true,fails=0;
+const COLS={
+ orders:{arr:()=>S.orders,key:o=>String(o.id)},
+ tickets:{arr:()=>S.tickets,key:t=>String(t.id)},
+ mermas:{arr:()=>S.mermas,key:x=>x.ts+'_'+String(x.name).replace(/\W/g,'')},
+ movs:{arr:()=>S.caja.movs,key:x=>String(x.ts)},
+ reviews:{arr:()=>S.soc.reviews,key:x=>x.ts+'_'+x.pid}
+};
+function kvNow(){
+ const o={};
+ ['radio','cap','envio'].forEach(k=>o['settings|'+k]=S.settings[k]);
+ MESAS.forEach(x=>o['cuenta|'+x.k]=!!S.cuenta[x.k]);
+ S.inv.forEach(i=>o['inv|'+i.id]={stock:i.stock,cost:i.cost,min:i.min});
+ MENU.forEach(q=>{o['avail|'+q.id]=!!q.avail;o['likes|'+q.id]=S.soc.likes[q.id]||0;const r=S.soc.rate[q.id]||{n:0,sum:0};o['rate|'+q.id]={n:r.n,sum:r.sum}});
+ o.cancelados=S.cancelados||0;
+ o.menu=MCFG;
+ return o;
+}
+function applyKv(k,v){
+ const a=k.split('|')[0],b=k.split('|')[1];
+ if(a==='settings'&&S.settings[b]!==undefined)S.settings[b]=v;
+ else if(a==='cuenta'){if(v)S.cuenta[b]=true;else delete S.cuenta[b]}
+ else if(a==='inv'){const i=ins(b);if(i&&v)Object.assign(i,v)}
+ else if(a==='avail'){const q=PM(b);if(q)q.avail=!!v}
+ else if(a==='likes')S.soc.likes[b]=v;
+ else if(a==='rate'&&v)S.soc.rate[b]={n:v.n,sum:v.sum};
+ else if(k==='cancelados')S.cancelados=v;
+ else if(k==='menu'){MCFG=v&&v.edits?v:{edits:{},custom:[]};applyMenu()}
+}
+function snapNow(){
+ const cols={},kv={};
+ Object.keys(COLS).forEach(n=>{const c=COLS[n],o={};c.arr().forEach(e=>{o[c.key(e)]=JSON.stringify(e)});cols[n]=o});
+ const k=kvNow();Object.keys(k).forEach(x=>{kv[x]=JSON.stringify(k[x])});
+ return{cols,kv};
+}
+function reseedKeep(){const k={role:S.role,auth:S.auth,dpin:S.dpin,me:S.me};seed();Object.assign(S,k)}
+function softRender(){const a=root.ownerDocument.activeElement;if(a&&root.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){dirty=true;return}dirty=false;render()}
+function applyResp(r){
+ if(!r||r.error)return;
+ let changed=false;
+ PROD=!!r.prod;
+ if(r.reset){const first=EPOCH===0;EPOCH=r.epoch;REV=0;UU={};if(!first||PROD){reseedKeep();changed=true}LAST=snapNow()}
+ const inc={cols:[],kv:[]};
+ Object.keys(r.cols||{}).forEach(name=>{const c=COLS[name];if(!c)return;r.cols[name].forEach(e=>{const key=name+'|'+e.k;if(UU[key]!==undefined&&UU[key]>=e.u)return;const arr=c.arr();const i=arr.findIndex(x=>c.key(x)===e.k);if(i>=0)arr[i]=e.d;else arr.push(e.d);UU[key]=e.u;inc.cols.push([name,e.k]);changed=true})});
+ Object.keys(r.kv||{}).sort((a,b)=>a==='menu'?-1:b==='menu'?1:0).forEach(k=>{const e=r.kv[k];if(UU['kv|'+k]!==undefined&&UU['kv|'+k]>=e.u)return;applyKv(k,e.v);UU['kv|'+k]=e.u;inc.kv.push(k);changed=true});
+ if(inc.cols.length||inc.kv.length){const cur=snapNow();inc.cols.forEach(x=>{LAST.cols[x[0]]=LAST.cols[x[0]]||{};LAST.cols[x[0]][x[1]]=cur.cols[x[0]][x[1]]});inc.kv.forEach(k=>{LAST.kv[k]=cur.kv[k]})}
+ REV=r.rev||REV;
+ S.orders.forEach(o=>{if(o.id>=S.seq)S.seq=o.id+1});S.tickets.forEach(t=>{if(t.id>=S.tseq)S.tseq=t.id+1});
+ if(changed)softRender();
+}
+async function tick(){
+ if(syncBusy||!S)return;syncBusy=true;
+ try{
+  const cur=snapNow(),now=Date.now(),push={cols:{},kv:{}};let n=0;
+  Object.keys(cur.cols).forEach(name=>{Object.keys(cur.cols[name]).forEach(k=>{const j=cur.cols[name][k];if(LAST.cols[name]&&LAST.cols[name][k]===j)return;(push.cols[name]=push.cols[name]||[]).push({k,u:now,d:JSON.parse(j)});n++})});
+  Object.keys(cur.kv).forEach(k=>{if(LAST.kv[k]===cur.kv[k])return;push.kv[k]={u:now,v:JSON.parse(cur.kv[k])};n++});
+  let resp;
+  if(n){
+   const r=await fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({since:REV,epoch:EPOCH,pin:S.dpin||'',cols:push.cols,kv:push.kv})});
+   if(!r.ok)throw new Error('sync');resp=await r.json();
+   Object.keys(push.cols).forEach(name=>push.cols[name].forEach(e=>{LAST.cols[name]=LAST.cols[name]||{};LAST.cols[name][e.k]=cur.cols[name][e.k];UU[name+'|'+e.k]=e.u}));
+   Object.keys(push.kv).forEach(k=>{LAST.kv[k]=cur.kv[k];UU['kv|'+k]=push.kv[k].u});
+  }else{
+   const r=await fetch(SAPI+'?since='+REV+'&epoch='+EPOCH,{cache:'no-store'});if(!r.ok)throw new Error('sync');resp=await r.json();
+  }
+  online=true;fails=0;applyResp(resp);
+ }catch(e){fails++;if(fails>=2&&online){online=false;render()}}
+ syncBusy=false;
+ if(dirty)softRender();
+}
+async function resetServer(accion){
+ try{
+  const r=await fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion,pin:S.dpin||''})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){toast(j.error||'No se pudo');return}
+  applyResp(j);toast(accion==='produccion'?'Listo: ya estás en producción, con datos limpios':'Demo reiniciada');
+ }catch(e){toast('Sin conexión')}
+ render();
+}
+async function verifyPin(){
+ const md=S.modal;
+ try{
+  const r=await fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'pin',rol:md.role,pin:md.pin})});
+  const j=await r.json();
+  if(j.ok){S.auth[md.role]=true;if(md.role==='dueno'){S.dpin=md.pin;S.pinDef=!!j.defecto}S.role=md.role;S.modal=null}else toast('PIN incorrecto');
+ }catch(e){
+  if(!PROD&&md.pin===S.pins[md.role]){S.auth[md.role]=true;if(md.role==='dueno')S.dpin=md.pin;S.role=md.role;S.modal=null}else toast('Sin conexión para validar el PIN');
+ }
+ render();
+}
+function dAjustes(){
+ let h='<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
+ h+='<div class="card stack"><h3>Antes de abrir al público</h3><ul class="small" style="margin:0;padding-left:18px"><li>Carga tus fotos y precios en "Menú y márgenes".</li><li>Captura tus costos reales de insumos en "Inventario".</li><li>Haz un conteo físico para dejar el inventario inicial correcto.</li>'+(S.pinDef?'<li><b style="color:var(--bad)">Cambia los PIN:</b> ahora usan los de la demo. Define TOSTICHELAS_PIN_DUENO y TOSTICHELAS_PIN_CAJA en el servidor.</li>':'')+'</ul></div>';
+ return h}
+
 /* ---------- acciones ---------- */
 function sendClient(){
  const c=S.cli;if(!c.cart.length)return;
@@ -546,6 +698,7 @@ function setupInput(el){
  else if(k==='rtext')S.modal.text=v;
  else if(k==='recv'){S.caja.recv=v;const e=$('#cambio');if(e){const os=mesaOrders(S.caja.sel.slice(2));const sub=os.reduce((a,o)=>a+orderSub(o),0);const L=S.caja.lc&&S.caja.lc.found?S.caja.lc:null;const sd=L?Math.floor(L.cliente.puntos):0;const disc=(S.caja.canje&&sd>0&&L.modelo==='cashback')?Math.min(sd,sub):0;e.textContent=cambioTxt(sub-disc+Math.round(sub*S.caja.tip/100))}}
  else if(k==='ctel'){const t=v.replace(/\D/g,'').slice(0,10);S.caja.canje=false;if(t!==S.caja.tel){S.caja.tel=t;S.caja.lc=null;if(t.length===10)loadCajaCliente(t)}}
+ else if(k==='pe_name')S.modal.f.name=v;else if(k==='pe_desc')S.modal.f.desc=v;else if(k==='pe_label')S.modal.f.label=v;else if(k==='pe_cost')S.modal.f.cost=v;else if(k==='pe_p')S.modal.f.price[+el.getAttribute('data-i')]=v;else if(k==='ptxt')S.modal.txt=v;else if(k==='icost'){const i=ins(el.getAttribute('data-i'));if(i)i.cost=Math.max(0,Number(v)||0)}
  else if(k==='mm')S.caja.mm=v;else if(k==='mo')S.caja.mo=v;else if(k==='pin')S.modal.pin=v;else if(k==='cnom')S.caja.nom=v;else if(k==='cnac')S.caja.nac=v
  else if(k==='lnom')S.loy.nom=v;else if(k==='lnac')S.loy.nac=v
  else if(k==='fondo'){S.caja.fondo=v;const ts=dayTickets();const ef=ts.filter(t=>t.method==='Efectivo').reduce((a,t)=>a+t.total,0);const esp=Number(v||0)+ef+movNet();$('#esp').textContent=m(esp);$('#dif').textContent=difTxt(esp,parseFloat(S.caja.contado))}
@@ -554,7 +707,15 @@ function setupInput(el){
  else if(k==='cfg'){S.settings[el.getAttribute('data-k')]=Math.max(0,Number(v)||0)}
 }
 root.addEventListener('input',e=>{const el=e.target.closest('[data-in]');if(el&&el.tagName!=='SELECT')setupInput(el)},{signal:ctl.signal});
-root.addEventListener('change',e=>{const el=e.target.closest('select[data-in]');if(!el)return;if(el.getAttribute('data-in')==='mesa'){S.cli.mesa=el.value;render()}},{signal:ctl.signal});
+root.addEventListener('change',e=>{
+ const fi=e.target.closest('input[data-file]');
+ if(fi){const file=fi.files&&fi.files[0];if(!file||!S.modal||S.modal.type!=='pedit')return;S.modal.up=true;render();
+  uploadImg(file).then(u=>{if(S.modal&&S.modal.type==='pedit'){S.modal.f.img=u}}).catch(er=>toast(er.message||'No se pudo subir la foto')).finally(()=>{if(S.modal)S.modal.up=false;render()});return}
+ const el=e.target.closest('select[data-in]');if(!el)return;const k=el.getAttribute('data-in');
+ if(k==='mesa'){S.cli.mesa=el.value;render()}
+ else if(k==='pe_cat'){S.modal.f.cat=el.value;render()}
+ else if(k==='pe_station'){S.modal.f.station=el.value}
+},{signal:ctl.signal});
 root.addEventListener('click',e=>{
  const el=e.target.closest('[data-a]');if(!el)return;
  if(el.getAttribute('data-scrim')&&e.target!==el)return;
@@ -562,7 +723,7 @@ root.addEventListener('click',e=>{
  const c=S.cli;
  switch(a){
   case'role':{const r=g('v');if((r==='caja'||r==='dueno')&&!S.auth[r]){S.modal={type:'pin',role:r,pin:''}}else S.role=r;break}
-  case'reset':seed();toast('Demo reiniciada');break;
+  case'reset':{if(!S.dpin){toast('Solo el dueño puede reiniciar: entra a Dueño con tu PIN');break}resetServer('reset');return}
   case'sound':S.sound=!S.sound;if(S.sound)beep();break;
   case'tab':c.tab=g('v');if(c.tab==='puntos'&&S.me.tel.length===10&&!S.loy.data&&!S.loy.loading)loadMe();break;
   case'geo':c.geo=g('v');if(c.geo==='fuera'&&c.canal==='mesa')c.canal='llevar';if(c.geo==='dentro')c.canal='mesa';break;
@@ -604,9 +765,16 @@ root.addEventListener('click',e=>{
   case'done':{const o=S.orders.find(x=>x.id===+g('o'));o.done=true;o.lines.forEach(l=>l.status='entregado');toast('Pedido entregado');break}
   case'kadv':advance(+g('o'),g('s'));break;
   case'kscreen':S.kds.screen=!S.kds.screen;break;
+  case'pedit':openPedit(g('p'));break;
+  case'pnew':openPedit(null);break;
+  case'peimgx':S.modal.f.img='';break;
+  case'pesave':savePedit();break;
+  case'pedel':{const id=S.modal.pid;MCFG.custom=MCFG.custom.filter(x=>x.id!==id);MCFG=JSON.parse(JSON.stringify(MCFG));applyMenu();S.modal=null;toast('Producto eliminado');break}
+  case'prodask':S.modal={type:'prodask',txt:''};break;
+  case'prodgo':{if((S.modal.txt||'').trim().toUpperCase()!=='EMPEZAR'){toast('Escribe EMPEZAR para confirmar');return}S.modal=null;resetServer('produccion');return}
   case'mtipo':S.caja.mt=g('v');break;
   case'movadd':{const mo=S.caja,mt=parseFloat(mo.mm);if(!(mt>0)||!mo.mo.trim()){toast('Escribe monto y motivo');return}mo.movs.push({tipo:mo.mt,monto:mt,motivo:mo.mo.trim(),ts:Date.now(),por:'Caja'});mo.mm='';mo.mo='';toast('Movimiento registrado');break}
-  case'pinok':{const md=S.modal;if(md.pin===S.pins[md.role]){S.auth[md.role]=true;S.role=md.role;S.modal=null}else toast('PIN incorrecto');break}
+  case'pinok':verifyPin();return;
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
   case'ctab':S.caja.tab=g('v');break;
@@ -626,7 +794,7 @@ root.addEventListener('click',e=>{
   case'wallet':addWallet();return;
   case'lalta':altaMe();return;
  }
- render()},{signal:ctl.signal});
+ render();setTimeout(tick,150)},{signal:ctl.signal});
 function kdsTick(){
  if(!S.kds.screen||(S.role!=='cocina'&&S.role!=='barra'))return;
  const now=Date.now();
@@ -642,6 +810,7 @@ function kdsPedal(){
 (root.ownerDocument||document).addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter'||e.key==='PageDown')&&kdsPedal()){e.preventDefault()}},{signal:ctl.signal});
 const iv=setInterval(()=>{if(!S.kds.screen&&(S.role==='cocina'||S.role==='barra'))render()},20000);
 const iv2=setInterval(kdsTick,3000);
-seed();render();
-return()=>{ctl.abort();clearInterval(iv);clearInterval(iv2)};
+seed();render();LAST=snapNow();tick();
+const iv3=setInterval(tick,2500);
+return()=>{ctl.abort();clearInterval(iv);clearInterval(iv2);clearInterval(iv3)};
 }

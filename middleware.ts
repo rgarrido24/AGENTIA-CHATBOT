@@ -212,7 +212,9 @@ export async function middleware(request: NextRequest) {
 
   // ── Rate limiting: /api/demo/* (20 per min per IP) ───────────────────────────
   if (pathname.startsWith('/api/demo/') && request.method === 'POST') {
-    const allowed = edgeRateLimit(`demo:${ip}`, 20, 60 * 1000);
+    // Tostichelas sincroniza varios dispositivos desde la misma IP: límite propio y más alto.
+    const tosti = pathname.startsWith('/api/demo/tostichelas/estado') || pathname.startsWith('/api/demo/tostichelas/imagen');
+    const allowed = tosti ? edgeRateLimit(`demo-tosti:${ip}`, 240, 60 * 1000) : edgeRateLimit(`demo:${ip}`, 20, 60 * 1000);
     if (!allowed) {
       return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' }, { status: 429 });
     }
