@@ -477,11 +477,7 @@ async function collectBusinessPages(userToken: string, map: Map<string, FbPageCh
         `?fields=id,name,access_token` +
         `&limit=50` +
         `&access_token=${encodeURIComponent(userToken)}`;
-      ingestPageRows(
-        map,
-        await graphGetLogged(pagesUrl, `business/${bizId}/${edge}`),
-        `business/${bizId}/${edge}`,
-      );
+      await ingestPagedPages(map, pagesUrl, `business/${bizId}/${edge}`);
     }
   }
 }
@@ -490,6 +486,19 @@ function ingestPageRows(map: Map<string, FbPageChoice>, json: Record<string, unk
   const rows = graphDataRows(json);
   for (const row of rows) upsertPage(map, row);
   console.log(`[fb-connect] ${label} count`, rows.length);
+}
+
+/** Lee una conexión de páginas y sigue paging.next (Meta suele devolver menos filas que `limit`). */
+async function ingestPagedPages(map: Map<string, FbPageChoice>, firstUrl: string, label: string) {
+  let url: string | undefined = firstUrl;
+  let guard = 0;
+  while (url && guard < 20) {
+    const json = await graphGetLogged(url, guard === 0 ? label : `${label} (pag ${guard + 1})`);
+    ingestPageRows(map, json, label);
+    const next = (json.paging as { next?: string } | undefined)?.next;
+    url = typeof next === 'string' && next ? next : undefined;
+    guard += 1;
+  }
 }
 
 /**
@@ -518,7 +527,7 @@ export async function listUserPages(userToken: string): Promise<FbPageChoice[]> 
     `?fields=id,name,access_token,tasks` +
     `&limit=100` +
     `&access_token=${encodeURIComponent(userToken)}`;
-  ingestPageRows(map, await graphGetLogged(accountsUrl, 'me/accounts'), 'me/accounts');
+  await ingestPagedPages(map, accountsUrl, 'me/accounts');
 
   const nestedAccountsUrl =
     `https://graph.facebook.com/${FB_GRAPH_VERSION}/me` +
@@ -533,7 +542,7 @@ export async function listUserPages(userToken: string): Promise<FbPageChoice[]> 
     `?fields=id,name,access_token` +
     `&limit=100` +
     `&access_token=${encodeURIComponent(userToken)}`;
-  ingestPageRows(map, await graphGetLogged(assignedUrl, 'me/assigned_pages'), 'me/assigned_pages');
+  await ingestPagedPages(map, assignedUrl, 'me/assigned_pages');
 
   const fromToken = await pageIdsFromDebugToken(userToken);
   for (const pageId of fromToken) {
