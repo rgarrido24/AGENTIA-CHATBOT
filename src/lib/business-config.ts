@@ -8,6 +8,8 @@ export type BusinessConfig = {
   model?: string;
   pageId?: string;
   accessToken?: string;
+  /** Reglas por palabra clave para comentarios/DMs sociales (ver social-rules.ts). */
+  socialRules?: import('./social-rules').SocialRule[];
   updatedAt?: Date;
 };
 
@@ -96,6 +98,7 @@ function mergeConfig(base: BusinessConfig, override: BusinessConfig): BusinessCo
     model: override.model ?? base.model,
     pageId: override.pageId ?? base.pageId,
     accessToken: override.accessToken ?? base.accessToken,
+    socialRules: override.socialRules ?? base.socialRules,
     updatedAt: override.updatedAt ?? base.updatedAt
   };
 }

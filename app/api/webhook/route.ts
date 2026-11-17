@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveBusinessConfigByPageId } from '@/src/lib/business-config';
+import { matchSocialRule, pickPublicReply } from '@/src/lib/social-rules';
 import { getMongoDb } from '@/lib/mongodb';
 
 function getEnv(name: string): string | undefined {
@@ -321,7 +322,14 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
 
     const FALLBACK_REPLY = '¡Hola! Gracias por escribirnos 🙌 En breve una asesora te responde con toda la información.';
     let replyText = '';
+    const rule = matchSocialRule(cfg.socialRules, incomingText, isComment ? 'comment' : 'dm');
+    if (rule) {
+      console.log(`[SOCIAL] regla coincide id=${rule.id}`);
+      await recordOutcome(dedupeKey, { rule: rule.id });
+      if (rule.dmMessage?.trim()) replyText = rule.dmMessage.trim();
+    }
     try {
+      if (replyText) throw new Error('__skip_ai__');
       const chatRes = await fetch(`${baseUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -334,7 +342,7 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
         replyText = '';
       }
     } catch (chatErr) {
-      console.log('[SOCIAL] /api/chat EXCEPCION', chatErr);
+      if ((chatErr as Error)?.message !== '__skip_ai__') console.log('[SOCIAL] /api/chat EXCEPCION', chatErr);
     }
     if (!replyText) replyText = FALLBACK_REPLY;
 
@@ -343,7 +351,7 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
     if (isComment && commentId) {
       let publicOk = false;
       try {
-        await replyToComment({ accessToken: cfg.accessToken, commentId, text: COMMENT_REPLY_FIXED, platform });
+        await replyToComment({ accessToken: cfg.accessToken, commentId, text: pickPublicReply(rule, COMMENT_REPLY_FIXED), platform });
         publicOk = true;
         console.log(`[SOCIAL] respuesta publica OK platform=${platform} comment=${commentId}`);
         await recordOutcome(dedupeKey, { publicOk: true });
