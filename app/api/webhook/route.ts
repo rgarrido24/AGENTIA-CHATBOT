@@ -121,6 +121,20 @@ async function sendPrivateReplyToComment(params: {
 }
 
 /** Meta reintenta webhooks: evita contestar dos veces el mismo evento. true = ya procesado. */
+async function recordOutcome(key: string | undefined, data: Record<string, unknown>) {
+  if (!key) return;
+  try {
+    const db = await getMongoDb();
+    await db.collection('webhook_events_social').updateOne({ _id: key as any }, { $set: data });
+  } catch {
+    /* solo diagnóstico */
+  }
+}
+
+function errText(e: unknown): string {
+  return String((e as Error)?.message ?? e).slice(0, 300);
+}
+
 async function alreadyProcessed(key: string): Promise<boolean> {
   try {
     const db = await getMongoDb();
@@ -332,21 +346,27 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
         await replyToComment({ accessToken: cfg.accessToken, commentId, text: COMMENT_REPLY_FIXED, platform });
         publicOk = true;
         console.log(`[SOCIAL] respuesta publica OK platform=${platform} comment=${commentId}`);
+        await recordOutcome(dedupeKey, { publicOk: true });
       } catch (e) {
         console.log(`[SOCIAL] respuesta publica FALLO platform=${platform} comment=${commentId}:`, e);
+        await recordOutcome(dedupeKey, { publicError: errText(e) });
       }
       try {
         await sendPrivateReplyToComment({ accessToken: cfg.accessToken, commentId, text: replyText });
         console.log(`[SOCIAL] DM privado OK comment=${commentId} publica=${publicOk}`);
+        await recordOutcome(dedupeKey, { dmOk: true });
       } catch (e) {
         console.log(`[SOCIAL] DM privado FALLO comment=${commentId}:`, e);
+        await recordOutcome(dedupeKey, { dmError: errText(e) });
       }
     } else if (dmRecipientId) {
       try {
         await sendMessengerReply({ accessToken: cfg.accessToken, recipientId: dmRecipientId, text: replyText });
         console.log(`[SOCIAL] DM OK platform=${platform}`);
+        await recordOutcome(dedupeKey, { dmOk: true });
       } catch (e) {
         console.log(`[SOCIAL] DM FALLO platform=${platform}:`, e);
+        await recordOutcome(dedupeKey, { dmError: errText(e) });
       }
     }
 
