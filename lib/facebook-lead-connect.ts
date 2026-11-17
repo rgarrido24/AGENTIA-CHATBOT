@@ -356,7 +356,7 @@ export function startListDebug(): string[] {
 async function graphGetLogged(url: string, label: string): Promise<Record<string, unknown>> {
   console.log(`[fb-connect] GET ${label}`, safeGraphUrl(url));
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15000) });
     const json = (await res.json().catch(() => ({ parse_error: true }))) as Record<string, unknown>;
     console.log(
       `[fb-connect] ${label} status=${res.status}`,
@@ -479,34 +479,46 @@ async function collectBusinessPages(userToken: string, map: Map<string, FbPageCh
   const bizUrl =
     `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/businesses` +
     `?fields=id,name` +
-    `&limit=50` +
+    `&limit=100` +
     `&access_token=${encodeURIComponent(userToken)}`;
-  const bizJson = await graphGetLogged(bizUrl, 'me/businesses');
-  const businesses = graphDataRows(bizJson);
-  console.log('[fb-connect] me/businesses count', businesses.length);
-  for (const biz of businesses) {
-    const bizId = String(biz.id ?? '').trim();
-    if (!bizId) continue;
-    const accountsByBizUrl =
-      `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/accounts` +
-      `?fields=id,name,access_token,tasks` +
-      `&business=${encodeURIComponent(bizId)}` +
-      `&limit=100` +
-      `&access_token=${encodeURIComponent(userToken)}`;
-    ingestPageRows(
-      map,
-      await graphGetLogged(accountsByBizUrl, `me/accounts?business=${bizId}`),
-      `me/accounts?business=${bizId}`,
-    );
-    for (const edge of ['owned_pages', 'client_pages'] as const) {
-      const pagesUrl =
-        `https://graph.facebook.com/${FB_GRAPH_VERSION}/${encodeURIComponent(bizId)}/${edge}` +
-        `?fields=id,name,access_token` +
-        `&limit=50` +
-        `&access_token=${encodeURIComponent(userToken)}`;
-      await ingestPagedPages(map, pagesUrl, `business/${bizId}/${edge}`);
-    }
+  const businesses: Array<Record<string, unknown>> = [];
+  let nextBiz: string | undefined = bizUrl;
+  for (let i = 0; nextBiz && i < 10; i++) {
+    const bizJson = await graphGetLogged(nextBiz, i === 0 ? 'me/businesses' : `me/businesses (pag ${i + 1})`);
+    businesses.push(...graphDataRows(bizJson));
+    const n = (bizJson.paging as { next?: string } | undefined)?.next;
+    nextBiz = typeof n === 'string' && n ? n : undefined;
   }
+  console.log('[fb-connect] me/businesses count', businesses.length);
+  debugSink?.push(`negocios=${businesses.length}`);
+
+  // Con decenas de portafolios hay que ir en paralelo (por tandas) o la conexión tarda minutos.
+  const before = map.size;
+  const savedSink = debugSink;
+  debugSink = null; // no inundar el diagnóstico con una línea por portafolio
+  const queue = businesses.map((b) => String(b.id ?? '').trim()).filter(Boolean);
+  const worker = async () => {
+    for (let bizId = queue.shift(); bizId; bizId = queue.shift()) {
+      const accountsByBizUrl =
+        `https://graph.facebook.com/${FB_GRAPH_VERSION}/me/accounts` +
+        `?fields=id,name,access_token,tasks` +
+        `&business=${encodeURIComponent(bizId)}` +
+        `&limit=100` +
+        `&access_token=${encodeURIComponent(userToken)}`;
+      await ingestPagedPages(map, accountsByBizUrl, `me/accounts?business=${bizId}`);
+      for (const edge of ['owned_pages', 'client_pages'] as const) {
+        const pagesUrl =
+          `https://graph.facebook.com/${FB_GRAPH_VERSION}/${encodeURIComponent(bizId)}/${edge}` +
+          `?fields=id,name,access_token` +
+          `&limit=50` +
+          `&access_token=${encodeURIComponent(userToken)}`;
+        await ingestPagedPages(map, pagesUrl, `business/${bizId}/${edge}`);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: 10 }, () => worker()));
+  debugSink = savedSink;
+  debugSink?.push(`paginas_nuevas_desde_negocios=${map.size - before}`);
 }
 
 function ingestPageRows(map: Map<string, FbPageChoice>, json: Record<string, unknown>, label: string) {
