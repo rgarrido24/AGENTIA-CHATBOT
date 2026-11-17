@@ -362,6 +362,14 @@ async function graphGetLogged(url: string, label: string): Promise<Record<string
       const hasNext = Boolean((json.paging as { next?: string } | undefined)?.next);
       const err = (json.error as { message?: string } | undefined)?.message;
       debugSink.push(`${label}: http=${res.status} filas=${rows} siguiente=${hasNext ? 'si' : 'no'}${err ? ' error=' + err.slice(0, 120) : ''}`);
+      if (label === 'me/permissions' && Array.isArray(json.data)) {
+        debugSink.push(
+          'permisos: ' +
+            (json.data as Array<{ permission?: string; status?: string }>)
+              .map((r) => `${r.permission}=${r.status}`)
+              .join(', '),
+        );
+      }
     }
     return json;
   } catch (err) {
