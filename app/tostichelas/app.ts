@@ -14,6 +14,16 @@ Object.keys(TOKS).forEach(r=>{if(tokExp(TOKS[r])<Date.now()+60000)delete TOKS[r]
 const anyTok=()=>TOKS.dueno||TOKS.caja||TOKS.mesero||TOKS.cocina||'';
 const hdr=()=>{const t=anyTok();return t?{'Content-Type':'application/json','x-tos-token':t}:{'Content-Type':'application/json'}};
 const saveToks=()=>lsSet('tos_toks',JSON.stringify(TOKS));
+/* PWA: service worker + botón Instalar app */
+let INSTALL=null;
+(()=>{try{const w=root.ownerDocument.defaultView,nav=w.navigator;
+ if(nav&&nav.serviceWorker&&/^https:|^http:\/\/localhost/.test(w.location.href))nav.serviceWorker.register('/tostichelas/sw.js',{scope:'/tostichelas'}).catch(()=>{});
+ w.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL=e;showInstall()});
+ w.addEventListener('appinstalled',()=>{INSTALL=null;showInstall()})}catch(e){}})();
+function isStandalone(){try{const w=root.ownerDocument.defaultView;return (w.matchMedia&&w.matchMedia('(display-mode: standalone)').matches)||w.navigator.standalone===true}catch(e){return false}}
+function isIOS(){try{return /iphone|ipad|ipod/i.test(root.ownerDocument.defaultView.navigator.userAgent)}catch(e){return false}}
+function showInstall(){const b=root.querySelector('#installBtn');if(b)b.style.display=(!isStandalone()&&(INSTALL||isIOS()))?'':'none'}
+async function doInstall(){if(INSTALL){INSTALL.prompt();try{await INSTALL.userChoice}catch(e){}INSTALL=null;showInstall()}else toast(isIOS()?'En Safari toca Compartir y luego "Añadir a pantalla de inicio".':'Abre el menú del navegador y elige "Instalar app".')}
 /* ---------- utilidades ---------- */
 const $=(s)=>root.querySelector(s);
 const ctl=new AbortController();
@@ -508,6 +518,7 @@ function render(){
  const v={cliente:vCliente,mesero:vMesero,cocina:()=>vKds('cocina'),barra:()=>vKds('barra'),caja:vCaja,dueno:vDueno}[S.role]();
  $('#app').innerHTML=v;
  $('#modal').innerHTML=modalHtml();
+ showInstall();
  const dn=root.querySelector('#demoNote');if(dn)dn.style.display=PROD?'none':'';
  $('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no')+' · '+(online?'en línea':'sin conexión');const rb=root.querySelector('[data-a=reset]');if(rb)rb.style.display=PROD?'none':'';
 }
@@ -970,6 +981,7 @@ root.addEventListener('click',e=>{
   case'mtipo':S.caja.mt=g('v');break;
   case'movadd':{const mo=S.caja,mt=parseFloat(mo.mm);if(!(mt>0)||!mo.mo.trim()){toast('Escribe monto y motivo');return}mo.movs.push({tipo:mo.mt,monto:mt,motivo:mo.mo.trim(),ts:Date.now(),por:'Caja'});mo.mm='';mo.mo='';toast('Movimiento registrado');break}
   case'pinok':verifyPin();return;
+  case'install':doInstall();return;
   case'savepw':{const n={};Object.entries(S.pw||{}).forEach(([r,v])=>{if(v)n[r]=v});if(Object.keys(n).some(r=>n[r].length!==4)){toast('Cada contraseña debe ser de 4 números');return}if(!Object.keys(n).length){toast('Escribe al menos una contraseña nueva');return}
    fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'setpin',nuevos:n})}).then(r=>r.json().then(j=>({r,j}))).then(({r,j})=>{if(r.ok&&j.ok){if(n.dueno)S.dpin=n.dueno;S.pinDef=!!j.defecto;S.pw={dueno:'',caja:'',mesero:'',cocina:''};toast('Contraseñas guardadas');}else toast(j.error||'No se pudo guardar');render()}).catch(()=>{toast('Sin conexión, intenta de nuevo');render()});return}
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
