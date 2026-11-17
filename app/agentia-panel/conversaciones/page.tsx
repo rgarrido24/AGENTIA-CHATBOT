@@ -412,7 +412,9 @@ export default function AgentiaConversacionesPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-white truncate text-[15px]">{c.senderName}</p>
-                          <p className="text-xs text-slate-500 truncate">{c.senderId}</p>
+                          {c.channel === 'whatsapp' ? (
+                            <p className="text-xs text-slate-500 truncate">{c.senderId}</p>
+                          ) : null}
                         </div>
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           <span
@@ -475,9 +477,11 @@ export default function AgentiaConversacionesPage() {
                       {channelLabel(activeChannel)}
                     </span>
                   </p>
-                  <p className="text-xs text-slate-500 truncate">
-                    {detail?.senderId ?? selectedSummary?.senderId}
-                  </p>
+                  {activeChannel === 'whatsapp' ? (
+                    <p className="text-xs text-slate-500 truncate">
+                      {detail?.senderId ?? selectedSummary?.senderId}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex shrink-0 gap-2">
                   {!botPaused ? (

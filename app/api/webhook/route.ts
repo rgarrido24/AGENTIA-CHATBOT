@@ -33,11 +33,13 @@ async function getFacebookUserName(
   userId: string
 ): Promise<string | undefined> {
   try {
-    const url = `https://graph.facebook.com/v20.0/${encodeURIComponent(userId)}?fields=name&access_token=${encodeURIComponent(accessToken)}`;
+    const url = `https://graph.facebook.com/v20.0/${encodeURIComponent(userId)}?fields=name,username&access_token=${encodeURIComponent(accessToken)}`;
     const res = await fetch(url);
     if (!res.ok) return undefined;
-    const json = (await res.json()) as { name?: string };
-    return typeof json?.name === 'string' ? json.name.trim() : undefined;
+    const json = (await res.json()) as { name?: string; username?: string };
+    if (typeof json?.name === 'string' && json.name.trim()) return json.name.trim();
+    if (typeof json?.username === 'string' && json.username.trim()) return `@${json.username.trim()}`;
+    return undefined;
   } catch {
     return undefined;
   }
@@ -293,6 +295,10 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
     }
     if (isComment && dmRecipientId && !senderName) {
       senderName = pickFirstString(changeValue?.from?.name);
+      if (!senderName) {
+        const u = pickFirstString(changeValue?.from?.username);
+        if (u) senderName = `@${u}`;
+      }
     }
 
     const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
