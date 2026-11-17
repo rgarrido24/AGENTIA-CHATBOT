@@ -43,8 +43,18 @@ async function load(): Promise<Doc> {
   const db = await getMongoDb();
   const c = db.collection<Doc>(COLL);
   const d = await c.findOne({ _id: ID });
-  if (d) return d;
-  const fresh: Doc = { _id: ID, rev: 0, epoch: 1, prod: false, cols: {}, kv: {} };
+  const forzar = process.env.TOSTICHELAS_PRODUCCION === '1';
+  if (d) {
+    if (forzar && !d.prod) {
+      const kv: Doc['kv'] = {};
+      for (const [k, e] of Object.entries(d.kv || {})) if (/^(menu|avail)/.test(k)) kv[k] = e;
+      const nuevo = { prod: true, cols: {}, kv, epoch: (d.epoch || 1) + 1, rev: (d.rev || 0) + 1 };
+      await c.updateOne({ _id: ID, prod: { $ne: true } }, { $set: nuevo });
+      return (await c.findOne({ _id: ID })) || d;
+    }
+    return d;
+  }
+  const fresh: Doc = { _id: ID, rev: 0, epoch: 1, prod: forzar, cols: {}, kv: {} };
   await c.updateOne({ _id: ID }, { $setOnInsert: fresh }, { upsert: true });
   return (await c.findOne({ _id: ID })) || fresh;
 }
@@ -96,6 +106,24 @@ export async function GET(req: NextRequest) {
   try {
     const doc = await load();
     const v = vistaDe(req);
+    const qm = req.nextUrl.searchParams.get('cuenta');
+    if (qm) {
+      const mesa = String(req.nextUrl.searchParams.get('mesa') || '');
+      const mt = String(req.nextUrl.searchParams.get('mt') || '');
+      if (!/^[mp]\d{1,2}$/.test(mesa) || (doc.prod && mt !== tokenMesa(mesa))) return NextResponse.json({ cuenta: null });
+      const items: { n: string; q: number; t: number; st: string }[] = [];
+      let total = 0;
+      for (const e of Object.values(doc.cols?.orders || {})) {
+        const o = e.d;
+        if (!o || o.mesa !== mesa || o.closed || o.cancel || o.hold || o.aprobar) continue;
+        for (const l of Array.isArray(o.lines) ? o.lines : []) {
+          const t = (Number(l.unit) || 0) * (Number(l.qty) || 0);
+          total += t;
+          items.push({ n: String(l.name || '').slice(0, 60), q: Number(l.qty) || 0, t, st: String(l.status || '') });
+        }
+      }
+      return NextResponse.json({ cuenta: { mesa, total, items: items.slice(0, 60) } });
+    }
     const since = Number(req.nextUrl.searchParams.get('since') || 0);
     const epoch = Number(req.nextUrl.searchParams.get('epoch') || 0);
     if (epoch !== doc.epoch) return NextResponse.json({ ...delta(doc, 0, v), reset: true });

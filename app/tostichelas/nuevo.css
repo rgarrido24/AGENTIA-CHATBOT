@@ -155,3 +155,9 @@
 .nv-note.ok{background:var(--lime)}
 .nv-cb-m b{color:var(--foam);font-family:var(--display);font-size:17px}
 .tos-root.nuevo.nv-cli .wrap{max-width:760px}
+
+.tos-root.nuevo .nv-who{margin:10px 0;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);font-size:.85rem;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tos-root.nuevo .nv-who.ask{flex-direction:column;align-items:stretch;gap:8px}
+.tos-root.nuevo .nv-who.ask span{opacity:.75}
+.tos-root.nuevo .nv-who input{flex:1;min-width:0}
+.tos-root.nuevo .nv-who a{color:inherit;text-decoration:underline;opacity:.8}

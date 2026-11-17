@@ -114,13 +114,13 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 
 function seed(){
  S={seq:101,tseq:2001,role:'cliente',sound:S?S.sound:false,modal:null,
-  settings:{radio:50,cap:500,envio:25,pedMesa:true,pedLlevar:true,pedEntrega:true,aprobar:false,lat:null,lng:null,diasMes:26,costoPct:35,comisionPct:2,metaPuntos:0,premioTxt:''},
+  settings:{radio:50,cap:500,envio:25,pedMesa:false,pedLlevar:false,pedEntrega:false,aprobar:true,lat:null,lng:null,diasMes:26,costoPct:35,comisionPct:2,metaPuntos:0,premioTxt:''},
   inv:INS0.map(r=>({id:r[0],name:r[1],unit:r[2],stock:r[3],min:r[4],cost:r[5],count:''})),
   orders:[],tickets:[],cuenta:{},mermas:[],cust:[],cancelados:1,gastos:[],fin:{cat:'Renta',con:'',monto:'',freq:'mensual'},invNew:{name:'',unit:'kg',stock:'',min:'',cost:''},
   soc:{likes:{},liked:{},rate:{},reviews:[],mine:{}},
   cli:{tab:'menu',geo:'dentro',mesa:'m4',canal:'mesa',cat:'Todo',sort:'pop',cart:[],addr:'',open:{},purchased:{}},
   me:{name:'',tel:''},
-  mw:{sel:null,adding:false,cart:[]},
+  mw:{sel:null,adding:false,cart:[],tel:'',guest:false},
   caja:{sel:null,tab:'cobro',split:1,tip:0,method:'Efectivo',recv:'',tel:'',canje:false,fondo:500,contado:'',lc:null,nom:'',nac:'',busy:false,movs:[],mt:'retiro',mm:'',mo:''},
   auth:{},pins:{caja:'1111',dueno:'2222',mesero:'3333',cocina:'4444'},
   loy:{tel:'',data:null,loading:false,nom:'',nac:''},real:null,kds:{screen:false},
@@ -257,7 +257,7 @@ function cPedido(){
  if(mine.length){h+='<div class="card stack"><h3>Seguimiento</h3>';mine.slice().reverse().forEach(o=>{h+='<div><div class="row between"><b>Pedido #'+o.id+' · '+(o.canal==='mesa'?mLabel(o.mesa):o.canal==='llevar'?'Para llevar':'Entrega')+'</b>'+(o.hold?'<span class="status s-warn">'+(o.aprobar?'Por aprobar del mesero':'Esperando pago')+'</span>':o.closed?'<span class="status s-good">Pagado</span>':'<span class="status s-neutral">Cuenta abierta</span>')+'</div>'+o.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+esc(l.name)+' '+esc(l.v)+'</span>'+stPill(l.status)+'</div>').join('');
    if(o.hold&&!o.aprobar)h+='<div class="row" style="margin-top:6px"><button class="btn pri sm" data-a="paynow" data-o="'+o.id+'">Pagar ahora</button></div>';
    h+='</div>'});h+='</div>'}
- if(dentro){const mo=mesaOrders(c.mesa).filter(o=>o.src==='cliente');if(mo.length){const tot=mesaTotal(c.mesa);h+='<div class="card stack"><h3>Cuenta de '+mLabel(c.mesa)+'</h3><div class="row between"><span>Total acumulado</span><b class="num">'+m(tot)+'</b></div><div class="row"><button class="btn sm" data-a="ctaCuenta">'+(S.cuenta[c.mesa]?'Cuenta solicitada':'Pedir la cuenta al mesero')+'</button><button class="btn pri sm" data-a="paymesa">Pagar desde mi celular</button></div></div>'}}
+ if(dentro){const cu=c.cuenta&&c.cuenta.mesa===c.mesa?c.cuenta:null;const mo=mesaOrders(c.mesa).filter(o=>o.src==='cliente');if(mo.length||(cu&&cu.items.length)){const tot=cu?cu.total:mesaTotal(c.mesa);h+='<div class="card stack"><h3>Cuenta de '+mLabel(c.mesa)+'</h3>'+(cu?cu.items.map(i=>'<div class="row between small"><span>'+i.q+' × '+esc(i.n)+'</span><b class="num">'+m(i.t)+'</b></div>').join(''):'')+'<div class="row between"><span>Total acumulado</span><b class="num">'+m(tot)+'</b></div><div class="row"><button class="btn sm" data-a="ctaCuenta">'+(S.cuenta[c.mesa]?'Cuenta solicitada':'Pedir la cuenta al mesero')+'</button><button class="btn pri sm" data-a="paymesa">Pagar desde mi celular</button></div></div>'}}
  return h}
 function stPill(s){return s==='nuevo'?'<span class="status s-neutral">En cola</span>':s==='preparando'?'<span class="status s-warn">Preparando</span>':s==='listo'?'<span class="status s-good">Listo</span>':'<span class="status s-neutral">Servido</span>'}
 function cPuntos(){
@@ -377,7 +377,7 @@ function vMesero(){
  return h+'</div>'}
 function qrHtml(k){let s='';let a=parseInt(tokenOf(k),10);for(let i=0;i<81;i++){a=(a*1103515245+12345)&0x7fffffff;const corner=(i%9<3&&Math.floor(i/9)<3)||(i%9>5&&Math.floor(i/9)<3)||(i%9<3&&Math.floor(i/9)>5);s+='<i class="'+((corner||a%3===0)?'on':'')+'"></i>'}return'<div class="qr" aria-hidden="true">'+s+'</div>'}
 function mDetail(k){
- const s=mesaState(k);const pend=S.orders.filter(o=>o.mesa===k&&o.aprobar&&!o.cancel&&!o.closed);let h='<div class="card stack"><div class="row between"><h3>'+mLabel(k)+'</h3><span class="b num">'+m(s.total)+'</span></div><div class="row" style="gap:12px">'+mesaQr(k)+'<div class="small muted">QR de la mesa (se imprime en Dueño, Lealtad y QR). Cada QR trae un código que cambia al liberar la mesa: <b class="num">'+tokenOf(k)+'</b>. Con el código y la ubicación del celular, el cliente puede pedir desde su lugar.</div></div>';
+ const s=mesaState(k);const pend=S.orders.filter(o=>o.mesa===k&&o.aprobar&&!o.cancel&&!o.closed);let h='<div class="card stack"><div class="row between"><h3>'+mLabel(k)+'</h3><span class="b num">'+m(s.total)+'</span></div><div class="row" style="gap:12px">'+mesaQr(k)+'<div class="small muted">QR de la mesa (se imprime en Dueño, Lealtad y QR). El QR es propio de esta mesa. El cliente ve su cuenta y, si el dueño abre los pedidos, puede pedir desde su lugar.</div></div>';
  if(!s.os.length&&!pend.length)h+='<div class="small muted">Mesa libre. Agrega un pedido o espera a que el cliente escanee el QR.</div>';
  pend.concat(s.os).forEach(o=>{h+='<div class="stack" style="gap:6px"><div class="row between"><span class="b small">Pedido #'+o.id+' · '+(o.src==='cliente'?'por QR del cliente':'tomado por mesero')+'</span><span class="xs muted">hace '+ago(o.created)+'</span></div>';
   if(o.aprobar)h+='<div class="banner bad"><b>Pedido por aprobar.</b> El cliente lo pidió desde su celular. Revisa que sea real y mándalo a cocina.<div class="row" style="margin-top:6px"><button class="btn sm pri" data-a="aprob" data-o="'+o.id+'">Aprobar y mandar a cocina</button><button class="btn sm" data-a="rechaz" data-o="'+o.id+'">Rechazar</button></div></div>';else if(o.porConfirmar)h+='<div class="banner bad"><b>Confirma que hay gente en la mesa.</b> Si no hay nadie, anula el pedido y regresa el inventario.<div class="row" style="margin-top:6px"><button class="btn sm pri" data-a="conf" data-o="'+o.id+'">Sí, hay clientes</button><button class="btn sm" data-a="anular" data-o="'+o.id+'">Anular pedido</button></div></div>';
@@ -388,7 +388,7 @@ function mDetail(k){
 function mAdd(){
  const w=S.mw;let h='<div class="stack" style="margin-top:12px"><div class="row between"><h2>Pedido para '+mLabel(w.sel)+'</h2><button class="btn ghost sm" data-a="mback">Volver</button></div>';
  CATS.forEach(c=>{h+='<div class="card stack" style="gap:6px"><b>'+c+'</b>'+MENU.filter(p=>p.cat===c).map(p=>'<div class="row between"><div class="grow"><span class="b small">'+esc(p.name)+'</span> <span class="xs muted">'+fromPrice(p)+'</span></div>'+(soldOut(p)?'<span class="status s-bad">Agotado</span>':'<button class="btn sm" data-a="mpick" data-p="'+p.id+'">+</button>')+'</div>').join('')+'</div>'});
- h+='<div class="card stack"><h3>Por enviar</h3>'+(w.cart.length?w.cart.map((l,i)=>'<div class="row between"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div><b class="num small">'+m(lineTot(l))+'</b><button class="btn ghost sm" data-a="mrm" data-i="'+i+'">Quitar</button></div>').join(''):'<div class="small muted">Elige productos arriba.</div>')+'<button class="btn pri" data-a="msend"'+(w.cart.length?'':' disabled')+'>Enviar a cocina y barra</button></div></div>';
+ h+='<div class="card stack"><h3>Cliente de la mesa</h3><div class="row" style="gap:8px"><input type="tel" inputmode="numeric" data-in="mtel" value="'+esc(w.tel)+'" placeholder="WhatsApp del cliente (opcional)"><button class="btn sm'+(w.guest?' pri':'')+'" data-a="mguest">Invitado</button></div><div class="xs muted">Con su número verá lo que ha pedido y junta saldo. Si no quiere darlo, deja Invitado.</div></div><div class="card stack"><h3>Por enviar</h3>'+(w.cart.length?w.cart.map((l,i)=>'<div class="row between"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div><b class="num small">'+m(lineTot(l))+'</b><button class="btn ghost sm" data-a="mrm" data-i="'+i+'">Quitar</button></div>').join(''):'<div class="small muted">Elige productos arriba.</div>')+'<button class="btn pri" data-a="msend"'+(w.cart.length?'':' disabled')+'>Enviar a cocina y barra</button></div></div>';
  return h}
 
 /* ---------- cocina y barra ---------- */
@@ -505,9 +505,9 @@ function dSeg(){
  return '<div class="card stack"><h3>Reglas anti pedido fantasma</h3><div class="small">1. En mesa solo se pide con el QR de la mesa y con el celular dentro del radio del local.<br>2. El mesero confirma que hay gente; si no, anula y el inventario regresa.<br>3. Si la cuenta abierta pasa del tope, se pide pago por adelantado.<br>4. Fuera del local, el pedido no llega a cocina hasta confirmar el pago.</div></div><div class="card stack"><h3>Ajustes</h3><label class="f">Radio de ubicación (metros)<input type="number" data-in="cfg" data-k="radio" value="'+s.radio+'"></label><label class="f">Tope de cuenta sin pagar ($)<input type="number" data-in="cfg" data-k="cap" value="'+s.cap+'"></label><label class="f">Costo de entrega cercana ($)<input type="number" data-in="cfg" data-k="envio" value="'+s.envio+'"></label><div class="small muted">Pedidos anulados por mesero hoy: <b>'+S.cancelados+'</b></div><div class="xs muted">La ubicación del celular la pide el navegador del cliente. Sirve como filtro junto con el QR y la confirmación del mesero, no como garantía total.</div></div>'}
 
 /* ================= NUEVO (?nuevo=1): experiencia premium del cliente ================= */
-const NUEVO=(()=>{try{return /[?&]nuevo=1(&|$)/.test(root.ownerDocument.defaultView.location.search)}catch(e){return false}})();
+const NUEVO=(()=>{try{return !/[?&]clasico=1(&|$)/.test(root.ownerDocument.defaultView.location.search)}catch(e){return true}})();
 let TOP=[];
-const NV={splash:(()=>{try{return !root.ownerDocument.defaultView.sessionStorage.getItem('tos_splash')}catch(e){return true}})(),q:'',cele:null,bump:0,fav:false};
+const NV={guest:(()=>{try{return lsGet('tos_guest')==='1'}catch(e){return false}})(),splash:(()=>{try{return !root.ownerDocument.defaultView.sessionStorage.getItem('tos_splash')}catch(e){return true}})(),q:'',cele:null,bump:0,fav:false};
 if(NUEVO)root.classList.add('nuevo');
 const nvRestoreMe=()=>{try{const me=JSON.parse(lsGet('tos_me')||'{}');if(me.tel)S.me.tel=String(me.tel).replace(/\D/g,'').slice(0,10);if(me.name)S.me.name=String(me.name).slice(0,60)}catch(e){}};
 const saveMe=()=>lsSet('tos_me',JSON.stringify({name:S.me.name,tel:S.me.tel}));
@@ -569,8 +569,13 @@ function nvList(){
  if(!list.length)return'<div class="nv-empty">'+(NV.fav?'Aún no tienes favoritos. Toca el corazón de lo que más te gusta.':'No encontramos eso. Prueba con otra palabra.')+'</div>';
  return'<div class="nv-grid">'+list.map(nvCard).join('')+'</div>'}
 function nvTabs(){const c=S.cli,n=c.cart.reduce((a,l)=>a+l.qty,0);return'<div class="nv-tabs" role="tablist"><button data-a="tab" data-v="menu" aria-pressed="'+(c.tab==='menu')+'">Menú</button><button data-a="tab" data-v="pedido" aria-pressed="'+(c.tab==='pedido')+'">Mi pedido'+(n?'<em class="nv-n">'+n+'</em>':'')+'</button><button data-a="tab" data-v="puntos" aria-pressed="'+(c.tab==='puntos')+'">Mis puntos</button></div>'}
+function nvWho(){
+ const tel=S.me.tel;
+ if(tel.length===10){const L=S.loy.data;const sal=L&&L.found&&L.saldo!=null?' · saldo <b>'+m(L.saldo)+'</b>':'';if(!L&&!S.loy.loading)setTimeout(loadMe,50);return'<div class="nv-who ok">Hola'+(S.me.name?', <b>'+esc(S.me.name.split(' ')[0])+'</b>':'')+sal+' <a href="#" data-a="nvchg">Cambiar</a></div>'}
+ if(NV.guest)return'<div class="nv-who">Navegando como invitado · <a href="#" data-a="nvchg">Identificarme</a></div>';
+ return'<div class="nv-who ask"><b>¿Ya viniste antes?</b><span>Pon tu WhatsApp para ver lo que has pedido y tu saldo. Es opcional.</span><div class="row" style="gap:8px"><input type="tel" inputmode="numeric" data-in="tel" value="" placeholder="10 dígitos"><button class="btn sm pri" data-a="nvid">Entrar</button></div><a href="#" data-a="nvguest">Seguir como invitado</a></div>'}
 function nvMenu(){
- const c=S.cli;let h=presence();
+ const c=S.cli;let h=presence()+nvWho();
  if(!canOrderAny())h+='<div class="banner warn"><b>Menú de consulta.</b> Por ahora los pedidos los toma tu mesero. Mira, califica y recomienda tus favoritos.</div>';
  const top=TOP.map(t=>({p:PM(t.pid),n:t.n})).filter(x=>x.p&&!soldOut(x.p)).slice(0,5);
  if(top.length)h+='<section class="nv-sec"><div class="nv-h"><h2>Lo más pedido hoy</h2><span class="nv-live"><i></i>en vivo</span></div><div class="strip nv-strip">'+top.map((x,i)=>'<button class="nv-top" style="--c:'+CATCOL[x.p.cat]+';--i:'+i+'" data-a="'+(canOrderAny()?'add':'noop')+'" data-p="'+x.p.id+'"><div class="nv-mini big">'+artHtml(x.p)+'</div><span class="nv-rank">#'+(i+1)+'</span><div class="b small">'+esc(x.p.name)+'</div><div class="xs nv-hot">'+x.n+(x.n===1?' pedido':' pedidos')+' hoy</div></button>').join('')+'</div></section>';
@@ -768,6 +773,7 @@ async function tick(){
   online=true;fails=0;
   if(resp&&resp.rech&&resp.rech.length){const bad=resp.rech.map(String);S.orders=S.orders.filter(o=>bad.indexOf(String(o.id))<0);LAST=snapNow();toast('No pudimos validar tu pedido. Escanea de nuevo el QR de tu mesa.');dirty=true}
   applyResp(resp);
+  if(S.role==='cliente'&&!anyTok()&&S.cli.mesa&&S.cli.mt){try{const rc=await fetch(SAPI+'?cuenta=1&mesa='+encodeURIComponent(S.cli.mesa)+'&mt='+encodeURIComponent(S.cli.mt),{cache:'no-store'});const jc=await rc.json();const nw=JSON.stringify(jc.cuenta||null);if(nw!==JSON.stringify(S.cli.cuenta||null)){S.cli.cuenta=jc.cuenta||null;dirty=true}}catch(e){}}
  }catch(e){fails++;if(fails>=2&&online){online=false;render()}}
  syncBusy=false;
  if(dirty)softRender();
@@ -985,7 +991,7 @@ function setupInput(el){
  else if(k==='cfg_metaPuntos'){S.settings.metaPuntos=Math.max(0,Math.min(100000,Number(v)||0))}else if(k==='cfg_premioTxt'){S.settings.premioTxt=v.slice(0,60)}
  else if(k==='name'){S.me.name=v;saveMe()}else if(k==='tel'){const t=v.replace(/\D/g,'').slice(0,10);if(t!==S.me.tel){S.me.tel=t;saveMe();S.loy.data=null;if(t.length===10&&S.cli.tab==='puntos')loadMe()}}
  else if(k.indexOf('pw_')===0){(S.pw||(S.pw={}))[k.slice(3)]=v.replace(/\D/g,'').slice(0,4)}
- else if(k==='addr')S.cli.addr=v;else if(k==='mnote'){S.modal.note=v}
+ else if(k==='addr')S.cli.addr=v;else if(k==='mtel'){S.mw.tel=v.replace(/\D/g,'').slice(0,10);if(S.mw.tel)S.mw.guest=false}else if(k==='mnote'){S.modal.note=v}
  else if(k==='rtext')S.modal.text=v;
  else if(k==='recv'){S.caja.recv=v;const e=$('#cambio');if(e){const os=mesaOrders(S.caja.sel.slice(2));const sub=os.reduce((a,o)=>a+orderSub(o),0);const L=S.caja.lc&&S.caja.lc.found?S.caja.lc:null;const sd=L?Math.floor(L.cliente.puntos):0;const disc=(S.caja.canje&&sd>0&&L.modelo==='cashback')?Math.min(sd,sub):0;e.textContent=cambioTxt(sub-disc+Math.round(sub*S.caja.tip/100))}}
  else if(k==='ctel'){const t=v.replace(/\D/g,'').slice(0,10);S.caja.canje=false;if(t!==S.caja.tel){S.caja.tel=t;S.caja.lc=null;if(t.length===10)loadCajaCliente(t)}}
@@ -1049,7 +1055,8 @@ root.addEventListener('click',e=>{
   case'mback':S.mw.adding=false;break;
   case'mpick':openProd(g('p'),'mes');break;
   case'mrm':S.mw.cart.splice(+g('i'),1);break;
-  case'msend':{const ls=S.mw.cart.map(l=>Object.assign({},l,{uid:uid(),status:'nuevo'}));newOrder({mesa:S.mw.sel,lines:ls,src:'mesero'});beep();S.mw.cart=[];S.mw.adding=false;toast('Enviado a cocina y barra');break}
+  case'mguest':S.mw.guest=!S.mw.guest;if(S.mw.guest)S.mw.tel='';break
+  case'msend':{const ls=S.mw.cart.map(l=>Object.assign({},l,{uid:uid(),status:'nuevo'}));if(S.mw.tel&&S.mw.tel.length!==10){toast('El número debe tener 10 dígitos, o déjalo vacío');break}newOrder({mesa:S.mw.sel,lines:ls,src:'mesero',cliente:S.mw.tel?{tel:S.mw.tel,name:''}:{}});beep();S.mw.cart=[];S.mw.tel='';S.mw.guest=false;S.mw.adding=false;toast('Enviado a cocina y barra');break}
   case'aprob':{const o=S.orders.find(x=>x.id===+g('o'));o.aprobar=false;o.porConfirmar=false;release(o);toast('Pedido enviado a cocina y barra');break}
   case'rechaz':{const o=S.orders.find(x=>x.id===+g('o'));o.cancel=true;o.aprobar=false;toast('Pedido rechazado');break}
   case'ped':S.settings[g('k')]=!S.settings[g('k')];break;
@@ -1086,6 +1093,9 @@ root.addEventListener('click',e=>{
   case'movadd':{const mo=S.caja,mt=parseFloat(mo.mm);if(!(mt>0)||!mo.mo.trim()){toast('Escribe monto y motivo');return}mo.movs.push({tipo:mo.mt,monto:mt,motivo:mo.mo.trim(),ts:Date.now(),por:'Caja'});mo.mm='';mo.mo='';toast('Movimiento registrado');break}
   case'pinok':verifyPin();return;
   case'install':doInstall();return;
+  case'nvid':if(S.me.tel.length===10){NV.guest=false;lsSet('tos_guest','0');saveMe();S.loy.data=null;loadMe();toast('Listo')}else toast('Escribe tus 10 dígitos o sigue como invitado');break
+  case'nvguest':NV.guest=true;lsSet('tos_guest','1');break
+  case'nvchg':S.me.tel='';S.loy.data=null;NV.guest=false;lsSet('tos_guest','0');saveMe();break
   case'nvgo':NV.splash=false;try{root.ownerDocument.defaultView.sessionStorage.setItem('tos_splash','1')}catch(e){}break;
   case'celeclose':NV.cele=null;S.cli.tab='pedido';break;
   case'qadd':nvQuickAdd(g('p'));break;
@@ -1097,7 +1107,7 @@ root.addEventListener('click',e=>{
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
   case'ctab':S.caja.tab=g('v');break;
-  case'csel':S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;break;
+  case'csel':{S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;const oc=mesaOrders(S.caja.sel).find(o=>o.cliente&&String(o.cliente.tel||'').length===10);if(oc){S.caja.tel=oc.cliente.tel;S.caja.lc=null;loadCajaCliente(oc.cliente.tel)}break}
   case'tip':S.caja.tip=+g('v');break;
   case'method':S.caja.method=g('v');break;
   case'split':S.caja.split=+g('v');break;
