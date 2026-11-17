@@ -1,8 +1,9 @@
 // @ts-nocheck
 import QRCode from 'qrcode';
 /* Demo Tostichelas: app de un solo archivo montada desde page.tsx. */
-export function initTostichelas(root: HTMLElement): () => void {
+export function initTostichelas(root: HTMLElement, opts: { staff?: boolean } = {}): () => void {
 'use strict';
+const STAFF=!!opts.staff;let SYNCED=false;const authKey=r=>r==='barra'?'cocina':r;
 /* ---------- utilidades ---------- */
 const $=(s)=>root.querySelector(s);
 const ctl=new AbortController();
@@ -101,7 +102,7 @@ function seed(){
   me:{name:'',tel:''},
   mw:{sel:null,adding:false,cart:[]},
   caja:{sel:null,tab:'cobro',split:1,tip:0,method:'Efectivo',recv:'',tel:'',canje:false,fondo:500,contado:'',lc:null,nom:'',nac:'',busy:false,movs:[],mt:'retiro',mm:'',mo:''},
-  auth:{},pins:{caja:'1111',dueno:'2222'},
+  auth:{},pins:{caja:'1111',dueno:'2222',mesero:'3333',cocina:'4444'},
   loy:{tel:'',data:null,loading:false,nom:'',nac:''},real:null,kds:{screen:false},
   own:{tab:'resumen'}};
  applyMenu();
@@ -328,7 +329,7 @@ function modalHtml(){
   h+='<div class="row between"><h2>Pasar a producción</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><p class="small">Se borran las ventas, reseñas, clientes y pedidos de ejemplo. Se conservan tu menú, tus fotos y tus precios. No se puede deshacer.</p><label class="f">Escribe EMPEZAR para confirmar<input type="text" data-in="ptxt" value="'+esc(md.txt||'')+'" autocomplete="off"></label><button class="btn pri" data-a="prodgo">Borrar ejemplos y empezar</button></div>';
  }
  if(md.type==='pin'){
-  h+='<div class="row between"><h2>Acceso de '+(md.role==='caja'?'Caja':'Dueño')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">PIN de 4 dígitos<input type="password" inputmode="numeric" maxlength="4" data-in="pin" value="'+esc(md.pin)+'" placeholder="••••"></label><div class="xs muted">'+(PROD?'':'PIN de la demo: '+S.pins[md.role]+'. ')+'Cada perfil tiene el suyo, así el mesero no entra a la caja ni a las ganancias.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
+  h+='<div class="row between"><h2>Acceso de '+({caja:'Caja',dueno:'Dueño',mesero:'Mesero',cocina:'Cocina y barra'}[md.role]||'Equipo')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">PIN de 4 dígitos<input type="password" inputmode="numeric" maxlength="4" data-in="pin" value="'+esc(md.pin)+'" placeholder="••••"></label><div class="xs muted">'+(PROD?'':'PIN de la demo: '+S.pins[md.role]+'. ')+'Cada perfil tiene el suyo, así nadie entra a la caja ni a las ganancias sin permiso.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
  }
  if(md.type==='ticket'){
   const t=S.tickets.find(x=>x.id===md.id);
@@ -490,6 +491,8 @@ function counts(){
 function render(){
  const c=counts();
  if(PROD){S.cli.geo=presenceOk()?'dentro':'fuera';if(QRMESA)S.cli.mesa=QRMESA}
+ const showNav=STAFF||(SYNCED&&!PROD);$('#nav').style.display=showNav?'':'none';
+ if(!showNav&&S.role!=='cliente')S.role='cliente';
  $('#nav').innerHTML=ROLES.map(r=>'<button data-a="role" data-v="'+r[0]+'" aria-current="'+(S.role===r[0])+'">'+r[1]+(c[r[0]]?'<span class="cnt">'+c[r[0]]+'</span>':'')+'</button>').join('');
  $('#wrap').classList.toggle('wide',S.role==='dueno'||S.role==='caja'||S.role==='cocina'||S.role==='barra');
  const v={cliente:vCliente,mesero:vMesero,cocina:()=>vKds('cocina'),barra:()=>vKds('barra'),caja:vCaja,dueno:vDueno}[S.role]();
@@ -619,7 +622,7 @@ function softRender(){const a=root.ownerDocument.activeElement;if(a&&root.contai
 function applyResp(r){
  if(!r||r.error)return;
  let changed=false;
- PROD=!!r.prod;
+ PROD=!!r.prod;SYNCED=true;
  if(r.reset){const first=EPOCH===0;EPOCH=r.epoch;REV=0;UU={};if(!first||PROD){reseedKeep();changed=true}LAST=snapNow()}
  const inc={cols:[],kv:[]};
  Object.keys(r.cols||{}).forEach(name=>{const c=COLS[name];if(!c)return;r.cols[name].forEach(e=>{const key=name+'|'+e.k;if(UU[key]!==undefined&&UU[key]>=e.u)return;const arr=c.arr();const i=arr.findIndex(x=>c.key(x)===e.k);if(i>=0)arr[i]=e.d;else arr.push(e.d);UU[key]=e.u;inc.cols.push([name,e.k]);changed=true})});
@@ -663,15 +666,15 @@ async function verifyPin(){
  try{
   const r=await fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'pin',rol:md.role,pin:md.pin})});
   const j=await r.json();
-  if(j.ok){S.auth[md.role]=true;if(md.role==='dueno'){S.dpin=md.pin;S.pinDef=!!j.defecto}S.role=md.role;S.modal=null}else toast('PIN incorrecto');
+  if(j.ok){S.auth[md.role]=true;if(md.role==='dueno'){S.dpin=md.pin;S.pinDef=!!j.defecto}S.role=md.target||md.role;S.modal=null}else toast('PIN incorrecto');
  }catch(e){
-  if(!PROD&&md.pin===S.pins[md.role]){S.auth[md.role]=true;if(md.role==='dueno')S.dpin=md.pin;S.role=md.role;S.modal=null}else toast('Sin conexión para validar el PIN');
+  if(!PROD&&md.pin===S.pins[md.role]){S.auth[md.role]=true;if(md.role==='dueno')S.dpin=md.pin;S.role=md.target||md.role;S.modal=null}else toast('Sin conexión para validar el PIN');
  }
  render();
 }
 function dAjustes(){
  let h=dPedidosCfg()+dQuickCfg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
- h+='<div class="card stack"><h3>Antes de abrir al público</h3><ul class="small" style="margin:0;padding-left:18px"><li>Carga tus fotos y precios en "Menú y márgenes".</li><li>Captura tus costos reales de insumos en "Inventario".</li><li>Haz un conteo físico para dejar el inventario inicial correcto.</li>'+(S.pinDef?'<li><b style="color:var(--bad)">Cambia los PIN:</b> ahora usan los de la demo. Define TOSTICHELAS_PIN_DUENO y TOSTICHELAS_PIN_CAJA en el servidor.</li>':'')+'</ul></div>';
+ h+='<div class="card stack"><h3>Antes de abrir al público</h3><ul class="small" style="margin:0;padding-left:18px"><li>Carga tus fotos y precios en "Menú y márgenes".</li><li>Captura tus costos reales de insumos en "Inventario".</li><li>Haz un conteo físico para dejar el inventario inicial correcto.</li>'+(S.pinDef?'<li><b style="color:var(--bad)">Cambia los PIN:</b> ahora usan los de la demo. Define TOSTICHELAS_PIN_DUENO, _CAJA, _MESERO y _COCINA en el servidor.</li>':'')+'</ul></div>';
  return h}
 
 
@@ -878,7 +881,7 @@ root.addEventListener('click',e=>{
  const a=el.getAttribute('data-a'),g=n=>el.getAttribute('data-'+n);
  const c=S.cli;
  switch(a){
-  case'role':{const r=g('v');if((r==='caja'||r==='dueno')&&!S.auth[r]){S.modal={type:'pin',role:r,pin:''}}else S.role=r;break}
+  case'role':{const r=g('v');const k=authKey(r);if(r!=='cliente'&&PROD&&!S.auth[k]||(!PROD&&(k==='caja'||k==='dueno')&&!S.auth[k])){S.modal={type:'pin',role:k,target:r,pin:''}}else S.role=r;break}
   case'reset':{if(!S.dpin){toast('Solo el dueño puede reiniciar: entra a Dueño con tu PIN');break}resetServer('reset');return}
   case'sound':S.sound=!S.sound;if(S.sound)beep();break;
   case'tab':c.tab=g('v');if(c.tab==='puntos'&&S.me.tel.length===10&&!S.loy.data&&!S.loy.loading)loadMe();break;

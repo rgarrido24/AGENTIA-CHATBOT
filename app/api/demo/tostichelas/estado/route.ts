@@ -24,6 +24,8 @@ const MAX_BYTES = 200_000;
 
 const pinDueno = () => process.env.TOSTICHELAS_PIN_DUENO || process.env.TOSTICHELAS_DUENO_PIN || '2222';
 const pinCaja = () => process.env.TOSTICHELAS_PIN_CAJA || '1111';
+const pinMesero = () => process.env.TOSTICHELAS_PIN_MESERO || '3333';
+const pinCocina = () => process.env.TOSTICHELAS_PIN_COCINA || '4444';
 const KEEP = /^(menu|avail\||settings\|)/; // el reset no borra el menú ni los ajustes del dueño
 const safeKey = (k: unknown) => typeof k === 'string' && /^[\w|:-]{1,80}$/.test(k);
 
@@ -83,9 +85,11 @@ export async function POST(req: NextRequest) {
     const c = db.collection<Doc>(COLL);
 
     if (body.accion === 'pin') {
-      const rol = body.rol === 'caja' ? 'caja' : 'dueno';
-      const ok = body.pin === (rol === 'caja' ? pinCaja() : pinDueno());
-      const defecto = rol === 'caja' ? !process.env.TOSTICHELAS_PIN_CAJA : !(process.env.TOSTICHELAS_PIN_DUENO || process.env.TOSTICHELAS_DUENO_PIN);
+      const rol = ['caja', 'mesero', 'cocina'].includes(body.rol) ? body.rol : 'dueno';
+      const pins: Record<string, string> = { caja: pinCaja(), mesero: pinMesero(), cocina: pinCocina(), dueno: pinDueno() };
+      const envs: Record<string, any> = { caja: process.env.TOSTICHELAS_PIN_CAJA, mesero: process.env.TOSTICHELAS_PIN_MESERO, cocina: process.env.TOSTICHELAS_PIN_COCINA, dueno: process.env.TOSTICHELAS_PIN_DUENO || process.env.TOSTICHELAS_DUENO_PIN };
+      const ok = body.pin === pins[rol];
+      const defecto = !envs[rol];
       return NextResponse.json({ ok, defecto });
     }
 
