@@ -160,3 +160,13 @@
 .tos-root .art img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
 .tos-root .art.mini{width:40px;height:40px;flex:none;border-radius:10px;overflow:hidden}
 .tos-root .art.pimg{width:96px;height:96px;flex:none;border-radius:14px;overflow:hidden;display:grid;place-items:center}
+
+.tos-root .loy-launch{background:linear-gradient(160deg,#E2573A,#B83A22);color:#fff;border-radius:22px;padding:16px;display:grid;gap:12px;box-shadow:0 14px 28px -14px rgba(120,30,10,.7);margin-bottom:12px}
+.tos-root .loy-t{font-family:var(--display);font-size:1.5rem;display:block}
+.tos-root .loy-mark{font-family:var(--display);font-size:.8rem;opacity:.85;letter-spacing:.08em}
+.tos-root .loy-btns{display:flex;flex-wrap:wrap;gap:8px}
+.tos-root .loy-b{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:99px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;font-weight:700;cursor:pointer}
+.tos-root .loy-b svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tos-root .loy-b:active{transform:scale(.96)}
+.tos-root .loy-link{display:grid;gap:4px;background:rgba(0,0,0,.18);padding:10px;border-radius:14px}
+.tos-root .loy-link code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:.78rem}

@@ -61,6 +61,16 @@ const mLabel=k=>(MESAS.find(x=>x.k===k)||{label:k}).label;
 const tokenOf=k=>String(1000+((k.charCodeAt(0)*31+parseInt(k.slice(1),10)*977)%9000));
 const ins=k=>S.inv.find(i=>i.id===k);
 
+/* extras que el dueño decide ofrecer (CFG.extras; -1 = no se ofrecen) */
+const EXT=CFG.extras||[];
+let XSIG='';
+function applyExtras(){
+ MENU.forEach(q=>{if(!q.bm)q.bm=(q.mods||[]).slice();const r=q.bm.slice();
+  EXT.forEach(e=>{const v=S.settings[e.k];if(!(v>=0)||!e.cats.includes(q.cat))return;
+   if(e.salsa)r.push({g:e.g,req:false,opts:(e.opciones||['Verde','Roja']).map(l=>({l,p:[0,0]}))});
+   else r.push({g:e.g,req:false,opts:[{l:'Sí',p:[v,Math.round(v*(e.mult||1))]}]})});
+  q.mods=r})}
+
 /* ---------- extras por restaurante (todo se activa desde la config) ---------- */
 const INI=CFG.inicio||null,CONTRA=CFG.pago==='contraentrega',CON=CFG.contacto||null,ARM=CFG.armador||null;
 const NIV=CFG.niveles||['Suave','Suavecito','Medio','Picoso','Extra fuego'];
@@ -97,7 +107,7 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 
 function seed(){
  S={seq:101,tseq:2001,role:'cliente',sound:S?S.sound:false,modal:null,
-  settings:Object.assign({radio:50,cap:500,envio:25,pedMesa:false,pedLlevar:false,pedEntrega:false,aprobar:true,lat:null,lng:null,diasMes:26,costoPct:35,comisionPct:2,metaPuntos:0,premioTxt:''},CFG.ajustes||{}),
+  settings:Object.assign({radio:50,cap:500,envio:25,pedMesa:false,pedLlevar:false,pedEntrega:false,aprobar:true,lat:null,lng:null,diasMes:26,costoPct:35,comisionPct:2,metaPuntos:0,premioTxt:''},EXT.reduce((o,e)=>(o[e.k]=-1,o),{}),CFG.ajustes||{}),
   inv:INS0.map(r=>({id:r[0],name:r[1],unit:r[2],stock:r[3],min:r[4],cost:r[5],count:''})),
   orders:[],tickets:[],cuenta:{},mermas:[],cust:[],cancelados:CFG.demo?1:0,gastos:[],fin:{cat:'Renta',con:'',monto:'',freq:'mensual'},invNew:{name:'',unit:'kg',stock:'',min:'',cost:''},
   soc:{likes:{},liked:{},rate:{},reviews:[],mine:{}},
@@ -392,8 +402,9 @@ function vKds(st){
 /* ---------- caja ---------- */
 const holds=()=>S.orders.filter(o=>o.hold&&!o.cancel&&!o.aprobar);
 function vCaja(){
- const c=S.caja;let h='<div class="stack" style="margin-top:12px"><div class="chips"><button class="chip" data-a="ctab" data-v="cobro" aria-pressed="'+(c.tab==='cobro')+'">Cobrar</button><button class="chip" data-a="ctab" data-v="corte" aria-pressed="'+(c.tab==='corte')+'">Corte de caja</button></div>';
+ const c=S.caja;let h='<div class="stack" style="margin-top:12px"><div class="chips"><button class="chip" data-a="ctab" data-v="cobro" aria-pressed="'+(c.tab==='cobro')+'">Cobrar</button><button class="chip" data-a="ctab" data-v="corte" aria-pressed="'+(c.tab==='corte')+'">Corte de caja</button><button class="chip" data-a="ctab" data-v="lealtad" aria-pressed="'+(c.tab==='lealtad')+'">Lealtad</button></div>';
  if(c.tab==='corte')return h+corte()+'</div>';
+ if(c.tab==='lealtad')return h+loyLauncher()+'</div>';
  h+='<div class="grid2"><div class="stack"><span class="pill-title" style="margin:0">Cuentas abiertas</span>';
  const abiertas=MESAS.filter(x=>mesaOrders(x.k).length);
  if(!abiertas.length)h+='<div class="card small muted">No hay cuentas abiertas.</div>';
@@ -615,6 +626,7 @@ function counts(){
  const act=st=>live().filter(o=>o.lines.some(l=>l.station===st&&l.status==='nuevo')).length;
  return{cocina:act('cocina'),barra:act('barra'),mesero:MESAS.filter(x=>{const s=mesaState(x.k);return s.pc||s.listo}).length+(CONTRA?porAprobar().length:0),caja:holds().length+MESAS.filter(x=>S.cuenta[x.k]&&mesaOrders(x.k).length).length+(CONTRA?porCobrar().length:0)}}
 function render(){
+ {const sg=EXT.map(e=>S.settings[e.k]).join();if(sg!==XSIG){XSIG=sg;applyExtras()}}
  const c=counts();
  if(PROD){S.cli.geo=presenceOk()?'dentro':'fuera';if(QRMESA)S.cli.mesa=QRMESA}
  const showNav=STAFF||(SYNCED&&!PROD);$('#nav').style.display=showNav?'':'none';
@@ -815,8 +827,12 @@ function dPwCfg(){
  const pw=S.pw||(S.pw={dueno:'',caja:'',mesero:'',cocina:''});
  const f=(k,l)=>'<label class="f">'+l+'<input type="password" inputmode="numeric" maxlength="8" autocomplete="off" data-in="pw_'+k+'" value="'+esc(pw[k])+'" placeholder="Nueva (4 a 8 números)"></label>';
  return '<div class="card stack"><h3>Contraseñas del equipo</h3><div class="small muted">Cada perfil entra con su contraseña de 4 números. Escribe solo las que quieras cambiar; las demás se quedan igual.</div><div class="grid2" style="gap:8px">'+f('mesero','Mesero')+f('cocina','Cocina y barra')+f('caja','Caja')+f('dueno','Dueño (tú)')+'</div><button class="btn pri" data-a="savepw">Guardar contraseñas</button></div>'}
+function dExtrasCfg(){
+ let h='<div class="card stack"><h3>Extras para el cliente</h3><div class="small muted">Tú decides qué extras ofreces. Apagados no aparecen en el menú. El precio es por pieza o porción; si el pedido es una orden de 3, se cobra por las 3.</div>';
+ EXT.forEach(e=>{const on=S.settings[e.k]>=0;h+='<div class="row between" style="gap:8px"><div class="grow"><b class="small">'+e.g+'</b><div class="xs muted">'+e.cats.join(', ')+'</div></div>'+(on&&!e.salsa?'<label class="f" style="width:96px;margin:0"><input type="number" min="0" max="500" data-in="xp_'+e.k+'" value="'+S.settings[e.k]+'" aria-label="Precio de '+e.g+'"></label>':'')+'<button class="btn sm'+(on?' pri':'')+'" data-a="xtog" data-k="'+e.k+'" aria-pressed="'+on+'">'+(on?'Ofrecido':'No ofrecido')+'</button></div>'});
+ return h+'</div>'}
 function dAjustes(){
- let h=dPedidosCfg()+dQuickCfg()+dPwCfg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
+ let h=dPedidosCfg()+dExtrasCfg()+dQuickCfg()+dPwCfg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
  h+='<div class="card stack"><h3>Antes de abrir al público</h3><ul class="small" style="margin:0;padding-left:18px"><li>Carga tus fotos y precios en "Menú y márgenes".</li><li>Captura tus costos reales de insumos en "Inventario".</li><li>Haz un conteo físico para dejar el inventario inicial correcto.</li>'+(S.pinDef?'<li><b style="color:var(--bad)">Cambia las contraseñas:</b> todavía hay perfiles con la contraseña inicial. Cámbialas en "Contraseñas del equipo".</li>':'')+'</ul></div>';
  return h}
 
@@ -896,11 +912,16 @@ async function lcbSave(){
  try{const r=await fetch(LAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'config',parametro:v})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo');S.real=null;S.lcb=undefined;toast('Cashback actualizado')}catch(e){toast(e.message)}
  render();
 }
+function loyLauncher(){
+ const IC={caja:'<path d="M3 4h2l2 11h11l2-8H6"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',buscar:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',clientes:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-4 3-6 7-6s7 2 7 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14c2.5.6 4 2.4 4 6"/>',banner:'<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/>',enlaces:'<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/>'};
+ const L=[['caja','Caja'],['buscar','Buscar'],['clientes','Clientes'],['banner','Banner'],['enlaces','Mi link']];
+ const own=S.role==='dueno';
+ return '<div class="loy-launch"><div class="row between"><div><b class="loy-t">Lealtad</b><div class="xs">Caja · Buscar · Clientes'+(own?' · Banner · Mi link':'')+'</div></div><span class="loy-mark">TOSTICHELAS</span></div><div class="loy-btns">'+L.filter(x=>own||['caja','buscar','clientes'].includes(x[0])).map(x=>'<button class="loy-b" data-a="loygo" data-s="'+x[0]+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+IC[x[0]]+'</svg>'+x[1]+'</button>').join('')+'</div>'+(own?'<div class="loy-link"><span class="xs">Link para redes sociales (Instagram, Facebook, WhatsApp)</span><div class="row" style="gap:6px"><code>'+esc(baseUrl()+'/l/'+CFG.slug)+'</code><button class="btn sm" data-a="qrcopy" data-u="'+esc(baseUrl()+'/l/'+CFG.slug)+'">Copiar</button></div><div class="xs">Ahí pones tu menú, ubicación, WhatsApp y redes desde el botón Mi link.</div></div>':'')+'</div>'}
 function dLealtad(){
- const R=S.real;if(!R){loadLista();return'<div class="card small muted">Cargando lealtad…</div>'}
- if(R.error)return'<div class="card small muted">No se pudo cargar la lealtad.</div>';
+ const R=S.real;if(!R){loadLista();return loyLauncher()+'<div class="card small muted">Cargando lealtad…</div>'}
+ if(R.error)return loyLauncher()+'<div class="card small muted">No se pudo cargar la lealtad.</div>';
  const pct=R.parametro||5,cs=R.clientes||[];
- let h='<div class="card stack"><h3>Tu tarjeta de lealtad</h3><div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">'+NOMU+'</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">'+m2(120)+'</div><div class="small">de saldo · '+pct+'% de cashback en cada cuenta</div></div></div><div class="row" style="align-items:flex-end;gap:8px"><label class="f grow">% de cashback<input type="number" step="0.5" data-in="lcb" value="'+esc(S.lcb!==undefined?S.lcb:pct)+'"></label><button class="btn pri sm" data-a="lcbsave">Guardar</button></div><div class="xs muted">Cada $100 de cuenta le regresan $'+pct+' de saldo que usa en su siguiente visita. Hoy tienes '+cs.length+' clientes con tarjeta. Funciona igual que en tus otros negocios con Agentia, con Google Wallet.</div></div>';
+ let h=loyLauncher()+'<div class="card stack"><h3>Tu tarjeta de lealtad</h3><div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">'+NOMU+'</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">'+m2(120)+'</div><div class="small">de saldo · '+pct+'% de cashback en cada cuenta</div></div></div><div class="row" style="align-items:flex-end;gap:8px"><label class="f grow">% de cashback<input type="number" step="0.5" data-in="lcb" value="'+esc(S.lcb!==undefined?S.lcb:pct)+'"></label><button class="btn pri sm" data-a="lcbsave">Guardar</button></div><div class="xs muted">Cada $100 de cuenta le regresan $'+pct+' de saldo que usa en su siguiente visita. Hoy tienes '+cs.length+' clientes con tarjeta. Funciona igual que en tus otros negocios con Agentia, con Google Wallet.</div></div>';
  h+='<div class="card stack"><h3>QR de tu tarjeta (registro)</h3><div class="row" style="gap:12px;align-items:flex-start">'+qrImg(altaUrl(),150)+'<div class="stack" style="gap:6px"><div class="small muted">El cliente lo escanea, se registra solo y guarda su tarjeta en Google Wallet. Pon el banner en el mostrador y en cada mesa.</div><div class="row"><button class="btn pri sm" data-a="qrbanner">Imprimir banner</button><button class="btn sm" data-a="qrcopy" data-u="'+esc(altaUrl())+'">Copiar link</button></div></div></div></div>';
  h+='<div class="card stack"><h3>QR del menú</h3><div class="row" style="gap:12px;align-items:flex-start">'+qrImg(menuUrl(),150)+'<div class="stack" style="gap:6px"><div class="small muted">Para redes, tarjetas, volantes y el mostrador. Abre el menú con likes y recomendaciones.</div><div class="row"><button class="btn pri sm" data-a="qrmenu">Imprimir</button><button class="btn sm" data-a="qrcopy" data-u="'+esc(menuUrl())+'">Copiar link</button></div></div></div></div>';
  h+='<div class="card stack"><h3>QR por mesa</h3><div class="small muted">Cada mesa tiene su QR con un código. Con él, y la ubicación del celular, el cliente puede pedir desde su lugar. Imprímelos y pégalos '+(CFG.textos.mesasTxt||'en las 9 mesas y los 3 periquitos')+'.</div><div class="grid2" style="gap:8px">'+MESAS.map(x=>'<div class="row" style="gap:8px;align-items:center">'+qrImg(mesaUrl(x.k),64)+'<b class="small">'+esc(x.label)+'</b></div>').join('')+'</div><button class="btn pri" data-a="qrmesas">Imprimir QR de todas las mesas</button></div>';
@@ -1005,7 +1026,7 @@ function setupInput(el){
  const k=el.getAttribute('data-in'),v=el.value;
  if(k==='nvq'){NV.q=v;const el2=$('#nvList');if(el2)el2.innerHTML=nvList();return}
  else if(k==='sal_desc'){salSet(el.getAttribute('data-s'),'desc',v.slice(0,80))}else if(k==='sal_extra'){salSet(el.getAttribute('data-s'),'extra',Math.max(0,Math.min(100,Number(v)||0)))}
- else if(k==='cfg_metaPuntos'){S.settings.metaPuntos=Math.max(0,Math.min(100000,Number(v)||0))}else if(k==='cfg_premioTxt'){S.settings.premioTxt=v.slice(0,60)}
+ else if(k.startsWith('xp_')){const e=EXT.find(x=>x.k===k.slice(3));if(e)S.settings[e.k]=Math.max(0,Math.min(500,Number(v)||0))}else if(k==='cfg_metaPuntos'){S.settings.metaPuntos=Math.max(0,Math.min(100000,Number(v)||0))}else if(k==='cfg_premioTxt'){S.settings.premioTxt=v.slice(0,60)}
  else if(k==='name'){S.me.name=v;saveMe()}else if(k==='tel'){const t=v.replace(/\D/g,'').slice(0,10);if(t!==S.me.tel){S.me.tel=t;saveMe();S.loy.data=null;if(t.length===10&&S.cli.tab==='puntos')loadMe()}}
  else if(k.indexOf('pw_')===0){(S.pw||(S.pw={}))[k.slice(3)]=v.replace(/\D/g,'').slice(0,4)}
  else if(k==='addr')S.cli.addr=v;else if(k==='mtel'){S.mw.tel=v.replace(/\D/g,'').slice(0,10);if(S.mw.tel)S.mw.guest=false}else if(k==='mnote'){S.modal.note=v}
@@ -1125,6 +1146,8 @@ root.addEventListener('click',e=>{
   case'nvgo':NV.splash=false;lsSet(LK+'splash_ts',String(Date.now()));break;
   case'celeclose':NV.cele=null;S.cli.tab='pedido';break;
   case'combo':{const ids=String(g('ids')).split(',');let n=0;ids.forEach(id=>{const q=PM(id);if(q&&!soldOut(q)){S.cli.cart.push(lineFrom(q,0,[],1,''));n++}});if(n){NV.bump++;toast('Combo agregado')}break}
+  case'xtog':{const e=EXT.find(x=>x.k===g('k'));if(e)S.settings[e.k]=S.settings[e.k]>=0?-1:e.def;break}
+  case'loygo':{const sec=g('s');lpost({accion:'sesion'}).then(j=>{root.ownerDocument.defaultView.location.assign((j.base||'/n/'+CFG.slug)+'/'+sec)}).catch(e=>toast(e.message));return}
   case'qadd':nvQuickAdd(g('p'));break;
   case'rep':nvRepeat();break;
   case'nvfav':NV.fav=!NV.fav;break;

@@ -34,7 +34,7 @@ export async function ensureTenant(cfg: ServidorConfig): Promise<TenantConfig | 
       collection: t.isDemo ? `demo_${key}_clientes` : `${key}_clientes`,
       classSuffix: t.isDemo ? `demo_${key}_lealtad` : `${key}_lealtad`,
       objectPrefix: t.isDemo ? `demo-${key}` : key,
-      basePath: `/${key}`,
+      basePath: `/n/${key}`,
       recompensa: t.recompensa,
       rewardMeta: t.rewardMeta,
       giro: t.giro,
@@ -51,8 +51,14 @@ export async function ensureTenant(cfg: ServidorConfig): Promise<TenantConfig | 
     doc = await col.findOne({ key });
   }
 
-  if (doc && doc.basePath !== `/${key}`) {
-    await col.updateOne({ key }, { $set: { basePath: `/${key}` } });
+  // Panel completo de lealtad (Caja, Buscar, Clientes, Banner, Mi link) en /n/<slug>.
+  if (doc && (doc.basePath !== `/n/${key}` || (cfg.tenant.isDemo === false && (doc.isDemo !== false || doc.plan === 'demo')))) {
+    const set: Record<string, unknown> = { basePath: `/n/${key}`, panelActivo: true };
+    if (cfg.tenant.isDemo === false) {
+      set.isDemo = false;
+      if (doc.plan === 'demo') set.plan = cfg.tenant.plan;
+    }
+    await col.updateOne({ key }, { $set: set });
     invalidateLoyaltyTenantCache(key);
   }
 

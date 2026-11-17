@@ -53,15 +53,6 @@ const MESAS:{ k: string; label: string; tipo: string }[]=[];
 for(let i=1;i<=9;i++)MESAS.push({k:'m'+i,label:'Mesa '+i,tipo:'mesa'});
 for(let i=1;i<=3;i++)MESAS.push({k:'p'+i,label:'Periquito '+i,tipo:'periquito'});
 
-/* extras con precio (precios de ejemplo: ajustar con el restaurante) */
-const XQ=(g:string,l:string,a:number,b?:number)=>({g,req:false,opts:[{l,p:[a,b==null?a:b]}]});
-const SALSA_X=()=>({g:'Salsa',req:false,opts:['Verde','Roja','Habanero','Macha'].map(l=>({l,p:[0,0]}))});
-MENU.forEach((q:any)=>{
- if(q.cat==='Tostadas')q.mods=q.mods.concat([XQ('Aguacate extra','Sí',15),XQ('Doble porción','Sí',35),SALSA_X()]);
- else if(q.cat==='Tacos')q.mods=q.mods.concat([XQ('Queso extra','Sí',10,25),XQ('Aguacate extra','Sí',10,25),SALSA_X()]);
- else if(q.cat==='Snacks')q.mods=q.mods.concat([XQ('Queso extra','Sí',15),SALSA_X()]);
-});
-
 /* ilustración propia por producto (trazo grueso del logo; el motor pone el trazo) */
 const BEER:Record<string,string[]>={cor:['#F5B83D','#2F6FB5','#F7E27A'],vic:['#C98A2B','#C0392B','#F3D9A4'],pac:['#E7B04A','#1F9AD6','#FFFFFF'],xx:['#B8721E','#2E8B57','#F5B83D'],ult:['#F2C14E','#3FA9F5','#E8EEF2'],mod:['#E5A82F','#E5B73B','#241610'],leo:['#5B2A14','#8C3B1B','#F2D6A0']};
 const DRINK:Record<string,string[]>={boi:['#9BD34A','#F5D45E'],coc:['#3B1F18','#D0312D'],min:['#CFE9F7','#FFFFFF'],sue:['#EAF6FB','#3FA9F5'],sug:['#EAF6FB','#2E7DD1'],cln:['#C9473A','#8CC152']};
@@ -136,6 +127,13 @@ export const TOSTICHELAS: RestauranteConfig = {
   arte: ARTE,
   inicio: { destacado: 'tcm', combos: [['tag', 'vic', 'Aguachile + Victoria'], ['tcc', 'cor', 'Camachera + Corona'], ['tar', 'mod', 'Arrachera + Modelo']], tituloCombos: 'Va muy bien con una chela' },
   ajustes: { pedMesa: true },
+  // Precios de ejemplo: el dueño enciende, apaga y ajusta los extras en Ajustes. Apagados por defecto.
+  extras: [
+    { k: 'xAguacate', g: 'Aguacate extra', def: 15, cats: ['Tostadas', 'Tacos'], mult: 3 },
+    { k: 'xDoble', g: 'Doble porción', def: 35, cats: ['Tostadas'], mult: 1 },
+    { k: 'xQueso', g: 'Queso extra', def: 15, cats: ['Tacos', 'Snacks'], mult: 3 },
+    { k: 'xSalsa', g: 'Salsa', def: 0, cats: ['Tostadas', 'Tacos', 'Snacks'], salsa: true, opciones: ['Verde', 'Roja', 'Habanero', 'Macha'] },
+  ],
   insumos: INS0,
   mesas: MESAS,
   mesaInicial: 'm4',

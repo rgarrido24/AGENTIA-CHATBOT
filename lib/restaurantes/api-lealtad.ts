@@ -21,6 +21,7 @@ import { syncWalletPuntosByObjectId } from '@/lib/wallet-sabucan';
 import { tenantObjectId, tenantRecompensa, type TenantConfig } from '@/lib/wallet-tenant';
 import { actualizarCashback, ensureTenant } from './tenant';
 import { crearAuth, puede } from './auth';
+import { setSessionCookie } from '@/lib/loyalty-session';
 import type { ServidorConfig } from './servidor';
 
 const MONTO_MAX = 50_000;
@@ -91,6 +92,14 @@ async function POST(req: NextRequest) {
       parametro?: number;
     };
     const telefono = String(body.telefono ?? '');
+
+    // Entrada directa al panel completo de lealtad (/n/<slug>/...) sin pedir otra contraseña:
+    // solo con sesión de caja o dueño del sistema.
+    if (body.accion === 'sesion') {
+      if (!puede(perfilDeRequest(req), 'caja')) return NextResponse.json({ error: 'Inicia sesión' }, { status: 401 });
+      await setSessionCookie(cfg.id);
+      return NextResponse.json({ ok: true, base: cfg.basePath });
+    }
 
     if (body.accion === 'config') {
       if (perfilDeRequest(req) !== 'dueno') return NextResponse.json({ error: 'Solo el dueño' }, { status: 403 });
