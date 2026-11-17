@@ -220,6 +220,16 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // ── Rate limiting: /api/restaurante/* (restaurantes en producción) ───────────
+  // Varios dispositivos del mismo local comparten IP: estado/imagen con límite alto, lealtad medio.
+  if (pathname.startsWith('/api/restaurante/') && request.method === 'POST') {
+    const sync = pathname.endsWith('/estado') || pathname.endsWith('/imagen');
+    const allowed = sync ? edgeRateLimit(`rest-sync:${ip}`, 240, 60 * 1000) : edgeRateLimit(`rest-loy:${ip}`, 60, 60 * 1000);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' }, { status: 429 });
+    }
+  }
+
   // ── Rate limiting: /api/brief/diagnostic (12 per 5 min per IP) ──────────────
   if (pathname === '/api/brief/diagnostic' && request.method === 'POST') {
     const allowed = edgeRateLimit(`brief:${ip}`, 12, 5 * 60 * 1000);
@@ -391,6 +401,7 @@ export const config = {
     '/clientes/:clientId/panel/:path*',
     '/api/chat',
     '/api/demo/:path*',
+    '/api/restaurante/:path*',
     '/api/brief/diagnostic',
     '/api/agentia/followup',
     '/api/auth/login',

@@ -1,23 +1,26 @@
 // @ts-nocheck
 import QRCode from 'qrcode';
-/* Demo Tostichelas: app de un solo archivo montada desde page.tsx. */
-export function initTostichelas(root: HTMLElement, opts?: { staff?: boolean }): () => void {
+import type { RestauranteConfig } from '@/lib/restaurantes/config';
+/* Motor de restaurante: app de un solo archivo montada desde RestauranteShell.
+   NO contiene datos de ningún restaurante: marca, menú, mesas, colores y reglas vienen de CFG. */
+export function initRestaurante(root: HTMLElement, CFG: RestauranteConfig, opts?: { staff?: boolean }): () => void {
 'use strict';
+const LK=CFG.lsPrefix,MARCA=CFG.marca,NOM=MARCA.nombre,NOMU=MARCA.nombreMayus;
 const STAFF=!!(opts&&opts.staff);let SYNCED=false;const authKey=r=>r==='barra'?'cocina':r;
 const LS=(()=>{try{return root.ownerDocument.defaultView.localStorage}catch(e){return null}})();
 const lsGet=k=>{try{return LS?LS.getItem(k):null}catch(e){return null}},lsSet=(k,v)=>{try{LS&&LS.setItem(k,v)}catch(e){}};
-const CID=(()=>{let c=lsGet('tos_cid');if(!c||!/^[\w-]{8,40}$/.test(c)){c='c'+Math.random().toString(36).slice(2,12)+Date.now().toString(36);lsSet('tos_cid',c)}return c})();
+const CID=(()=>{let c=lsGet(LK+'cid');if(!c||!/^[\w-]{8,40}$/.test(c)){c='c'+Math.random().toString(36).slice(2,12)+Date.now().toString(36);lsSet(LK+'cid',c)}return c})();
 const custId=()=>100000+Math.floor(Math.random()*8999999);
 const tokExp=t=>Number(String(t||'').split('.')[1])||0;
-let TOKS={};try{TOKS=JSON.parse(lsGet('tos_toks')||'{}')}catch(e){TOKS={}}
+let TOKS={};try{TOKS=JSON.parse(lsGet(LK+'toks')||'{}')}catch(e){TOKS={}}
 Object.keys(TOKS).forEach(r=>{if(tokExp(TOKS[r])<Date.now()+60000)delete TOKS[r]});
 const anyTok=()=>TOKS.dueno||TOKS.caja||TOKS.mesero||TOKS.cocina||'';
 const hdr=()=>{const t=anyTok();return t?{'Content-Type':'application/json','x-tos-token':t}:{'Content-Type':'application/json'}};
-const saveToks=()=>lsSet('tos_toks',JSON.stringify(TOKS));
+const saveToks=()=>lsSet(LK+'toks',JSON.stringify(TOKS));
 /* PWA: service worker + botón Instalar app */
 let INSTALL=null;
 (()=>{try{const w=root.ownerDocument.defaultView,nav=w.navigator;
- if(nav&&nav.serviceWorker&&/^https:|^http:\/\/localhost/.test(w.location.href))nav.serviceWorker.register('/tostichelas/sw.js',{scope:'/tostichelas'}).catch(()=>{});
+ if(nav&&nav.serviceWorker&&/^https:|^http:\/\/localhost/.test(w.location.href))nav.serviceWorker.register(CFG.ruta+'/sw.js',{scope:CFG.ruta}).catch(()=>{});
  w.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL=e;showInstall()});
  w.addEventListener('appinstalled',()=>{INSTALL=null;showInstall()})}catch(e){}})();
 function isStandalone(){try{const w=root.ownerDocument.defaultView;return (w.matchMedia&&w.matchMedia('(display-mode: standalone)').matches)||w.navigator.standalone===true}catch(e){return false}}
@@ -42,57 +45,37 @@ const ICON={
 };
 const starsHtml=(avg,n)=>{let h='<span class="stars" role="img" aria-label="'+avg.toFixed(1)+' de 5">';for(let i=1;i<=5;i++)h+='<span class="'+(avg>=i-.25?'':'off')+'">'+ICON.star+'</span>';return h+'</span>'};
 
-/* ---------- menú real de Tostichelas ---------- */
-const SAB=['Sandía','Fresa','Miguelito','Tajín','Piña Mango','Cereza','Mora Azul Truena Pop','Ajonjolí Caramelizado'];
-const BMODS=[
- {g:'Preparado',req:false,opts:[{l:'Michelada',p:[5,10]},{l:'Cubana',p:[15,20]},{l:'Clamato',p:[20,25]}]},
- {g:'Vaso',req:false,opts:[{l:'Escarchado',p:[10,15]},{l:'Michelado',p:[20,25]},{l:'Cubano',p:[25,30]},{l:'Clamato',p:[35,50]}]},
- {g:'Sabor del escarchado',req:true,showIf:['Vaso','Escarchado'],opts:SAB.map(l=>({l,p:[0,0]}))}
-];
+/* ---------- menú del restaurante (viene de la config) ---------- */
+const clon=o=>JSON.parse(JSON.stringify(o));
 const P=o=>Object.assign({avail:true,mods:[],desc:''},o);
-const T=(id,name,p1,p3,prot,desc,torKey)=>P({id,cat:'Tacos',name,desc:desc||'Servidos con papa y nopales',emoji:'🌮',station:'cocina',v:[{l:'Pza',p:p1,f:1,s:0},{l:'Orden (3 pzas)',p:p3,f:3,s:1}],use:Object.assign({[torKey||'tor']:1,nop:.03,pap:.05},prot)});
-const B=(id,name,ins,h,mg)=>{const v=[];if(h)v.push({l:'1/2',p:h,f:1,s:0});if(mg)v.push({l:'Mega',p:mg,f:2,s:1});return P({id,cat:'Cervezas',name,emoji:'🍺',station:'barra',v,use:{[ins]:1},mods:BMODS,desc:(h&&!mg)?'Solo en 1/2':(!h?'Solo en Mega':'')})};
-const MENU=[
- P({id:'tag',cat:'Tostadas',name:'Tostada de Aguachile',desc:'Cebolla morada, pepino, mayonesa y aguacate',emoji:'🥒',station:'cocina',v:[{l:'Tostada',p:78,f:1,s:0}],use:{tos:1,cam:.07,agu:.25}}),
- P({id:'tce',cat:'Tostadas',name:'Tostada de Ceviche de camarón',desc:'Servido con mayonesa y aguacate',emoji:'🦐',station:'cocina',v:[{l:'Tostada',p:78,f:1,s:0}],use:{tos:1,cam:.07,agu:.25}}),
- T('tbi','Taco de bistec',38,100,{bis:.07}),
- T('tpo','Taco de pollo',38,100,{pol:.07}),
- T('tlo','Taco de longaniza',38,100,{lon:.06}),
- T('tmi','Taco de milanesa de res',43,115,{mil:.08}),
- T('tca','Taco campechano',43,115,{bis:.04,lon:.03}),
- T('tar','Taco de arrachera',48,130,{arr:.07}),
- T('tcm','Taco de camarón',78,220,{cam:.08,agu:.1},'Camarón empanizado con mayonesa, cebolla, jitomate y aguacate en tortilla de harina','torh'),
- T('tcc','Camachera',80,230,{cam:.05,arr:.05},'Camarón, queso y arrachera en tortilla de harina','torh'),
- B('cor','Corona','cor',60,120),B('vic','Victoria','vic',60,120),B('pac','Pacífico','pac',60,120),B('xx','XX Lager','xx',60,120),
- B('ult','Ultra','ult',60,0),B('mod','Modelo','mod',60,0),B('leo','León','leo',0,120),
- P({id:'boi',cat:'Bebidas',name:'Boing',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{boi:1}}),
- P({id:'coc',cat:'Bebidas',name:'Coca Cola',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{coc:1}}),
- P({id:'min',cat:'Bebidas',name:'Agua mineral',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{min:1}}),
- P({id:'sue',cat:'Bebidas',name:'Suero',emoji:'🥤',station:'barra',v:[{l:'Botella',p:50,f:1,s:0}],use:{sue:1}}),
- P({id:'sug',cat:'Bebidas',name:'Suero grande',emoji:'🥤',station:'barra',v:[{l:'Grande',p:70,f:1,s:0}],use:{sue:2}}),
- P({id:'cln',cat:'Bebidas',name:'Clamato natural',emoji:'🍅',station:'barra',v:[{l:'Vaso',p:60,f:1,s:0}],use:{clm:.3}}),
- P({id:'ha',cat:'Snacks',name:'Hamburguesa',emoji:'🍔',station:'cocina',v:[{l:'Sola',p:90,f:1,s:0}],use:{pan:1,car:1}}),
- P({id:'hp',cat:'Snacks',name:'Hamburguesa con papas',desc:'Servida con papas a la francesa',emoji:'🍔',station:'cocina',v:[{l:'Con papas',p:110,f:1,s:0}],use:{pan:1,car:1,pap:.15}}),
- P({id:'pf',cat:'Snacks',name:'Papas a la francesa',desc:'Preparadas con salsas negras, limón y tajín',emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}}),
- P({id:'pr',cat:'Snacks',name:'Papas fritas',desc:'Preparadas con salsas negras, limón y tajín',emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}})
-];
-const CATS=['Tostadas','Tacos','Cervezas','Bebidas','Snacks'];
-const CATCOL={Tostadas:'#7DBB86',Tacos:'#F29A4A',Cervezas:'#F2C14E',Bebidas:'#7FB2E5',Snacks:'#E2573A'};
+const MENU=clon(CFG.menu).map(P);
+const CATS=CFG.categorias.slice();
+const CATCOL=Object.assign({},CFG.colores);
 const PM=id=>MENU.find(p=>p.id===id);
-const INS0=[
- ['cor','Corona','bot',96,24,17],['vic','Victoria','bot',96,24,16],['pac','Pacífico','bot',72,24,16],['ult','Ultra','bot',48,12,18],['xx','XX Lager','bot',72,24,16],['mod','Modelo','bot',48,12,17],['leo','León','bot',48,12,16],
- ['bis','Bistec','kg',8,2,190],['pol','Pollo','kg',8,2,110],['arr','Arrachera','kg',6,2,260],['lon','Longaniza','kg',5,1.5,120],['mil','Milanesa de res','kg',6,2,170],['cam','Camarón','kg',9,3,280],
- ['tor','Tortilla de maíz','pza',300,80,1.2],['torh','Tortilla de harina','pza',120,40,2.5],['pan','Pan de hamburguesa','pza',40,12,6],['car','Carne de hamburguesa','pza',40,12,22],
- ['pap','Papa','kg',20,6,35],['nop','Nopales','kg',6,2,30],['agu','Aguacate','pza',30,10,18],['tos','Tostada','pza',150,40,3],
- ['coc','Coca Cola','pza',48,12,14],['boi','Boing','pza',48,12,12],['min','Agua mineral','pza',48,12,13],['sue','Suero','pza',36,12,18],['clm','Clamato','l',12,4,45]
-];
+const INS0=clon(CFG.insumos);
 
 /* ---------- estado ---------- */
 let S,ac;
-const MESAS=[];for(let i=1;i<=9;i++)MESAS.push({k:'m'+i,label:'Mesa '+i,tipo:'mesa'});for(let i=1;i<=3;i++)MESAS.push({k:'p'+i,label:'Periquito '+i,tipo:'periquito'});
+const MESAS=clon(CFG.mesas);
 const mLabel=k=>(MESAS.find(x=>x.k===k)||{label:k}).label;
 const tokenOf=k=>String(1000+((k.charCodeAt(0)*31+parseInt(k.slice(1),10)*977)%9000));
 const ins=k=>S.inv.find(i=>i.id===k);
+
+/* ---------- extras por restaurante (todo se activa desde la config) ---------- */
+const CONTRA=CFG.pago==='contraentrega',CON=CFG.contacto||null,ARM=CFG.armador||null;
+const NIV=CFG.niveles||['Suave','Suavecito','Medio','Picoso','Extra fuego'];
+const SI=MARCA.splash.img||{src:MARCA.mark,alt:MARCA.markAlt,w:MARCA.markW,h:MARCA.markH};
+const salsasAll=()=>(CFG.salsas||[]).map(x=>Object.assign({},x,(MCFG.salsas&&MCFG.salsas[x.id])||{}));
+const salsasOn=()=>salsasAll().filter(x=>x.avail!==false);
+const salsaBy=id=>salsasAll().find(x=>x.id===id);
+const flames=n=>'<span class="flames" role="img" aria-label="Picor '+n+' de 5">'+[1,2,3,4,5].map(i=>'<i class="fl'+(i<=n?' on':'')+'"></i>').join('')+'</span>';
+const waLink=txt=>CON?'https://wa.me/'+CON.whatsapp+(txt?'?text='+encodeURIComponent(txt):''):'#';
+const waCli=(tel,txt)=>'https://wa.me/52'+tel+(txt?'?text='+encodeURIComponent(txt):'');
+const dosSab=p=>!!(S.settings.dosSabores)&&!!p.salsas&&!!S.modal&&!!p.v[S.modal.vi]&&p.v[S.modal.vi].f>=2;
+const porAprobar=()=>S.orders.filter(o=>o.hold&&o.aprobar&&!o.cancel&&o.canal!=='mesa');
+const porCobrar=()=>S.orders.filter(o=>o.canal!=='mesa'&&!o.hold&&!o.cancel&&!o.closed);
+function cobroOrders(sel){if(!sel)return[];if(sel.indexOf('m:')===0)return mesaOrders(sel.slice(2));const o=S.orders.find(x=>String(x.id)===sel.slice(2));return o&&!o.hold&&!o.cancel&&!o.closed?[o]:[]}
+
 
 function lineFrom(p,vi,mods,qty,note){const v=p.v[vi];let unit=v.p;mods.forEach(x=>unit+=x.p);return{uid:uid(),pid:p.id,name:p.name,v:v.l,s:v.s,f:v.f,mods,unit,qty,note:note||'',station:p.station,status:'nuevo'}}
 function lineCost(l){const p=PM(l.pid);let c=0;Object.keys(p.use).forEach(k=>{const it=ins(k);if(it)c+=p.use[k]*l.f*l.qty*it.cost});if(p.cost)c+=p.cost*l.f*l.qty;return c}
@@ -114,43 +97,28 @@ function toast(t){const d=document.createElement('div');d.className='toast';d.te
 
 function seed(){
  S={seq:101,tseq:2001,role:'cliente',sound:S?S.sound:false,modal:null,
-  settings:{radio:50,cap:500,envio:25,pedMesa:false,pedLlevar:false,pedEntrega:false,aprobar:true,lat:null,lng:null,diasMes:26,costoPct:35,comisionPct:2,metaPuntos:0,premioTxt:''},
+  settings:Object.assign({radio:50,cap:500,envio:25,pedMesa:false,pedLlevar:false,pedEntrega:false,aprobar:true,lat:null,lng:null,diasMes:26,costoPct:35,comisionPct:2,metaPuntos:0,premioTxt:''},CFG.ajustes||{}),
   inv:INS0.map(r=>({id:r[0],name:r[1],unit:r[2],stock:r[3],min:r[4],cost:r[5],count:''})),
-  orders:[],tickets:[],cuenta:{},mermas:[],cust:[],cancelados:1,gastos:[],fin:{cat:'Renta',con:'',monto:'',freq:'mensual'},invNew:{name:'',unit:'kg',stock:'',min:'',cost:''},
+  orders:[],tickets:[],cuenta:{},mermas:[],cust:[],cancelados:CFG.demo?1:0,gastos:[],fin:{cat:'Renta',con:'',monto:'',freq:'mensual'},invNew:{name:'',unit:'kg',stock:'',min:'',cost:''},
   soc:{likes:{},liked:{},rate:{},reviews:[],mine:{}},
-  cli:{tab:'menu',geo:'dentro',mesa:'m4',canal:'mesa',cat:'Todo',sort:'pop',cart:[],addr:'',open:{},purchased:{}},
+  cli:{tab:'menu',geo:'dentro',mesa:CFG.mesaInicial||(MESAS[0]?MESAS[0].k:''),canal:'mesa',cat:'Todo',sort:'pop',cart:[],addr:'',open:{},purchased:{}},
   me:{name:'',tel:''},
   mw:{sel:null,adding:false,cart:[],tel:'',guest:false},
   caja:{sel:null,tab:'cobro',split:1,tip:0,method:'Efectivo',recv:'',tel:'',canje:false,fondo:500,contado:'',lc:null,nom:'',nac:'',busy:false,movs:[],mt:'retiro',mm:'',mo:''},
-  auth:{},pins:{caja:'1111',dueno:'2222',mesero:'3333',cocina:'4444'},
+  auth:{},pins:Object.assign({},(CFG.demo&&CFG.demo.pins)||{}),
   loy:{tel:'',data:null,loading:false,nom:'',nac:''},real:null,kds:{screen:false},
   own:{tab:'resumen'}};
  applyMenu();
- if(PROD){MENU.forEach(q=>{S.soc.likes[q.id]=0;S.soc.rate[q.id]={n:0,sum:0}});return}
- S.gastos=[{id:'g1',cat:'Renta',concepto:'Renta del local',monto:12000,freq:'mensual'},{id:'g2',cat:'Sueldos',concepto:'Cocinero',monto:9000,freq:'mensual'},{id:'g3',cat:'Sueldos',concepto:'Mesero',monto:7000,freq:'mensual'},{id:'g4',cat:'Servicios',concepto:'Luz y agua',monto:3500,freq:'mensual'},{id:'g5',cat:'Servicios',concepto:'Gas',monto:2400,freq:'mensual'},{id:'g6',cat:'Otros fijos',concepto:'Internet y sistema',monto:899,freq:'mensual'}];
- const LK={tag:128,tce:96,tcc:84,tcm:77,cor:71,vic:64,tar:58,pac:49,ha:44,hp:40,tca:39,tmi:37,tbi:33,xx:30,mod:31,leo:25,tlo:26,pf:22,tpo:21,ult:18,pr:19,sue:15,coc:14,cln:12,boi:9,sug:8,min:6};
- const RT={tag:[4.8,64],tce:[4.7,52],tcc:[4.9,48],tcm:[4.8,41],cor:[4.5,39],vic:[4.6,35],tar:[4.7,30],pac:[4.4,22],ha:[4.3,25],hp:[4.4,21],tca:[4.5,19],tmi:[4.5,17],tbi:[4.3,15],xx:[4.4,16],mod:[4.4,15],leo:[4.5,13],tlo:[4.4,12],pf:[4.2,14],tpo:[4.2,10],ult:[4.3,9],pr:[4.1,9],sue:[4.6,8],coc:[4.5,7],cln:[4.2,6],boi:[4.3,5],sug:[4.5,4],min:[4.2,3]};
- MENU.forEach(p=>{S.soc.likes[p.id]=LK[p.id]||5;const r=RT[p.id]||[4.3,3];S.soc.rate[p.id]={n:r[1],sum:Math.round(r[0]*r[1]*10)/10}});
- S.soc.reviews=[
-  {pid:'tag',user:'Karla M.',stars:5,text:'El aguachile está en su punto y pica rico. Pídelo con una Victoria Mega.',v:true,ts:-95},
-  {pid:'tag',user:'Dany R.',stars:5,text:'La mejor tostada de la zona, el aguacate no escatima.',v:true,ts:-1440},
-  {pid:'tcc',user:'Chuy P.',stars:5,text:'La camachera es obligatoria. Camarón con arrachera y queso, sin pierde.',v:true,ts:-300},
-  {pid:'tcc',user:'Mariana L.',stars:5,text:'Vine por recomendación y ya soy fan.',v:true,ts:-2800},
-  {pid:'tce',user:'Beto G.',stars:4,text:'Muy fresco el ceviche. Yo le pondría más limón.',v:true,ts:-700},
-  {pid:'cor',user:'Lalo S.',stars:5,text:'La Mega bien helada con michelada de la casa.',v:true,ts:-180},
-  {pid:'tcm',user:'Ana V.',stars:5,text:'El taco de camarón empanizado se acaba rápido, pidan temprano.',v:true,ts:-4000},
-  {pid:'tar',user:'Rubén C.',stars:4,text:'Arrachera tierna, la orden alcanza para compartir.',v:true,ts:-1200},
-  {pid:'ha',user:'Nicté H.',stars:4,text:'Buena hamburguesa para acompañar la cerveza.',v:true,ts:-5000},
-  {pid:'vic',user:'Pedro T.',stars:5,text:'Cerveza siempre bien fría.',v:true,ts:-60}
- ].map(r=>Object.assign(r,{ts:Date.now()+r.ts*60000}));
- S.mermas=[{ts:Date.now()-26*3600000,name:'Bistec',unit:'kg',diff:-0.5,val:95},{ts:Date.now()-26*3600000,name:'Corona',unit:'bot',diff:-3,val:51}];
- S.cust=[
-  {tel:'9991230001',name:'Karla M.',pts:130,visits:9,last:2},{tel:'9991230002',name:'Chuy P.',pts:84,visits:6,last:5},
-  {tel:'9991230003',name:'Dany R.',pts:42,visits:3,last:12},{tel:'9991230004',name:'Lalo S.',pts:210,visits:14,last:41},
-  {tel:'9991230005',name:'Beto G.',pts:63,visits:5,last:38},{tel:'9991230006',name:'Mariana L.',pts:18,visits:2,last:57}];
+ if(PROD||!CFG.demo){MENU.forEach(q=>{S.soc.likes[q.id]=0;S.soc.rate[q.id]={n:0,sum:0}});return}
+ const D=CFG.demo;
+ S.gastos=D.gastos.map(g=>Object.assign({},g));
+ MENU.forEach(p=>{S.soc.likes[p.id]=D.likes[p.id]||5;const r=D.rates[p.id]||[4.3,3];S.soc.rate[p.id]={n:r[1],sum:Math.round(r[0]*r[1]*10)/10}});
+ S.soc.reviews=D.reviews.map(r=>Object.assign({},r,{ts:Date.now()+r.ts*60000}));
+ S.mermas=D.mermas.map(x=>({ts:Date.now()-x.hace*3600000,name:x.name,unit:x.unit,diff:x.diff,val:x.val}));
+ S.cust=D.clientes.map(c=>Object.assign({},c));
  /* ventas del día de ejemplo */
  const hmax=Math.max(14,Math.min(21,new Date().getHours()));
- const pool=['tag','tce','tcc','tcm','tar','tbi','cor','vic','pac','xx','ha','pf','tca','coc','hp'];
+ const pool=D.pool;
  const meth=['Efectivo','Efectivo','Efectivo','Tarjeta','Tarjeta','Tarjeta','Transferencia'];
  for(let i=0;i<30;i++){
   const d=new Date();d.setHours(13+Math.floor(rng()*(hmax-12)),Math.floor(rng()*60),0,0);if(d.getTime()>Date.now())d.setHours(hmax-1);
@@ -162,19 +130,17 @@ function seed(){
  }
  /* mesas ocupadas de ejemplo */
  const mk=(mesa,items,age,st,extra)=>{const ls=items.map(a=>{const l=lineFrom(PM(a[0]),a[1],[],a[2]);l.status=st;return l});return newOrder(Object.assign({mesa,lines:ls,created:Date.now()-age*60000},extra||{}))};
- mk('m2',[['tcc',1,1],['cor',1,1]],4,'preparando');
- mk('m5',[['tag',0,2],['vic',1,1]],12,'listo');
- const o7=mk('m7',[['tar',1,1],['pac',0,2]],35,'entregado');S.cuenta.m7=true;
- mk('p1',[['xx',0,2]],8,'nuevo');
- if(!o7)return;
+ D.mesasOcupadas.forEach(x=>mk(x[0],x[1],x[2],x[3]));
+ if(D.mesaConCuenta)S.cuenta[D.mesaConCuenta]=true;
 }
 const ordersInit=()=>seed();
 
 
 /* ilustraciones planas con el trazo grueso del logo */
-const SK='stroke="#241610" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"';
+const SK='stroke="'+MARCA.trazo+'" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"';
 function artSvg(p){
  const id=p.id,cat=p.cat;let b='';
+ if(CFG.arte&&(CFG.arte[id]!==undefined||CFG.arte[cat]!==undefined))return '<svg viewBox="0 0 64 64" width="100%" height="100%" '+SK+' aria-hidden="true">'+(CFG.arte[id]!==undefined?CFG.arte[id]:CFG.arte[cat])+'</svg>';
  if(cat==='Cervezas')b='<path d="M14 24h28v28a5 5 0 0 1-5 5H19a5 5 0 0 1-5-5z" fill="#F5B83D"/><path d="M42 30h5a5 5 0 0 1 5 5v7a5 5 0 0 1-5 5h-5" fill="none"/><path d="M20 30v22M28 30v22" stroke-width="2" opacity=".35"/><circle cx="21" cy="19" r="7" fill="#fff"/><circle cx="31" cy="15" r="8" fill="#fff"/><circle cx="40" cy="21" r="6" fill="#fff"/>';
  else if(cat==='Tostadas')b='<circle cx="32" cy="34" r="23" fill="#E9C27E"/><circle cx="32" cy="34" r="17" fill="#D94F3A"/><circle cx="25" cy="30" r="4.5" fill="#fff"/><circle cx="37" cy="38" r="4.5" fill="#fff"/><circle cx="38" cy="28" r="3.5" fill="#fff"/><path d="M28 18q12 4 9 18-11-2-9-18z" fill="#8CC152"/><path d="M16 42a16 16 0 0 0 32 0z" fill="#C5E063"/>';
  else if(cat==='Tacos')b='<path d="M6 46a26 26 0 0 1 52 0z" fill="#F2C76B"/><path d="M13 46a19 19 0 0 1 38 0" fill="#C9473A"/><circle cx="24" cy="38" r="4.5" fill="#8CC152"/><circle cx="34" cy="33" r="4.5" fill="#fff"/><circle cx="43" cy="40" r="4" fill="#F5B83D"/>';
@@ -198,7 +164,7 @@ function prodCard(p){
  h+='<div class="row between"><span class="b num">'+fromPrice(p)+'</span>'+(out?'<span class="status s-bad">Agotado hoy</span>':'')+'</div>';
  h+='<div class="row"><button class="chip like" aria-pressed="'+(!!liked)+'" data-a="like" data-p="'+p.id+'">'+ICON.heart+' Me gusta</button>';
  h+='<button class="chip" aria-pressed="'+(!!open)+'" data-a="togrev" data-p="'+p.id+'">'+ICON.chat+' '+revs.length+'</button>';
- h+='<a class="chip" style="text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent('Prueba '+p.name+' en Tostichelas, '+a.toFixed(1)+' de 5 con '+r.n+' opiniones')+'">'+ICON.share+' Recomendar</a>';
+ h+='<a class="chip" style="text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent('Prueba '+p.name+' en '+NOM+', '+a.toFixed(1)+' de 5 con '+r.n+' opiniones')+'">'+ICON.share+' Recomendar</a>';
  h+=''+(canOrderAny()?'<button class="btn pri sm" data-a="add" data-p="'+p.id+'"'+(out?' disabled':'')+'>Agregar</button>':'')+'</div></div>';
  if(open){h+='<div class="reviews">';
   revs.slice(0,4).forEach(x=>{h+='<div class="rev"><div class="row between"><span class="b small">'+esc(x.user)+'</span>'+starsHtml(x.stars)+'</div><div class="small">'+esc(x.text)+'</div><div class="xs muted">'+(x.v?'<span class="status s-good" style="padding:1px 8px">Consumo verificado</span> ':'')+ago(x.ts)+'</div></div>'});
@@ -206,7 +172,7 @@ function prodCard(p){
   h+='<button class="btn sm" data-a="review" data-p="'+p.id+'">Calificar y opinar</button></div>'}
  return h+'</article>'}
 function vCliente(){
- const c=S.cli;let h='<div class="stack" style="margin-top:12px"><img class="hero" src="/tostichelas/logo.jpg" alt="Tostichelas, tostadas, mariscos y cervezas" width="900" height="619">';
+ const c=S.cli;let h='<div class="stack" style="margin-top:12px"><img class="hero" src="'+MARCA.logo+'" alt="'+esc(MARCA.logoAlt)+'" width="'+MARCA.logoW+'" height="'+MARCA.logoH+'">';
  h+='<div class="chips"><button class="chip" data-a="tab" data-v="menu" aria-pressed="'+(c.tab==='menu')+'">Menú</button><button class="chip" data-a="tab" data-v="pedido" aria-pressed="'+(c.tab==='pedido')+'">Mi pedido'+(c.cart.length?' ('+c.cart.reduce((a,l)=>a+l.qty,0)+')':'')+'</button><button class="chip" data-a="tab" data-v="puntos" aria-pressed="'+(c.tab==='puntos')+'">Mis puntos</button></div>';
  if(c.tab==='menu')h+=cMenu();else if(c.tab==='pedido')h+=cPedido();else h+=cPuntos();
  return h+'</div>'}
@@ -241,7 +207,7 @@ function cPedido(){
   h+='<div class="sep"></div><div class="row between"><span class="b">Subtotal</span><span class="b num">'+m(sub)+'</span></div>';
   h+='<div class="stack" style="gap:8px"><span class="b small">¿Cómo lo quieres?</span><div class="chips">';
   if(al.includes('mesa'))h+='<button class="chip" data-a="canal" data-v="mesa" aria-pressed="'+(c.canal==='mesa')+'">En mi mesa</button>';
-  h+=(al.includes('llevar')?'<button class="chip" data-a="canal" data-v="llevar" aria-pressed="'+(c.canal==='llevar')+'">Para llevar</button>':'')+(al.includes('entrega')?'<button class="chip" data-a="canal" data-v="entrega" aria-pressed="'+(c.canal==='entrega')+'">Entrega cercana +'+m(S.settings.envio)+'</button>':'')+'</div></div>';
+  h+=(al.includes('llevar')?'<button class="chip" data-a="canal" data-v="llevar" aria-pressed="'+(c.canal==='llevar')+'">Para llevar</button>':'')+(al.includes('entrega')?'<button class="chip" data-a="canal" data-v="entrega" aria-pressed="'+(c.canal==='entrega')+'">'+(CONTRA?'A domicilio'+(S.settings.envio?' +'+m(S.settings.envio):''):'Entrega cercana +'+m(S.settings.envio))+'</button>':'')+'</div></div>';
   if(c.canal==='entrega')h+='<label class="f">Dirección o referencia<input type="text" data-in="addr" value="'+esc(c.addr)+'" placeholder="Calle, número y referencia"></label>';
   h+='<div class="grid2" style="gap:8px"><label class="f">Tu nombre<input type="text" data-in="name" value="'+esc(S.me.name)+'" placeholder="Nombre"></label><label class="f">WhatsApp (para puntos y ticket)<input type="tel" data-in="tel" value="'+esc(S.me.tel)+'" placeholder="10 dígitos"></label></div>';
   let eff=c.canal;if(!dentro&&eff==='mesa')eff='llevar';
@@ -250,11 +216,12 @@ function cPedido(){
    const need=unpaid+sub>S.settings.cap;
    h+='<div class="banner '+(need?'warn':'good')+'">'+(need?'Tu cuenta abierta superaría '+m(S.settings.cap)+'. Para evitar pedidos fantasma, este envío requiere <b>pago por adelantado</b>.':'Se envía directo a cocina y barra. El mesero confirma tu mesa y pagas al final, o antes desde tu celular.')+'</div>';
    h+='<button class="btn pri" data-a="send">'+(need?'Pagar y enviar a cocina':'Enviar a cocina y barra')+'</button>'}
+  else if(CONTRA)h+='<div class="banner good">Pagas <b>al recibir</b> tu pedido (efectivo o terminal). '+NOM+' lo confirma contigo antes de prepararlo.'+(eff==='entrega'&&S.settings.envio?' Envío: '+m(S.settings.envio)+'.':'')+'</div><button class="btn pri" data-a="send">Enviar mi pedido · '+m(sub+(eff==='entrega'?S.settings.envio:0))+'</button>';
   else h+='<div class="banner warn">Pedido a distancia: <b>pago previo obligatorio</b>. No entra a cocina hasta confirmar el pago.</div><button class="btn pri" data-a="send">Pagar '+m(sub+(eff==='entrega'?S.settings.envio:0))+' y enviar</button>';
  }
  h+='</div>';
  const mine=myOrders();
- if(mine.length){h+='<div class="card stack"><h3>Seguimiento</h3>';mine.slice().reverse().forEach(o=>{h+='<div><div class="row between"><b>Pedido #'+o.id+' · '+(o.canal==='mesa'?mLabel(o.mesa):o.canal==='llevar'?'Para llevar':'Entrega')+'</b>'+(o.hold?'<span class="status s-warn">'+(o.aprobar?'Por aprobar del mesero':'Esperando pago')+'</span>':o.closed?'<span class="status s-good">Pagado</span>':'<span class="status s-neutral">Cuenta abierta</span>')+'</div>'+o.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+esc(l.name)+' '+esc(l.v)+'</span>'+stPill(l.status)+'</div>').join('');
+ if(mine.length){h+='<div class="card stack"><h3>Seguimiento</h3>';mine.slice().reverse().forEach(o=>{h+='<div><div class="row between"><b>Pedido #'+o.id+' · '+(o.canal==='mesa'?mLabel(o.mesa):o.canal==='llevar'?'Para llevar':'Entrega')+'</b>'+(o.hold?'<span class="status s-warn">'+(o.aprobar?(CONTRA&&o.canal!=='mesa'?'Por confirmar':'Por aprobar del mesero'):'Esperando pago')+'</span>':o.closed?'<span class="status s-good">'+(CONTRA&&o.canal!=='mesa'?'Entregado y pagado':'Pagado')+'</span>':CONTRA&&o.canal!=='mesa'?'<span class="status s-neutral">'+(o.done?'Entregado':o.stage==='camino'?'En camino':'En preparación')+'</span>':'<span class="status s-neutral">Cuenta abierta</span>')+'</div>'+o.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+esc(l.name)+' '+esc(l.v)+'</span>'+stPill(l.status)+'</div>').join('');
    if(o.hold&&!o.aprobar)h+='<div class="row" style="margin-top:6px"><button class="btn pri sm" data-a="paynow" data-o="'+o.id+'">Pagar ahora</button></div>';
    h+='</div>'});h+='</div>'}
  if(dentro){const cu=c.cuenta&&c.cuenta.mesa===c.mesa?c.cuenta:null;const mo=mesaOrders(c.mesa).filter(o=>o.src==='cliente');if(mo.length||(cu&&cu.items.length)){const tot=cu?cu.total:mesaTotal(c.mesa);h+='<div class="card stack"><h3>Cuenta de '+mLabel(c.mesa)+'</h3>'+(cu?cu.items.map(i=>'<div class="row between small"><span>'+i.q+' × '+esc(i.n)+'</span><b class="num">'+m(i.t)+'</b></div>').join(''):'')+'<div class="row between"><span>Total acumulado</span><b class="num">'+m(tot)+'</b></div><div class="row"><button class="btn sm" data-a="ctaCuenta">'+(S.cuenta[c.mesa]?'Cuenta solicitada':'Pedir la cuenta al mesero')+'</button><button class="btn pri sm" data-a="paymesa">Pagar desde mi celular</button></div></div>'}}
@@ -266,9 +233,9 @@ function cPuntos(){
  let h='';
  if(d&&d.found){
   const cl=d.cliente;
-  h+='<div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">TOSTICHELAS</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">'+fmtSaldo(d,cl.puntos)+'</div><div class="small">'+(modelo==='cashback'?'de saldo para tu próxima cuenta':unidad(d))+' · '+d.parametro+'% de cashback en cada visita</div></div><div class="xs">'+esc(cl.nombre)+' · '+cl.visitas+' visitas</div></div>';
+  h+='<div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">'+NOMU+'</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">'+fmtSaldo(d,cl.puntos)+'</div><div class="small">'+(modelo==='cashback'?'de saldo para tu próxima cuenta':unidad(d))+' · '+d.parametro+'% de cashback en cada visita</div></div><div class="xs">'+esc(cl.nombre)+' · '+cl.visitas+' visitas</div></div>';
  }else{
-  h+='<div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">TOSTICHELAS</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">$0</div><div class="small">Regístrate y gana '+(d&&d.parametro?d.parametro:5)+'% de saldo en cada cuenta</div></div></div>';
+  h+='<div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">'+NOMU+'</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">$0</div><div class="small">Regístrate y gana '+(d&&d.parametro?d.parametro:5)+'% de saldo en cada cuenta</div></div></div>';
  }
  h+='<div class="card stack"><label class="f">Tu WhatsApp<input type="tel" data-in="tel" value="'+esc(tel)+'" placeholder="10 dígitos"></label>';
  if(tel.length===10){
@@ -289,9 +256,9 @@ function loadMe(){
 async function addWallet(){
  const L=S.loy,tel=S.me.tel;L.wbusy=true;L.wmsg='';render();
  try{
-  const r=await fetch('/api/wallet/tostichelas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telefono:tel})});
+  const r=await fetch('/api/wallet/'+CFG.slug,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telefono:tel,clienteId:tel,clienteNombre:(L.data&&L.data.found&&L.data.cliente?L.data.cliente.nombre:S.me.name)||'',puntosActuales:(L.data&&L.data.found&&L.data.cliente?Number(L.data.cliente.puntos||0):0)})});
   const j=await r.json().catch(()=>({}));
-  if(!r.ok||!j.saveUrl)throw new Error(j.error||'Wallet aún no está activo para esta demo');
+  if(!r.ok||!j.saveUrl)throw new Error(j.error||'Google Wallet aún no está activo');
   window.open(j.saveUrl,'_blank','noopener');L.wmsg='Se abrió Google Wallet para guardar tu tarjeta.';
  }catch(e){L.wmsg=e.message}
  L.wbusy=false;render();
@@ -306,7 +273,7 @@ async function altaMe(){
 
 /* ---------- modales ---------- */
 function openProd(pid,target){const p=PM(pid);S.modal={type:'prod',pid,target,vi:0,pick:{},qty:1,note:'',quick:[]}}
-function ticketTxt(t){return 'Tostichelas · Ticket '+t.id+'\n'+t.lines.map(l=>l.qty+' x '+l.name+' '+l.v+' '+m(lineTot(l))).join('\n')+'\nTotal '+m(t.total)+(t.loy&&t.loy.modelo==='cashback'?'\nSaldo en tu tarjeta: '+m2(t.loy.saldo):'')}
+function ticketTxt(t){return NOM+' · Ticket '+t.id+'\n'+t.lines.map(l=>l.qty+' x '+l.name+' '+l.v+' '+m(lineTot(l))).join('\n')+'\nTotal '+m(t.total)+(t.loy&&t.loy.modelo==='cashback'?'\nSaldo en tu tarjeta: '+m2(t.loy.saldo):'')}
 function modalHtml(){
  const md=S.modal;if(!md)return'';
  let h='<div class="scrim" data-a="mclose" data-scrim="1"><div class="sheet" role="dialog" aria-modal="true">';
@@ -319,9 +286,17 @@ function modalHtml(){
    h+='<div><div class="b small">'+esc(g.g)+(g.req?' (obligatorio)':' (opcional)')+'</div><div class="chips">';
    if(!g.req)h+='<button class="chip" data-a="mo" data-g="'+esc(g.g)+'" data-l="" aria-pressed="'+(!md.pick[g.g])+'">Ninguno</button>';
    h+=g.opts.map(o=>{const pr=o.p[v.s];return'<button class="chip" data-a="mo" data-g="'+esc(g.g)+'" data-l="'+esc(o.l)+'" aria-pressed="'+(md.pick[g.g]===o.l)+'">'+esc(o.l)+(pr?' +'+m(pr):'')+'</button>'}).join('')+'</div></div>'});
+  if(p.salsas&&ARM&&CFG.salsas){
+   const ss=salsasOn(),sel=md.pick.Salsa,sel2=md.pick.Salsa2;
+   const sc=(x,key,cur)=>'<button class="sal'+(cur===x.id?' on':'')+'" data-a="msal" data-k="'+key+'" data-s="'+x.id+'" aria-pressed="'+(cur===x.id)+'">'+flames(x.picor)+'<b>'+esc(x.nombre)+'</b><span class="xs">'+esc(NIV[x.picor-1]||'')+(x.extra?' · +'+m(x.extra):'')+'</span>'+(x.desc?'<span class="xs muted">'+esc(x.desc)+'</span>':'')+'</button>';
+   h+='<div><div class="b small">'+esc(ARM.paso2)+' (obligatorio)</div><div class="sal-grid">'+ss.map(x=>sc(x,'Salsa',sel)).join('')+'</div></div>';
+   if(dosSab(p))h+='<div><div class="b small">'+esc(ARM.paso3)+'</div><div class="sal-grid">'+ss.filter(x=>x.id!==sel).map(x=>sc(x,'Salsa2',sel2)).join('')+'</div></div>';
+   const pc=[sel,dosSab(p)?sel2:null].filter(Boolean).map(id=>(salsaBy(id)||{}).picor||0);
+   if(pc.length){const mx=Math.max.apply(null,pc);h+='<div class="picor-m" style="--pc:'+mx+'"><div class="row between"><span class="b small">Tu nivel de picor</span><b>'+esc(NIV[mx-1]||'')+'</b></div><div class="picor-bar"><i style="width:'+(mx*20)+'%"></i></div></div>'}
+  }
   {const qs=quickOf(p.cat);if(qs.length)h+='<div><div class="b small">Personaliza tu pedido (opcional)</div><div class="chips">'+qs.map(x=>'<button class="chip" data-a="qk" data-l="'+esc(x)+'" aria-pressed="'+md.quick.includes(x)+'">'+esc(x)+'</button>').join('')+'</div></div>'}
   h+='<label class="f">Nota para cocina (opcional)<input type="text" data-in="mnote" value="'+esc(md.note)+'" placeholder="Sin cebolla, bien picoso..."></label>';
-  const ready=p.mods.every(g=>!g.req||(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])||md.pick[g.g]);
+  const ready=p.mods.every(g=>!g.req||(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])||md.pick[g.g])&&(!(p.salsas&&ARM&&CFG.salsas)||!salsasOn().length||!!md.pick.Salsa);
   const ln=buildLine();
   if(NUEVO&&md.target==='cli')h+=nvPairHtml(p);
   h+='<div class="row between"><div class="qty"><button data-a="mq" data-d="-1" aria-label="Quitar uno">−</button><b class="num">'+md.qty+'</b><button data-a="mq" data-d="1" aria-label="Agregar uno">+</button></div><button class="btn pri" data-a="madd"'+(ready?'':' disabled')+'>Agregar '+m(ln.unit*md.qty)+'</button></div></div>';
@@ -342,6 +317,7 @@ function modalHtml(){
   h+='<div class="row between"><h2>'+(md.pid?'Editar producto':'Producto nuevo')+'</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="row" style="align-items:center"><div class="art pimg" style="--c:'+CATCOL[f.cat]+'">'+(f.img?'<img src="'+esc(f.img)+'" alt="">':'<span class="xs muted">Sin foto</span>')+'</div><div class="stack" style="gap:6px"><label class="btn sm" style="cursor:pointer">'+(md.up?'Subiendo…':'Subir foto')+'<input type="file" accept="image/*" data-file="pe" hidden></label>'+(f.img?'<button class="btn ghost sm" data-a="peimgx">Quitar foto</button>':'')+'<div class="xs muted">Se ajusta sola a un tamaño ligero.</div></div></div>'
   +'<label class="f">Nombre<input type="text" data-in="pe_name" value="'+esc(f.name)+'"></label><label class="f">Descripción<input type="text" data-in="pe_desc" value="'+esc(f.desc)+'" placeholder="Qué lleva"></label>'
   +'<div class="grid2" style="gap:8px"><label class="f">Categoría<select data-in="pe_cat">'+CATS.map(c=>'<option'+(c===f.cat?' selected':'')+'>'+c+'</option>').join('')+'</select></label><label class="f">Se prepara en<select data-in="pe_station"><option value="cocina"'+(f.station==='cocina'?' selected':'')+'>Cocina</option><option value="barra"'+(f.station==='barra'?' selected':'')+'>Barra</option></select></label></div>'
+  +(CFG.etiquetas?'<label class="f">Etiqueta (opcional)<select data-in="pe_tag"><option value="">Sin etiqueta</option>'+CFG.etiquetas.map(t=>'<option'+(t===f.tag?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label>':'')
   +(q&&!q.custom&&q.v.length>1?q.v.map((x,i)=>'<label class="f">Precio · '+esc(x.l)+'<input type="number" inputmode="decimal" data-in="pe_p" data-i="'+i+'" value="'+esc(f.price[i])+'"></label>').join(''):(md.pid?'':'<label class="f">Presentación<input type="text" data-in="pe_label" value="'+esc(f.label)+'"></label>')+'<label class="f">Precio<input type="number" inputmode="decimal" data-in="pe_p" data-i="0" value="'+esc(f.price[0]||'')+'"></label>')
   +recetaHtml(f)+'<label class="f">Otros costos por pieza (empaque, etc.)<input type="number" inputmode="decimal" data-in="pe_cost" value="'+esc(f.cost)+'" placeholder="0"></label>'
   +'<div class="row between"><button class="btn pri" data-a="pesave"'+(md.up?' disabled':'')+'>Guardar</button>'+(q&&q.custom?'<button class="btn" data-a="pedel">Eliminar producto</button>':'')+'</div></div>';
@@ -355,17 +331,23 @@ function modalHtml(){
  if(md.type==='ticket'){
   const t=S.tickets.find(x=>x.id===md.id);
   const txt=ticketTxt(t);
-  h+='<div class="row between"><h2>Ticket digital</h2><span class="row" style="gap:6px"><button class="btn ghost sm" data-a="printt" data-t="'+t.id+'">Imprimir (opcional)</button><button class="btn ghost sm" data-a="mclose">Cerrar</button></span></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>TOSTICHELAS · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div>'+(t.loy?'<hr><div class="small"><b>Tarjeta Tostichelas</b><br>'+(t.loy.usado?'Usaste '+m(t.loy.usado)+' de saldo.<br>':'')+(t.loy.modelo==='cashback'?'Ganaste '+m2(t.loy.ganado)+' de saldo. Saldo ahora: <b>'+m2(t.loy.saldo)+'</b>':'Ganaste '+t.loy.ganado+' y llevas <b>'+t.loy.saldo+'</b>')+(t.loy.nuevo?'<br>Tu tarjeta ya está creada: guárdala en Google Wallet desde la pestaña Mis puntos.':'')+'</div>':'')+'</div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
+  h+='<div class="row between"><h2>Ticket digital</h2><span class="row" style="gap:6px"><button class="btn ghost sm" data-a="printt" data-t="'+t.id+'">Imprimir (opcional)</button><button class="btn ghost sm" data-a="mclose">Cerrar</button></span></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>'+NOMU+' · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div>'+(t.loy?'<hr><div class="small"><b>Tarjeta '+NOM+'</b><br>'+(t.loy.usado?'Usaste '+m(t.loy.usado)+' de saldo.<br>':'')+(t.loy.modelo==='cashback'?'Ganaste '+m2(t.loy.ganado)+' de saldo. Saldo ahora: <b>'+m2(t.loy.saldo)+'</b>':'Ganaste '+t.loy.ganado+' y llevas <b>'+t.loy.saldo+'</b>')+(t.loy.nuevo?'<br>Tu tarjeta ya está creada: guárdala en Google Wallet desde la pestaña Mis puntos.':'')+'</div>':'')+'</div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
  }
  return h+'</div></div>'}
-function buildLine(){const md=S.modal,p=PM(md.pid),v=p.v[md.vi];const mods=[];p.mods.forEach(g=>{if(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])return;const l=md.pick[g.g];if(!l)return;const o=g.opts.find(x=>x.l===l);mods.push({g:g.g,l:(g.g==='Preparado'||g.g==='Vaso')?g.g+' '+l:l,p:o.p[v.s]})});return lineFrom(p,md.vi,mods,md.qty,(md.quick||[]).concat(md.note&&md.note.trim()?[md.note.trim()]:[]).join(', '))}
+function buildLine(){const md=S.modal,p=PM(md.pid),v=p.v[md.vi];const mods=[];p.mods.forEach(g=>{if(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])return;const l=md.pick[g.g];if(!l)return;const o=g.opts.find(x=>x.l===l);mods.push({g:g.g,l:g.prefix?g.g+' '+l:l,p:o.p[v.s]})});if(p.salsas&&ARM&&CFG.salsas){[md.pick.Salsa,dosSab(p)?md.pick.Salsa2:null].forEach(id=>{const x=id&&salsaBy(id);if(x)mods.push({g:'Salsa',l:'Salsa '+x.nombre,p:Number(x.extra)||0})})}return lineFrom(p,md.vi,mods,md.qty,(md.quick||[]).concat(md.note&&md.note.trim()?[md.note.trim()]:[]).join(', '))}
 
 /* ---------- mesero ---------- */
 function mesaState(k){const os=mesaOrders(k);return{os,pc:os.some(o=>o.porConfirmar)||S.orders.some(o=>o.mesa===k&&o.aprobar&&!o.cancel&&!o.closed),listo:os.some(o=>o.lines.some(l=>l.status==='listo')),cuenta:!!S.cuenta[k],total:os.reduce((a,o)=>a+orderSub(o),0)}}
+function domPorAprobar(){
+ const ps=porAprobar();if(!ps.length)return'';
+ return'<span class="pill-title" style="margin:4px 0">Pedidos nuevos por confirmar ('+ps.length+')</span>'+ps.map(o=>{const tel=String(o.cliente.tel||'');return'<div class="card stack dom-new" style="gap:6px"><div class="row between"><b>#'+o.id+' · '+(o.canal==='llevar'?'Para llevar':'A domicilio')+' · '+esc(o.cliente.name||'Cliente')+'</b><span class="xs muted">hace '+ago(o.created)+'</span></div>'+(o.addr?'<div class="small">Dirección: '+esc(o.addr)+'</div>':'')+o.lines.map(l=>'<div class="small">'+l.qty+' × '+lineHtml(l)+'</div>').join('')+'<div class="row between"><b class="num">Cobrar al entregar '+m(orderSub(o)+o.envio)+'</b>'+(tel.length===10?'<a class="btn sm" target="_blank" rel="noopener" href="'+waCli(tel,'Hola '+(o.cliente.name||'')+', recibimos tu pedido en '+NOM+'. ¿Todo bien?')+'">WhatsApp</a>':'')+'</div><div class="row"><button class="btn pri sm" data-a="aprob" data-o="'+o.id+'">Aceptar y mandar a cocina</button><button class="btn sm" data-a="rechaz" data-o="'+o.id+'">Rechazar</button></div></div>'}).join('')}
+function domPorCobrar(){
+ const ps=porCobrar();
+ return'<span class="pill-title" style="margin:8px 0 0">Domicilio y para llevar por cobrar ('+ps.length+')</span>'+(ps.length?ps.map(o=>'<button class="card row between" style="text-align:left;'+(S.caja.sel==='o:'+o.id?'outline:3px solid var(--ink)':'')+'" data-a="csel" data-k="o:'+o.id+'"><span><b>#'+o.id+' · '+(o.canal==='llevar'?'Para llevar':'Domicilio')+'</b><span class="xs muted"> '+esc(o.cliente.name||'')+'</span></span><b class="num">'+m(orderSub(o)+o.envio)+'</b></button>').join(''):'<div class="card small muted">Aquí caen los pedidos aceptados. Cóbralos al entregar.</div>')}
 function vMesero(){
  const w=S.mw;
  if(w.adding)return mAdd();
- let h='<div class="stack" style="margin-top:12px"><span class="pill-title" style="margin:4px 0">Mis mesas</span><div class="mesas">';
+ let h='<div class="stack" style="margin-top:12px">'+(CONTRA?domPorAprobar():'')+'<span class="pill-title" style="margin:4px 0">Mis mesas</span><div class="mesas">';
  MESAS.forEach(x=>{const s=mesaState(x.k);const cls=s.pc?'alerta':s.os.length?'ocupada':'';
   h+='<button class="mesa '+cls+'" data-a="msel" data-k="'+x.k+'" aria-pressed="'+(w.sel===x.k)+'"><span class="nm">'+x.label+'</span><span class="xs">'+(s.os.length?m(s.total):'Libre')+'</span><span class="row" style="gap:4px">'+(s.pc?'<span class="status s-bad">Confirmar</span>':'')+(s.cuenta?'<span class="status s-warn">Cuenta</span>':'')+(s.listo?'<span class="dot pulse" title="Hay algo listo"></span>':'')+'</span></button>'});
  h+='</div>';
@@ -373,7 +355,7 @@ function vMesero(){
  const take=S.orders.filter(o=>(o.canal==='llevar'||o.canal==='entrega')&&!o.cancel&&!o.hold&&!o.done);
  h+='<span class="pill-title" style="margin:4px 0">Para llevar y entregas</span>';
  if(!take.length)h+='<div class="card small muted">Sin pedidos para llevar por ahora. Los que llegan por link ya vienen pagados.</div>';
- take.forEach(o=>{const all=o.lines.every(l=>l.status==='listo'||l.status==='entregado');h+='<div class="card stack" style="gap:6px"><div class="row between"><b>#'+o.id+' · '+(o.canal==='llevar'?'Para llevar':'Entrega cercana')+' · '+esc(o.cliente.name||'Cliente')+'</b><span class="status s-good">Pagado</span></div>'+(o.addr?'<div class="small muted">Dirección: '+esc(o.addr)+'</div>':'')+o.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+esc(l.name)+' '+esc(l.v)+'</span>'+stPill(l.status)+'</div>').join('')+'<div class="row">'+(o.canal==='entrega'&&o.stage!=='camino'?'<button class="btn sm" data-a="stage" data-o="'+o.id+'"'+(all?'':' disabled')+'>Salió a entregar</button>':'')+'<button class="btn pri sm" data-a="done" data-o="'+o.id+'"'+(all?'':' disabled')+'>'+(o.canal==='llevar'?'Entregado al cliente':'Entregado')+'</button></div></div>'});
+ take.forEach(o=>{const all=o.lines.every(l=>l.status==='listo'||l.status==='entregado');h+='<div class="card stack" style="gap:6px"><div class="row between"><b>#'+o.id+' · '+(o.canal==='llevar'?'Para llevar':'Entrega cercana')+' · '+esc(o.cliente.name||'Cliente')+'</b>'+(CONTRA?(o.closed?'<span class="status s-good">Cobrado</span>':'<span class="status s-warn">Cobrar '+m(orderSub(o)+o.envio)+'</span>'):'<span class="status s-good">Pagado</span>')+'</div>'+(CONTRA&&String(o.cliente.tel||'').length===10?'<div class="small"><a href="'+waCli(o.cliente.tel,'Hola '+(o.cliente.name||'')+', tu pedido de '+NOM+' va en camino')+'" target="_blank" rel="noopener">WhatsApp: '+esc(o.cliente.tel)+'</a></div>':'')+(o.addr?'<div class="small muted">Dirección: '+esc(o.addr)+'</div>':'')+o.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+esc(l.name)+' '+esc(l.v)+'</span>'+stPill(l.status)+'</div>').join('')+'<div class="row">'+(o.canal==='entrega'&&o.stage!=='camino'?'<button class="btn sm" data-a="stage" data-o="'+o.id+'"'+(all?'':' disabled')+'>Salió a entregar</button>':'')+'<button class="btn pri sm" data-a="done" data-o="'+o.id+'"'+(all?'':' disabled')+'>'+(o.canal==='llevar'?'Entregado al cliente':'Entregado')+'</button></div></div>'});
  return h+'</div>'}
 function qrHtml(k){let s='';let a=parseInt(tokenOf(k),10);for(let i=0;i<81;i++){a=(a*1103515245+12345)&0x7fffffff;const corner=(i%9<3&&Math.floor(i/9)<3)||(i%9>5&&Math.floor(i/9)<3)||(i%9<3&&Math.floor(i/9)>5);s+='<i class="'+((corner||a%3===0)?'on':'')+'"></i>'}return'<div class="qr" aria-hidden="true">'+s+'</div>'}
 function mDetail(k){
@@ -416,6 +398,7 @@ function vCaja(){
  const abiertas=MESAS.filter(x=>mesaOrders(x.k).length);
  if(!abiertas.length)h+='<div class="card small muted">No hay cuentas abiertas.</div>';
  abiertas.forEach(x=>{const s=mesaState(x.k);h+='<button class="card row between" style="text-align:left;'+(c.sel==='m:'+x.k?'outline:3px solid var(--ink)':'')+'" data-a="csel" data-k="m:'+x.k+'"><span class="b">'+x.label+'</span><span class="row" style="gap:6px">'+(s.cuenta?'<span class="status s-warn">Pidió cuenta</span>':'')+'<b class="num">'+m(s.total)+'</b></span></button>'});
+ if(CONTRA)h+=domPorAprobar()+domPorCobrar();
  const hs=holds();
  h+='<span class="pill-title" style="margin:8px 0 0">Esperando pago ('+hs.length+')</span>';
  if(!hs.length)h+='<div class="card small muted">Aquí caen los pedidos a distancia sin pagar. No llegan a cocina hasta que se confirma el pago.</div>';
@@ -423,13 +406,13 @@ function vCaja(){
  h+='</div><div>'+cobro()+'</div></div></div>';
  return h}
 function cobro(){
- const c=S.caja;if(!c.sel||c.sel.indexOf('m:')!==0)return'<div class="card small muted">Elige una cuenta para cobrar.</div>';
- const k=c.sel.slice(2),os=mesaOrders(k);if(!os.length){c.sel=null;return'<div class="card small muted">Elige una cuenta para cobrar.</div>'}
+ const c=S.caja;if(!c.sel||(c.sel.indexOf('m:')!==0&&c.sel.indexOf('o:')!==0))return'<div class="card small muted">Elige una cuenta para cobrar.</div>';
+ const k=c.sel.slice(2),os=cobroOrders(c.sel),isO=c.sel.indexOf('o:')===0,env=os.reduce((a,o)=>a+(o.envio||0),0);if(!os.length){c.sel=null;return'<div class="card small muted">Elige una cuenta para cobrar.</div>'}
  const sub=os.reduce((a,o)=>a+orderSub(o),0),tip=Math.round(sub*c.tip/100);
- const lc=c.lc&&c.lc.found?c.lc:null;const saldo=lc?Math.floor(lc.cliente.puntos):0;const disc=(c.canje&&saldo>0&&lc.modelo==='cashback')?Math.min(saldo,sub):0;const tot=sub-disc+tip;
- let h='<div class="card stack"><h3>Cobrar '+mLabel(k)+'</h3>';
+ const lc=c.lc&&c.lc.found?c.lc:null;const saldo=lc?Math.floor(lc.cliente.puntos):0;const disc=(c.canje&&saldo>0&&lc.modelo==='cashback')?Math.min(saldo,sub):0;const tot=sub-disc+tip+env;
+ let h='<div class="card stack"><h3>Cobrar '+(isO?'pedido #'+k+(os[0].canal==='llevar'?' · Para llevar':' · Domicilio'):mLabel(k))+'</h3>'+(isO&&os[0].addr?'<div class="small">Dirección: '+esc(os[0].addr)+'</div>':'');
  os.forEach(o=>o.lines.forEach(l=>{h+='<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>'}));
- h+='<div class="sep"></div><div class="row between"><span>Subtotal</span><b class="num">'+m(sub)+'</b></div>';
+ h+='<div class="sep"></div><div class="row between"><span>Subtotal</span><b class="num">'+m(sub)+'</b></div>'+(env?'<div class="row between"><span>Envío</span><b class="num">'+m(env)+'</b></div>':'');
  h+='<div><div class="b small">Propina</div><div class="chips">'+[0,10,15,20].map(x=>'<button class="chip" data-a="tip" data-v="'+x+'" aria-pressed="'+(c.tip===x)+'">'+(x?x+'%':'Sin propina')+'</button>').join('')+'</div></div>';
  h+='<div><div class="b small">Método</div><div class="chips">'+['Efectivo','Tarjeta','Transferencia'].map(x=>'<button class="chip" data-a="method" data-v="'+x+'" aria-pressed="'+(c.method===x)+'">'+x+'</button>').join('')+'</div></div>';
  if(c.method==='Efectivo')h+='<label class="f">Recibido<input type="number" inputmode="decimal" data-in="recv" value="'+esc(c.recv)+'" placeholder="0"></label><div class="b" id="cambio">'+cambioTxt(tot)+'</div>';
@@ -470,9 +453,10 @@ function stats(){
  ts.forEach(t=>{const sub=t.sub-t.disc;rev+=sub;tips+=t.tip;canal[t.canal]=(canal[t.canal]||0)+sub;t.lines.forEach(l=>{const cs=l.cost!=null?l.cost:lineCost(l);cost+=cs;const x=prod[l.pid]||(prod[l.pid]={pid:l.pid,qty:0,rev:0,cost:0});x.qty+=l.qty;x.rev+=lineTot(l);x.cost+=cs});const hr=new Date(t.ts).getHours();hours[hr]=(hours[hr]||0)+sub});
  return{ts,rev,cost,tips,prod:Object.keys(prod).map(k=>prod[k]),hours,canal}}
 function vDueno(){
- const o=S.own;const tabs=[['resumen','Resumen'],['inventario','Inventario'],['menu','Menú y márgenes'],['finanzas','Finanzas'],['lealtad','Lealtad y QR'],['clientes','Clientes'],['ajustes','Ajustes'],['seguridad','Seguridad']];
+ const o=S.own;const tabs=[['resumen','Resumen'],['inventario','Inventario'],['menu','Menú y márgenes'],['finanzas','Finanzas'],['lealtad','Lealtad y QR'],['clientes','Clientes'],['ajustes','Ajustes'],['seguridad','Seguridad']].filter(t=>t[0]!=='salsas');
+ if(CFG.salsas)tabs.splice(3,0,['salsas','Salsas']);
  let h='<div class="stack" style="margin-top:12px"><div class="chips scroll">'+tabs.map(t=>'<button class="chip" data-a="otab" data-v="'+t[0]+'" aria-pressed="'+(o.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div>';
- if(o.tab==='resumen')h+=dResumen();else if(o.tab==='inventario')h+=dInv();else if(o.tab==='menu')h+=dMenu();else if(o.tab==='clientes')h+=dClientes();else if(o.tab==='ajustes')h+=dAjustes();else if(o.tab==='finanzas')h+=dFin();else if(o.tab==='lealtad')h+=dLealtad();else h+=dSeg();
+ if(o.tab==='resumen')h+=dResumen();else if(o.tab==='inventario')h+=dInv();else if(o.tab==='menu')h+=dMenu();else if(o.tab==='salsas'&&CFG.salsas)h+=dSalsas();else if(o.tab==='clientes')h+=dClientes();else if(o.tab==='ajustes')h+=dAjustes();else if(o.tab==='finanzas')h+=dFin();else if(o.tab==='lealtad')h+=dLealtad();else h+=dSeg();
  return h+'</div>'}
 function dResumen(){
  const s=stats(),n=s.ts.length,avg=n?s.rev/n:0,prof=s.rev-s.cost;
@@ -507,16 +491,16 @@ function dSeg(){
 /* ================= NUEVO (?nuevo=1): experiencia premium del cliente ================= */
 const NUEVO=(()=>{try{return !/[?&]clasico=1(&|$)/.test(root.ownerDocument.defaultView.location.search)}catch(e){return true}})();
 let TOP=[];
-const NV={guest:(()=>{try{return lsGet('tos_guest')==='1'}catch(e){return false}})(),splash:(()=>{try{return !root.ownerDocument.defaultView.sessionStorage.getItem('tos_splash')}catch(e){return true}})(),q:'',cele:null,bump:0,fav:false};
+const NV={guest:(()=>{try{return lsGet(LK+'guest')==='1'}catch(e){return false}})(),splash:(()=>{try{return !root.ownerDocument.defaultView.sessionStorage.getItem(LK+'splash')}catch(e){return true}})(),q:'',cele:null,bump:0,fav:false};
 if(NUEVO)root.classList.add('nuevo');
-const nvRestoreMe=()=>{try{const me=JSON.parse(lsGet('tos_me')||'{}');if(me.tel)S.me.tel=String(me.tel).replace(/\D/g,'').slice(0,10);if(me.name)S.me.name=String(me.name).slice(0,60)}catch(e){}};
-const saveMe=()=>lsSet('tos_me',JSON.stringify({name:S.me.name,tel:S.me.tel}));
+if(MARCA.tema)root.classList.add(MARCA.tema);
+const nvRestoreMe=()=>{try{const me=JSON.parse(lsGet(LK+'me')||'{}');if(me.tel)S.me.tel=String(me.tel).replace(/\D/g,'').slice(0,10);if(me.name)S.me.name=String(me.name).slice(0,60)}catch(e){}};
+const saveMe=()=>lsSet(LK+'me',JSON.stringify({name:S.me.name,tel:S.me.tel}));
 /* reglas de maridaje (configurables por producto con MCFG.pair[id]=[ids]) */
-const PAIR={Tostadas:['Cervezas'],Tacos:['Cervezas','Bebidas'],Cervezas:['Tostadas','Snacks'],Bebidas:['Tostadas','Tacos'],Snacks:['Cervezas']};
-const PAIR_TXT={Tostadas:'Va muy bien con una chela bien fría',Tacos:'Acompáñalo con algo bien frío',Cervezas:'Qué rica con una tostada',Bebidas:'Combínala con una tostada o un taco',Snacks:'Perfecto con una chela'};
+const PAIR=CFG.maridaje,PAIR_TXT=CFG.maridajeTxt;
 const topN=id=>{const t=TOP.find(x=>x.pid===id);return t?t.n:0};
 function nvSuggest(p,exclude){
- const forced=MCFG.pair&&MCFG.pair[p.id];
+ const forced=(MCFG.pair&&MCFG.pair[p.id])||(CFG.pares&&CFG.pares[p.id]);
  const inCart=S.cli.cart.map(l=>l.pid);
  let c=forced?forced.map(PM).filter(Boolean):MENU.filter(x=>(PAIR[p.cat]||[]).includes(x.cat));
  c=c.filter(x=>x.id!==p.id&&!soldOut(x)&&!inCart.includes(x.id)).sort((a,b)=>(topN(b.id)-topN(a.id))||(scoreOf(b.id)-scoreOf(a.id)));
@@ -539,9 +523,9 @@ function nvLoyHtml(sub,compact){
  else t='Tu saldo <b>'+m(L.saldo)+'</b> · con este pedido sumas <b>'+m(L.earn)+'</b>';
  return'<div class="nv-loy'+(compact?' compact':'')+'"><div class="nv-loy-t">'+t+'</div>'+bar+'</div>'}
 /* historial local para "pide lo de siempre" */
-function histGet(){try{return JSON.parse(lsGet('tos_hist')||'[]')}catch(e){return[]}}
+function histGet(){try{return JSON.parse(lsGet(LK+'hist')||'[]')}catch(e){return[]}}
 function nvAfterSend(cart,o){
- const h=histGet();h.unshift({ts:Date.now(),lines:cart.map(l=>({pid:l.pid,v:l.v,mods:l.mods.map(x=>({g:x.g,l:x.l,p:x.p})),qty:l.qty,note:l.note||''}))});lsSet('tos_hist',JSON.stringify(h.slice(0,5)));
+ const h=histGet();h.unshift({ts:Date.now(),lines:cart.map(l=>({pid:l.pid,v:l.v,mods:l.mods.map(x=>({g:x.g,l:x.l,p:x.p})),qty:l.qty,note:l.note||''}))});lsSet(LK+'hist',JSON.stringify(h.slice(0,5)));
  const sub=sumLines(o.lines),L=nvLoy(sub);
  NV.cele={id:o.id,sub,earn:L.earn,hold:!!o.hold,aprobar:!!o.aprobar,canal:o.canal,ts:Date.now()};
  if(S.me.tel.length===10&&!S.loy.loading)setTimeout(loadMe,200)}
@@ -557,10 +541,10 @@ const nvBag='<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" style="fill
 function nvCard(p,i){
  const out=soldOut(p),can=canOrderAny()&&!out,t=topN(p.id),liked=S.soc.liked[p.id],a=avgOf(p.id),r=S.soc.rate[p.id];
  return'<article class="nv-card'+(out?' out':'')+'" style="--c:'+CATCOL[p.cat]+';--i:'+Math.min(i,10)+'"'+(can?' data-a="add" data-p="'+p.id+'"':'')+'>'
- +'<div class="nv-art" data-tilt>'+artHtml(p)+(t?'<span class="nv-tag">'+t+' hoy</span>':'')+(out?'<span class="nv-tag off">Agotado</span>':'')+'</div>'
+ +'<div class="nv-art" data-tilt>'+artHtml(p)+(t?'<span class="nv-tag">'+t+' hoy</span>':p.tag?'<span class="nv-tag etq">'+esc(p.tag)+'</span>':'')+(out?'<span class="nv-tag off">Agotado</span>':'')+'</div>'
  +'<button class="nv-heart'+(liked?' on':'')+'" data-a="like" data-p="'+p.id+'" aria-label="Me gusta" aria-pressed="'+(!!liked)+'">'+ICON.heart+'</button>'
  +'<div class="nv-info"><h3>'+esc(p.name)+'</h3>'+(p.desc?'<div class="nv-desc">'+esc(p.desc)+'</div>':'')
- +'<div class="nv-meta">'+(r.n?'<span class="nv-star">★ '+a.toFixed(1)+'</span>':'<span class="nv-star new">Nuevo</span>')+'</div>'
+ +(p.salsas&&CFG.salsas?'<div class="nv-flm"><span class="xs">'+salsasOn().length+' salsas, de suave a extra fuego</span></div>':'')+'<div class="nv-meta">'+(r.n?'<span class="nv-star">★ '+a.toFixed(1)+'</span>':CFG.etiquetas?'':'<span class="nv-star new">Nuevo</span>')+'</div>'
  +'<div class="nv-foot"><span class="nv-price num">'+fromPrice(p)+'</span>'+(can?'<button class="nv-plus" data-a="qadd" data-p="'+p.id+'" aria-label="Agregar '+esc(p.name)+'">+</button>':'')+'</div></div></article>'}
 function nvList(){
  const c=S.cli,q=NV.q.trim().toLowerCase();
@@ -574,6 +558,10 @@ function nvWho(){
  if(tel.length===10){const L=S.loy.data;const sal=L&&L.found&&L.saldo!=null?' · saldo <b>'+m(L.saldo)+'</b>':'';if(!L&&!S.loy.loading)setTimeout(loadMe,50);return'<div class="nv-who ok">Hola'+(S.me.name?', <b>'+esc(S.me.name.split(' ')[0])+'</b>':'')+sal+' <a href="#" data-a="nvchg">Cambiar</a></div>'}
  if(NV.guest)return'<div class="nv-who">Navegando como invitado · <a href="#" data-a="nvchg">Identificarme</a></div>';
  return'<div class="nv-who ask"><b>¿Ya viniste antes?</b><span>Pon tu WhatsApp para ver lo que has pedido y tu saldo. Es opcional.</span><div class="row" style="gap:8px"><input type="tel" inputmode="numeric" data-in="tel" value="" placeholder="10 dígitos"><button class="btn sm pri" data-a="nvid">Entrar</button></div><a href="#" data-a="nvguest">Seguir como invitado</a></div>'}
+function nvSalsas(){
+ const ss=salsasOn();if(!ss.length||!ARM)return'';
+ return'<section class="nv-sec nv-salsas"><div class="nv-h"><h2>'+esc(ARM.titulo)+'</h2><span class="nv-live"><i></i>'+ss.length+' salsas</span></div><div class="strip nv-strip">'+ss.slice().sort((a,b)=>b.picor-a.picor).map(x=>'<button class="nv-sal" style="--pc:'+x.picor+'" data-a="salpick" data-s="'+x.id+'">'+flames(x.picor)+'<b>'+esc(x.nombre)+'</b><span class="xs">'+esc(NIV[x.picor-1]||'')+'</span></button>').join('')+'</div></section>'}
+const nvWa=()=>CON?'<a class="nv-wa-cta" href="'+waLink('Hola '+NOM+', quiero hacer un pedido')+'" target="_blank" rel="noopener"><b>¿Prefieres pedir por WhatsApp?</b><span>'+esc(CON.whatsappVista)+(CON.facebook?' · Facebook '+esc(CON.facebook):'')+'</span></a>':'';
 function nvMenu(){
  const c=S.cli;let h=presence()+nvWho();
  if(!canOrderAny())h+='<div class="banner warn"><b>Menú de consulta.</b> Por ahora los pedidos los toma tu mesero. Mira, califica y recomienda tus favoritos.</div>';
@@ -581,12 +569,13 @@ function nvMenu(){
  if(top.length)h+='<section class="nv-sec"><div class="nv-h"><h2>Lo más pedido hoy</h2><span class="nv-live"><i></i>en vivo</span></div><div class="strip nv-strip">'+top.map((x,i)=>'<button class="nv-top" style="--c:'+CATCOL[x.p.cat]+';--i:'+i+'" data-a="'+(canOrderAny()?'add':'noop')+'" data-p="'+x.p.id+'"><div class="nv-mini big">'+artHtml(x.p)+'</div><span class="nv-rank">#'+(i+1)+'</span><div class="b small">'+esc(x.p.name)+'</div><div class="xs nv-hot">'+x.n+(x.n===1?' pedido':' pedidos')+' hoy</div></button>').join('')+'</div></section>';
  const hist=histGet()[0];
  if(hist&&canOrderAny()){const ls=hist.lines.map(nvRebuild).filter(Boolean);if(ls.length){const tot=sumLines(ls);h+='<section class="nv-again"><div><div class="nv-again-k">Pide lo de siempre</div><div class="b">'+ls.slice(0,3).map(l=>l.qty+' × '+esc(l.name)).join(' · ')+(ls.length>3?' …':'')+'</div></div><button class="btn pri" data-a="rep">Repetir · '+m(tot)+'</button></section>'}}
- h+='<div class="nv-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" data-in="nvq" value="'+esc(NV.q)+'" placeholder="Busca tostadas, chelas, tacos…" aria-label="Buscar en el menú" autocomplete="off"></div>';
+ if(CFG.salsas)h+=nvSalsas();
+ h+='<div class="nv-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" data-in="nvq" value="'+esc(NV.q)+'" placeholder="'+esc(CFG.textos.buscar)+'" aria-label="Buscar en el menú" autocomplete="off"></div>';
  h+='<div class="chips scroll nv-cats">'+['Todo'].concat(CATS).map(x=>'<button class="chip" data-a="cat" data-v="'+x+'" aria-pressed="'+(c.cat===x)+'">'+esc(x)+'</button>').join('')+'<button class="chip fav" data-a="nvfav" aria-pressed="'+NV.fav+'">♥ Favoritos</button></div>';
- return h+'<div id="nvList">'+nvList()+'</div>'}
+ return h+'<div id="nvList">'+nvList()+'</div>'+nvWa()}
 function vClienteNuevo(){
  const c=S.cli,n=c.cart.reduce((a,l)=>a+l.qty,0),sub=sumLines(c.cart);
- let h='<div class="nv-wrap"><div class="nv-brand"><img src="/tostichelas/mark.webp" alt="" width="46" height="30"><div class="grow"><b>TOSTICHELAS</b><span>Tostadas, mariscos y cervezas</span></div><button class="nv-inst" data-a="install" style="display:none">Instalar app</button></div>'+nvTabs();
+ let h='<div class="nv-wrap"><div class="nv-brand"><img src="'+MARCA.mark+'" alt="" width="46" height="'+Math.round(46*MARCA.markH/MARCA.markW)+'"><div class="grow"><b>'+NOMU+'</b><span>'+esc(MARCA.tagline)+'</span></div><button class="nv-inst" data-a="install" style="display:none">Instalar app</button>'+(CON?'<a class="nv-wa" href="'+waLink('Hola '+NOM+', quiero hacer un pedido')+'" target="_blank" rel="noopener" aria-label="Pedir por WhatsApp">WhatsApp</a>':'')+'</div>'+nvTabs();
  if(c.tab==='menu')h+=nvMenu();
  else if(c.tab==='pedido'){
   h+=nvLoyHtml(sub);
@@ -598,9 +587,9 @@ function vClienteNuevo(){
  return h}
 function nvOverlays(){
  let h='';
- if(NUEVO&&NV.splash&&S.role==='cliente')h+='<div class="nv-splash" data-par><div class="nv-sp-glow"></div>'+Array.from({length:14},(_,i)=>'<i class="nv-bub" style="--x:'+(6+i*7)+'%;--d:'+(5+(i*37)%6)+'s;--s:'+(10+(i*13)%22)+'px;--w:'+((i*0.7)%4).toFixed(1)+'s"></i>').join('')
-  +'<div class="nv-sp-in"><img class="nv-sp-mark" src="/tostichelas/mark.webp" alt="Tostada de ceviche con cerveza" width="640" height="422" fetchpriority="high"><h1 class="nv-sp-t"><span>TOSTI</span><span>CHELAS</span></h1><p class="nv-sp-s">Tostadas, mariscos y cervezas bien frías</p><button class="nv-go" data-a="nvgo">Ver el menú<i></i></button></div></div>';
- if(NUEVO&&NV.cele){const e=NV.cele;h+='<div class="nv-cele" data-a="celeclose"><div class="nv-confetti" aria-hidden="true">'+Array.from({length:44},(_,i)=>'<i style="--x:'+((i*23)%100)+'%;--d:'+(1.8+((i*7)%10)/6).toFixed(2)+'s;--w:'+(((i*13)%9)/10).toFixed(1)+'s;--r:'+((i*47)%360)+'deg;--k:'+(i%5)+'"></i>').join('')+'</div><div class="nv-cele-card"><div class="nv-check"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 15-17"/></svg></div><h2>¡Pedido #'+e.id+' enviado!</h2><p>'+(e.hold&&!e.aprobar?'Falta confirmar tu pago para que llegue a cocina.':e.aprobar?'Tu mesero lo aprueba en un momento y sale a cocina.':'Ya va para cocina y barra. Sigue el estado aquí mismo.')+'</p>'+(e.earn>0?'<div class="nv-cele-pts">Al pagar sumas <b>'+m(e.earn)+'</b> de saldo en tu tarjeta</div>':'')+'<button class="btn pri" data-a="celeclose">Ver seguimiento</button></div></div>'}
+ if(NUEVO&&NV.splash&&S.role==='cliente')h+='<div class="nv-splash'+(MARCA.splash.efecto==='brasas'?' brasas':'')+'" data-par><div class="nv-sp-glow"></div>'+Array.from({length:14},(_,i)=>'<i class="nv-bub" style="--x:'+(6+i*7)+'%;--d:'+(5+(i*37)%6)+'s;--s:'+(10+(i*13)%22)+'px;--w:'+((i*0.7)%4).toFixed(1)+'s"></i>').join('')
+  +'<div class="nv-sp-in"><img class="nv-sp-mark" src="'+SI.src+'" alt="'+esc(SI.alt)+'" width="'+SI.w+'" height="'+SI.h+'" fetchpriority="high"><h1 class="nv-sp-t">'+MARCA.splash.lineas.map(x=>'<span>'+esc(x)+'</span>').join('')+'</h1>'+(MARCA.splash.frase?'<p class="nv-sp-f">'+esc(MARCA.splash.frase)+'</p>':'')+'<p class="nv-sp-s">'+esc(MARCA.splash.sub)+'</p><button class="nv-go" data-a="nvgo">'+esc(MARCA.splash.boton)+'<i></i></button></div></div>';
+ if(NUEVO&&NV.cele){const e=NV.cele;h+='<div class="nv-cele" data-a="celeclose"><div class="nv-confetti" aria-hidden="true">'+Array.from({length:44},(_,i)=>'<i style="--x:'+((i*23)%100)+'%;--d:'+(1.8+((i*7)%10)/6).toFixed(2)+'s;--w:'+(((i*13)%9)/10).toFixed(1)+'s;--r:'+((i*47)%360)+'deg;--k:'+(i%5)+'"></i>').join('')+'</div><div class="nv-cele-card"><div class="nv-check"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 15-17"/></svg></div><h2>¡Pedido #'+e.id+' enviado!</h2><p>'+(CONTRA&&e.canal!=='mesa'?'Recibimos tu pedido. '+NOM+' lo confirma contigo y pagas al recibirlo.':e.hold&&!e.aprobar?'Falta confirmar tu pago para que llegue a cocina.':e.aprobar?'Tu mesero lo aprueba en un momento y sale a cocina.':'Ya va para cocina y barra. Sigue el estado aquí mismo.')+'</p>'+(e.earn>0?'<div class="nv-cele-pts">Al pagar sumas <b>'+m(e.earn)+'</b> de saldo en tu tarjeta</div>':'')+'<button class="btn pri" data-a="celeclose">Ver seguimiento</button></div></div>'}
  return h}
 /* ================= fin NUEVO ================= */
 
@@ -608,7 +597,7 @@ function nvOverlays(){
 const ROLES=[['cliente','Cliente'],['mesero','Mesero'],['cocina','Cocina'],['barra','Barra'],['caja','Caja'],['dueno','Dueño']];
 function counts(){
  const act=st=>live().filter(o=>o.lines.some(l=>l.station===st&&l.status==='nuevo')).length;
- return{cocina:act('cocina'),barra:act('barra'),mesero:MESAS.filter(x=>{const s=mesaState(x.k);return s.pc||s.listo}).length,caja:holds().length+MESAS.filter(x=>S.cuenta[x.k]&&mesaOrders(x.k).length).length}}
+ return{cocina:act('cocina'),barra:act('barra'),mesero:MESAS.filter(x=>{const s=mesaState(x.k);return s.pc||s.listo}).length+(CONTRA?porAprobar().length:0),caja:holds().length+MESAS.filter(x=>S.cuenta[x.k]&&mesaOrders(x.k).length).length+(CONTRA?porCobrar().length:0)}}
 function render(){
  const c=counts();
  if(PROD){S.cli.geo=presenceOk()?'dentro':'fuera';if(QRMESA)S.cli.mesa=QRMESA}
@@ -626,7 +615,7 @@ function render(){
 
 
 /* ---------- lealtad real (mismo motor que Sabucan y Carnitas) ---------- */
-const LAPI='/api/demo/tostichelas/lealtad';
+const LAPI=CFG.api+'/lealtad';
 async function lget(q){const r=await fetch(LAPI+'?'+q,{cache:'no-store',headers:hdr()});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Sin conexión con lealtad');return j}
 async function lpost(b){const r=await fetch(LAPI,{method:'POST',headers:hdr(),body:JSON.stringify(b)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Sin conexión con lealtad');return j}
 const unidad=lc=>!lc?'':lc.modelo==='sellos'?'sellos':lc.modelo==='puntos'?'puntos':'de saldo';
@@ -640,7 +629,7 @@ function loadLista(){lget('lista=1').then(j=>{S.real=j;render()}).catch(()=>{S.r
 
 async function doCobro(){
  const c=S.caja;if(c.busy||!c.sel)return;
- const k=c.sel.slice(2),os=mesaOrders(k);if(!os.length)return;
+ const k=c.sel.slice(2),os=cobroOrders(c.sel);if(!os.length)return;
  const sub=os.reduce((a,o)=>a+orderSub(o),0),tip=Math.round(sub*c.tip/100),tel=c.tel;
  const L=c.lc&&c.lc.found?c.lc:null;const saldo=L?Math.floor(L.cliente.puntos):0;
  const disc=(c.canje&&saldo>0&&L.modelo==='cashback')?Math.min(saldo,sub):0;
@@ -655,22 +644,29 @@ async function doCobro(){
   c.busy=false;
  }
  const cl={name:nombre||(L?L.cliente.nombre:''),tel};
- const t=closeTicket(os,{method:c.method,tip,disc,cliente:cl,mesa:k,canal:'mesa'});t.loy=loy;
+ const o2={method:c.method,tip,disc,cliente:cl,mesa:k,canal:'mesa'};if(c.sel.indexOf('o:')===0){o2.mesa=null;o2.canal=os[0].canal;o2.envio=os[0].envio||0}
+ const t=closeTicket(os,o2);t.loy=loy;
  c.sel=null;c.tel='';c.canje=false;c.tip=0;c.recv='';c.split=1;c.lc=null;c.nom='';c.nac='';
  S.modal={type:'ticket',id:t.id};S.real=null;render();
 }
 
 
 /* ---------- menú editable por el dueño ---------- */
-let PROD=false,MCFG={edits:{},custom:[]};
+let PROD=!!CFG.produccion,MCFG={edits:{},custom:[]};
+function dSalsas(){
+ const ss=salsasAll();
+ return'<div class="card stack"><h3>Tus salsas</h3><div class="small muted">Cambia el picor, la descripción, el precio extra y si está disponible. El cliente ve los cambios al instante en el armador de alitas y boneless.</div>'
+ +(ARM?'<div class="row between" style="align-items:flex-start;gap:10px"><div class="grow"><div class="b small">Permitir 2 sabores en 10 piezas</div><div class="xs muted">Apagado por defecto. Si lo enciendes, quien pida 10 piezas puede elegir una segunda salsa.</div></div><button class="chip" data-a="dos" aria-pressed="'+!!S.settings.dosSabores+'">'+(S.settings.dosSabores?'Activo':'Apagado')+'</button></div>':'')
+ +ss.map(x=>'<div class="card stack sal-ed" style="gap:8px"><div class="row between"><b>'+esc(x.nombre)+'</b><button class="chip" data-a="salav" data-s="'+x.id+'" aria-pressed="'+(x.avail!==false)+'">'+(x.avail!==false?'Disponible':'Agotada')+'</button></div><div class="row" style="align-items:center;gap:10px"><span class="art mini">'+(x.foto?'<img src="'+esc(x.foto)+'" alt="">':'')+'</span><label class="btn sm" style="cursor:pointer">'+(S.salUp===x.id?'Subiendo…':'Foto')+'<input type="file" accept="image/*" data-file="sal" data-s="'+x.id+'" hidden></label>'+(x.foto?'<button class="btn ghost sm" data-a="salfx" data-s="'+x.id+'">Quitar foto</button>':'')+'</div><div class="b small">Picor</div><div class="chips">'+[1,2,3,4,5].map(n=>'<button class="chip" data-a="salpc" data-s="'+x.id+'" data-n="'+n+'" aria-pressed="'+(x.picor===n)+'">'+n+' · '+esc(NIV[n-1]||'')+'</button>').join('')+'</div><div class="grid2" style="gap:8px"><label class="f">Descripción<input type="text" data-in="sal_desc" data-s="'+x.id+'" value="'+esc(x.desc||'')+'" placeholder="Opcional"></label><label class="f">Precio extra ($)<input type="number" inputmode="decimal" data-in="sal_extra" data-s="'+x.id+'" value="'+esc(x.extra||'')+'" placeholder="0"></label></div></div>').join('')+'</div>'}
+function salSet(id,k,v){MCFG.salsas=MCFG.salsas||{};MCFG.salsas[id]=Object.assign({},MCFG.salsas[id],{[k]:v});MCFG=JSON.parse(JSON.stringify(MCFG))}
 function applyMenu(){
  const ids=new Set(MCFG.custom.map(c=>c.id));
  for(let i=MENU.length-1;i>=0;i--)if(MENU[i].custom&&!ids.has(MENU[i].id))MENU.splice(i,1);
  MCFG.custom.forEach(c=>{let q=PM(c.id);if(!q){q=P(Object.assign({custom:true},c));MENU.push(q)}else{const a=q.avail;Object.assign(q,c);q.avail=a}});
- Object.keys(MCFG.edits).forEach(id=>{const q=PM(id),e=MCFG.edits[id];if(!q||q.custom)return;['name','desc','cat','station','img','cost'].forEach(k=>{if(e[k]!==undefined)q[k]=e[k]});if(e.price)e.price.forEach((x,i)=>{if(q.v[i]&&x>0)q.v[i].p=x});if(e.use)q.use=JSON.parse(JSON.stringify(e.use))});
+ Object.keys(MCFG.edits).forEach(id=>{const q=PM(id),e=MCFG.edits[id];if(!q||q.custom)return;['name','desc','cat','station','img','cost','tag'].forEach(k=>{if(e[k]!==undefined)q[k]=e[k]});if(e.price)e.price.forEach((x,i)=>{if(q.v[i]&&x>0)q.v[i].p=x});if(e.use)q.use=JSON.parse(JSON.stringify(e.use))});
  if(S)MENU.forEach(q=>{if(S.soc.likes[q.id]==null)S.soc.likes[q.id]=0;if(!S.soc.rate[q.id])S.soc.rate[q.id]={n:0,sum:0}});
 }
-const IAPI='/api/demo/tostichelas/imagen';
+const IAPI=CFG.api+'/imagen';
 async function uploadImg(file){
  const bmp=await createImageBitmap(file);
  const sc=Math.min(1,900/Math.max(bmp.width,bmp.height));
@@ -682,7 +678,7 @@ async function uploadImg(file){
 }
 function openPedit(pid){
  const q=pid?PM(pid):null;
- S.modal={type:'pedit',pid,up:false,f:q?{name:q.name,desc:q.desc||'',cat:q.cat,station:q.station,img:q.img||'',price:q.v.map(x=>x.p),label:q.v[0].l,cost:q.cost||'',use:Object.keys(q.use).map(k=>({id:k,q:q.use[k]}))}:{name:'',desc:'',cat:'Tostadas',station:'cocina',img:'',price:[0],label:'Pieza',cost:'',use:[]}};
+ S.modal={type:'pedit',pid,up:false,f:q?{tag:q.tag||'',name:q.name,desc:q.desc||'',cat:q.cat,station:q.station,img:q.img||'',price:q.v.map(x=>x.p),label:q.v[0].l,cost:q.cost||'',use:Object.keys(q.use).map(k=>({id:k,q:q.use[k]}))}:{name:'',desc:'',cat:CATS[0],station:'cocina',img:'',price:[0],label:'Pieza',cost:'',use:[],tag:''}};
 }
 function savePedit(){
  const md=S.modal,f=md.f;
@@ -693,16 +689,17 @@ function savePedit(){
  if(md.pid){
   const q=PM(md.pid);
   if(q.custom){const c=MCFG.custom.find(x=>x.id===md.pid);Object.assign(c,{name:f.name.trim(),desc:f.desc.trim(),cat:f.cat,station:f.station,img:f.img,cost,use});c.v=[{l:f.label||'Pieza',p:price[0],f:1,s:0}]}
-  else MCFG.edits[md.pid]={name:f.name.trim(),desc:f.desc.trim(),cat:f.cat,station:f.station,img:f.img,price,cost,use};
+  else{MCFG.edits[md.pid]={name:f.name.trim(),desc:f.desc.trim(),cat:f.cat,station:f.station,img:f.img,price,cost,use};if(CFG.etiquetas)MCFG.edits[md.pid].tag=f.tag||''}
+  if(q.custom&&CFG.etiquetas)MCFG.custom.find(x=>x.id===md.pid).tag=f.tag||'';
  }else{
   const id='x'+Date.now().toString(36);
-  MCFG.custom.push({id,cat:f.cat,name:f.name.trim(),desc:f.desc.trim(),emoji:'🍽️',station:f.station,v:[{l:f.label||'Pieza',p:price[0],f:1,s:0}],use,mods:[],img:f.img,cost});
+  MCFG.custom.push({id,cat:f.cat,name:f.name.trim(),desc:f.desc.trim(),emoji:'🍽️',station:f.station,v:[{l:f.label||'Pieza',p:price[0],f:1,s:0}],use,mods:[],img:f.img,cost,tag:CFG.etiquetas?(f.tag||''):undefined});
  }
  MCFG=JSON.parse(JSON.stringify(MCFG));applyMenu();S.modal=null;toast('Producto guardado');
 }
 
 /* ---------- sincronización entre dispositivos (MongoDB) ---------- */
-const SAPI='/api/demo/tostichelas/estado';
+const SAPI=CFG.api+'/estado';
 let EPOCH=0,REV=0,LAST={cols:{},kv:{}},UU={},syncBusy=false,dirty=false,online=true,fails=0;
 const COLS={
  orders:{arr:()=>S.orders,key:o=>String(o.id)},
@@ -809,7 +806,7 @@ function dAjustes(){
 
 
 /* ---------- personalización rápida ---------- */
-const QDEF={Tostadas:'Sin chile, Sin cebolla, Sin cilantro, Sin jitomate, Sin aguacate, Sin mayonesa, Poco picante, Extra picante, Extra limón',Tacos:'Sin chile, Sin cebolla, Sin cilantro, Poco picante, Extra picante, Con limón',Snacks:'Sin chile, Sin cebolla, Sin jitomate, Sin mayonesa, Poco picante, Extra picante',Cervezas:'Bien helada, Con limón, Con sal, Sin popote',Bebidas:'Sin hielo, Poco hielo, Con limón'};
+const QDEF=CFG.rapidas;
 const quickOf=cat=>String((MCFG.quick&&MCFG.quick[cat]!==undefined)?MCFG.quick[cat]:(QDEF[cat]||'')).split(',').map(x=>x.trim()).filter(Boolean);
 function dQuickCfg(){
  return'<div class="card stack"><h3>Opciones rápidas para personalizar</h3><div class="small muted">Son los botones que ve el cliente y el mesero al elegir un platillo ("Sin chile", "Sin cebolla"…). Separa con comas. Siempre pueden escribir una nota libre.</div>'+CATS.map(c=>'<label class="f">'+c+'<input type="text" data-in="qk" data-c="'+c+'" value="'+esc((MCFG.quick&&MCFG.quick[c]!==undefined)?MCFG.quick[c]:(QDEF[c]||''))+'"></label>').join('')+'</div>'}
@@ -826,7 +823,7 @@ function dPedidosCfg(){
  +t('aprobar','El mesero aprueba cada pedido de mesa','El pedido no llega a cocina hasta que el mesero lo aprueba. Ideal para perder el miedo a los pedidos falsos.')
  +t('pedLlevar','Para llevar','Siempre pagando por adelantado; no llega a cocina hasta confirmar el pago.')
  +t('pedEntrega','Entrega cercana','Pagando por adelantado, con costo de entrega.')
- +'<div class="sep"></div><div class="b small">Meta de recompensa (barra de lealtad del carrito)</div><div class="xs muted">Cuánto saldo junta el cliente para su premio. Déjalo en 0 si todavía no defines el premio: la barra no se muestra.</div><div class="grid2" style="gap:8px"><label class="f">Meta en $ de saldo<input type="number" inputmode="numeric" data-in="cfg_metaPuntos" value="'+esc(s.metaPuntos||'')+'" placeholder="Ej. 100"></label><label class="f">Premio<input type="text" data-in="cfg_premioTxt" value="'+esc(s.premioTxt||'')+'" placeholder="Ej. tu chela gratis"></label></div>'
+ +'<div class="sep"></div><div class="b small">Meta de recompensa (barra de lealtad del carrito)</div><div class="xs muted">Cuánto saldo junta el cliente para su premio. Déjalo en 0 si todavía no defines el premio: la barra no se muestra.</div><div class="grid2" style="gap:8px"><label class="f">Meta en $ de saldo<input type="number" inputmode="numeric" data-in="cfg_metaPuntos" value="'+esc(s.metaPuntos||'')+'" placeholder="Ej. 100"></label><label class="f">Premio<input type="text" data-in="cfg_premioTxt" value="'+esc(s.premioTxt||'')+'" placeholder="Ej. '+esc(CFG.textos.premioEjemplo)+'"></label></div>'
  +'<div class="sep"></div><div class="b small">Ubicación del local</div><div class="xs muted">'+(s.lat!=null?'Guardada. Los clientes deben estar a menos de '+s.radio+' m (el radio se cambia en Seguridad).':'Sin configurar: se valida solo con el QR de la mesa. Párate en el local y toca el botón.')+'</div><button class="btn sm" data-a="setloc">Usar mi ubicación actual como el local</button></div>'}
 function setLoc(){
  if(!navigator.geolocation){toast('Este equipo no permite ubicación');return}
@@ -840,7 +837,7 @@ function geoChk(){
 const presenceOk=()=>!!QRMESA&&(S.settings.lat==null||GEOOK===true);
 function presenceReal(){
  if(NUEVO){
-  if(!QRMESA)return'<div class="nv-note">📍 Escanea el QR de tu mesa para pedir desde tu lugar, o pide para llevar.</div>';
+  if(!QRMESA)return CONTRA&&!S.settings.pedMesa?'':'<div class="nv-note">📍 Escanea el QR de tu mesa para pedir desde tu lugar, o pide para llevar.</div>';
   if(S.settings.lat==null||GEOOK===true)return'<div class="nv-note ok">✓ Pides desde <b>'+mLabel(QRMESA)+'</b></div>';
   return'<div class="nv-note">📍 '+mLabel(QRMESA)+': falta confirmar que estás en el local.'+(GEOOK===false?' Parece que estás lejos.':'')+' <button class="btn pri sm" data-a="geochk">Verificar mi ubicación</button></div>'}
  let h='<div class="card stack" style="gap:8px">';
@@ -852,10 +849,10 @@ function presenceReal(){
 /* ---------- QR reales e impresos ---------- */
 const QRC={};
 const baseUrl=()=>{try{return root.ownerDocument.defaultView.location.origin}catch(e){return''}};
-const menuUrl=()=>baseUrl()+'/tostichelas';
+const menuUrl=()=>baseUrl()+CFG.ruta;
 const mesaUrl=k=>menuUrl()+'?mesa='+k+'&t='+((S.mesaTok&&S.mesaTok[k])||'');
 async function loadMesaTok(){if(!anyTok())return;try{const r=await fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'mesatok',mesas:MESAS.map(x=>x.k)})});const j=await r.json();if(j&&j.tokens)S.mesaTok=j.tokens}catch(e){}}
-const altaUrl=()=>baseUrl()+'/tostichelas/alta';
+const altaUrl=()=>baseUrl()+CFG.ruta+'/alta';
 function qrImg(url,px,cls){
  if(QRC[url])return'<img class="'+(cls||'qrimg')+'" src="'+QRC[url]+'" width="'+px+'" height="'+px+'" alt="Código QR">';
  if(QRC[url]===undefined){QRC[url]=null;QRCode.toDataURL(url,{width:360,margin:1,errorCorrectionLevel:'M'}).then(d=>{QRC[url]=d;softRender()}).catch(()=>{QRC[url]=''})}
@@ -864,18 +861,19 @@ const mesaQr=k=>qrImg(mesaUrl(k),84);
 async function copyTxt(t){try{await navigator.clipboard.writeText(t);toast('Link copiado')}catch(e){toast(t)}}
 function openPrint(title,bodyFn){
  const w=window.open('','_blank','width=820,height=900');if(!w){toast('Permite las ventanas emergentes para imprimir');return}
- w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font-family:system-ui,Segoe UI,sans-serif;margin:0;padding:24px;color:#241610}h1{margin:0}.b{border:4px solid #241610;border-radius:24px;padding:28px;text-align:center;background:#F2C14E}.b .top{background:#E2573A;color:#fff;border-radius:16px;padding:14px}.b img.q{width:340px;height:340px;background:#fff;padding:10px;border-radius:12px;margin:16px auto;display:block}.g{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.c{border:3px solid #241610;border-radius:16px;padding:12px;text-align:center}.c img{width:100%;max-width:200px}@page{margin:10mm}</style></head><body>Preparando…</body></html>');
+ const PR=MARCA.impresion||{fondo:'#F2C14E',top:'#E2573A',topTxt:'#fff',tinta:'#241610',pagina:'#fff'};
+ w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font-family:system-ui,Segoe UI,sans-serif;margin:0;padding:24px;color:'+PR.tinta+(MARCA.impresion?';background:'+PR.pagina:'')+'}h1{margin:0}.b{border:4px solid '+PR.tinta+';border-radius:24px;padding:28px;text-align:center;background:'+PR.fondo+'}.b .top{background:'+PR.top+';color:'+PR.topTxt+';border-radius:16px;padding:14px}.b img.q{width:340px;height:340px;background:#fff;padding:10px;border-radius:12px;margin:16px auto;display:block}.g{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.c{border:3px solid '+PR.tinta+';border-radius:16px;padding:12px;text-align:center}.c img{width:100%;max-width:200px'+(MARCA.impresion?';background:#fff;border-radius:8px':'')+'}@page{margin:10mm}'+(MARCA.impresion?'body{-webkit-print-color-adjust:exact;print-color-adjust:exact}':'')+'</style></head><body>Preparando…</body></html>');
  Promise.resolve().then(bodyFn).then(html=>{w.document.body.innerHTML=html;setTimeout(()=>w.print(),500)}).catch(()=>{w.document.body.textContent='No se pudo generar el QR'});
 }
 function printBanner(){
  const pct=(S.real&&S.real.parametro)||5;
- openPrint('Banner de tarjeta de lealtad',async()=>{const q=await QRCode.toDataURL(altaUrl(),{width:700,margin:1});return'<div class="b"><div class="top"><h1>TOSTICHELAS</h1></div><h1 style="margin-top:18px;font-size:38px">Gana saldo en cada visita</h1><p style="font-size:20px">Escanea, regístrate y guarda tu tarjeta en Google Wallet.<br>Sin apps y sin plásticos. Ganas '+pct+'% de saldo en cada cuenta.</p><img class="q" src="'+q+'" alt="QR de registro"><p style="font-size:14px">'+esc(altaUrl())+'</p></div>'});
+ openPrint('Banner de tarjeta de lealtad',async()=>{const q=await QRCode.toDataURL(altaUrl(),{width:700,margin:1});return'<div class="b"><div class="top"><h1>'+NOMU+'</h1></div><h1 style="margin-top:18px;font-size:38px">Gana saldo en cada visita</h1><p style="font-size:20px">Escanea, regístrate y guarda tu tarjeta en Google Wallet.<br>Sin apps y sin plásticos. Ganas '+pct+'% de saldo en cada cuenta.</p><img class="q" src="'+q+'" alt="QR de registro"><p style="font-size:14px">'+esc(altaUrl())+'</p></div>'});
 }
 function printMenuQr(){
- openPrint('QR del menú',async()=>{const q=await QRCode.toDataURL(menuUrl(),{width:700,margin:1});return'<div class="b"><div class="top"><h1>TOSTICHELAS</h1></div><h1 style="margin-top:18px;font-size:38px">Mira el menú y recomienda tus favoritos</h1><img class="q" src="'+q+'" alt="QR del menú"><p style="font-size:14px">'+esc(menuUrl())+'</p></div>'});
+ openPrint('QR del menú',async()=>{const q=await QRCode.toDataURL(menuUrl(),{width:700,margin:1});return'<div class="b"><div class="top"><h1>'+NOMU+'</h1></div><h1 style="margin-top:18px;font-size:38px">Mira el menú y recomienda tus favoritos</h1><img class="q" src="'+q+'" alt="QR del menú"><p style="font-size:14px">'+esc(menuUrl())+'</p></div>'});
 }
 function printMesas(){
- openPrint('QR de las mesas',async()=>{const cs=await Promise.all(MESAS.map(async x=>'<div class="c"><b style="font-size:20px">'+esc(x.label)+'</b><img src="'+await QRCode.toDataURL(mesaUrl(x.k),{width:400,margin:1})+'" alt="QR '+esc(x.label)+'"><div style="font-size:13px">Escanea para pedir desde tu mesa</div></div>'));return'<h1 style="margin-bottom:14px">Tostichelas · QR de mesas</h1><div class="g">'+cs.join('')+'</div>'});
+ openPrint('QR de las mesas',async()=>{const cs=await Promise.all(MESAS.map(async x=>'<div class="c"><b style="font-size:20px">'+esc(x.label)+'</b><img src="'+await QRCode.toDataURL(mesaUrl(x.k),{width:400,margin:1})+'" alt="QR '+esc(x.label)+'"><div style="font-size:13px">Escanea para pedir desde tu mesa</div></div>'));return'<h1 style="margin-bottom:14px">'+esc(NOM)+' · QR de mesas</h1><div class="g">'+cs.join('')+'</div>'});
 }
 async function lcbSave(){
  const v=Number(S.lcb);if(!(v>0)){toast('Escribe un porcentaje');return}
@@ -886,24 +884,24 @@ function dLealtad(){
  const R=S.real;if(!R){loadLista();return'<div class="card small muted">Cargando lealtad…</div>'}
  if(R.error)return'<div class="card small muted">No se pudo cargar la lealtad.</div>';
  const pct=R.parametro||5,cs=R.clientes||[];
- let h='<div class="card stack"><h3>Tu tarjeta de lealtad</h3><div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">TOSTICHELAS</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">'+m2(120)+'</div><div class="small">de saldo · '+pct+'% de cashback en cada cuenta</div></div></div><div class="row" style="align-items:flex-end;gap:8px"><label class="f grow">% de cashback<input type="number" step="0.5" data-in="lcb" value="'+esc(S.lcb!==undefined?S.lcb:pct)+'"></label><button class="btn pri sm" data-a="lcbsave">Guardar</button></div><div class="xs muted">Cada $100 de cuenta le regresan $'+pct+' de saldo que usa en su siguiente visita. Hoy tienes '+cs.length+' clientes con tarjeta. Funciona igual que en tus otros negocios con Agentia, con Google Wallet.</div></div>';
+ let h='<div class="card stack"><h3>Tu tarjeta de lealtad</h3><div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">'+NOMU+'</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">'+m2(120)+'</div><div class="small">de saldo · '+pct+'% de cashback en cada cuenta</div></div></div><div class="row" style="align-items:flex-end;gap:8px"><label class="f grow">% de cashback<input type="number" step="0.5" data-in="lcb" value="'+esc(S.lcb!==undefined?S.lcb:pct)+'"></label><button class="btn pri sm" data-a="lcbsave">Guardar</button></div><div class="xs muted">Cada $100 de cuenta le regresan $'+pct+' de saldo que usa en su siguiente visita. Hoy tienes '+cs.length+' clientes con tarjeta. Funciona igual que en tus otros negocios con Agentia, con Google Wallet.</div></div>';
  h+='<div class="card stack"><h3>QR de tu tarjeta (registro)</h3><div class="row" style="gap:12px;align-items:flex-start">'+qrImg(altaUrl(),150)+'<div class="stack" style="gap:6px"><div class="small muted">El cliente lo escanea, se registra solo y guarda su tarjeta en Google Wallet. Pon el banner en el mostrador y en cada mesa.</div><div class="row"><button class="btn pri sm" data-a="qrbanner">Imprimir banner</button><button class="btn sm" data-a="qrcopy" data-u="'+esc(altaUrl())+'">Copiar link</button></div></div></div></div>';
  h+='<div class="card stack"><h3>QR del menú</h3><div class="row" style="gap:12px;align-items:flex-start">'+qrImg(menuUrl(),150)+'<div class="stack" style="gap:6px"><div class="small muted">Para redes, tarjetas, volantes y el mostrador. Abre el menú con likes y recomendaciones.</div><div class="row"><button class="btn pri sm" data-a="qrmenu">Imprimir</button><button class="btn sm" data-a="qrcopy" data-u="'+esc(menuUrl())+'">Copiar link</button></div></div></div></div>';
- h+='<div class="card stack"><h3>QR por mesa</h3><div class="small muted">Cada mesa tiene su QR con un código. Con él, y la ubicación del celular, el cliente puede pedir desde su lugar. Imprímelos y pégalos en las 9 mesas y los 3 periquitos.</div><div class="grid2" style="gap:8px">'+MESAS.map(x=>'<div class="row" style="gap:8px;align-items:center">'+qrImg(mesaUrl(x.k),64)+'<b class="small">'+esc(x.label)+'</b></div>').join('')+'</div><button class="btn pri" data-a="qrmesas">Imprimir QR de todas las mesas</button></div>';
+ h+='<div class="card stack"><h3>QR por mesa</h3><div class="small muted">Cada mesa tiene su QR con un código. Con él, y la ubicación del celular, el cliente puede pedir desde su lugar. Imprímelos y pégalos '+(CFG.textos.mesasTxt||'en las 9 mesas y los 3 periquitos')+'.</div><div class="grid2" style="gap:8px">'+MESAS.map(x=>'<div class="row" style="gap:8px;align-items:center">'+qrImg(mesaUrl(x.k),64)+'<b class="small">'+esc(x.label)+'</b></div>').join('')+'</div><button class="btn pri" data-a="qrmesas">Imprimir QR de todas las mesas</button></div>';
  return h}
 
 /* ---------- recetas ---------- */
 function recCost(use){return use.reduce((a,u)=>{const i=ins(u.id);return a+(i?(Number(u.q)||0)*i.cost:0)},0)}
 function recetaHtml(f){
  const base=Number(f.price[0])||0,rc=recCost(f.use)+(Number(f.cost)||0);
- let h='<div class="card stack" style="gap:8px"><h3>Receta</h3><div class="xs muted">Lo que lleva UNA pieza, en la unidad del insumo. Ejemplo: 70 g de camarón se captura como 0.07 (kg). Con la receta, cada venta descuenta tu inventario sola y tu margen sale real.</div>';
+ let h='<div class="card stack" style="gap:8px"><h3>Receta</h3><div class="xs muted">Lo que lleva UNA pieza, en la unidad del insumo. Ejemplo: '+(CFG.textos.ejemploUnidad||'70 g de camarón se captura como 0.07 (kg).')+' Con la receta, cada venta descuenta tu inventario sola y tu margen sale real.</div>';
  h+=f.use.map((u,i)=>'<div class="row" style="flex-wrap:nowrap;gap:6px"><select data-in="pe_ui" data-i="'+i+'" style="flex:1;min-width:0">'+S.inv.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===u.id?' selected':'')+'>'+esc(x.name)+' ('+esc(x.unit)+')</option>').join('')+'</select><input type="number" inputmode="decimal" step="any" style="width:84px" data-in="pe_uq" data-i="'+i+'" value="'+esc(u.q)+'" aria-label="Cantidad"><button class="btn ghost sm" data-a="peudel" data-i="'+i+'" aria-label="Quitar insumo">✕</button></div>').join('');
  h+='<button class="btn sm" data-a="peuadd">Agregar insumo</button>';
  if(rc>0&&base>0){const mg=Math.round((base-rc)/base*100);h+='<div class="row between small"><span>Costo del platillo</span><b class="num">'+m2(rc)+'</b></div><div class="row between small"><span>Margen con tu precio</span><b class="num" style="color:'+(mg<60?'var(--bad)':'var(--good)')+'">'+mg+'%</b></div><div class="xs muted">Para que los insumos sean cerca del 32% del precio, cóbralo en <b>'+m(Math.ceil(rc/0.32/5)*5)+'</b>.</div>'}
  return h+'</div>'}
 function invExtra(){
  const sin=MENU.filter(p=>!Object.keys(p.use).length).length,n=S.invNew;
- let h='<div class="card stack"><h3>Cómo armar tus recetas</h3><ol class="small" style="margin:0;padding-left:18px"><li>Da de alta tus insumos con su unidad (kg, pza, l) y lo que pagas por cada uno.</li><li>Pesa o cuenta lo que lleva UNA pieza. Ejemplo: tostada de ceviche = 1 tostada, 70 g de camarón (0.07 kg) y un cuarto de aguacate (0.25 pza).</li><li>En Menú y márgenes toca Editar en el platillo y captura esa receta.</li><li>Cada venta descuenta sola. Cada semana haz un conteo físico: la diferencia son tus mermas.</li></ol>'+(sin?'<div class="banner warn">'+sin+' platillos todavía no tienen receta, así que no descuentan inventario.</div>':'<div class="banner good">Todos tus platillos tienen receta.</div>')+'</div>';
+ let h='<div class="card stack"><h3>Cómo armar tus recetas</h3><ol class="small" style="margin:0;padding-left:18px"><li>Da de alta tus insumos con su unidad (kg, pza, l) y lo que pagas por cada uno.</li><li>Pesa o cuenta lo que lleva UNA pieza. Ejemplo: '+CFG.textos.ejemploReceta+'</li><li>En Menú y márgenes toca Editar en el platillo y captura esa receta.</li><li>Cada venta descuenta sola. Cada semana haz un conteo físico: la diferencia son tus mermas.</li></ol>'+(sin?'<div class="banner warn">'+sin+' platillos todavía no tienen receta, así que no descuentan inventario.</div>':'<div class="banner good">Todos tus platillos tienen receta.</div>')+'</div>';
  h+='<div class="card stack"><h3>Agregar insumo</h3><div class="grid2" style="gap:8px"><label class="f">Nombre<input type="text" data-in="in_name" value="'+esc(n.name)+'" placeholder="Ej. Limón"></label><label class="f">Unidad<select data-in="in_unit">'+['kg','pza','l','bot','lata'].map(u=>'<option'+(u===n.unit?' selected':'')+'>'+u+'</option>').join('')+'</select></label><label class="f">Existencia inicial<input type="number" inputmode="decimal" data-in="in_stock" value="'+esc(n.stock)+'"></label><label class="f">Mínimo (aviso)<input type="number" inputmode="decimal" data-in="in_min" value="'+esc(n.min)+'"></label><label class="f">Costo por unidad<input type="number" inputmode="decimal" data-in="in_cost" value="'+esc(n.cost)+'"></label></div><button class="btn pri" data-a="iadd">Agregar al inventario</button></div>';
  return h}
 
@@ -959,6 +957,7 @@ function sendClient0(){
  const dentro=c.geo==='dentro';let eff=c.canal;if(!dentro&&eff==='mesa')eff='llevar';
  if(!canalOk(eff)){toast('Por ahora el restaurante no acepta ese tipo de pedido desde el celular');return}
  if(eff==='entrega'&&!c.addr.trim()){toast('Escribe tu dirección para la entrega');return}
+ if(CONTRA&&eff!=='mesa'&&(!S.me.name.trim()||S.me.tel.length!==10)){toast('Escribe tu nombre y tu WhatsApp (10 dígitos) para confirmar tu pedido');return}
  const lines=c.cart.map(l=>Object.assign({},l,{uid:uid(),status:'nuevo'}));
  const cliente={name:S.me.name.trim(),tel:S.me.tel.trim()};
  const envio=eff==='entrega'?S.settings.envio:0;
@@ -969,8 +968,9 @@ function sendClient0(){
   c.cart=[];
   if(need){S.modal={type:'pay',oid:o.id,total:orderSub(o),by:'order'}}else if(ap){toast('Tu pedido se mandó al mesero para aprobarlo')}else{beep();toast('Pedido enviado a cocina y barra')}
  }else{
-  const o=newOrder({mesa:null,canal:eff,lines,cliente,src:'cliente',hold:true,addr:c.addr,envio});
-  c.cart=[];S.modal={type:'pay',oid:o.id,total:orderSub(o)+envio,by:'order'}
+  if(CONTRA){newOrder({mesa:null,canal:eff,lines,cliente,src:'cliente',hold:true,aprobar:true,addr:c.addr,envio});c.cart=[];toast('Pedido enviado. Te confirmamos por WhatsApp')}
+  else{const o=newOrder({mesa:null,canal:eff,lines,cliente,src:'cliente',hold:true,addr:c.addr,envio});
+  c.cart=[];S.modal={type:'pay',oid:o.id,total:orderSub(o)+envio,by:'order'}}
  }
  c.tab='pedido'}
 function settleHold(o){release(o);o.porConfirmar=false;const t=closeTicket([o],{method:'Link de pago',cliente:o.cliente,canal:o.canal,mesa:o.mesa,envio:o.envio});o.ticketId=t.id;return t}
@@ -988,12 +988,13 @@ function advance(oid,st){const o=S.orders.find(x=>x.id===oid);const ls=o.lines.f
 function setupInput(el){
  const k=el.getAttribute('data-in'),v=el.value;
  if(k==='nvq'){NV.q=v;const el2=$('#nvList');if(el2)el2.innerHTML=nvList();return}
+ else if(k==='sal_desc'){salSet(el.getAttribute('data-s'),'desc',v.slice(0,80))}else if(k==='sal_extra'){salSet(el.getAttribute('data-s'),'extra',Math.max(0,Math.min(100,Number(v)||0)))}
  else if(k==='cfg_metaPuntos'){S.settings.metaPuntos=Math.max(0,Math.min(100000,Number(v)||0))}else if(k==='cfg_premioTxt'){S.settings.premioTxt=v.slice(0,60)}
  else if(k==='name'){S.me.name=v;saveMe()}else if(k==='tel'){const t=v.replace(/\D/g,'').slice(0,10);if(t!==S.me.tel){S.me.tel=t;saveMe();S.loy.data=null;if(t.length===10&&S.cli.tab==='puntos')loadMe()}}
  else if(k.indexOf('pw_')===0){(S.pw||(S.pw={}))[k.slice(3)]=v.replace(/\D/g,'').slice(0,4)}
  else if(k==='addr')S.cli.addr=v;else if(k==='mtel'){S.mw.tel=v.replace(/\D/g,'').slice(0,10);if(S.mw.tel)S.mw.guest=false}else if(k==='mnote'){S.modal.note=v}
  else if(k==='rtext')S.modal.text=v;
- else if(k==='recv'){S.caja.recv=v;const e=$('#cambio');if(e){const os=mesaOrders(S.caja.sel.slice(2));const sub=os.reduce((a,o)=>a+orderSub(o),0);const L=S.caja.lc&&S.caja.lc.found?S.caja.lc:null;const sd=L?Math.floor(L.cliente.puntos):0;const disc=(S.caja.canje&&sd>0&&L.modelo==='cashback')?Math.min(sd,sub):0;e.textContent=cambioTxt(sub-disc+Math.round(sub*S.caja.tip/100))}}
+ else if(k==='recv'){S.caja.recv=v;const e=$('#cambio');if(e){const os=cobroOrders(S.caja.sel);const sub=os.reduce((a,o)=>a+orderSub(o),0);const L=S.caja.lc&&S.caja.lc.found?S.caja.lc:null;const sd=L?Math.floor(L.cliente.puntos):0;const disc=(S.caja.canje&&sd>0&&L.modelo==='cashback')?Math.min(sd,sub):0;e.textContent=cambioTxt(sub-disc+Math.round(sub*S.caja.tip/100)+os.reduce((a,o)=>a+(o.envio||0),0))}}
  else if(k==='ctel'){const t=v.replace(/\D/g,'').slice(0,10);S.caja.canje=false;if(t!==S.caja.tel){S.caja.tel=t;S.caja.lc=null;if(t.length===10)loadCajaCliente(t)}}
  else if(k==='pe_uq')S.modal.f.use[+el.getAttribute('data-i')].q=v;else if(k==='qk'){MCFG.quick=MCFG.quick||{};MCFG.quick[el.getAttribute('data-c')]=v}else if(k==='f_con')S.fin.con=v;else if(k==='f_monto')S.fin.monto=v;else if(k==='lcb')S.lcb=v;else if(k==='in_name')S.invNew.name=v;else if(k==='in_stock')S.invNew.stock=v;else if(k==='in_min')S.invNew.min=v;else if(k==='in_cost')S.invNew.cost=v;else if(k==='pe_name')S.modal.f.name=v;else if(k==='pe_desc')S.modal.f.desc=v;else if(k==='pe_label')S.modal.f.label=v;else if(k==='pe_cost')S.modal.f.cost=v;else if(k==='pe_p')S.modal.f.price[+el.getAttribute('data-i')]=v;else if(k==='ptxt')S.modal.txt=v;else if(k==='icost'){const i=ins(el.getAttribute('data-i'));if(i)i.cost=Math.max(0,Number(v)||0)}
  else if(k==='mm')S.caja.mm=v;else if(k==='mo')S.caja.mo=v;else if(k==='pin')S.modal.pin=v;else if(k==='cnom')S.caja.nom=v;else if(k==='cnac')S.caja.nac=v
@@ -1006,12 +1007,15 @@ function setupInput(el){
 root.addEventListener('input',e=>{const el=e.target.closest('[data-in]');if(el&&el.tagName!=='SELECT')setupInput(el)},{signal:ctl.signal});
 root.addEventListener('change',e=>{
  const fi=e.target.closest('input[data-file]');
+ if(fi&&fi.getAttribute('data-file')==='sal'){const file=fi.files&&fi.files[0],sid=fi.getAttribute('data-s');if(!file)return;S.salUp=sid;render();
+  uploadImg(file).then(u=>{salSet(sid,'foto',u)}).catch(er=>toast(er.message||'No se pudo subir la foto')).finally(()=>{S.salUp=null;render()});return}
  if(fi){const file=fi.files&&fi.files[0];if(!file||!S.modal||S.modal.type!=='pedit')return;S.modal.up=true;render();
   uploadImg(file).then(u=>{if(S.modal&&S.modal.type==='pedit'){S.modal.f.img=u}}).catch(er=>toast(er.message||'No se pudo subir la foto')).finally(()=>{if(S.modal)S.modal.up=false;render()});return}
  const el=e.target.closest('select[data-in]');if(!el)return;const k=el.getAttribute('data-in');
  if(k==='mesa'){S.cli.mesa=el.value;render()}
  else if(k==='pe_cat'){S.modal.f.cat=el.value;render()}
  else if(k==='pe_station'){S.modal.f.station=el.value}
+ else if(k==='pe_tag'){S.modal.f.tag=el.value}
  else if(k==='pe_ui'){S.modal.f.use[+el.getAttribute('data-i')].id=el.value;render()}
  else if(k==='f_cat')S.fin.cat=el.value;else if(k==='f_freq')S.fin.freq=el.value;else if(k==='in_unit')S.invNew.unit=el.value;
 },{signal:ctl.signal});
@@ -1042,6 +1046,12 @@ root.addEventListener('click',e=>{
   case'mclose':S.modal=null;break;
   case'mv':{S.modal.vi=+g('i');break}
   case'mo':{const gr=g('g'),l=g('l');if(l)S.modal.pick[gr]=l;else delete S.modal.pick[gr];if(gr==='Vaso'&&l!=='Escarchado')delete S.modal.pick['Sabor del escarchado'];break}
+  case'dos':S.settings.dosSabores=!S.settings.dosSabores;break;
+  case'salav':{const x=salsaBy(g('s'));salSet(x.id,'avail',x.avail===false);break}
+  case'salpc':salSet(g('s'),'picor',+g('n'));break;
+  case'salfx':salSet(g('s'),'foto','');break;
+  case'msal':{const k=g('k'),id=g('s'),pk=S.modal.pick;if(pk[k]===id)delete pk[k];else{pk[k]=id;if(k==='Salsa'&&pk.Salsa2===id)delete pk.Salsa2}break}
+  case'salpick':{const id=g('s');const pid=ARM&&ARM.productos.find(x=>{const q=PM(x);return q&&!soldOut(q)});if(!pid||!canOrderAny()){if(CON)window.open(waLink('Hola, quiero pedir alitas'),'_blank','noopener');break}openProd(pid,'cli');S.modal.pick.Salsa=id;break}
   case'mq':S.modal.qty=Math.max(1,S.modal.qty+ +g('d'));break;
   case'madd':{const ln=buildLine();const tgt=S.modal.target;S.modal=null;if(tgt==='cli'){c.cart.push(ln);toast('Agregado a tu pedido')}else{S.mw.cart.push(ln);toast('Agregado')}break}
   case'rstar':S.modal.stars=+g('n');break;
@@ -1093,10 +1103,10 @@ root.addEventListener('click',e=>{
   case'movadd':{const mo=S.caja,mt=parseFloat(mo.mm);if(!(mt>0)||!mo.mo.trim()){toast('Escribe monto y motivo');return}mo.movs.push({tipo:mo.mt,monto:mt,motivo:mo.mo.trim(),ts:Date.now(),por:'Caja'});mo.mm='';mo.mo='';toast('Movimiento registrado');break}
   case'pinok':verifyPin();return;
   case'install':doInstall();return;
-  case'nvid':if(S.me.tel.length===10){NV.guest=false;lsSet('tos_guest','0');saveMe();S.loy.data=null;loadMe();toast('Listo')}else toast('Escribe tus 10 dígitos o sigue como invitado');break
-  case'nvguest':NV.guest=true;lsSet('tos_guest','1');break
-  case'nvchg':S.me.tel='';S.loy.data=null;NV.guest=false;lsSet('tos_guest','0');saveMe();break
-  case'nvgo':NV.splash=false;try{root.ownerDocument.defaultView.sessionStorage.setItem('tos_splash','1')}catch(e){}break;
+  case'nvid':if(S.me.tel.length===10){NV.guest=false;lsSet(LK+'guest','0');saveMe();S.loy.data=null;loadMe();toast('Listo')}else toast('Escribe tus 10 dígitos o sigue como invitado');break
+  case'nvguest':NV.guest=true;lsSet(LK+'guest','1');break
+  case'nvchg':S.me.tel='';S.loy.data=null;NV.guest=false;lsSet(LK+'guest','0');saveMe();break
+  case'nvgo':NV.splash=false;try{root.ownerDocument.defaultView.sessionStorage.setItem(LK+'splash','1')}catch(e){}break;
   case'celeclose':NV.cele=null;S.cli.tab='pedido';break;
   case'qadd':nvQuickAdd(g('p'));break;
   case'rep':nvRepeat();break;
@@ -1107,7 +1117,7 @@ root.addEventListener('click',e=>{
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
   case'ctab':S.caja.tab=g('v');break;
-  case'csel':{S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;const oc=mesaOrders(S.caja.sel).find(o=>o.cliente&&String(o.cliente.tel||'').length===10);if(oc){S.caja.tel=oc.cliente.tel;S.caja.lc=null;loadCajaCliente(oc.cliente.tel)}break}
+  case'csel':{S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;const oc=(CONTRA?cobroOrders(S.caja.sel):mesaOrders(S.caja.sel)).find(o=>o.cliente&&String(o.cliente.tel||'').length===10);if(oc){S.caja.tel=oc.cliente.tel;S.caja.lc=null;loadCajaCliente(oc.cliente.tel)}break}
   case'tip':S.caja.tip=+g('v');break;
   case'method':S.caja.method=g('v');break;
   case'split':S.caja.split=+g('v');break;

@@ -46,6 +46,7 @@ import {
 import { getLoyaltyPoints, formatLoyaltyReply } from '../lib/loyalty';
 import { handleConfirmationReply } from '../lib/noshow-confirmation';
 import { handleBiovelaPickupMessage } from '../../lib/biovela-pickup-flow';
+import { handleArwingsMessage } from '../../lib/arwings-whatsapp';
 import {
   lookupCoverageByCP,
   formatCoverageContext,
@@ -425,6 +426,18 @@ export async function handleChat(params: {
       }
     } catch (confirmErr) {
       console.error('[chat-handler] Error confirmation reply:', confirmErr instanceof Error ? confirmErr.message : confirmErr);
+    }
+  }
+
+  // Arwings: pedidos a domicilio por WhatsApp (menú real, historial del cliente, pedido al sistema del restaurante)
+  if (clientId === 'arwings' && senderId && userMessage && !mediaBase64 && platform === 'whatsapp') {
+    try {
+      const r = await handleArwingsMessage({ message: userMessage, senderId, senderName });
+      if (r.handled && r.reply) {
+        return { status: 200, json: { clientId, reply: r.reply } };
+      }
+    } catch (arwErr) {
+      console.error('[chat-handler] arwings whatsapp:', arwErr instanceof Error ? arwErr.message : arwErr);
     }
   }
 
