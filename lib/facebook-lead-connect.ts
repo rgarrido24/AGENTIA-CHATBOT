@@ -13,12 +13,17 @@ export { fbConnectUserMessage };
 export type { FbConnectErrorCode, FbConnectReveal };
 
 export const FB_GRAPH_VERSION = 'v21.0';
-export const FB_OAUTH_SCOPES = [
+const FB_OAUTH_SCOPES_DEFAULT = [
   'pages_show_list',
   'pages_manage_metadata',
   'pages_manage_ads',
   'leads_retrieval',
 ].join(',');
+/**
+ * Permisos del login clásico. Se puede sobreescribir con la variable FB_OAUTH_SCOPES en Render
+ * (p. ej. agregando pages_read_engagement) y revertir quitando la variable, sin redeploy de código.
+ */
+export const FB_OAUTH_SCOPES = (process.env.FB_OAUTH_SCOPES || '').trim() || FB_OAUTH_SCOPES_DEFAULT;
 export const FB_OAUTH_SESSION_COOKIE = 'fb_oauth_sid';
 export const FB_CONNECT_REVEAL_COOKIE = 'fb_connect_reveal';
 export const FB_OAUTH_SESSION_TTL_MS = 15 * 60 * 1000;
