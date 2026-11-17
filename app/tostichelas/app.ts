@@ -76,6 +76,14 @@ const MENU=[
  P({id:'pf',cat:'Snacks',name:'Papas a la francesa',desc:'Preparadas con salsas negras, limón y tajín',emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}}),
  P({id:'pr',cat:'Snacks',name:'Papas fritas',desc:'Preparadas con salsas negras, limón y tajín',emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}})
 ];
+
+/* extras (precios de ejemplo: ajustar con el restaurante) */
+const XQ=(g,l,a,b)=>({g,req:false,opts:[{l,p:[a,b==null?a:b]}]});
+MENU.forEach(q=>{
+ if(q.cat==='Tostadas')q.mods=q.mods.concat([XQ('Aguacate extra','Sí',15),XQ('Doble porción','Sí',35),{g:'Salsa',req:false,opts:['Verde','Roja','Habanero','Macha'].map(l=>({l,p:[0,0]}))}]);
+ else if(q.cat==='Tacos')q.mods=q.mods.concat([XQ('Queso extra','Sí',10,25),XQ('Aguacate extra','Sí',10,25),{g:'Salsa',req:false,opts:['Verde','Roja','Habanero','Macha'].map(l=>({l,p:[0,0]}))}]);
+ else if(q.cat==='Snacks')q.mods=q.mods.concat([XQ('Queso extra','Sí',15),{g:'Salsa',req:false,opts:['Verde','Roja','Habanero','Macha'].map(l=>({l,p:[0,0]}))}]);
+});
 const CATS=['Tostadas','Tacos','Cervezas','Bebidas','Snacks'];
 const CATCOL={Tostadas:'#7DBB86',Tacos:'#F29A4A',Cervezas:'#F2C14E',Bebidas:'#7FB2E5',Snacks:'#E2573A'};
 const PM=id=>MENU.find(p=>p.id===id);
@@ -586,7 +594,8 @@ function nvTabs(){const c=S.cli,n=c.cart.reduce((a,l)=>a+l.qty,0);return'<div cl
 function nvWho(){
  const tel=S.me.tel;
  if(tel.length===10){const L=S.loy.data;const sal=L&&L.found&&L.saldo!=null?' · saldo <b>'+m(L.saldo)+'</b>':'';if(!L&&!S.loy.loading)setTimeout(loadMe,50);return'<div class="nv-who ok">Hola'+(S.me.name?', <b>'+esc(S.me.name.split(' ')[0])+'</b>':'')+sal+' <a href="#" data-a="nvchg">Cambiar</a></div>'}
- if(NV.guest)return'<div class="nv-who">Navegando como invitado · <a href="#" data-a="nvchg">Identificarme</a></div>';
+
+ return'';
  return'<div class="nv-who ask"><b>¿Ya viniste antes?</b><span>Pon tu WhatsApp para ver lo que has pedido y tu saldo. Es opcional.</span><div class="row" style="gap:8px"><input type="tel" inputmode="numeric" data-in="tel" value="" placeholder="10 dígitos"><button class="btn sm pri" data-a="nvid">Entrar</button></div><a href="#" data-a="nvguest">Seguir como invitado</a></div>'}
 
 const COMBOS=[['tag','vic','Aguachile + Victoria'],['tcc','cor','Camachera + Corona'],['tar','mod','Arrachera + Modelo']];
@@ -616,7 +625,7 @@ function nvMenu(){
  return h+'<div id="nvList">'+nvList()+'</div>'}
 function vClienteNuevo(){
  const c=S.cli,n=c.cart.reduce((a,l)=>a+l.qty,0),sub=sumLines(c.cart);
- let h='<div class="nv-wrap"><div class="nv-brand"><img src="/tostichelas/mark.webp" alt="" width="46" height="30"><div class="grow"><b>TOSTICHELAS</b><span>Tostadas, mariscos y cervezas</span></div><button class="nv-inst" data-a="install" style="display:none">Instalar app</button></div>'+nvTabs();
+ let h='<div class="nv-wrap"><div class="nv-logo"><img src="/tostichelas/logo-hero.webp" alt="Tostichelas · tostadas, mariscos y cervezas" width="900" height="617" fetchpriority="high"></div>'+nvTabs();
  if(c.tab==='menu')h+=nvMenu();
  else if(c.tab==='pedido'){
   h+=nvLoyHtml(sub);
@@ -629,7 +638,7 @@ function vClienteNuevo(){
 function nvOverlays(){
  let h='';
  if(NUEVO&&NV.splash&&S.role==='cliente')h+='<div class="nv-splash" data-par><div class="nv-sp-glow"></div>'+Array.from({length:14},(_,i)=>'<i class="nv-bub" style="--x:'+(6+i*7)+'%;--d:'+(5+(i*37)%6)+'s;--s:'+(10+(i*13)%22)+'px;--w:'+((i*0.7)%4).toFixed(1)+'s"></i>').join('')
-  +'<div class="nv-sp-in"><img class="nv-sp-mark" src="/tostichelas/mark.webp" alt="Tostada de ceviche con cerveza" width="640" height="422" fetchpriority="high"><h1 class="nv-sp-t"><span>TOSTI</span><span>CHELAS</span></h1><p class="nv-sp-s">Tostadas, mariscos y cervezas bien frías</p><button class="nv-go" data-a="nvgo">Ver el menú<i></i></button></div></div>';
+  +'<div class="nv-sp-in"><img class="nv-sp-mark" src="/tostichelas/logo-hero.webp" alt="Tostichelas · tostadas, mariscos y cervezas" width="900" height="617" fetchpriority="high"><h1 class="nv-sp-t"><span>TOSTI</span><span>CHELAS</span></h1><p class="nv-sp-s">Tostadas, mariscos y cervezas bien frías</p><button class="nv-go" data-a="nvgo">Ver el menú<i></i></button></div></div>';
  if(NUEVO&&NV.cele){const e=NV.cele;h+='<div class="nv-cele" data-a="celeclose"><div class="nv-confetti" aria-hidden="true">'+Array.from({length:44},(_,i)=>'<i style="--x:'+((i*23)%100)+'%;--d:'+(1.8+((i*7)%10)/6).toFixed(2)+'s;--w:'+(((i*13)%9)/10).toFixed(1)+'s;--r:'+((i*47)%360)+'deg;--k:'+(i%5)+'"></i>').join('')+'</div><div class="nv-cele-card"><div class="nv-check"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 15-17"/></svg></div><h2>¡Pedido #'+e.id+' enviado!</h2><p>'+(e.hold&&!e.aprobar?'Falta confirmar tu pago para que llegue a cocina.':e.aprobar?'Tu mesero lo aprueba en un momento y sale a cocina.':'Ya va para cocina y barra. Sigue el estado aquí mismo.')+'</p>'+(e.earn>0?'<div class="nv-cele-pts">Al pagar sumas <b>'+m(e.earn)+'</b> de saldo en tu tarjeta</div>':'')+'<button class="btn pri" data-a="celeclose">Ver seguimiento</button></div></div>'}
  return h}
 /* ================= fin NUEVO ================= */
@@ -769,7 +778,7 @@ function snapNow(){
  const k=kvNow();Object.keys(k).forEach(x=>{kv[x]=JSON.stringify(k[x])});
  return{cols,kv};
 }
-function reseedKeep(){const k={role:S.role,auth:S.auth,dpin:S.dpin,me:S.me,mesaTok:S.mesaTok};seed();Object.assign(S,k);if(QRMESA){S.cli.mesa=QRMESA;S.cli.mt=QRT}}
+function reseedKeep(){const k={role:S.role,auth:S.auth,dpin:S.dpin,me:S.me,mesaTok:S.mesaTok};if(S.modal&&S.modal.type==='pin')k.modal=S.modal;seed();Object.assign(S,k);if(QRMESA){S.cli.mesa=QRMESA;S.cli.mt=QRT}}
 function softRender(){const a=root.ownerDocument.activeElement;if(a&&root.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){dirty=true;return}dirty=false;render()}
 function applyResp(r){
  if(!r||r.error)return;
