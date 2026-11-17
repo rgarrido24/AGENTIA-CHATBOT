@@ -62,7 +62,7 @@ const tokenOf=k=>String(1000+((k.charCodeAt(0)*31+parseInt(k.slice(1),10)*977)%9
 const ins=k=>S.inv.find(i=>i.id===k);
 
 /* ---------- extras por restaurante (todo se activa desde la config) ---------- */
-const CONTRA=CFG.pago==='contraentrega',CON=CFG.contacto||null,ARM=CFG.armador||null;
+const INI=CFG.inicio||null,CONTRA=CFG.pago==='contraentrega',CON=CFG.contacto||null,ARM=CFG.armador||null;
 const NIV=CFG.niveles||['Suave','Suavecito','Medio','Picoso','Extra fuego'];
 const SI=MARCA.splash.img||{src:MARCA.mark,alt:MARCA.markAlt,w:MARCA.markW,h:MARCA.markH};
 const salsasAll=()=>(CFG.salsas||[]).map(x=>Object.assign({},x,(MCFG.salsas&&MCFG.salsas[x.id])||{}));
@@ -326,7 +326,7 @@ function modalHtml(){
   h+='<div class="row between"><h2>Pasar a producción</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><p class="small">Se borran las ventas, reseñas, clientes y pedidos de ejemplo. Se conservan tu menú, tus fotos y tus precios. No se puede deshacer.</p><label class="f">Escribe EMPEZAR para confirmar<input type="text" data-in="ptxt" value="'+esc(md.txt||'')+'" autocomplete="off"></label><button class="btn pri" data-a="prodgo">Borrar ejemplos y empezar</button></div>';
  }
  if(md.type==='pin'){
-  h+='<div class="row between"><h2>Acceso de '+({caja:'Caja',dueno:'Dueño',mesero:'Mesero',cocina:'Cocina y barra'}[md.role]||'Equipo')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">PIN de 4 dígitos<input type="password" inputmode="numeric" maxlength="4" data-in="pin" value="'+esc(md.pin)+'" placeholder="••••"></label><div class="xs muted">'+(PROD?'':'PIN de la demo: '+S.pins[md.role]+'. ')+'Cada perfil tiene el suyo, así nadie entra a la caja ni a las ganancias sin permiso.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
+  h+='<div class="row between"><h2>Acceso de '+({caja:'Caja',dueno:'Dueño',mesero:'Mesero',cocina:'Cocina y barra'}[md.role]||'Equipo')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">Contraseña (números)<input type="password" inputmode="numeric" maxlength="8" autocomplete="off" data-in="pin" value="'+esc(md.pin)+'" placeholder="••••"></label><div class="xs muted">'+(PROD?'':'PIN de la demo: '+S.pins[md.role]+'. ')+'Cada perfil tiene el suyo, así nadie entra a la caja ni a las ganancias sin permiso.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
  }
  if(md.type==='ticket'){
   const t=S.tickets.find(x=>x.id===md.id);
@@ -491,7 +491,7 @@ function dSeg(){
 /* ================= NUEVO (?nuevo=1): experiencia premium del cliente ================= */
 const NUEVO=(()=>{try{return !/[?&]clasico=1(&|$)/.test(root.ownerDocument.defaultView.location.search)}catch(e){return true}})();
 let TOP=[];
-const NV={guest:(()=>{try{return lsGet(LK+'guest')==='1'}catch(e){return false}})(),splash:(()=>{try{return !root.ownerDocument.defaultView.sessionStorage.getItem(LK+'splash')}catch(e){return true}})(),q:'',cele:null,bump:0,fav:false};
+const NV={guest:(()=>{try{return lsGet(LK+'guest')==='1'}catch(e){return false}})(),splash:(()=>{try{return Date.now()-Number(lsGet(LK+'splash_ts')||0)>30*60000}catch(e){return true}})(),q:'',cele:null,bump:0,fav:false};
 if(NUEVO)root.classList.add('nuevo');
 if(MARCA.tema)root.classList.add(MARCA.tema);
 const nvRestoreMe=()=>{try{const me=JSON.parse(lsGet(LK+'me')||'{}');if(me.tel)S.me.tel=String(me.tel).replace(/\D/g,'').slice(0,10);if(me.name)S.me.name=String(me.name).slice(0,60)}catch(e){}};
@@ -508,7 +508,7 @@ function nvSuggest(p,exclude){
 function nvPairHtml(p,title){
  const sg=nvSuggest(p,2);if(!sg.length)return'';
  return'<div class="nv-pair"><div class="nv-pair-t">'+esc(title||PAIR_TXT[p.cat]||'Completa tu pedido')+'</div><div class="nv-pair-row">'+sg.map(x=>'<div class="nv-pair-c" style="--c:'+CATCOL[x.cat]+'"><div class="nv-mini">'+artHtml(x)+'</div><div class="grow"><div class="b small">'+esc(x.name)+'</div><div class="xs muted num">'+fromPrice(x)+'</div></div><button class="nv-plus sm" data-a="qadd" data-p="'+x.id+'" aria-label="Agregar '+esc(x.name)+'">+</button></div>').join('')+'</div></div>'}
-function nvHero(p){return'<div class="nv-hero" style="--c:'+CATCOL[p.cat]+'" data-tilt><div class="nv-hero-art">'+artHtml(p)+'</div><i class="nv-b b1"></i><i class="nv-b b2"></i><i class="nv-b b3"></i>'+(topN(p.id)?'<span class="nv-tag">'+topN(p.id)+' hoy</span>':'')+'</div>'+(p.desc?'<div class="nv-sheet-desc">'+esc(p.desc)+'</div>':'')}
+function nvHero(p){return'<div class="nv-hero" style="--c:'+CATCOL[p.cat]+'" data-tilt><div class="nv-hero-art">'+artHtml(p)+'</div><i class="nv-b b1"></i><i class="nv-b b2"></i><i class="nv-b b3"></i>'+(topN(p.id)?'<span class="nv-tag">'+topN(p.id)+' hoy</span>':'')+(p.img?'':'<span class="nv-ilus">Ilustración · foto próximamente</span>')+'</div>'+(p.desc?'<div class="nv-sheet-desc">'+esc(p.desc)+'</div>':'')}
 /* lealtad real: saldo del cliente + lo que gana con este pedido + meta configurada por el dueño */
 function nvLoy(sub){
  const d=S.loy.data,found=!!(d&&d.found),saldo=found?Number(d.cliente.puntos||0):0;
@@ -556,26 +556,42 @@ function nvTabs(){const c=S.cli,n=c.cart.reduce((a,l)=>a+l.qty,0);return'<div cl
 function nvWho(){
  const tel=S.me.tel;
  if(tel.length===10){const L=S.loy.data;const sal=L&&L.found&&L.saldo!=null?' · saldo <b>'+m(L.saldo)+'</b>':'';if(!L&&!S.loy.loading)setTimeout(loadMe,50);return'<div class="nv-who ok">Hola'+(S.me.name?', <b>'+esc(S.me.name.split(' ')[0])+'</b>':'')+sal+' <a href="#" data-a="nvchg">Cambiar</a></div>'}
- if(NV.guest)return'<div class="nv-who">Navegando como invitado · <a href="#" data-a="nvchg">Identificarme</a></div>';
+
+ return'';
  return'<div class="nv-who ask"><b>¿Ya viniste antes?</b><span>Pon tu WhatsApp para ver lo que has pedido y tu saldo. Es opcional.</span><div class="row" style="gap:8px"><input type="tel" inputmode="numeric" data-in="tel" value="" placeholder="10 dígitos"><button class="btn sm pri" data-a="nvid">Entrar</button></div><a href="#" data-a="nvguest">Seguir como invitado</a></div>'}
 function nvSalsas(){
  const ss=salsasOn();if(!ss.length||!ARM)return'';
  return'<section class="nv-sec nv-salsas"><div class="nv-h"><h2>'+esc(ARM.titulo)+'</h2><span class="nv-live"><i></i>'+ss.length+' salsas</span></div><div class="strip nv-strip">'+ss.slice().sort((a,b)=>b.picor-a.picor).map(x=>'<button class="nv-sal" style="--pc:'+x.picor+'" data-a="salpick" data-s="'+x.id+'">'+flames(x.picor)+'<b>'+esc(x.nombre)+'</b><span class="xs">'+esc(NIV[x.picor-1]||'')+'</span></button>').join('')+'</div></section>'}
 const nvWa=()=>CON?'<a class="nv-wa-cta" href="'+waLink('Hola '+NOM+', quiero hacer un pedido')+'" target="_blank" rel="noopener"><b>¿Prefieres pedir por WhatsApp?</b><span>'+esc(CON.whatsappVista)+(CON.facebook?' · Facebook '+esc(CON.facebook):'')+'</span></a>':'';
+
+function nvFeatured(top){
+ const t=top&&top[0],p=t?t.p:PM(INI.destacado);if(!p||soldOut(p))return'';
+ const ok=canOrderAny();
+ return'<section class="nv-feat" style="--c:'+CATCOL[p.cat]+'" data-tilt><div class="nv-feat-art">'+artHtml(p)+'</div><i class="nv-b b1"></i><i class="nv-b b2"></i><div class="nv-feat-t"><span class="nv-feat-k">'+(t?'Lo más pedido hoy · '+t.n+(t.n===1?' pedido':' pedidos'):'Recomendado de la casa')+'</span><h2>'+esc(p.name)+'</h2><p>'+esc(p.desc||'')+'</p><div class="row" style="gap:8px;align-items:center"><b class="num">'+fromPrice(p)+'</b>'+(ok?'<button class="btn pri sm" data-a="add" data-p="'+p.id+'">Personalizar y agregar</button>':'')+'</div></div></section>'}
+function nvMosaic(){
+ return'<section class="nv-sec"><div class="nv-h"><h2>¿Qué se te antoja?</h2></div><div class="nv-mosaic">'+CATS.map((k,i)=>{const items=MENU.filter(x=>x.cat===k&&!soldOut(x));const rep=items[0]||MENU.find(x=>x.cat===k);return rep?'<button class="nv-tile t'+i+'" style="--c:'+CATCOL[k]+';--i:'+i+'" data-a="cat" data-v="'+k+'"><span class="nv-tile-art">'+artHtml(rep)+'</span><b>'+k+'</b><em>'+items.length+' opciones</em></button>':''}).join('')+'</div></section>'}
+function nvCombos(){
+ const ok=canOrderAny();
+ const cs=INI.combos.map(c=>({ids:[c[0],c[1]],ps:[PM(c[0]),PM(c[1])],n:c[2]})).filter(c=>c.ps.every(x=>x&&!soldOut(x)));
+ if(!cs.length)return'';
+ return'<section class="nv-sec"><div class="nv-h"><h2>'+esc(INI.tituloCombos)+'</h2></div><div class="strip nv-strip">'+cs.map(c=>{const tot=c.ps.reduce((a,x)=>a+x.v[0].p,0);return'<div class="nv-combo"><div class="nv-combo-art"><span>'+artHtml(c.ps[0])+'</span><i>+</i><span>'+artHtml(c.ps[1])+'</span></div><div class="b small">'+esc(c.n)+'</div><div class="row between"><b class="num">'+m(tot)+'</b>'+(ok?'<button class="nv-plus" data-a="combo" data-ids="'+c.ids.join(',')+'" aria-label="Agregar combo">+</button>':'')+'</div></div>'}).join('')+'</div></section>'}
 function nvMenu(){
  const c=S.cli;let h=presence()+nvWho();
  if(!canOrderAny())h+='<div class="banner warn"><b>Menú de consulta.</b> Por ahora los pedidos los toma tu mesero. Mira, califica y recomienda tus favoritos.</div>';
  const top=TOP.map(t=>({p:PM(t.pid),n:t.n})).filter(x=>x.p&&!soldOut(x.p)).slice(0,5);
+ const home=c.cat==='Todo'&&!NV.q.trim()&&!NV.fav;
+ if(home&&INI)h+=nvFeatured(top);
  if(top.length)h+='<section class="nv-sec"><div class="nv-h"><h2>Lo más pedido hoy</h2><span class="nv-live"><i></i>en vivo</span></div><div class="strip nv-strip">'+top.map((x,i)=>'<button class="nv-top" style="--c:'+CATCOL[x.p.cat]+';--i:'+i+'" data-a="'+(canOrderAny()?'add':'noop')+'" data-p="'+x.p.id+'"><div class="nv-mini big">'+artHtml(x.p)+'</div><span class="nv-rank">#'+(i+1)+'</span><div class="b small">'+esc(x.p.name)+'</div><div class="xs nv-hot">'+x.n+(x.n===1?' pedido':' pedidos')+' hoy</div></button>').join('')+'</div></section>';
  const hist=histGet()[0];
  if(hist&&canOrderAny()){const ls=hist.lines.map(nvRebuild).filter(Boolean);if(ls.length){const tot=sumLines(ls);h+='<section class="nv-again"><div><div class="nv-again-k">Pide lo de siempre</div><div class="b">'+ls.slice(0,3).map(l=>l.qty+' × '+esc(l.name)).join(' · ')+(ls.length>3?' …':'')+'</div></div><button class="btn pri" data-a="rep">Repetir · '+m(tot)+'</button></section>'}}
- if(CFG.salsas)h+=nvSalsas();
+if(CFG.salsas)h+=nvSalsas();
+ if(home&&INI)h+=nvMosaic()+nvCombos();
  h+='<div class="nv-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" data-in="nvq" value="'+esc(NV.q)+'" placeholder="'+esc(CFG.textos.buscar)+'" aria-label="Buscar en el menú" autocomplete="off"></div>';
  h+='<div class="chips scroll nv-cats">'+['Todo'].concat(CATS).map(x=>'<button class="chip" data-a="cat" data-v="'+x+'" aria-pressed="'+(c.cat===x)+'">'+esc(x)+'</button>').join('')+'<button class="chip fav" data-a="nvfav" aria-pressed="'+NV.fav+'">♥ Favoritos</button></div>';
  return h+'<div id="nvList">'+nvList()+'</div>'+nvWa()}
 function vClienteNuevo(){
  const c=S.cli,n=c.cart.reduce((a,l)=>a+l.qty,0),sub=sumLines(c.cart);
- let h='<div class="nv-wrap"><div class="nv-brand"><img src="'+MARCA.mark+'" alt="" width="46" height="'+Math.round(46*MARCA.markH/MARCA.markW)+'"><div class="grow"><b>'+NOMU+'</b><span>'+esc(MARCA.tagline)+'</span></div><button class="nv-inst" data-a="install" style="display:none">Instalar app</button>'+(CON?'<a class="nv-wa" href="'+waLink('Hola '+NOM+', quiero hacer un pedido')+'" target="_blank" rel="noopener" aria-label="Pedir por WhatsApp">WhatsApp</a>':'')+'</div>'+nvTabs();
+ let h='<div class="nv-wrap">'+(MARCA.logoHero?'<div class="nv-logo"><img src="'+MARCA.logoHero.src+'" alt="'+esc(MARCA.logoHero.alt)+'" width="'+MARCA.logoHero.w+'" height="'+MARCA.logoHero.h+'" fetchpriority="high"></div>':'<div class="nv-brand"><img src="'+MARCA.mark+'" alt="" width="46" height="'+Math.round(46*MARCA.markH/MARCA.markW)+'"><div class="grow"><b>'+NOMU+'</b><span>'+esc(MARCA.tagline)+'</span></div>'+(CON?'<a class="nv-wa" href="'+waLink('Hola '+NOM+', quiero hacer un pedido')+'" target="_blank" rel="noopener" aria-label="Pedir por WhatsApp">WhatsApp</a>':'')+'</div>')+nvTabs();
  if(c.tab==='menu')h+=nvMenu();
  else if(c.tab==='pedido'){
   h+=nvLoyHtml(sub);
@@ -736,7 +752,7 @@ function snapNow(){
  const k=kvNow();Object.keys(k).forEach(x=>{kv[x]=JSON.stringify(k[x])});
  return{cols,kv};
 }
-function reseedKeep(){const k={role:S.role,auth:S.auth,dpin:S.dpin,me:S.me,mesaTok:S.mesaTok};seed();Object.assign(S,k);if(QRMESA){S.cli.mesa=QRMESA;S.cli.mt=QRT}}
+function reseedKeep(){const k={role:S.role,auth:S.auth,dpin:S.dpin,me:S.me,mesaTok:S.mesaTok};if(S.modal&&S.modal.type==='pin')k.modal=S.modal;seed();Object.assign(S,k);if(QRMESA){S.cli.mesa=QRMESA;S.cli.mt=QRT}}
 function softRender(){const a=root.ownerDocument.activeElement;if(a&&root.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){dirty=true;return}dirty=false;render()}
 function applyResp(r){
  if(!r||r.error)return;
@@ -797,7 +813,7 @@ async function verifyPin(){
 }
 function dPwCfg(){
  const pw=S.pw||(S.pw={dueno:'',caja:'',mesero:'',cocina:''});
- const f=(k,l)=>'<label class="f">'+l+'<input type="password" inputmode="numeric" maxlength="4" autocomplete="off" data-in="pw_'+k+'" value="'+esc(pw[k])+'" placeholder="Nueva (4 números)"></label>';
+ const f=(k,l)=>'<label class="f">'+l+'<input type="password" inputmode="numeric" maxlength="8" autocomplete="off" data-in="pw_'+k+'" value="'+esc(pw[k])+'" placeholder="Nueva (4 a 8 números)"></label>';
  return '<div class="card stack"><h3>Contraseñas del equipo</h3><div class="small muted">Cada perfil entra con su contraseña de 4 números. Escribe solo las que quieras cambiar; las demás se quedan igual.</div><div class="grid2" style="gap:8px">'+f('mesero','Mesero')+f('cocina','Cocina y barra')+f('caja','Caja')+f('dueno','Dueño (tú)')+'</div><button class="btn pri" data-a="savepw">Guardar contraseñas</button></div>'}
 function dAjustes(){
  let h=dPedidosCfg()+dQuickCfg()+dPwCfg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
@@ -1030,7 +1046,7 @@ root.addEventListener('click',e=>{
   case'sound':S.sound=!S.sound;if(S.sound)beep();break;
   case'tab':c.tab=g('v');if(c.tab==='puntos'&&S.me.tel.length===10&&!S.loy.data&&!S.loy.loading)loadMe();break;
   case'geo':c.geo=g('v');if(c.geo==='fuera'&&c.canal==='mesa')c.canal='llevar';if(c.geo==='dentro')c.canal='mesa';break;
-  case'cat':c.cat=g('v');break;
+  case'cat':c.cat=g('v');if(NUEVO)setTimeout(()=>{const e=root.querySelector('.nv-cats');if(e&&e.scrollIntoView)e.scrollIntoView({behavior:'smooth',block:'start'})},60);break;
   case'sort':c.sort=g('v');break;
   case'like':{const p=g('p');if(S.soc.liked[p]){delete S.soc.liked[p];S.soc.likes[p]--}else{S.soc.liked[p]=true;S.soc.likes[p]++}break}
   case'togrev':c.open[g('p')]=!c.open[g('p')];break;
@@ -1106,13 +1122,14 @@ root.addEventListener('click',e=>{
   case'nvid':if(S.me.tel.length===10){NV.guest=false;lsSet(LK+'guest','0');saveMe();S.loy.data=null;loadMe();toast('Listo')}else toast('Escribe tus 10 dígitos o sigue como invitado');break
   case'nvguest':NV.guest=true;lsSet(LK+'guest','1');break
   case'nvchg':S.me.tel='';S.loy.data=null;NV.guest=false;lsSet(LK+'guest','0');saveMe();break
-  case'nvgo':NV.splash=false;try{root.ownerDocument.defaultView.sessionStorage.setItem(LK+'splash','1')}catch(e){}break;
+  case'nvgo':NV.splash=false;lsSet(LK+'splash_ts',String(Date.now()));break;
   case'celeclose':NV.cele=null;S.cli.tab='pedido';break;
+  case'combo':{const ids=String(g('ids')).split(',');let n=0;ids.forEach(id=>{const q=PM(id);if(q&&!soldOut(q)){S.cli.cart.push(lineFrom(q,0,[],1,''));n++}});if(n){NV.bump++;toast('Combo agregado')}break}
   case'qadd':nvQuickAdd(g('p'));break;
   case'rep':nvRepeat();break;
   case'nvfav':NV.fav=!NV.fav;break;
   case'noop':return;
-  case'savepw':{const n={};Object.entries(S.pw||{}).forEach(([r,v])=>{if(v)n[r]=v});if(Object.keys(n).some(r=>n[r].length!==4)){toast('Cada contraseña debe ser de 4 números');return}if(!Object.keys(n).length){toast('Escribe al menos una contraseña nueva');return}
+  case'savepw':{const n={};Object.entries(S.pw||{}).forEach(([r,v])=>{if(v)n[r]=v});if(Object.keys(n).some(r=>n[r].length<4||n[r].length>8)){toast('Cada contraseña debe ser de 4 a 8 números');return}if(!Object.keys(n).length){toast('Escribe al menos una contraseña nueva');return}
    fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'setpin',nuevos:n})}).then(r=>r.json().then(j=>({r,j}))).then(({r,j})=>{if(r.ok&&j.ok){if(n.dueno)S.dpin=n.dueno;S.pinDef=!!j.defecto;S.pw={dueno:'',caja:'',mesero:'',cocina:''};toast('Contraseñas guardadas');}else toast(j.error||'No se pudo guardar');render()}).catch(()=>{toast('Sin conexión, intenta de nuevo');render()});return}
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
@@ -1153,6 +1170,7 @@ const iv2=setInterval(kdsTick,3000);
 seed();Object.keys(TOKS).forEach(r=>{S.auth[r]=true});loadMesaTok();
 if(NUEVO){nvRestoreMe();if(S.me.tel.length===10)setTimeout(()=>{try{loadMe()}catch(e){}},400)}
 try{const qs=new URLSearchParams(root.ownerDocument.defaultView.location.search),mm=qs.get('mesa');if(mm&&MESAS.some(x=>x.k===mm)&&/^[\w]{4,20}$/.test(qs.get('t')||'')){QRMESA=mm;QRT=qs.get('t');S.cli.mt=QRT;S.cli.mesa=mm;S.cli.geo='dentro';S.cli.canal='mesa'}}catch(e){}
+try{if(STAFF){const rr=new URLSearchParams(root.ownerDocument.defaultView.location.search).get('rol');if(['mesero','cocina','barra','caja','dueno'].includes(rr)){const k=authKey(rr);if(S.auth[k])S.role=rr;else S.modal={type:'pin',role:k,target:rr,pin:''}}}}catch(e){}
 render();LAST=snapNow();tick();
 const iv3=setInterval(tick,2500);
 return()=>{ctl.abort();clearInterval(iv);clearInterval(iv2);clearInterval(iv3)};

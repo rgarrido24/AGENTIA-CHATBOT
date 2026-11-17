@@ -26,7 +26,7 @@ export function crearPins(cfg: ServidorConfig) {
   }
 
   async function pinOk(rol: Rol, pin: unknown): Promise<boolean> {
-    if (typeof pin !== 'string' || !/^\d{4}$/.test(pin)) return false;
+    if (typeof pin !== 'string' || !/^\d{4,8}$/.test(pin)) return false;
     const g = (await guardados())[rol];
     return g ? g === hash(pin) : pin === (env(rol) || cfg.pinesIniciales[rol]);
   }
@@ -42,5 +42,14 @@ export function crearPins(cfg: ServidorConfig) {
     await db.collection<any>(colEstado(cfg)).updateOne({ _id: 'main' }, { $set: { ['pins.' + rol]: hash(nuevo) } }, { upsert: true });
   }
 
-  return { pinOk, pinPorDefecto, cambiarPin };
+  /** Rechaza PINs obvios: repetidos, secuencias, los iniciales y los típicos. */
+  function pinDebil(pin: string): boolean {
+    if (/^(\d)\1+$/.test(pin)) return true;
+    const asc = '0123456789012345678901', desc = '9876543210987654321';
+    if (asc.includes(pin) || desc.includes(pin)) return true;
+    const iniciales = Object.values(cfg.pinesIniciales || {}) as string[];
+    return iniciales.concat(['1111', '2222', '3333', '4444', '1234', '0000', '2580', '1212', '2020', '2026', '123456', '654321', '000000']).includes(pin);
+  }
+
+  return { pinOk, pinPorDefecto, cambiarPin, pinDebil };
 }

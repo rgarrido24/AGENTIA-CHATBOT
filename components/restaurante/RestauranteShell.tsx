@@ -26,7 +26,6 @@ export default function RestauranteShell({ cfg, staff }: { cfg: RestauranteConfi
               <small>{staff ? 'Equipo' : cfg.marca.tagline}</small>
             </div>
             <div className="row">
-              <button className="btn ghost sm" data-a="install" id="installBtn" style={{ display: 'none' }}>Instalar app</button>
               <button className="btn ghost sm" data-a="sound" id="soundBtn">Sonido: no</button>
               <button className="btn ghost sm" data-a="reset">Reiniciar demo</button>
             </div>

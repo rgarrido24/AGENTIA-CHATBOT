@@ -118,6 +118,30 @@ const nextConfig = {
 
   async headers() {
     return [
+      // Tostichelas: sin iframes, sin sniffing, sin referrer, y nada de caché en equipo/API
+      {
+        source: '/tostichelas/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), payment=()' },
+        ],
+      },
+      {
+        source: '/tostichelas/equipo/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+        ],
+      },
+      {
+        source: '/api/demo/tostichelas/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+        ],
+      },
       // Prevent aggressive edge caching for conversion-critical flows
       {
         source: '/lealtad',

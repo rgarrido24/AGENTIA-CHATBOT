@@ -80,6 +80,8 @@ export type RestauranteConfig = {
       /** Imagen de portada distinta a `mark` (por ejemplo el logo completo). */
       img?: { src: string; w: number; h: number; alt: string };
     };
+    /** Logo grande que reemplaza la franja de marca del menú del cliente (sin botón de instalar). */
+    logoHero?: { src: string; w: number; h: number; alt: string };
   };
   textos: {
     buscar: string;
@@ -128,6 +130,8 @@ export type RestauranteConfig = {
   ajustes?: Record<string, number | boolean | string | null>;
   /** Ilustraciones SVG por categoría (viewBox 64x64). Si falta, el motor usa las de Tostichelas. */
   arte?: Record<string, string>;
+  /** Portada del menú: producto destacado, mosaico de categorías y combos. Si falta, no se muestra. */
+  inicio?: { destacado: string; combos: [string, string, string][]; tituloCombos: string };
   /** Constructor de alitas/boneless con salsas y medidor de picor. */
   armador?: Armador;
   salsas?: Salsa[];

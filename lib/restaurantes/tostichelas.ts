@@ -53,6 +53,45 @@ const MESAS:{ k: string; label: string; tipo: string }[]=[];
 for(let i=1;i<=9;i++)MESAS.push({k:'m'+i,label:'Mesa '+i,tipo:'mesa'});
 for(let i=1;i<=3;i++)MESAS.push({k:'p'+i,label:'Periquito '+i,tipo:'periquito'});
 
+/* extras con precio (precios de ejemplo: ajustar con el restaurante) */
+const XQ=(g:string,l:string,a:number,b?:number)=>({g,req:false,opts:[{l,p:[a,b==null?a:b]}]});
+const SALSA_X=()=>({g:'Salsa',req:false,opts:['Verde','Roja','Habanero','Macha'].map(l=>({l,p:[0,0]}))});
+MENU.forEach((q:any)=>{
+ if(q.cat==='Tostadas')q.mods=q.mods.concat([XQ('Aguacate extra','Sí',15),XQ('Doble porción','Sí',35),SALSA_X()]);
+ else if(q.cat==='Tacos')q.mods=q.mods.concat([XQ('Queso extra','Sí',10,25),XQ('Aguacate extra','Sí',10,25),SALSA_X()]);
+ else if(q.cat==='Snacks')q.mods=q.mods.concat([XQ('Queso extra','Sí',15),SALSA_X()]);
+});
+
+/* ilustración propia por producto (trazo grueso del logo; el motor pone el trazo) */
+const BEER:Record<string,string[]>={cor:['#F5B83D','#2F6FB5','#F7E27A'],vic:['#C98A2B','#C0392B','#F3D9A4'],pac:['#E7B04A','#1F9AD6','#FFFFFF'],xx:['#B8721E','#2E8B57','#F5B83D'],ult:['#F2C14E','#3FA9F5','#E8EEF2'],mod:['#E5A82F','#E5B73B','#241610'],leo:['#5B2A14','#8C3B1B','#F2D6A0']};
+const DRINK:Record<string,string[]>={boi:['#9BD34A','#F5D45E'],coc:['#3B1F18','#D0312D'],min:['#CFE9F7','#FFFFFF'],sue:['#EAF6FB','#3FA9F5'],sug:['#EAF6FB','#2E7DD1'],cln:['#C9473A','#8CC152']};
+const bottle=(c:string[],big?:boolean)=>'<path d="M26 4h12v4h-3v8c0 4 7 8 7 15v23a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V31c0-7 7-11 7-15V8h-3z" fill="'+c[0]+'"/><rect x="23" y="'+(big?30:34)+'" width="18" height="'+(big?22:16)+'" fill="'+c[1]+'" stroke-width="2"/><circle cx="32" cy="'+(big?41:42)+'" r="4" fill="'+c[2]+'" stroke-width="2"/><rect x="27" y="2" width="10" height="5" rx="2" fill="#241610"/>';
+const TACO:Record<string,[string,string]>={tbi:['#8B4A2B','<path d="M18 40l8-6M28 41l8-7M38 40l7-5" stroke="#4A2412" stroke-width="2.5" fill="none"/>'],tpo:['#EBCB9C','<path d="M17 40q5-4 10 0t10 0 8-1M20 35q5-3 10 0t8 0" stroke="#B88B54" stroke-width="2.2" fill="none"/>'],tlo:['#B0342B','<circle cx="22" cy="39" r="4" fill="#7E1F1A"/><circle cx="32" cy="35" r="4" fill="#7E1F1A"/><circle cx="42" cy="39" r="4" fill="#7E1F1A"/>'],tmi:['#DDA845','<path d="M14 42l36-6" stroke="#B9822A" stroke-width="7"/><circle cx="22" cy="40" r="1.4" fill="#fff"/><circle cx="36" cy="37" r="1.4" fill="#fff"/><circle cx="46" cy="35" r="1.4" fill="#fff"/>'],tca:['#9A4A2A','<path d="M14 42a18 18 0 0 1 18-16v17z" fill="#B0342B"/><path d="M32 43V26a18 18 0 0 1 18 16z" fill="#8B4A2B"/>'],tar:['#5E2F1E','<path d="M17 41l7-5M27 42l8-7M38 41l7-5" stroke="#241610" stroke-width="3" fill="none"/><path d="M45 28l10 6-9 6z" fill="#C5E063"/>'],tcm:['#F08A3E','<path d="M18 41q4-8 9-3M30 40q4-9 9-3M41 41q3-6 8-2" stroke="#B85A1C" stroke-width="3" fill="none"/>'],tcc:['#8B4A2B','<path d="M14 40q6 5 12 0t12 0 10 0v4H14z" fill="#F5D45E"/><path d="M20 37l6-5M33 36l6-5" stroke="#4A2412" stroke-width="3" fill="none"/><circle cx="46" cy="34" r="4" fill="#F08A3E"/>']};
+function arteDe(id:string,cat:string):string{
+ let b='';
+ if(cat==='Cervezas')b=bottle(BEER[id]||['#F5B83D','#C0392B','#fff']);
+ else if(cat==='Tostadas'){
+  const ag=id==='tag';
+  b='<circle cx="32" cy="34" r="23" fill="#E9C27E"/><circle cx="32" cy="34" r="18" fill="'+(ag?'#DDEBB4':'#F07A4D')+'"/>'
+   +(ag?'<circle cx="24" cy="29" r="6" fill="#8CC152"/><circle cx="24" cy="29" r="3" fill="#E7F2C2" stroke-width="1.5"/><circle cx="38" cy="38" r="6" fill="#8CC152"/><circle cx="38" cy="38" r="3" fill="#E7F2C2" stroke-width="1.5"/><path d="M30 22q8 1 12 7-7 3-12-7z" fill="#B14B8A"/><path d="M20 40q4 5 9 4" fill="none" stroke="#B14B8A" stroke-width="3"/><path d="M40 24q5 1 6 6-5 1-6-6z" fill="#F08A3E"/>'
+    :'<path d="M22 30q4-6 9-2-1 6-9 2zM33 36q5-5 10-1-2 6-10 1zM26 41q4-3 8 0" fill="#F5A04A"/><path d="M28 20q12 4 10 15-10-2-10-15z" fill="#8CC152"/><circle cx="41" cy="28" r="3" fill="#fff"/><path d="M16 42a16 16 0 0 0 32 0z" fill="#C5E063"/>');
+ }else if(cat==='Tacos'){
+  const t=TACO[id]||['#8B4A2B',''];const harina=id==='tcm'||id==='tcc';
+  b='<path d="M6 46a26 26 0 0 1 52 0z" fill="'+(harina?'#F6E8C8':'#F2C76B')+'"/><path d="M13 46a19 19 0 0 1 38 0z" fill="'+t[0]+'"/>'+t[1]+'<circle cx="22" cy="29" r="2.5" fill="#8CC152"/><circle cx="41" cy="27" r="2.5" fill="#8CC152"/><circle cx="32" cy="24" r="2.5" fill="#fff"/><path d="M8 50h48" stroke-width="2.5" opacity=".4"/>';
+ }else if(cat==='Bebidas'){
+  const c=DRINK[id]||['#7FB2E5','#fff'];
+  if(id==='cln')b='<path d="M16 12h32l-4 44a4 4 0 0 1-4 4H24a4 4 0 0 1-4-4z" fill="'+c[0]+'"/><path d="M42 4l-6 16" stroke="'+c[1]+'" stroke-width="4"/><circle cx="46" cy="14" r="6" fill="#C5E063"/>';
+  else if(id==='boi')b='<path d="M20 8h24l3 10v36a4 4 0 0 1-4 4H21a4 4 0 0 1-4-4V18z" fill="'+c[0]+'"/><circle cx="32" cy="36" r="9" fill="'+c[1]+'"/><path d="M26 36h12" stroke-width="2.5"/>';
+  else b=bottle([c[0],c[1],id==='coc'?'#fff':c[0]],id==='sug');
+ }else if(id==='pf')b='<rect x="17" y="10" width="6" height="26" fill="#F5D45E"/><rect x="26" y="6" width="6" height="30" fill="#F5D45E"/><rect x="35" y="10" width="6" height="26" fill="#F5D45E"/><rect x="43" y="14" width="5" height="22" fill="#F5D45E"/><path d="M14 32h36l-4 26H18z" fill="#E2573A"/><path d="M20 38q6 4 12 0t12 0" stroke="#fff" stroke-width="3" fill="none"/>';
+ else if(id==='pr')b='<path d="M12 28l4 28h32l4-28z" fill="#E8C27E"/><path d="M16 28l-3-16M26 28l-1-20M36 28l2-18M46 28l5-14" stroke="#F5D45E" stroke-width="6" fill="none"/>';
+ else if(id==='hp')b='<path d="M6 26a20 16 0 0 1 40 0z" fill="#E8A24A"/><path d="M5 28h42l-3 4H8z" fill="#8CC152"/><rect x="7" y="33" width="38" height="7" rx="3" fill="#7A4A2B"/><path d="M8 42h36a4 4 0 0 1-4 7H12a4 4 0 0 1-4-7z" fill="#E8A24A"/><rect x="40" y="38" width="5" height="16" fill="#F5D45E"/><rect x="47" y="34" width="5" height="20" fill="#F5D45E"/><rect x="54" y="40" width="5" height="14" fill="#F5D45E"/><path d="M38 52h24l-3 8H41z" fill="#E2573A"/>';
+ else b='<path d="M9 30a23 19 0 0 1 46 0z" fill="#E8A24A"/><circle cx="24" cy="23" r="1.5" fill="#fff"/><circle cx="34" cy="19" r="1.5" fill="#fff"/><path d="M7 33h50l-4 5H11z" fill="#8CC152"/><path d="M10 38h44v3H10z" fill="#F5D45E"/><rect x="10" y="41" width="44" height="8" rx="4" fill="#7A4A2B"/><path d="M12 49h40a4 4 0 0 1-4 8H16a4 4 0 0 1-4-8z" fill="#E8A24A"/>';
+ return b;
+}
+const ARTE:Record<string,string>={};
+MENU.forEach(q=>{ARTE[q.id]=arteDe(q.id,q.cat)});
+
 export const TOSTICHELAS: RestauranteConfig = {
   slug: 'tostichelas',
   ruta: '/tostichelas',
@@ -80,7 +119,8 @@ export const TOSTICHELAS: RestauranteConfig = {
     fondoManifest: '#FBE3CB',
     tema: '',
     trazo: '#241610',
-    splash: { lineas: ['TOSTI', 'CHELAS'], sub: 'Tostadas, mariscos y cervezas bien frías', boton: 'Ver el menú', efecto: 'burbujas' },
+    splash: { lineas: ['TOSTI', 'CHELAS'], sub: 'Tostadas, mariscos y cervezas bien frías', boton: 'Ver el menú', efecto: 'burbujas', img: { src: '/tostichelas/logo-hero.webp', w: 900, h: 617, alt: 'Tostichelas · tostadas, mariscos y cervezas' } },
+    logoHero: { src: '/tostichelas/logo-hero.webp', w: 900, h: 617, alt: 'Tostichelas · tostadas, mariscos y cervezas' },
   },
   textos: {
     buscar: 'Busca tostadas, chelas, tacos…',
@@ -93,6 +133,9 @@ export const TOSTICHELAS: RestauranteConfig = {
   categorias: CATS,
   colores: CATCOL,
   menu: MENU,
+  arte: ARTE,
+  inicio: { destacado: 'tcm', combos: [['tag', 'vic', 'Aguachile + Victoria'], ['tcc', 'cor', 'Camachera + Corona'], ['tar', 'mod', 'Arrachera + Modelo']], tituloCombos: 'Va muy bien con una chela' },
+  ajustes: { pedMesa: true },
   insumos: INS0,
   mesas: MESAS,
   mesaInicial: 'm4',
