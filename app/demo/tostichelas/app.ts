@@ -84,7 +84,7 @@ const live=()=>S.orders.filter(o=>!o.hold&&!o.cancel);
 const mesaOrders=k=>S.orders.filter(o=>o.mesa===k&&!o.closed&&!o.cancel&&!o.hold);
 const orderSub=o=>sumLines(o.lines);
 const mesaTotal=k=>mesaOrders(k).reduce((a,o)=>a+orderSub(o),0);
-function addPoints(c,sub,disc){if(!c||!c.tel)return;let cu=S.cust.find(x=>x.tel===c.tel);if(!cu){cu={tel:c.tel,name:c.name||'Cliente',pts:0,visits:0,last:0};S.cust.push(cu)}if(c.name&&cu.name==='Cliente')cu.name=c.name;cu.pts+=Math.floor((sub-disc)/10);cu.visits++;cu.last=0}
+function addPoints(c,sub,disc){return;let cu=S.cust.find(x=>x.tel===c.tel);if(!cu){cu={tel:c.tel,name:c.name||'Cliente',pts:0,visits:0,last:0};S.cust.push(cu)}if(c.name&&cu.name==='Cliente')cu.name=c.name;cu.pts+=Math.floor((sub-disc)/10);cu.visits++;cu.last=0}
 function closeTicket(orders,o2){const lines=[];orders.forEach(o=>o.lines.forEach(l=>lines.push(Object.assign({},l,{cost:lineCost(l)}))));const sub=sumLines(lines);const t=Object.assign({id:S.tseq++,ts:Date.now(),lines,sub,disc:0,tip:0,method:'Efectivo',cliente:{},canal:'mesa',mesa:null,orderIds:orders.map(o=>o.id)},o2);t.total=sub-t.disc+t.tip+(t.envio||0);S.tickets.push(t);orders.forEach(o=>{o.closed=true});if(t.mesa)delete S.cuenta[t.mesa];addPoints(t.cliente,sub,t.disc);return t}
 function restockCancel(o){if(!o.hold)deduct(o,-1);o.cancel=true}
 function beep(){if(!S||!S.sound)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.4);o.start();o.stop(ac.currentTime+.4)}catch(e){}}
@@ -99,7 +99,8 @@ function seed(){
   cli:{tab:'menu',geo:'dentro',mesa:'m4',canal:'mesa',cat:'Todo',sort:'pop',cart:[],addr:'',open:{},purchased:{}},
   me:{name:'',tel:''},
   mw:{sel:null,adding:false,cart:[]},
-  caja:{sel:null,tab:'cobro',split:1,tip:0,method:'Efectivo',recv:'',tel:'',canje:false,fondo:500,contado:''},
+  caja:{sel:null,tab:'cobro',split:1,tip:0,method:'Efectivo',recv:'',tel:'',canje:false,fondo:500,contado:'',lc:null,nom:'',nac:'',busy:false},
+  loy:{tel:'',data:null,loading:false,nom:'',nac:''},real:null,kds:{screen:false},
   own:{tab:'resumen'}};
  const LK={tag:128,tce:96,tcc:84,tcm:77,cor:71,vic:64,tar:58,pac:49,ha:44,hp:40,tca:39,tmi:37,tbi:33,xx:30,mod:31,leo:25,tlo:26,pf:22,tpo:21,ult:18,pr:19,sue:15,coc:14,cln:12,boi:9,sug:8,min:6};
  const RT={tag:[4.8,64],tce:[4.7,52],tcc:[4.9,48],tcm:[4.8,41],cor:[4.5,39],vic:[4.6,35],tar:[4.7,30],pac:[4.4,22],ha:[4.3,25],hp:[4.4,21],tca:[4.5,19],tmi:[4.5,17],tbi:[4.3,15],xx:[4.4,16],mod:[4.4,15],leo:[4.5,13],tlo:[4.4,12],pf:[4.2,14],tpo:[4.2,10],ult:[4.3,9],pr:[4.1,9],sue:[4.6,8],coc:[4.5,7],cln:[4.2,6],boi:[4.3,5],sug:[4.5,4],min:[4.2,3]};
@@ -228,10 +229,48 @@ function cPedido(){
  return h}
 function stPill(s){return s==='nuevo'?'<span class="status s-neutral">En cola</span>':s==='preparando'?'<span class="status s-warn">Preparando</span>':s==='listo'?'<span class="status s-good">Listo</span>':'<span class="status s-neutral">Servido</span>'}
 function cPuntos(){
- const tel=S.me.tel,cu=S.cust.find(x=>x.tel===tel&&tel);const pts=cu?cu.pts:0,nx=100;
- let h='<div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">TOSTICHELAS</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">'+pts+'</div><div class="small">puntos · 1 punto por cada $10 · 100 puntos = $25 de descuento</div></div><div><div class="meter" style="background:rgba(255,255,255,.35)"><i style="width:'+Math.min(100,pts%nx||(pts?100:0))+'%;background:#fff"></i></div><div class="xs" style="margin-top:4px">'+(pts>=nx?'Ya puedes canjear en caja':'Te faltan '+(nx-pts%nx)+' puntos para tu descuento')+'</div></div></div>';
- h+='<div class="card stack"><label class="f">Tu WhatsApp para ver tus puntos<input type="tel" data-in="tel" value="'+esc(S.me.tel)+'" placeholder="Prueba 9991230001"></label><div class="small muted">'+(cu?'Hola '+esc(cu.name)+', llevas '+cu.visits+' visitas.':'Escribe un número registrado, o paga una cuenta con tu WhatsApp para empezar a sumar.')+'</div><button class="btn" disabled>Agregar a Google Wallet</button><div class="xs muted">La tarjeta en Wallet se activa al contratar.</div></div>';
- return h}
+ const L=S.loy,d=L.data,tel=S.me.tel;
+ const modelo=d?d.modelo:'cashback';
+ let h='';
+ if(d&&d.found){
+  const cl=d.cliente;
+  h+='<div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">TOSTICHELAS</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">'+fmtSaldo(d,cl.puntos)+'</div><div class="small">'+(modelo==='cashback'?'de saldo para tu próxima cuenta':unidad(d))+' · '+d.parametro+'% de cashback en cada visita</div></div><div class="xs">'+esc(cl.nombre)+' · '+cl.visitas+' visitas</div></div>';
+ }else{
+  h+='<div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">TOSTICHELAS</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">$0</div><div class="small">Regístrate y gana '+(d&&d.parametro?d.parametro:5)+'% de saldo en cada cuenta</div></div></div>';
+ }
+ h+='<div class="card stack"><label class="f">Tu WhatsApp<input type="tel" data-in="tel" value="'+esc(tel)+'" placeholder="10 dígitos"></label>';
+ if(tel.length===10){
+  if(L.loading||!d)h+='<div class="small muted">Buscando tu tarjeta…</div>';
+  else if(d.error)h+='<div class="banner warn">No pudimos consultar tu tarjeta ahora. Intenta de nuevo.</div>';
+  else if(d.found){
+   h+='<div class="small muted">Tu saldo se aplica en caja al pagar. Tu tarjeta vive en tu celular.</div><button class="btn pri" data-a="wallet"'+(L.wbusy?' disabled':'')+'>'+(L.wbusy?'Preparando…':'Agregar a Google Wallet')+'</button>'+(L.wmsg?'<div class="xs muted">'+esc(L.wmsg)+'</div>':'');
+  }else{
+   h+='<div class="small muted">Aún no tienes tarjeta. Créala en 10 segundos.</div><div class="grid2" style="gap:8px"><label class="f">Nombre<input type="text" data-in="lnom" value="'+esc(L.nom)+'"></label><label class="f">Fecha de nacimiento<input type="date" data-in="lnac" value="'+esc(L.nac)+'"></label></div><button class="btn pri" data-a="lalta"'+(L.wbusy?' disabled':'')+'>Crear mi tarjeta</button>';
+  }
+ }else h+='<div class="small muted">Escribe tu número para ver o crear tu tarjeta.</div>';
+ return h+'</div>'}
+function loadMe(){
+ const L=S.loy,tel=S.me.tel;if(tel.length!==10)return;
+ L.loading=true;L.data=null;
+ lget('telefono='+tel).then(j=>{if(S.me.tel===tel){L.data=j;L.loading=false;render()}}).catch(e=>{if(S.me.tel===tel){L.data={error:e.message};L.loading=false;render()}});
+}
+async function addWallet(){
+ const L=S.loy,tel=S.me.tel;L.wbusy=true;L.wmsg='';render();
+ try{
+  const r=await fetch('/api/wallet/tostichelas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telefono:tel})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.saveUrl)throw new Error(j.error||'Wallet aún no está activo para esta demo');
+  window.open(j.saveUrl,'_blank','noopener');L.wmsg='Se abrió Google Wallet para guardar tu tarjeta.';
+ }catch(e){L.wmsg=e.message}
+ L.wbusy=false;render();
+}
+async function altaMe(){
+ const L=S.loy;
+ if(!L.nom.trim()||!L.nac){toast('Escribe tu nombre y fecha de nacimiento');return}
+ L.wbusy=true;render();
+ try{await lpost({accion:'alta',telefono:S.me.tel,nombre:L.nom,fechaNacimiento:L.nac});toast('Tarjeta creada');S.real=null}catch(e){toast(e.message)}
+ L.wbusy=false;loadMe();
+}
 
 /* ---------- modales ---------- */
 function openProd(pid,target){const p=PM(pid);S.modal={type:'prod',pid,target,vi:0,pick:{},qty:1,note:''}}
@@ -264,8 +303,8 @@ function modalHtml(){
  }
  if(md.type==='ticket'){
   const t=S.tickets.find(x=>x.id===md.id);
-  const txt='Tostichelas · Ticket '+t.id+'\n'+t.lines.map(l=>l.qty+' x '+l.name+' '+l.v+' '+m(lineTot(l))).join('\n')+'\nTotal '+m(t.total);
-  h+='<div class="row between"><h2>Ticket digital</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>TOSTICHELAS · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div></div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
+  const txt='Tostichelas · Ticket '+t.id+'\n'+t.lines.map(l=>l.qty+' x '+l.name+' '+l.v+' '+m(lineTot(l))).join('\n')+'\nTotal '+m(t.total)+(t.loy&&t.loy.modelo==='cashback'?'\nSaldo en tu tarjeta: '+m2(t.loy.saldo):'');
+  h+='<div class="row between"><h2>Ticket digital</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>TOSTICHELAS · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div>'+(t.loy?'<hr><div class="small"><b>Tarjeta Tostichelas</b><br>'+(t.loy.usado?'Usaste '+m(t.loy.usado)+' de saldo.<br>':'')+(t.loy.modelo==='cashback'?'Ganaste '+m2(t.loy.ganado)+' de saldo. Saldo ahora: <b>'+m2(t.loy.saldo)+'</b>':'Ganaste '+t.loy.ganado+' y llevas <b>'+t.loy.saldo+'</b>')+(t.loy.nuevo?'<br>Tu tarjeta ya está creada: guárdala en Google Wallet desde la pestaña Mis puntos.':'')+'</div>':'')+'</div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
  }
  return h+'</div></div>'}
 function buildLine(){const md=S.modal,p=PM(md.pid),v=p.v[md.vi];const mods=[];p.mods.forEach(g=>{if(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])return;const l=md.pick[g.g];if(!l)return;const o=g.opts.find(x=>x.l===l);mods.push({g:g.g,l:(g.g==='Preparado'||g.g==='Vaso')?g.g+' '+l:l,p:o.p[v.s]})});return lineFrom(p,md.vi,mods,md.qty,md.note)}
@@ -291,7 +330,7 @@ function mDetail(k){
  if(!s.os.length)h+='<div class="small muted">Mesa libre. Agrega un pedido o espera a que el cliente escanee el QR.</div>';
  s.os.forEach(o=>{h+='<div class="stack" style="gap:6px"><div class="row between"><span class="b small">Pedido #'+o.id+' · '+(o.src==='cliente'?'por QR del cliente':'tomado por mesero')+'</span><span class="xs muted">hace '+ago(o.created)+'</span></div>';
   if(o.porConfirmar)h+='<div class="banner bad"><b>Confirma que hay gente en la mesa.</b> Si no hay nadie, anula el pedido y regresa el inventario.<div class="row" style="margin-top:6px"><button class="btn sm pri" data-a="conf" data-o="'+o.id+'">Sí, hay clientes</button><button class="btn sm" data-a="anular" data-o="'+o.id+'">Anular pedido</button></div></div>';
-  o.lines.forEach(l=>{h+='<div class="row between" style="align-items:flex-start"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div>'+stPill(l.status)+(l.status==='listo'?'<button class="btn sm pri" data-a="servir" data-o="'+o.id+'" data-u="'+l.uid+'">Servir</button>':'')+'</div>'});
+  o.lines.forEach(l=>{h+='<div class="row between" style="align-items:flex-start"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div>'+stPill(l.status)+((l.status==='listo'||(S.kds.screen&&l.status==='preparando'))?'<button class="btn sm pri" data-a="servir" data-o="'+o.id+'" data-u="'+l.uid+'">'+(l.status==='listo'?'Servir':'Recoger y servir')+'</button>':'')+'</div>'});
   h+='</div><hr>'});
  h+='<div class="row"><button class="btn pri sm" data-a="madding" data-k="'+k+'">Agregar pedido</button>'+(s.os.length?'<button class="btn sm" data-a="mcuenta" data-k="'+k+'">'+(S.cuenta[k]?'Cuenta ya en caja':'Pasar cuenta a caja')+'</button>':'')+'</div></div>';
  return h}
@@ -307,12 +346,13 @@ function vKds(st){
  const tks=live().map(o=>({o,ls:o.lines.filter(l=>l.station===st&&l.status!=='entregado')})).filter(x=>x.ls.length);
  const stOf=x=>x.ls.every(l=>l.status==='listo')?'listo':x.ls.some(l=>l.status==='preparando')?'preparando':'nuevo';
  const cols=[['nuevo','Nuevos'],['preparando','Preparando'],['listo','Listos']];
- let h='<div class="stack" style="margin-top:12px"><div class="row between"><h2>'+title+'</h2><span class="small muted">Se actualiza solo. Toca el botón de cada comanda para avanzar.</span></div><div class="kds">';
+ const sc=S.kds.screen;
+ let h='<div class="stack" style="margin-top:12px"><div class="row between"><h2>'+title+'</h2><span class="row" style="gap:8px"><span class="small muted">'+(sc?'Modo pantalla: sin tocar. Avanza solo; el pedal o botón marca listo.':'Se actualiza solo. Toca el botón de cada comanda para avanzar.')+'</span><button class="btn sm" data-a="kscreen" aria-pressed="'+sc+'">'+(sc?'Salir de modo pantalla':'Modo pantalla (sin tocar)')+'</button></span></div><div class="kds">';
  cols.forEach(c=>{const arr=tks.filter(x=>stOf(x)===c[0]).sort((a,b)=>a.o.created-b.o.created);
   h+='<div class="kcol"><h3>'+c[1]+' ('+arr.length+')</h3>';
   if(!arr.length)h+='<div class="small muted">Sin comandas</div>';
   arr.forEach(x=>{const mi=mins(x.o.created);const cls=c[0]==='listo'?'ok':mi>=15?'late':'';
-   h+='<div class="ticket '+cls+'"><div class="row between"><b>'+(x.o.canal==='mesa'?mLabel(x.o.mesa):x.o.canal==='llevar'?'Para llevar':'Entrega')+' · #'+x.o.id+'</b><span class="status '+(mi>=15&&c[0]!=='listo'?'s-bad':'s-neutral')+' num">'+mi+' min</span></div>'+(x.o.porConfirmar?'<div class="xs" style="color:var(--warn)">Mesero por confirmar mesa</div>':'')+'<ul>'+x.ls.map(l=>'<li>'+l.qty+' × '+lineHtml(l)+'</li>').join('')+'</ul>'+(c[0]==='nuevo'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Empezar a preparar</button>':c[0]==='preparando'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Marcar listo</button>':'<span class="small b" style="color:var(--good)">Esperando al mesero</span>')+'</div>'});
+   h+='<div class="ticket '+cls+'"><div class="row between"><b>'+(x.o.canal==='mesa'?mLabel(x.o.mesa):x.o.canal==='llevar'?'Para llevar':'Entrega')+' · #'+x.o.id+'</b><span class="status '+(mi>=15&&c[0]!=='listo'?'s-bad':'s-neutral')+' num">'+mi+' min</span></div>'+(x.o.porConfirmar?'<div class="xs" style="color:var(--warn)">Mesero por confirmar mesa</div>':'')+'<ul>'+x.ls.map(l=>'<li>'+l.qty+' × '+lineHtml(l)+'</li>').join('')+'</ul>'+(sc?(c[0]==='nuevo'?'<span class="small muted">Entra a preparación en unos segundos</span>':c[0]==='preparando'?'<span class="small b">Pedal o tecla Espacio: marcar listo</span>':'<span class="small b" style="color:var(--good)">Listo. El mesero ya fue avisado</span>'):(c[0]==='nuevo'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Empezar a preparar</button>':c[0]==='preparando'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Marcar listo</button>':'<span class="small b" style="color:var(--good)">Esperando al mesero</span>'))+'</div>'});
   h+='</div>'});
  return h+'</div></div>'}
 
@@ -335,7 +375,7 @@ function cobro(){
  const c=S.caja;if(!c.sel||c.sel.indexOf('m:')!==0)return'<div class="card small muted">Elige una cuenta para cobrar.</div>';
  const k=c.sel.slice(2),os=mesaOrders(k);if(!os.length){c.sel=null;return'<div class="card small muted">Elige una cuenta para cobrar.</div>'}
  const sub=os.reduce((a,o)=>a+orderSub(o),0),tip=Math.round(sub*c.tip/100);
- const cu=c.tel?S.cust.find(x=>x.tel===c.tel):null;const disc=(c.canje&&cu&&cu.pts>=100)?25:0;const tot=sub-disc+tip;
+ const lc=c.lc&&c.lc.found?c.lc:null;const saldo=lc?Math.floor(lc.cliente.puntos):0;const disc=(c.canje&&saldo>0&&lc.modelo==='cashback')?Math.min(saldo,sub):0;const tot=sub-disc+tip;
  let h='<div class="card stack"><h3>Cobrar '+mLabel(k)+'</h3>';
  os.forEach(o=>o.lines.forEach(l=>{h+='<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>'}));
  h+='<div class="sep"></div><div class="row between"><span>Subtotal</span><b class="num">'+m(sub)+'</b></div>';
@@ -344,10 +384,19 @@ function cobro(){
  if(c.method==='Efectivo')h+='<label class="f">Recibido<input type="number" inputmode="decimal" data-in="recv" value="'+esc(c.recv)+'" placeholder="0"></label><div class="b" id="cambio">'+cambioTxt(tot)+'</div>';
  else if(c.method==='Tarjeta')h+='<div class="small muted">Cobra en la terminal bancaria del negocio y registra aquí el pago.</div>';
  h+='<div><div class="b small">Dividir cuenta</div><div class="chips">'+[1,2,3,4,5,6].map(x=>'<button class="chip" data-a="split" data-v="'+x+'" aria-pressed="'+(c.split===x)+'">'+x+'</button>').join('')+'</div>'+(c.split>1?'<div class="small">Cada quien paga <b class="num">'+m(tot/c.split)+'</b></div>':'')+'</div>';
- h+='<label class="f">WhatsApp del cliente (puntos y ticket)<input type="tel" data-in="ctel" value="'+esc(c.tel)+'" placeholder="Prueba 9991230001"></label>';
- if(cu)h+='<div class="row between small"><span>'+esc(cu.name)+' tiene <b>'+cu.pts+'</b> puntos</span>'+(cu.pts>=100?'<button class="chip" data-a="canje" aria-pressed="'+c.canje+'">Canjear 100 pts = −$25</button>':'')+'</div>';
- if(disc)h+='<div class="row between small"><span>Descuento por puntos</span><b class="num">−'+m(disc)+'</b></div>';
- h+='<div class="row between"><span class="b">Total</span><b class="num" style="font-size:26px">'+m(tot)+'</b></div><button class="btn pri" data-a="cobrar">Cobrar y enviar ticket</button><button class="btn" disabled>Facturar (en integración)</button></div>';
+
+ h+='<div class="stack" style="gap:6px"><label class="f">WhatsApp del cliente (tarjeta de lealtad y ticket)<input type="tel" data-in="ctel" value="'+esc(c.tel)+'" placeholder="10 dígitos"></label>';
+ const L=c.lc;
+ if(c.tel.length===10){
+  if(!L||L.loading)h+='<div class="small muted">Buscando tarjeta…</div>';
+  else if(L.error)h+='<div class="banner warn">No se pudo consultar lealtad ('+esc(L.error)+'). Puedes cobrar sin puntos.</div>';
+  else if(L.found){h+='<div class="row between small"><span><b>'+esc(L.cliente.nombre)+'</b> · saldo '+fmtSaldo(L,L.cliente.puntos)+' '+(L.modelo==='cashback'?'':unidad(L))+'</span>'+(L.modelo==='cashback'&&saldo>0?'<button class="chip" data-a="canje" aria-pressed="'+c.canje+'">Usar '+m(Math.min(saldo,sub))+' de saldo</button>':'')+'</div>'}
+  else h+='<div class="banner warn">Cliente nuevo. Pide su nombre y fecha de nacimiento para crear su tarjeta.</div><div class="grid2" style="gap:8px"><label class="f">Nombre<input type="text" data-in="cnom" value="'+esc(c.nom)+'"></label><label class="f">Fecha de nacimiento<input type="date" data-in="cnac" value="'+esc(c.nac)+'"></label></div>';
+  if(L&&!L.error&&!L.loading&&L.modelo==='cashback')h+='<div class="xs muted">Esta venta le suma aprox. '+m2((sub-disc)*L.parametro/100)+' de saldo ('+L.parametro+'% de cashback).</div>';
+ }
+ h+='</div>';
+ if(disc)h+='<div class="row between small"><span>Saldo aplicado</span><b class="num">−'+m(disc)+'</b></div>';
+ h+='<div class="row between"><span class="b">Total</span><b class="num" style="font-size:26px">'+m(tot)+'</b></div><button class="btn pri" data-a="cobrar"'+(c.busy?' disabled':'')+'>'+(c.busy?'Cobrando…':'Cobrar y enviar ticket')+'</button><button class="btn" disabled>Facturar (en integración)</button></div>';
  return h}
 const cambioTxt=tot=>{const r=parseFloat(S.caja.recv);if(!r)return'Cambio: escribe lo recibido';return r>=tot?'Cambio: '+m(r-tot):'Faltan '+m(tot-r)};
 function dayTickets(){const d=new Date();d.setHours(0,0,0,0);return S.tickets.filter(t=>t.ts>=d.getTime())}
@@ -392,8 +441,11 @@ function dInv(){
 function dMenu(){
  return '<div class="card stack"><h3>Disponibilidad y margen por producto</h3><div class="small muted">Apaga un producto cuando se acabe y desaparece del menú del cliente y del mesero. Los costos son de ejemplo, edítalos con los reales.</div><div class="scrollx"><table class="tbl"><thead><tr><th>Producto</th><th class="r">Precio</th><th class="r">Costo</th><th class="r">Margen</th><th>Hoy</th></tr></thead><tbody>'+MENU.map(p=>{const l=lineFrom(p,0,[],1);const c=lineCost(l),pr=p.v[0].p;return'<tr><td>'+esc(p.name)+' <span class="xs muted">'+esc(p.v[0].l)+'</span></td><td class="r num">'+m(pr)+'</td><td class="r num">'+m(c)+'</td><td class="r num">'+Math.round((pr-c)/pr*100)+'%</td><td><button class="chip" data-a="avail" data-p="'+p.id+'" aria-pressed="'+p.avail+'">'+(p.avail?'Disponible':'Apagado')+'</button></td></tr>'}).join('')+'</tbody></table></div></div>'}
 function dClientes(){
- const inact=S.cust.filter(c=>c.last>30);
- return '<div class="card stack"><h3>Clientes con tarjeta</h3><div class="scrollx"><table class="tbl"><thead><tr><th>Cliente</th><th class="r">Puntos</th><th class="r">Visitas</th><th>Última visita</th></tr></thead><tbody>'+S.cust.map(c=>'<tr><td>'+esc(c.name)+'<div class="xs muted">'+esc(c.tel)+'</div></td><td class="r num">'+c.pts+'</td><td class="r num">'+c.visits+'</td><td>'+(c.last===0?'Hoy':'hace '+c.last+' días')+(c.last>30?' <span class="status s-warn">Inactivo</span>':'')+'</td></tr>').join('')+'</tbody></table></div></div><div class="card stack"><h3>Recupera a los que dejaron de venir</h3><div class="small muted">'+inact.length+' clientes llevan más de 30 días sin visitar.</div><button class="btn pri" data-a="promo"'+(inact.length?'':' disabled')+'>Enviar promoción por WhatsApp</button></div>'}
+ const R=S.real;
+ if(!R){loadLista();return'<div class="card small muted">Cargando clientes de la tarjeta…</div>'}
+ if(R.error)return'<div class="card small muted">No se pudo cargar la lista de clientes.</div>';
+ const cs=R.clientes||[],inact=cs.filter(c=>c.diasSinVenir>30);
+ return'<div class="card stack"><h3>Clientes con tarjeta ('+cs.length+')</h3><div class="small muted">Datos reales del motor de lealtad: lo que se cobra en Caja aparece aquí.</div>'+(cs.length?'<div class="scrollx"><table class="tbl"><thead><tr><th>Cliente</th><th class="r">Saldo</th><th class="r">Visitas</th><th>Última visita</th></tr></thead><tbody>'+cs.map(c=>'<tr><td>'+esc(c.nombre)+'<div class="xs muted">'+esc(c.telefono)+'</div></td><td class="r num">'+fmtSaldo(R,c.puntos)+'</td><td class="r num">'+c.visitas+'</td><td>'+(c.diasSinVenir<=0?'Hoy':'hace '+c.diasSinVenir+' días')+(c.diasSinVenir>30?' <span class="status s-warn">Inactivo</span>':'')+'</td></tr>').join('')+'</tbody></table></div>':'<div class="small muted">Aún no hay clientes. Cobra una cuenta en Caja con un WhatsApp para crear el primero.</div>')+'</div><div class="card stack"><h3>Recupera a los que dejaron de venir</h3><div class="small muted">'+inact.length+' clientes llevan más de 30 días sin visitar.</div><button class="btn pri" data-a="promo"'+(inact.length?'':' disabled')+'>Enviar promoción por WhatsApp</button></div>'}
 function dSeg(){
  const s=S.settings;
  return '<div class="card stack"><h3>Reglas anti pedido fantasma</h3><div class="small">1. En mesa solo se pide con el QR de la mesa y con el celular dentro del radio del local.<br>2. El mesero confirma que hay gente; si no, anula y el inventario regresa.<br>3. Si la cuenta abierta pasa del tope, se pide pago por adelantado.<br>4. Fuera del local, el pedido no llega a cocina hasta confirmar el pago.</div></div><div class="card stack"><h3>Ajustes</h3><label class="f">Radio de ubicación (metros)<input type="number" data-in="cfg" data-k="radio" value="'+s.radio+'"></label><label class="f">Tope de cuenta sin pagar ($)<input type="number" data-in="cfg" data-k="cap" value="'+s.cap+'"></label><label class="f">Costo de entrega cercana ($)<input type="number" data-in="cfg" data-k="envio" value="'+s.envio+'"></label><div class="small muted">Pedidos anulados por mesero hoy: <b>'+S.cancelados+'</b></div><div class="xs muted">La ubicación del celular la pide el navegador del cliente. Sirve como filtro junto con el QR y la confirmación del mesero, no como garantía total.</div></div>'}
@@ -411,6 +463,42 @@ function render(){
  $('#app').innerHTML=v;
  $('#modal').innerHTML=modalHtml();
  $('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no');
+}
+
+
+/* ---------- lealtad real (mismo motor que Sabucan y Carnitas) ---------- */
+const LAPI='/api/demo/tostichelas/lealtad';
+async function lget(q){const r=await fetch(LAPI+'?'+q,{cache:'no-store'});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Sin conexión con lealtad');return j}
+async function lpost(b){const r=await fetch(LAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Sin conexión con lealtad');return j}
+const unidad=lc=>!lc?'':lc.modelo==='sellos'?'sellos':lc.modelo==='puntos'?'puntos':'de saldo';
+const fmtSaldo=(lc,n)=>lc&&lc.modelo==='cashback'?m2(n):String(Math.round(n*100)/100);
+function loadCajaCliente(tel){
+ const c=S.caja;c.lc={loading:true};
+ lget('telefono='+tel).then(j=>{if(c.tel===tel){c.lc=j;render()}}).catch(e=>{if(c.tel===tel){c.lc={error:e.message};render()}});
+}
+function loadLista(){lget('lista=1').then(j=>{S.real=j;render()}).catch(()=>{S.real={error:true};render()})}
+
+
+async function doCobro(){
+ const c=S.caja;if(c.busy||!c.sel)return;
+ const k=c.sel.slice(2),os=mesaOrders(k);if(!os.length)return;
+ const sub=os.reduce((a,o)=>a+orderSub(o),0),tip=Math.round(sub*c.tip/100),tel=c.tel;
+ const L=c.lc&&c.lc.found?c.lc:null;const saldo=L?Math.floor(L.cliente.puntos):0;
+ const disc=(c.canje&&saldo>0&&L.modelo==='cashback')?Math.min(saldo,sub):0;
+ let loy=null,nombre='';
+ if(tel.length===10&&c.lc&&!c.lc.error&&!c.lc.loading){
+  if(!c.lc.found&&(!c.nom.trim()||!c.nac)){toast('Cliente nuevo: escribe su nombre y fecha de nacimiento');return}
+  c.busy=true;render();
+  try{
+   if(disc>0)await lpost({accion:'canje',telefono:tel,puntos:disc});
+   if(sub-disc>0){const r=await lpost({accion:'venta',telefono:tel,monto:sub-disc,nombre:c.nom,fechaNacimiento:c.nac});loy={ganado:r.puntosGanados,saldo:r.cliente.puntos,nuevo:r.esNuevo,modelo:r.modelo,usado:disc};nombre=r.cliente.nombre}
+  }catch(e){toast('Lealtad: '+e.message+'. Se cobró sin puntos.')}
+  c.busy=false;
+ }
+ const cl={name:nombre||(L?L.cliente.nombre:''),tel};
+ const t=closeTicket(os,{method:c.method,tip,disc,cliente:cl,mesa:k,canal:'mesa'});t.loy=loy;
+ c.sel=null;c.tel='';c.canje=false;c.tip=0;c.recv='';c.split=1;c.lc=null;c.nom='';c.nac='';
+ S.modal={type:'ticket',id:t.id};S.real=null;render();
 }
 
 /* ---------- acciones ---------- */
@@ -445,11 +533,13 @@ function payMesaOnline(){
 function advance(oid,st){const o=S.orders.find(x=>x.id===oid);const ls=o.lines.filter(l=>l.station===st&&l.status!=='entregado');ls.forEach(l=>{if(l.status==='nuevo')l.status='preparando';else if(l.status==='preparando')l.status='listo'})}
 function setupInput(el){
  const k=el.getAttribute('data-in'),v=el.value;
- if(k==='name')S.me.name=v;else if(k==='tel')S.me.tel=v.replace(/\D/g,'').slice(0,10);
+ if(k==='name')S.me.name=v;else if(k==='tel'){const t=v.replace(/\D/g,'').slice(0,10);if(t!==S.me.tel){S.me.tel=t;S.loy.data=null;if(t.length===10&&S.cli.tab==='puntos')loadMe()}}
  else if(k==='addr')S.cli.addr=v;else if(k==='mnote'){S.modal.note=v}
  else if(k==='rtext')S.modal.text=v;
- else if(k==='recv'){S.caja.recv=v;const e=$('#cambio');if(e){const os=mesaOrders(S.caja.sel.slice(2));const sub=os.reduce((a,o)=>a+orderSub(o),0);const cu=S.caja.tel?S.cust.find(x=>x.tel===S.caja.tel):null;const disc=(S.caja.canje&&cu&&cu.pts>=100)?25:0;e.textContent=cambioTxt(sub-disc+Math.round(sub*S.caja.tip/100))}}
- else if(k==='ctel'){S.caja.tel=v.replace(/\D/g,'').slice(0,10);S.caja.canje=false}
+ else if(k==='recv'){S.caja.recv=v;const e=$('#cambio');if(e){const os=mesaOrders(S.caja.sel.slice(2));const sub=os.reduce((a,o)=>a+orderSub(o),0);const L=S.caja.lc&&S.caja.lc.found?S.caja.lc:null;const sd=L?Math.floor(L.cliente.puntos):0;const disc=(S.caja.canje&&sd>0&&L.modelo==='cashback')?Math.min(sd,sub):0;e.textContent=cambioTxt(sub-disc+Math.round(sub*S.caja.tip/100))}}
+ else if(k==='ctel'){const t=v.replace(/\D/g,'').slice(0,10);S.caja.canje=false;if(t!==S.caja.tel){S.caja.tel=t;S.caja.lc=null;if(t.length===10)loadCajaCliente(t)}}
+ else if(k==='cnom')S.caja.nom=v;else if(k==='cnac')S.caja.nac=v
+ else if(k==='lnom')S.loy.nom=v;else if(k==='lnac')S.loy.nac=v
  else if(k==='fondo'){S.caja.fondo=v;const ts=dayTickets();const ef=ts.filter(t=>t.method==='Efectivo').reduce((a,t)=>a+t.total,0);const esp=Number(v||0)+ef;$('#esp').textContent=m(esp);$('#dif').textContent=difTxt(esp,parseFloat(S.caja.contado))}
  else if(k==='contado'){S.caja.contado=v;const ts=dayTickets();const ef=ts.filter(t=>t.method==='Efectivo').reduce((a,t)=>a+t.total,0);$('#dif').textContent=difTxt(Number(S.caja.fondo||0)+ef,parseFloat(v))}
  else if(k==='cnt'){ins(el.getAttribute('data-i')).count=v}
@@ -466,7 +556,7 @@ root.addEventListener('click',e=>{
   case'role':S.role=g('v');break;
   case'reset':seed();toast('Demo reiniciada');break;
   case'sound':S.sound=!S.sound;if(S.sound)beep();break;
-  case'tab':c.tab=g('v');break;
+  case'tab':c.tab=g('v');if(c.tab==='puntos'&&S.me.tel.length===10&&!S.loy.data&&!S.loy.loading)loadMe();break;
   case'geo':c.geo=g('v');if(c.geo==='fuera'&&c.canal==='mesa')c.canal='llevar';if(c.geo==='dentro')c.canal='mesa';break;
   case'cat':c.cat=g('v');break;
   case'sort':c.sort=g('v');break;
@@ -505,6 +595,7 @@ root.addEventListener('click',e=>{
   case'stage':S.orders.find(x=>x.id===+g('o')).stage='camino';toast('Entrega en camino');break;
   case'done':{const o=S.orders.find(x=>x.id===+g('o'));o.done=true;o.lines.forEach(l=>l.status='entregado');toast('Pedido entregado');break}
   case'kadv':advance(+g('o'),g('s'));break;
+  case'kscreen':S.kds.screen=!S.kds.screen;break;
   /* caja */
   case'ctab':S.caja.tab=g('v');break;
   case'csel':S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;break;
@@ -514,15 +605,31 @@ root.addEventListener('click',e=>{
   case'canje':S.caja.canje=!S.caja.canje;break;
   case'hpaid':{settleHold(S.orders.find(x=>x.id===+g('o')));toast('Pago confirmado, pedido enviado a cocina');break}
   case'hcancel':{const o=S.orders.find(x=>x.id===+g('o'));o.cancel=true;toast('Pedido cancelado, nunca llegó a cocina');break}
-  case'cobrar':{const k=S.caja.sel.slice(2),os=mesaOrders(k);if(!os.length)break;const sub=os.reduce((a,o)=>a+orderSub(o),0);const cu=S.caja.tel?S.cust.find(x=>x.tel===S.caja.tel):null;const disc=(S.caja.canje&&cu&&cu.pts>=100)?25:0;if(disc)cu.pts-=100;const cl=cu?{name:cu.name,tel:cu.tel}:{name:'',tel:S.caja.tel};const t=closeTicket(os,{method:S.caja.method,tip:Math.round(sub*S.caja.tip/100),disc,cliente:cl,mesa:k,canal:'mesa'});S.caja.sel=null;S.caja.tel='';S.caja.canje=false;S.caja.tip=0;S.caja.recv='';S.caja.split=1;S.modal={type:'ticket',id:t.id};break}
+  case'cobrar':doCobro();return;
   /* dueño */
   case'otab':S.own.tab=g('v');break;
   case'avail':{const p=PM(g('p'));p.avail=!p.avail;break}
   case'cnt':{const i=ins(g('i'));const v=parseFloat(i.count);if(isNaN(v))break;const diff=Math.round((v-i.stock)*100)/100;if(diff!==0){S.mermas.push({ts:Date.now(),name:i.name,unit:i.unit,diff,val:diff*i.cost})}i.stock=v;i.count='';toast(diff?'Diferencia registrada':'Conteo coincide con el sistema');break}
-  case'promo':toast('Promoción enviada a '+S.cust.filter(x=>x.last>30).length+' clientes (simulado)');break;
+  case'promo':toast('Promoción enviada a '+((S.real&&S.real.clientes)||[]).filter(x=>x.diasSinVenir>30).length+' clientes (simulado)');break;
+  case'wallet':addWallet();return;
+  case'lalta':altaMe();return;
  }
  render()},{signal:ctl.signal});
-const iv=setInterval(()=>{if(S.role==='cocina'||S.role==='barra')render()},20000);
+function kdsTick(){
+ if(!S.kds.screen||(S.role!=='cocina'&&S.role!=='barra'))return;
+ const now=Date.now();
+ S.orders.forEach(o=>{if(o.hold||o.cancel)return;o.lines.forEach(l=>{if(l.station===S.role&&l.status==='nuevo'){l.seen=l.seen||now;if(now-l.seen>=6000)l.status='preparando'}})});
+ render();
+}
+function kdsPedal(){
+ if(!S.kds.screen||(S.role!=='cocina'&&S.role!=='barra'))return false;
+ const cand=S.orders.filter(o=>!o.hold&&!o.cancel&&o.lines.some(l=>l.station===S.role&&l.status==='preparando')).sort((a,b)=>a.created-b.created)[0];
+ if(!cand)return false;
+ cand.lines.forEach(l=>{if(l.station===S.role&&l.status==='preparando')l.status='listo'});render();return true;
+}
+(root.ownerDocument||document).addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter'||e.key==='PageDown')&&kdsPedal()){e.preventDefault()}},{signal:ctl.signal});
+const iv=setInterval(()=>{if(!S.kds.screen&&(S.role==='cocina'||S.role==='barra'))render()},20000);
+const iv2=setInterval(kdsTick,3000);
 seed();render();
-return()=>{ctl.abort();clearInterval(iv)};
+return()=>{ctl.abort();clearInterval(iv);clearInterval(iv2)};
 }
