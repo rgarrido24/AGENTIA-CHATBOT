@@ -505,7 +505,8 @@ async function collectBusinessPages(userToken: string, map: Map<string, FbPageCh
         `&business=${encodeURIComponent(bizId)}` +
         `&limit=100` +
         `&access_token=${encodeURIComponent(userToken)}`;
-      await ingestPagedPages(map, accountsByBizUrl, `me/accounts?business=${bizId}`);
+      const found = await ingestPagedPages(map, accountsByBizUrl, `me/accounts?business=${bizId}`);
+      if (found > 0) continue; // ya se obtuvieron las páginas de este portafolio: ahorra llamadas (límite de la app)
       for (const edge of ['owned_pages', 'client_pages'] as const) {
         const pagesUrl =
           `https://graph.facebook.com/${FB_GRAPH_VERSION}/${encodeURIComponent(bizId)}/${edge}` +
@@ -528,16 +529,19 @@ function ingestPageRows(map: Map<string, FbPageChoice>, json: Record<string, unk
 }
 
 /** Lee una conexión de páginas y sigue paging.next (Meta suele devolver menos filas que `limit`). */
-async function ingestPagedPages(map: Map<string, FbPageChoice>, firstUrl: string, label: string) {
+async function ingestPagedPages(map: Map<string, FbPageChoice>, firstUrl: string, label: string): Promise<number> {
   let url: string | undefined = firstUrl;
   let guard = 0;
+  let total = 0;
   while (url && guard < 20) {
     const json = await graphGetLogged(url, guard === 0 ? label : `${label} (pag ${guard + 1})`);
+    total += graphDataRows(json).length;
     ingestPageRows(map, json, label);
     const next = (json.paging as { next?: string } | undefined)?.next;
     url = typeof next === 'string' && next ? next : undefined;
     guard += 1;
   }
+  return total;
 }
 
 /**
