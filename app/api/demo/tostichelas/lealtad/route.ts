@@ -21,9 +21,10 @@ import { tenantObjectId, tenantRecompensa, type TenantConfig } from '@/lib/walle
 import {
   actualizarCashbackTostichelas,
   ensureTostichelasTenant,
-  pinDuenoTostichelas,
   TOSTICHELAS_KEY,
 } from '@/lib/tostichelas-tenant';
+
+import { pinOk } from '@/lib/tostichelas-pins';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     const telefono = String(body.telefono ?? '');
 
     if (body.accion === 'config') {
-      if (body.pin !== pinDuenoTostichelas()) return NextResponse.json({ error: 'PIN incorrecto' }, { status: 403 });
+      if (!(await pinOk('dueno', body.pin))) return NextResponse.json({ error: 'PIN incorrecto' }, { status: 403 });
       const pct = Number(body.parametro);
       if (!Number.isFinite(pct) || pct <= 0) return NextResponse.json({ error: 'Porcentaje inválido' }, { status: 400 });
       const nuevo = await actualizarCashbackTostichelas(pct);

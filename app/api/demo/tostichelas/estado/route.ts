@@ -12,6 +12,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoDb } from '@/lib/mongodb';
+import { pinOk, pinPorDefecto, cambiarPin, ROLES_PIN, type Rol } from '@/lib/tostichelas-pins';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,10 +23,6 @@ const KV_DUENO = /^(menu|avail\||settings\|)/; // solo el dueño puede cambiarla
 const MAX_ENTRIES = 400;
 const MAX_BYTES = 200_000;
 
-const pinDueno = () => process.env.TOSTICHELAS_PIN_DUENO || process.env.TOSTICHELAS_DUENO_PIN || '2222';
-const pinCaja = () => process.env.TOSTICHELAS_PIN_CAJA || '1111';
-const pinMesero = () => process.env.TOSTICHELAS_PIN_MESERO || '3333';
-const pinCocina = () => process.env.TOSTICHELAS_PIN_COCINA || '4444';
 const KEEP = /^(menu|avail\||settings\|)/; // el reset no borra el menú ni los ajustes del dueño
 const safeKey = (k: unknown) => typeof k === 'string' && /^[\w|:-]{1,80}$/.test(k);
 
@@ -80,17 +77,29 @@ export async function POST(req: NextRequest) {
     const raw = await req.text();
     if (raw.length > MAX_BYTES) return NextResponse.json({ error: 'Solicitud muy grande' }, { status: 413 });
     const body = JSON.parse(raw || '{}');
-    const esDueno = body.pin === pinDueno();
+    const esDueno = await pinOk('dueno', body.pin);
     const db = await getMongoDb();
     const c = db.collection<Doc>(COLL);
 
     if (body.accion === 'pin') {
-      const rol = ['caja', 'mesero', 'cocina'].includes(body.rol) ? body.rol : 'dueno';
-      const pins: Record<string, string> = { caja: pinCaja(), mesero: pinMesero(), cocina: pinCocina(), dueno: pinDueno() };
-      const envs: Record<string, any> = { caja: process.env.TOSTICHELAS_PIN_CAJA, mesero: process.env.TOSTICHELAS_PIN_MESERO, cocina: process.env.TOSTICHELAS_PIN_COCINA, dueno: process.env.TOSTICHELAS_PIN_DUENO || process.env.TOSTICHELAS_DUENO_PIN };
-      const ok = body.pin === pins[rol];
-      const defecto = !envs[rol];
-      return NextResponse.json({ ok, defecto });
+      const rol: Rol = (ROLES_PIN as string[]).includes(body.rol) ? body.rol : 'dueno';
+      return NextResponse.json({ ok: await pinOk(rol, body.pin), defecto: await pinPorDefecto(rol) });
+    }
+
+    if (body.accion === 'setpin') {
+      if (!esDueno) return NextResponse.json({ error: 'PIN incorrecto' }, { status: 403 });
+      const nuevos = (body.nuevos || {}) as Record<string, unknown>;
+      for (const r of ROLES_PIN) {
+        const v = nuevos[r];
+        if (v === undefined || v === '') continue;
+        if (typeof v !== 'string' || !/^\d{4}$/.test(v)) return NextResponse.json({ error: 'Cada contraseña debe ser de 4 números' }, { status: 400 });
+      }
+      for (const r of ROLES_PIN) {
+        const v = nuevos[r];
+        if (typeof v === 'string' && /^\d{4}$/.test(v)) await cambiarPin(r, v);
+      }
+      const defecto = await Promise.all(ROLES_PIN.map((r) => pinPorDefecto(r)));
+      return NextResponse.json({ ok: true, defecto: defecto.some(Boolean) });
     }
 
     if (body.accion === 'reset' || body.accion === 'produccion') {
