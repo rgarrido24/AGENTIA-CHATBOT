@@ -8,7 +8,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useLucianoPortalThemeOptional } from '../dashboard/LucianoPortalTheme';
 import { LUCINO_PRODUCT_TITLE } from '@/lib/portal-luciano-ui';
 import AddonsButton from '../dashboard/AddonsButton';
-import { FacebookConnectBanners, FbAddPageLink, FbConnectLink, FbConnectionBadge, FbTestLeadButton } from './FacebookConnectUi';
+import { FacebookConnectBanners, FbAddPageLink, FbConnectLink, FbConnectSystemLink, FbConnectionBadge, FbTestLeadButton } from './FacebookConnectUi';
 
 export type ClienteRow = {
   clientSlug: string;
@@ -474,6 +474,7 @@ export default function ClientesPageView({
                         connected={!!c.fbNative}
                         light={light}
                       />
+                      <FbConnectSystemLink resellerId={resellerId} clientSlug={c.clientSlug} add={!!c.fbNative} light={light} />
                       {c.fbNative && <FbAddPageLink resellerId={resellerId} clientSlug={c.clientSlug} light={light} />}
                       {c.fbNative && (
                         <FbTestLeadButton resellerId={resellerId} clientSlug={c.clientSlug} light={light} />

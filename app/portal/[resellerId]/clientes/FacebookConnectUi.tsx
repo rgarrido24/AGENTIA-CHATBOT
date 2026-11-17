@@ -58,6 +58,24 @@ export function FbConnectLink({
   );
 }
 
+/** Conexión alterna por Usuario del sistema (sin login de Facebook). Lista las páginas del portafolio. */
+export function FbConnectSystemLink({ resellerId, clientSlug, add, light }: { resellerId: string; clientSlug: string; add?: boolean; light?: boolean }) {
+  return (
+    <a
+      href={`/api/portal/${resellerId}/client/${clientSlug}/facebook/connect-system${add ? '?add=1' : ''}`}
+      title="Conectar eligiendo entre todas las páginas del portafolio (sin login de Facebook)"
+      className="text-[10px] font-semibold rounded-lg px-2 py-0.5 whitespace-nowrap"
+      style={{
+        background: light ? '#ecfeff' : '#06222b',
+        color: light ? '#0e7490' : '#67e8f9',
+        border: `1px solid ${light ? '#a5f3fc' : '#155e75'}`,
+      }}
+    >
+      {add ? '+ Página (portafolio)' : 'Conectar (portafolio)'}
+    </a>
+  );
+}
+
 /** Caso extraordinario: suma una 2.ª página de Facebook (y sus formularios) al mismo panel. */
 export function FbAddPageLink({ resellerId, clientSlug, light }: { resellerId: string; clientSlug: string; light?: boolean }) {
   return (
