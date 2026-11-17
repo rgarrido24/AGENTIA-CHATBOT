@@ -338,6 +338,13 @@ export default function AgentiaConversacionesPage() {
             <RefreshCw className={`h-4 w-4 ${loadingList ? 'animate-spin' : ''}`} />
             Actualizar
           </button>
+          <a
+            href="/agentia-panel/reglas"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-slate-200 hover:bg-white/5 transition"
+            style={{ borderColor: BRAND.border }}
+          >
+            Respuestas automáticas
+          </a>
         </div>
 
         <div className="flex flex-wrap gap-2">
