@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isDashboardAuthenticated } from '@/lib/dashboard-auth';
+import { isAgentiaPanelAuthenticated } from '@/lib/dashboard-auth';
 import {
   AGENTIA_PANEL_CLIENT_ID,
   AGENTIA_PANEL_PHONE_DISPLAY,
@@ -21,7 +21,7 @@ function parseChannel(raw: string | null): PanelChannel | 'all' {
 }
 
 export async function GET(req: NextRequest) {
-  if (!isDashboardAuthenticated(req)) {
+  if (!isAgentiaPanelAuthenticated(req)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 

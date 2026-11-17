@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isDashboardAuthenticated } from '@/lib/dashboard-auth';
+import { isAgentiaPanelAuthenticated } from '@/lib/dashboard-auth';
 import { getMongoDb } from '@/lib/mongodb';
 import { AGENTIA_FB_PAGE_ID } from '@/lib/agentia-panel';
 import type { SocialRule } from '@/src/lib/social-rules';
@@ -42,14 +42,14 @@ function clean(raw: unknown): SocialRule[] {
 }
 
 export async function GET(req: NextRequest) {
-  if (!isDashboardAuthenticated(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  if (!isAgentiaPanelAuthenticated(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const { doc } = await findConfig();
   if (!doc) return NextResponse.json({ error: 'No se encontró la configuración de Agentia' }, { status: 404 });
   return NextResponse.json({ rules: Array.isArray(doc.socialRules) ? doc.socialRules : [] });
 }
 
 export async function PUT(req: NextRequest) {
-  if (!isDashboardAuthenticated(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  if (!isAgentiaPanelAuthenticated(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const rules = clean(body?.rules);
   const { col, doc } = await findConfig();

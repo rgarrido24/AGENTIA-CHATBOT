@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isDashboardAuthenticated } from '@/lib/dashboard-auth';
+import { isAgentiaPanelAuthenticated } from '@/lib/dashboard-auth';
 import {
   AGENTIA_PANEL_CLIENT_ID,
   getAgentiaWhatsAppPhoneNumberId,
@@ -21,7 +21,7 @@ type RouteCtx = { params: Promise<{ id: string }> };
 const agentiaPhoneId = () => getAgentiaWhatsAppPhoneNumberId();
 
 export async function POST(req: NextRequest, ctx: RouteCtx) {
-  if (!isDashboardAuthenticated(req)) {
+  if (!isAgentiaPanelAuthenticated(req)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 

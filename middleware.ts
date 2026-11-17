@@ -287,6 +287,15 @@ export async function middleware(request: NextRequest) {
     const dashExpected = await sha256Hex(adminUser + ':' + adminPass + 'agentia_dashboard_v2');
     const adminExpected = await sha256Hex(adminPass + 'agentia_admin_salt');
 
+    let okReviewer = false;
+    if ((isAgentiaPanelPage || isAgentiaPanelApi) && !isAgentiaPanelApi_blockedForReviewer(pathname, request.method)) {
+      const rUser = process.env.REVIEWER_USER?.trim();
+      const rPass = process.env.REVIEWER_PASSWORD;
+      const rCookie = request.cookies.get('agentia_reviewer')?.value;
+      if (rUser && rPass && rCookie) {
+        okReviewer = rCookie === (await sha256Hex(`${rUser}:${rPass}:agentia_reviewer_v1`));
+      }
+    }
     const okDashboard = !!dashToken && dashToken === dashExpected;
     const okAdmin = !!adminToken && adminToken === adminExpected;
     const izziUser = process.env.IZZI_PANEL_USER || 'izzi';
@@ -336,7 +345,7 @@ export async function middleware(request: NextRequest) {
       okIzzi = true;
     }
 
-    if (!okDashboard && !okAdmin && !(isIzziPanelPage || isIzziPanelApi ? okIzzi : false)) {
+    if (!okDashboard && !okAdmin && !okReviewer && !(isIzziPanelPage || isIzziPanelApi ? okIzzi : false)) {
       if (isDashboardApi || isCwfPanelApi || isAgentiaPanelApi || isIzziPanelApi) {
         return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
       }
@@ -407,3 +416,10 @@ export const config = {
     '/api/auth/login',
   ],
 };
+
+
+/** El revisor puede ver y responder conversaciones, pero no editar reglas ni suscripciones push. */
+function isAgentiaPanelApi_blockedForReviewer(pathname: string, method: string): boolean {
+  if (pathname.startsWith('/api/agentia-panel/reglas') && method !== 'GET') return true;
+  return false;
+}

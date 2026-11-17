@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isDashboardAuthenticated } from '@/lib/dashboard-auth';
+import { isAgentiaPanelAuthenticated } from '@/lib/dashboard-auth';
 import { savePanelPushSubscription } from '@/lib/panel-push';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-  if (!isDashboardAuthenticated(req)) {
+  if (!isAgentiaPanelAuthenticated(req)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 

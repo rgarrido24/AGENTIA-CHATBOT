@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isDashboardAuthenticated } from '@/lib/dashboard-auth';
+import { isAgentiaPanelAuthenticated } from '@/lib/dashboard-auth';
 import { AGENTIA_PANEL_CLIENT_ID } from '@/lib/agentia-panel';
 import { getPanelConversationById, setPanelConversationPaused } from '@/lib/panel-conversations';
 import { setBotPaused } from '@/src/lib/leads';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(req: NextRequest, ctx: RouteCtx) {
-  if (!isDashboardAuthenticated(req)) {
+  if (!isAgentiaPanelAuthenticated(req)) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 

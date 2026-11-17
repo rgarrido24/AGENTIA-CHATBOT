@@ -25,6 +25,24 @@ export async function POST(request: NextRequest) {
   const username = typeof body?.username === 'string' ? body.username.trim() : '';
   const password = typeof body?.password === 'string' ? body.password : '';
 
+  // Acceso de revisor (Meta App Review): cookie propia, solo panel Agentia.
+  const revUser = process.env.REVIEWER_USER?.trim();
+  const revPass = process.env.REVIEWER_PASSWORD;
+  if (revUser && revPass && username === revUser && password === revPass) {
+    const data = new TextEncoder().encode(`${revUser}:${revPass}:agentia_reviewer_v1`);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    const rtoken = Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    const jar = await cookies();
+    jar.set('agentia_reviewer', rtoken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: COOKIE_MAX_AGE,
+      path: '/',
+    });
+    return NextResponse.json({ ok: true });
+  }
+
   // Usuario demo (solo lectura, acceso público para demos)
   const isDemoUser = username === 'demo-agencia' && password === 'demo2026';
 
