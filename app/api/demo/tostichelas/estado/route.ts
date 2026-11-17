@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 const COLL = 'demo_tostichelas_estado';
 const ID = 'main';
-const COLS = ['orders', 'tickets', 'mermas', 'movs', 'reviews'] as const;
+const COLS = ['orders', 'tickets', 'mermas', 'movs', 'reviews', 'gastos'] as const;
 const KV_DUENO = /^(menu|avail\||settings\|)/; // solo el dueño puede cambiarlas
 const MAX_ENTRIES = 400;
 const MAX_BYTES = 200_000;

@@ -18,7 +18,12 @@ import {
 } from '@/lib/sabucan-clientes';
 import { syncWalletPuntosByObjectId } from '@/lib/wallet-sabucan';
 import { tenantObjectId, tenantRecompensa, type TenantConfig } from '@/lib/wallet-tenant';
-import { ensureTostichelasTenant, TOSTICHELAS_KEY } from '@/lib/tostichelas-tenant';
+import {
+  actualizarCashbackTostichelas,
+  ensureTostichelasTenant,
+  pinDuenoTostichelas,
+  TOSTICHELAS_KEY,
+} from '@/lib/tostichelas-tenant';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,8 +86,18 @@ export async function POST(req: NextRequest) {
       puntos?: number;
       nombre?: string;
       fechaNacimiento?: string;
+      pin?: string;
+      parametro?: number;
     };
     const telefono = String(body.telefono ?? '');
+
+    if (body.accion === 'config') {
+      if (body.pin !== pinDuenoTostichelas()) return NextResponse.json({ error: 'PIN incorrecto' }, { status: 403 });
+      const pct = Number(body.parametro);
+      if (!Number.isFinite(pct) || pct <= 0) return NextResponse.json({ error: 'Porcentaje inválido' }, { status: 400 });
+      const nuevo = await actualizarCashbackTostichelas(pct);
+      return NextResponse.json(nuevo ? { ...info(nuevo), ok: true } : { error: 'No se pudo guardar' });
+    }
 
     if (body.accion === 'alta') {
       const r = await altaCliente(TOSTICHELAS_KEY, {

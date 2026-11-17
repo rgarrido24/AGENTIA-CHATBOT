@@ -67,3 +67,17 @@ export async function ensureTostichelasTenant(): Promise<TenantConfig | null> {
 
   return getLoyaltyTenant(TOSTICHELAS_KEY);
 }
+
+export const pinDuenoTostichelas = () =>
+  process.env.TOSTICHELAS_PIN_DUENO || process.env.TOSTICHELAS_DUENO_PIN || '2222';
+
+/** Cambia el % de cashback del tenant (solo el dueño, ya validado por PIN). */
+export async function actualizarCashbackTostichelas(pct: number): Promise<TenantConfig | null> {
+  const db = await getMongoDb();
+  const valor = Math.min(30, Math.max(0.5, Math.round(pct * 100) / 100));
+  await db
+    .collection('loyalty_tenants')
+    .updateOne({ key: TOSTICHELAS_KEY }, { $set: { 'recompensa.modelo': 'cashback', 'recompensa.parametro': valor } });
+  invalidateLoyaltyTenantCache(TOSTICHELAS_KEY);
+  return getLoyaltyTenant(TOSTICHELAS_KEY);
+}
