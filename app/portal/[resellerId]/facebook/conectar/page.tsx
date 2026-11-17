@@ -109,13 +109,21 @@ export default async function FacebookConectarPage({
   }
 
   return (
-    <FacebookPageSelector
-      resellerId={resellerId}
-      clientSlug={session.clientSlug}
-      clientNombre={clientNombre}
-      hintPageId={hintPageId}
-      hintFrom={hintFrom}
-      pages={pages}
-    />
+    <>
+      <FacebookPageSelector
+        resellerId={resellerId}
+        clientSlug={session.clientSlug}
+        clientNombre={clientNombre}
+        hintPageId={hintPageId}
+        hintFrom={hintFrom}
+        pages={pages}
+      />
+      {session.debug?.length ? (
+        <details className="mx-auto mt-4 max-w-md px-4 pb-8 text-[11px] text-slate-400">
+          <summary className="cursor-pointer">Diagnóstico técnico (para soporte)</summary>
+          <pre className="mt-2 whitespace-pre-wrap break-words">{session.debug.join('\n')}</pre>
+        </details>
+      ) : null}
+    </>
   );
 }

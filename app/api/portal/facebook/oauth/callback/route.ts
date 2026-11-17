@@ -14,6 +14,7 @@ import {
   newOauthSessionId,
   saveOauthSession,
   signReveal,
+  startListDebug,
   verifyOauthState,
 } from '@/lib/facebook-lead-connect';
 
@@ -84,6 +85,7 @@ export async function GET(req: NextRequest) {
       exchanged: userToken !== shortToken,
       clientSlug,
     });
+    const listDebug = startListDebug();
     let pages = await listUserPages(userToken);
     if (pages.length === 0 && userToken !== shortToken) {
       console.warn('[fb-oauth] 0 páginas con token long-lived; reintento con short-lived');
@@ -129,6 +131,7 @@ export async function GET(req: NextRequest) {
       resellerId,
       clientSlug,
       addPage,
+      debug: listDebug.slice(0, 60),
       pages: pages.map((p) => ({
         id: p.id,
         name: p.name,

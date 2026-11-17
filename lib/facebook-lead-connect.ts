@@ -44,6 +44,8 @@ export type FbOauthSessionDoc = {
   pages: Array<{ id: string; name: string; access_token_enc: string }>;
   /** true = agregar una página extra al cliente (no reemplaza la principal). */
   addPage?: boolean;
+  /** Resumen técnico (sin tokens) de lo que devolvió Meta al listar páginas. */
+  debug?: string[];
   expiresAt: Date;
   createdAt: Date;
 };
@@ -340,6 +342,12 @@ function safeGraphUrl(url: string): string {
     .replace(/client_secret=[^&]+/gi, 'client_secret=[redacted]');
 }
 
+let debugSink: string[] | null = null;
+export function startListDebug(): string[] {
+  debugSink = [];
+  return debugSink;
+}
+
 async function graphGetLogged(url: string, label: string): Promise<Record<string, unknown>> {
   console.log(`[fb-connect] GET ${label}`, safeGraphUrl(url));
   try {
@@ -349,6 +357,12 @@ async function graphGetLogged(url: string, label: string): Promise<Record<string
       `[fb-connect] ${label} status=${res.status}`,
       JSON.stringify(redactSecrets(json)).slice(0, 8000),
     );
+    if (debugSink) {
+      const rows = Array.isArray(json.data) ? (json.data as unknown[]).length : '-';
+      const hasNext = Boolean((json.paging as { next?: string } | undefined)?.next);
+      const err = (json.error as { message?: string } | undefined)?.message;
+      debugSink.push(`${label}: http=${res.status} filas=${rows} siguiente=${hasNext ? 'si' : 'no'}${err ? ' error=' + err.slice(0, 120) : ''}`);
+    }
     return json;
   } catch (err) {
     console.error(`[fb-connect] ${label} fetch failed`, (err as Error).message);
@@ -562,6 +576,7 @@ export async function listUserPages(userToken: string): Promise<FbPageChoice[]> 
   }
 
   const usable = [...map.values()].filter((p) => p.id && p.access_token);
+  debugSink?.push(`candidatas=${map.size} con_token=${usable.length}`);
   console.log(
     '[fb-connect] pages resolved',
     JSON.stringify({
