@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { initTostichelas } from './app';
 
-export default function TostichelasDemoPage() {
+export default function TostichelasPage() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function TostichelasDemoPage() {
           <nav className="nav" id="nav" aria-label="Perfiles" />
         </header>
         <main id="app" />
-        <p className="demo-note">
+        <p className="demo-note" id="demoNote">
           Demo de Agentia con datos de ejemplo. El pedido que haces como cliente aparece en Cocina, Barra, Mesero y Caja.
         </p>
       </div>

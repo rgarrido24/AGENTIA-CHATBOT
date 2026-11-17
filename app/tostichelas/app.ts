@@ -495,6 +495,7 @@ function render(){
  const v={cliente:vCliente,mesero:vMesero,cocina:()=>vKds('cocina'),barra:()=>vKds('barra'),caja:vCaja,dueno:vDueno}[S.role]();
  $('#app').innerHTML=v;
  $('#modal').innerHTML=modalHtml();
+ const dn=root.querySelector('#demoNote');if(dn)dn.style.display=PROD?'none':'';
  $('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no')+' · '+(online?'en línea':'sin conexión');const rb=root.querySelector('[data-a=reset]');if(rb)rb.style.display=PROD?'none':'';
 }
 
@@ -713,7 +714,7 @@ function presenceReal(){
 /* ---------- QR reales e impresos ---------- */
 const QRC={};
 const baseUrl=()=>{try{return root.ownerDocument.defaultView.location.origin}catch(e){return''}};
-const menuUrl=()=>baseUrl()+'/demo/tostichelas';
+const menuUrl=()=>baseUrl()+'/tostichelas';
 const mesaUrl=k=>menuUrl()+'?mesa='+k+'&t='+tokenOf(k);
 const altaUrl=()=>baseUrl()+'/tostichelas/alta';
 function qrImg(url,px,cls){

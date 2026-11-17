@@ -39,7 +39,7 @@ export async function ensureTostichelasTenant(): Promise<TenantConfig | null> {
       collection: `demo_${TOSTICHELAS_KEY}_clientes`,
       classSuffix: `demo_${TOSTICHELAS_KEY}_lealtad`,
       objectPrefix: `demo-${TOSTICHELAS_KEY}`,
-      basePath: `/demo/${TOSTICHELAS_KEY}`,
+      basePath: `/${TOSTICHELAS_KEY}`,
       recompensa: { modelo: 'cashback', parametro: 5 },
       rewardMeta: 10,
       giro: 'restaurante',
@@ -53,6 +53,11 @@ export async function ensureTostichelasTenant(): Promise<TenantConfig | null> {
     }
     invalidateLoyaltyTenantCache(TOSTICHELAS_KEY);
     doc = await col.findOne({ key: TOSTICHELAS_KEY });
+  }
+
+  if (doc && doc.basePath !== `/${TOSTICHELAS_KEY}`) {
+    await col.updateOne({ key: TOSTICHELAS_KEY }, { $set: { basePath: `/${TOSTICHELAS_KEY}` } });
+    invalidateLoyaltyTenantCache(TOSTICHELAS_KEY);
   }
 
   if (doc && !doc.walletClase) {

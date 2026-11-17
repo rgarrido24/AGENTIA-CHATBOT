@@ -97,6 +97,11 @@ const nextConfig = {
     ],
   },
 
+  async redirects() {
+    // Tostichelas ya vive en su propia ruta (antes /demo/tostichelas).
+    return [{ source: '/demo/tostichelas', destination: '/tostichelas', permanent: false }];
+  },
+
   async rewrites() {
     return {
       // Landing nueva de /lealtad (HTML estático en public/). La anterior (React) sigue en app/lealtad.
