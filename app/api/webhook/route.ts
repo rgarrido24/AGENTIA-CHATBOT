@@ -379,14 +379,21 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
 
     if (isComment && commentId) {
       let publicOk = false;
+      // Facebook: la respuesta pública requiere pages_read_user_content (App Review). Hasta que Meta la apruebe, solo inbox.
+      const skipPublic = platform === 'facebook' && getEnv('SOCIAL_FB_PUBLIC_REPLY') !== '1';
       try {
+        if (skipPublic) throw new Error('__skip_public__');
         await replyToComment({ accessToken: cfg.accessToken, commentId, text: pickPublicReply(rule, COMMENT_REPLY_FIXED), platform });
         publicOk = true;
         console.log(`[SOCIAL] respuesta publica OK platform=${platform} comment=${commentId}`);
         await recordOutcome(dedupeKey, { publicOk: true });
       } catch (e) {
+        if ((e as Error)?.message === '__skip_public__') {
+          await recordOutcome(dedupeKey, { publicSkipped: true });
+        } else {
         console.log(`[SOCIAL] respuesta publica FALLO platform=${platform} comment=${commentId}:`, e);
         await recordOutcome(dedupeKey, { publicError: errText(e) });
+        }
       }
       try {
         await sendPrivateReplyToComment({ accessToken: cfg.accessToken, commentId, text: replyText });
