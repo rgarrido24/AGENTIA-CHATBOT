@@ -188,7 +188,7 @@ export default function AgentiaConversacionesPage() {
 
   const activeChannel = detail?.channel ?? selectedSummary?.channel ?? 'whatsapp';
   const botPaused = detail?.botPaused ?? selectedSummary?.botPaused ?? false;
-  const canSendWhatsApp = activeChannel === 'whatsapp';
+  const canSendWhatsApp = true;
 
   const closeChat = () => {
     setSelectedId(null);
@@ -324,7 +324,7 @@ export default function AgentiaConversacionesPage() {
               <MessageSquare className="h-5 w-5 text-blue-400" />
               Panel de conversaciones
             </h1>
-            <p className="text-xs text-slate-500 mt-1">WhatsApp API · {phoneDisplay}</p>
+            <p className="text-xs text-slate-500 mt-1">WhatsApp API · {phoneDisplay} · Facebook · Instagram</p>
           </div>
           <button
             type="button"
@@ -359,9 +359,6 @@ export default function AgentiaConversacionesPage() {
                 }`}
               >
                 {tab.label}
-                {tab.id === 'facebook' || tab.id === 'instagram' ? (
-                  <span className="ml-1.5 text-[10px] opacity-60">próx.</span>
-                ) : null}
               </button>
             );
           })}
@@ -395,7 +392,7 @@ export default function AgentiaConversacionesPage() {
               {channelFilter === 'whatsapp'
                 ? 'Sin conversaciones WhatsApp aún.'
                 : channelFilter === 'facebook' || channelFilter === 'instagram'
-                  ? `Los DMs de ${channelLabel(channelFilter as PanelChannel)} se mostrarán aquí cuando estén conectados.`
+                  ? `Sin conversaciones de ${channelLabel(channelFilter as PanelChannel)} aún.`
                   : 'Sin conversaciones activas.'}
             </p>
           ) : (
@@ -539,12 +536,6 @@ export default function AgentiaConversacionesPage() {
                     Usa &quot;Tomar control&quot; para pausar el bot y responder manualmente.
                   </p>
                 )}
-                {botPaused && !canSendWhatsApp && (
-                  <p className="text-xs text-amber-400/80 mb-2">
-                    Envío por {channelLabel(activeChannel)} estará disponible al conectar la API de Meta DMs.
-                    Por ahora puedes registrar notas internas en el historial.
-                  </p>
-                )}
                 <PanelReplyComposer
                   replyText={replyText}
                   onReplyTextChange={setReplyText}
@@ -555,13 +546,11 @@ export default function AgentiaConversacionesPage() {
                   placeholder={
                     !botPaused
                       ? 'Toma control primero para responder...'
-                      : canSendWhatsApp
-                        ? 'Escribe tu respuesta por WhatsApp...'
-                        : 'Nota interna (se guarda en el historial)...'
+                      : `Escribe tu respuesta por ${channelLabel(activeChannel)}...`
                   }
                   attachHint={
-                    botPaused && !canSendWhatsApp
-                      ? 'Los adjuntos se guardan en el historial; el envío por Meta DMs llegará en una fase siguiente.'
+                    botPaused && activeChannel !== 'whatsapp'
+                      ? 'En Facebook/Instagram solo se envía texto; los adjuntos se guardan en el historial.'
                       : undefined
                   }
                   accentSendClass="bg-blue-600 hover:bg-blue-500"

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { resolveBusinessConfigByPageId } from '@/src/lib/business-config';
 import { matchSocialRule, pickPublicReply } from '@/src/lib/social-rules';
 import { getMongoDb } from '@/lib/mongodb';
+import { AGENTIA_PANEL_CLIENT_ID, isAgentiaSocialPageId } from '@/lib/agentia-panel';
+import { appendPanelMessages, getPanelConversationById } from '@/lib/panel-conversations';
+import { makeLeadIdFromParams } from '@/src/lib/leads';
 
 function getEnv(name: string): string | undefined {
   const value = process.env[name];
@@ -320,6 +323,32 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
       chatBody.mimeType = mimeType;
     }
 
+    const toPanel = isAgentiaSocialPageId(pageId) && Boolean(dmRecipientId);
+    const panelRef = {
+      clientId: AGENTIA_PANEL_CLIENT_ID,
+      senderId: dmRecipientId ?? '',
+      senderName: senderName ?? undefined,
+      pageId: pageId ?? undefined,
+      platform,
+      channel: platform === 'instagram' ? ('instagram' as const) : ('facebook' as const),
+    };
+    const panelUserText = isComment ? `💬 Comentario: ${incomingText}` : incomingText;
+    if (toPanel && !isComment) {
+      try {
+        const existing = await getPanelConversationById(
+          AGENTIA_PANEL_CLIENT_ID,
+          makeLeadIdFromParams(panelRef.senderId, panelRef.pageId ?? '', AGENTIA_PANEL_CLIENT_ID)
+        );
+        if (existing?.botPaused) {
+          await appendPanelMessages({ ...panelRef, entries: [{ role: 'user', content: panelUserText }] });
+          console.log('[SOCIAL] conversacion en modo manual; bot no responde');
+          return summary;
+        }
+      } catch (e) {
+        console.log('[SOCIAL] panel check error', e);
+      }
+    }
+
     const FALLBACK_REPLY = '¡Hola! Gracias por escribirnos 🙌 En breve una asesora te responde con toda la información.';
     let replyText = '';
     const rule = matchSocialRule(cfg.socialRules, incomingText, isComment ? 'comment' : 'dm');
@@ -375,6 +404,20 @@ async function handleEvent(request: NextRequest, body: any): Promise<any> {
       } catch (e) {
         console.log(`[SOCIAL] DM FALLO platform=${platform}:`, e);
         await recordOutcome(dedupeKey, { dmError: errText(e) });
+      }
+    }
+
+    if (toPanel) {
+      try {
+        await appendPanelMessages({
+          ...panelRef,
+          entries: [
+            { role: 'user', content: panelUserText },
+            { role: 'assistant', content: replyText },
+          ],
+        });
+      } catch (e) {
+        console.log('[SOCIAL] panel append error', e);
       }
     }
 

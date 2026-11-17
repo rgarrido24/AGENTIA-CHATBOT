@@ -11,6 +11,7 @@ import {
 } from '@/lib/panel-conversations';
 import { serializePanelMessages } from '@/lib/panel-message-dto';
 import { parsePanelReplyRequest, sendPanelWhatsAppReply, buildAttachmentFromPayload } from '@/lib/panel-reply-route';
+import { resolveBusinessConfigByPageId } from '@/src/lib/business-config';
 import { sendWhatsAppCloudMedia, sendWhatsAppCloudText } from '@/lib/whatsapp-cloud';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +62,31 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
       return NextResponse.json({ error: result.error, status: result.status }, { status: result.status });
     }
     entry = result.entry;
+  } else if (parsed.kind === 'text') {
+    const cfg = await resolveBusinessConfigByPageId(conv.pageId);
+    if (!cfg?.accessToken) {
+      return NextResponse.json({ error: 'Página sin token de acceso' }, { status: 400 });
+    }
+    const gr = await fetch(
+      `https://graph.facebook.com/v20.0/me/messages?access_token=${encodeURIComponent(cfg.accessToken)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messaging_type: 'RESPONSE',
+          recipient: { id: conv.senderId },
+          message: { text: parsed.text },
+        }),
+      }
+    );
+    if (!gr.ok) {
+      const t = await gr.text().catch(() => '');
+      return NextResponse.json(
+        { error: `Meta rechazó el mensaje (${gr.status}): ${t.slice(0, 200)}` },
+        { status: 502 }
+      );
+    }
+    entry = { role: 'agent', content: parsed.text, deliveryStatus: 'sent' };
   } else if (parsed.kind === 'attachment') {
     const prepared = await buildAttachmentFromPayload(
       parsed,
@@ -77,7 +103,7 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
       fileName: prepared.data.fileName,
     };
   } else {
-    entry = { role: 'agent', content: parsed.text };
+    return NextResponse.json({ error: 'Solo se puede enviar texto' }, { status: 400 });
   }
 
   await appendPanelMessages({

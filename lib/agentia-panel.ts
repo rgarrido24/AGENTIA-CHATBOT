@@ -14,3 +14,12 @@ export function getAgentiaWhatsAppPhoneNumberId(): string {
 }
 
 export const AGENTIA_PANEL_PHONE_DISPLAY = '+52 984 492 7769';
+
+/** Página de Facebook e Instagram propios de Agentia (solo estos se muestran en el panel). */
+export const AGENTIA_FB_PAGE_ID = process.env.AGENTIA_FB_PAGE_ID?.trim() || '104901035867357';
+export const AGENTIA_IG_ACCOUNT_ID = process.env.AGENTIA_IG_ACCOUNT_ID?.trim() || '17841448371814783';
+
+export function isAgentiaSocialPageId(pageId?: string | null): boolean {
+  const p = String(pageId ?? '').trim();
+  return Boolean(p) && (p === AGENTIA_FB_PAGE_ID || p === AGENTIA_IG_ACCOUNT_ID);
+}
