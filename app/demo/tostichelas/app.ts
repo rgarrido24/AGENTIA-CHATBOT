@@ -99,7 +99,8 @@ function seed(){
   cli:{tab:'menu',geo:'dentro',mesa:'m4',canal:'mesa',cat:'Todo',sort:'pop',cart:[],addr:'',open:{},purchased:{}},
   me:{name:'',tel:''},
   mw:{sel:null,adding:false,cart:[]},
-  caja:{sel:null,tab:'cobro',split:1,tip:0,method:'Efectivo',recv:'',tel:'',canje:false,fondo:500,contado:'',lc:null,nom:'',nac:'',busy:false},
+  caja:{sel:null,tab:'cobro',split:1,tip:0,method:'Efectivo',recv:'',tel:'',canje:false,fondo:500,contado:'',lc:null,nom:'',nac:'',busy:false,movs:[],mt:'retiro',mm:'',mo:''},
+  auth:{},pins:{caja:'1111',dueno:'2222'},
   loy:{tel:'',data:null,loading:false,nom:'',nac:''},real:null,kds:{screen:false},
   own:{tab:'resumen'}};
  const LK={tag:128,tce:96,tcc:84,tcm:77,cor:71,vic:64,tar:58,pac:49,ha:44,hp:40,tca:39,tmi:37,tbi:33,xx:30,mod:31,leo:25,tlo:26,pf:22,tpo:21,ult:18,pr:19,sue:15,coc:14,cln:12,boi:9,sug:8,min:6};
@@ -274,6 +275,7 @@ async function altaMe(){
 
 /* ---------- modales ---------- */
 function openProd(pid,target){const p=PM(pid);S.modal={type:'prod',pid,target,vi:0,pick:{},qty:1,note:''}}
+function ticketTxt(t){return 'Tostichelas · Ticket '+t.id+'\n'+t.lines.map(l=>l.qty+' x '+l.name+' '+l.v+' '+m(lineTot(l))).join('\n')+'\nTotal '+m(t.total)+(t.loy&&t.loy.modelo==='cashback'?'\nSaldo en tu tarjeta: '+m2(t.loy.saldo):'')}
 function modalHtml(){
  const md=S.modal;if(!md)return'';
  let h='<div class="scrim" data-a="mclose" data-scrim="1"><div class="sheet" role="dialog" aria-modal="true">';
@@ -301,10 +303,14 @@ function modalHtml(){
  if(md.type==='pay'){
   h+='<div class="row between"><h2>Pago con link</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="banner warn">Simulación del pago. En producción abre Mercado Pago (SPEI, OXXO o tarjeta) y confirma solo.</div><div class="row between"><span>Total a pagar</span><b class="num" style="font-size:22px">'+m(md.total)+'</b></div><button class="btn pri" data-a="payok">Simular pago exitoso</button></div>';
  }
+
+ if(md.type==='pin'){
+  h+='<div class="row between"><h2>Acceso de '+(md.role==='caja'?'Caja':'Dueño')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">PIN de 4 dígitos<input type="password" inputmode="numeric" maxlength="4" data-in="pin" value="'+esc(md.pin)+'" placeholder="••••"></label><div class="xs muted">PIN de la demo: '+S.pins[md.role]+'. Cada perfil tiene el suyo, así el mesero no entra a la caja ni a las ganancias.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
+ }
  if(md.type==='ticket'){
   const t=S.tickets.find(x=>x.id===md.id);
-  const txt='Tostichelas · Ticket '+t.id+'\n'+t.lines.map(l=>l.qty+' x '+l.name+' '+l.v+' '+m(lineTot(l))).join('\n')+'\nTotal '+m(t.total)+(t.loy&&t.loy.modelo==='cashback'?'\nSaldo en tu tarjeta: '+m2(t.loy.saldo):'');
-  h+='<div class="row between"><h2>Ticket digital</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>TOSTICHELAS · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div>'+(t.loy?'<hr><div class="small"><b>Tarjeta Tostichelas</b><br>'+(t.loy.usado?'Usaste '+m(t.loy.usado)+' de saldo.<br>':'')+(t.loy.modelo==='cashback'?'Ganaste '+m2(t.loy.ganado)+' de saldo. Saldo ahora: <b>'+m2(t.loy.saldo)+'</b>':'Ganaste '+t.loy.ganado+' y llevas <b>'+t.loy.saldo+'</b>')+(t.loy.nuevo?'<br>Tu tarjeta ya está creada: guárdala en Google Wallet desde la pestaña Mis puntos.':'')+'</div>':'')+'</div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
+  const txt=ticketTxt(t);
+  h+='<div class="row between"><h2>Ticket digital</h2><span class="row" style="gap:6px"><button class="btn ghost sm" data-a="printt" data-t="'+t.id+'">Imprimir (opcional)</button><button class="btn ghost sm" data-a="mclose">Cerrar</button></span></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>TOSTICHELAS · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div>'+(t.loy?'<hr><div class="small"><b>Tarjeta Tostichelas</b><br>'+(t.loy.usado?'Usaste '+m(t.loy.usado)+' de saldo.<br>':'')+(t.loy.modelo==='cashback'?'Ganaste '+m2(t.loy.ganado)+' de saldo. Saldo ahora: <b>'+m2(t.loy.saldo)+'</b>':'Ganaste '+t.loy.ganado+' y llevas <b>'+t.loy.saldo+'</b>')+(t.loy.nuevo?'<br>Tu tarjeta ya está creada: guárdala en Google Wallet desde la pestaña Mis puntos.':'')+'</div>':'')+'</div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
  }
  return h+'</div></div>'}
 function buildLine(){const md=S.modal,p=PM(md.pid),v=p.v[md.vi];const mods=[];p.mods.forEach(g=>{if(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])return;const l=md.pick[g.g];if(!l)return;const o=g.opts.find(x=>x.l===l);mods.push({g:g.g,l:(g.g==='Preparado'||g.g==='Vaso')?g.g+' '+l:l,p:o.p[v.s]})});return lineFrom(p,md.vi,mods,md.qty,md.note)}
@@ -400,14 +406,16 @@ function cobro(){
  return h}
 const cambioTxt=tot=>{const r=parseFloat(S.caja.recv);if(!r)return'Cambio: escribe lo recibido';return r>=tot?'Cambio: '+m(r-tot):'Faltan '+m(tot-r)};
 function dayTickets(){const d=new Date();d.setHours(0,0,0,0);return S.tickets.filter(t=>t.ts>=d.getTime())}
+const movNet=()=>S.caja.movs.reduce((a,x)=>a+(x.tipo==='entrada'?x.monto:-x.monto),0);
 function corte(){
  const c=S.caja,ts=dayTickets();const by={Efectivo:0,Tarjeta:0,Transferencia:0,'Link de pago':0};let tips=0,sub=0;
  ts.forEach(t=>{by[t.method]=(by[t.method]||0)+t.total;tips+=t.tip;sub+=t.sub-t.disc});
- const esp=Number(c.fondo||0)+by.Efectivo,cont=parseFloat(c.contado);
+ const esp=Number(c.fondo||0)+by.Efectivo+movNet(),cont=parseFloat(c.contado);
  let h='<div class="grid2"><div class="card stack"><h3>Corte del día</h3>';
  [['Efectivo',by.Efectivo],['Tarjeta',by.Tarjeta],['Transferencia',by.Transferencia],['Link de pago',by['Link de pago']||0]].forEach(x=>{h+='<div class="row between"><span>'+x[0]+'</span><b class="num">'+m(x[1])+'</b></div>'});
  h+='<div class="sep"></div><div class="row between"><span>Ventas sin propina</span><b class="num">'+m(sub)+'</b></div><div class="row between"><span>Propinas</span><b class="num">'+m(tips)+'</b></div><div class="row between"><span>Tickets</span><b class="num">'+ts.length+'</b></div></div>';
- h+='<div class="card stack"><h3>Cuadre de efectivo</h3><label class="f">Fondo inicial<input type="number" inputmode="decimal" data-in="fondo" value="'+esc(c.fondo)+'"></label><div class="row between"><span>Efectivo esperado</span><b class="num" id="esp">'+m(esp)+'</b></div><label class="f">Efectivo contado<input type="number" inputmode="decimal" data-in="contado" value="'+esc(c.contado)+'" placeholder="0"></label><div class="b" id="dif">'+difTxt(esp,cont)+'</div><div class="xs muted">En producción este cierre se guarda y se manda al dueño por WhatsApp.</div></div></div>';
+ h+='<div class="card stack"><h3>Cuadre de efectivo</h3><label class="f">Fondo inicial<input type="number" inputmode="decimal" data-in="fondo" value="'+esc(c.fondo)+'"></label>'+(c.movs.length?c.movs.map(x=>'<div class="row between small"><span>'+(x.tipo==='entrada'?'Entrada':'Retiro')+': '+esc(x.motivo)+'</span><b class="num">'+(x.tipo==='entrada'?'+':'−')+m(x.monto)+'</b></div>').join(''):'')+'<div class="row between"><span>Efectivo esperado</span><b class="num" id="esp">'+m(esp)+'</b></div><label class="f">Efectivo contado<input type="number" inputmode="decimal" data-in="contado" value="'+esc(c.contado)+'" placeholder="0"></label><div class="b" id="dif">'+difTxt(esp,cont)+'</div><div class="xs muted">En producción este cierre se guarda y se manda al dueño por WhatsApp.</div></div></div>';
+ h+='<div class="card stack"><h3>Entradas y retiros de efectivo</h3><div class="chips"><button class="chip" data-a="mtipo" data-v="retiro" aria-pressed="'+(c.mt==='retiro')+'">Retiro</button><button class="chip" data-a="mtipo" data-v="entrada" aria-pressed="'+(c.mt==='entrada')+'">Entrada</button></div><div class="grid2" style="gap:8px"><label class="f">Monto<input type="number" inputmode="decimal" data-in="mm" value="'+esc(c.mm)+'" placeholder="0"></label><label class="f">Motivo<input type="text" data-in="mo" value="'+esc(c.mo)+'" placeholder="Hielo, cambio, propina…"></label></div><button class="btn" data-a="movadd">Registrar movimiento</button><div class="xs muted">Queda en el corte con quién y cuándo, y descuenta del efectivo esperado.</div></div>';
  return h}
 const difTxt=(esp,cont)=>isNaN(cont)?'Escribe lo contado para ver la diferencia':(cont===esp?'Caja cuadrada':(cont>esp?'Sobran '+m(cont-esp):'Faltan '+m(esp-cont)));
 
@@ -538,10 +546,10 @@ function setupInput(el){
  else if(k==='rtext')S.modal.text=v;
  else if(k==='recv'){S.caja.recv=v;const e=$('#cambio');if(e){const os=mesaOrders(S.caja.sel.slice(2));const sub=os.reduce((a,o)=>a+orderSub(o),0);const L=S.caja.lc&&S.caja.lc.found?S.caja.lc:null;const sd=L?Math.floor(L.cliente.puntos):0;const disc=(S.caja.canje&&sd>0&&L.modelo==='cashback')?Math.min(sd,sub):0;e.textContent=cambioTxt(sub-disc+Math.round(sub*S.caja.tip/100))}}
  else if(k==='ctel'){const t=v.replace(/\D/g,'').slice(0,10);S.caja.canje=false;if(t!==S.caja.tel){S.caja.tel=t;S.caja.lc=null;if(t.length===10)loadCajaCliente(t)}}
- else if(k==='cnom')S.caja.nom=v;else if(k==='cnac')S.caja.nac=v
+ else if(k==='mm')S.caja.mm=v;else if(k==='mo')S.caja.mo=v;else if(k==='pin')S.modal.pin=v;else if(k==='cnom')S.caja.nom=v;else if(k==='cnac')S.caja.nac=v
  else if(k==='lnom')S.loy.nom=v;else if(k==='lnac')S.loy.nac=v
- else if(k==='fondo'){S.caja.fondo=v;const ts=dayTickets();const ef=ts.filter(t=>t.method==='Efectivo').reduce((a,t)=>a+t.total,0);const esp=Number(v||0)+ef;$('#esp').textContent=m(esp);$('#dif').textContent=difTxt(esp,parseFloat(S.caja.contado))}
- else if(k==='contado'){S.caja.contado=v;const ts=dayTickets();const ef=ts.filter(t=>t.method==='Efectivo').reduce((a,t)=>a+t.total,0);$('#dif').textContent=difTxt(Number(S.caja.fondo||0)+ef,parseFloat(v))}
+ else if(k==='fondo'){S.caja.fondo=v;const ts=dayTickets();const ef=ts.filter(t=>t.method==='Efectivo').reduce((a,t)=>a+t.total,0);const esp=Number(v||0)+ef+movNet();$('#esp').textContent=m(esp);$('#dif').textContent=difTxt(esp,parseFloat(S.caja.contado))}
+ else if(k==='contado'){S.caja.contado=v;const ts=dayTickets();const ef=ts.filter(t=>t.method==='Efectivo').reduce((a,t)=>a+t.total,0);$('#dif').textContent=difTxt(Number(S.caja.fondo||0)+ef+movNet(),parseFloat(v))}
  else if(k==='cnt'){ins(el.getAttribute('data-i')).count=v}
  else if(k==='cfg'){S.settings[el.getAttribute('data-k')]=Math.max(0,Number(v)||0)}
 }
@@ -553,7 +561,7 @@ root.addEventListener('click',e=>{
  const a=el.getAttribute('data-a'),g=n=>el.getAttribute('data-'+n);
  const c=S.cli;
  switch(a){
-  case'role':S.role=g('v');break;
+  case'role':{const r=g('v');if((r==='caja'||r==='dueno')&&!S.auth[r]){S.modal={type:'pin',role:r,pin:''}}else S.role=r;break}
   case'reset':seed();toast('Demo reiniciada');break;
   case'sound':S.sound=!S.sound;if(S.sound)beep();break;
   case'tab':c.tab=g('v');if(c.tab==='puntos'&&S.me.tel.length===10&&!S.loy.data&&!S.loy.loading)loadMe();break;
@@ -596,6 +604,10 @@ root.addEventListener('click',e=>{
   case'done':{const o=S.orders.find(x=>x.id===+g('o'));o.done=true;o.lines.forEach(l=>l.status='entregado');toast('Pedido entregado');break}
   case'kadv':advance(+g('o'),g('s'));break;
   case'kscreen':S.kds.screen=!S.kds.screen;break;
+  case'mtipo':S.caja.mt=g('v');break;
+  case'movadd':{const mo=S.caja,mt=parseFloat(mo.mm);if(!(mt>0)||!mo.mo.trim()){toast('Escribe monto y motivo');return}mo.movs.push({tipo:mo.mt,monto:mt,motivo:mo.mo.trim(),ts:Date.now(),por:'Caja'});mo.mm='';mo.mo='';toast('Movimiento registrado');break}
+  case'pinok':{const md=S.modal;if(md.pin===S.pins[md.role]){S.auth[md.role]=true;S.role=md.role;S.modal=null}else toast('PIN incorrecto');break}
+  case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
   case'ctab':S.caja.tab=g('v');break;
   case'csel':S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;break;
