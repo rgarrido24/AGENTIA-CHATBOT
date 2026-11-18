@@ -392,7 +392,7 @@ function mDetail(k){
   o.lines.forEach(l=>{h+='<div class="row between" style="align-items:flex-start"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div>'+stPill(l.status)+'</div>'});
   h+='</div><hr>'});
  {const rl=readyLines(k);if(rl.length)h+='<button class="btn pri" data-a="servall" data-k="'+k+'">Ya lo entregué ('+rl.length+')</button>'}
- h+='<div class="row"><button class="btn pri sm" data-a="madding" data-k="'+k+'">Agregar pedido</button>'+(s.os.length?'<button class="btn sm" data-a="mcuenta" data-k="'+k+'">'+(S.cuenta[k]?'Cuenta ya en caja':'Pasar cuenta a caja')+'</button>'+waCuenta(s.os,mLabel(k),mesaTel(k)):'')+'</div></div>';
+ h+='<div class="row"><button class="btn pri sm" data-a="madding" data-k="'+k+'">Agregar pedido</button>'+(s.os.length?'<button class="btn sm" data-a="mcuenta" data-k="'+k+'">'+(S.cuenta[k]?'Cuenta ya en caja':'Pasar cuenta a caja')+'</button>':'')+'</div></div>';
  return h}
 function mAdd(){
  const w=S.mw;let h='<div class="stack" style="margin-top:12px"><div class="row between"><h2>Pedido para '+mLabel(w.sel)+'</h2><button class="btn ghost sm" data-a="mback">Volver</button></div>';
@@ -426,6 +426,7 @@ function vCaja(){
  const abiertas=MESAS.filter(x=>mesaOrders(x.k).length);
  if(!abiertas.length)h+='<div class="card small muted">No hay cuentas abiertas.</div>';
  abiertas.forEach(x=>{const s=mesaState(x.k);h+='<button class="card row between" style="text-align:left;'+(c.sel==='m:'+x.k?'outline:3px solid var(--ink)':'')+'" data-a="csel" data-k="m:'+x.k+'"><span class="b">'+x.label+'</span><span class="row" style="gap:6px">'+(s.cuenta?'<span class="status s-warn">Pidió cuenta</span>':'')+'<b class="num">'+m(s.total)+'</b></span></button>'});
+ {const env=abiertas.filter(x=>S.cuenta[x.k]&&mesaTel(x.k));if(env.length)h+='<span class="pill-title" style="margin:8px 0 0">Enviar cuenta por WhatsApp ('+env.length+')</span>'+env.map(x=>'<div class="card row between"><b>'+x.label+'</b>'+waCuenta(mesaOrders(x.k),x.label,mesaTel(x.k))+'</div>').join('')}
  if(CONTRA)h+=domPorAprobar()+domPorCobrar();
  const hs=holds();
  h+='<span class="pill-title" style="margin:8px 0 0">Esperando pago ('+hs.length+')</span>';
