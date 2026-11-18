@@ -27,6 +27,11 @@ export default function RestauranteShell({ cfg, staff }: { cfg: RestauranteConfi
             </div>
             <div className="row">
               <button className="btn ghost sm" data-a="sound" id="soundBtn">Sonido: no</button>
+              {staff ? (
+                <button className="btn ghost sm" data-a="pushtoggle" id="pushBtn" style={{ display: 'none' }}>
+                  Avisos
+                </button>
+              ) : null}
               <button className="btn ghost sm" data-a="reset">Reiniciar demo</button>
             </div>
           </div>

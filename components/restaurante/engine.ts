@@ -26,6 +26,24 @@ let INSTALL=null;
 function isStandalone(){try{const w=root.ownerDocument.defaultView;return (w.matchMedia&&w.matchMedia('(display-mode: standalone)').matches)||w.navigator.standalone===true}catch(e){return false}}
 function isIOS(){try{return /iphone|ipad|ipod/i.test(root.ownerDocument.defaultView.navigator.userAgent)}catch(e){return false}}
 function showInstall(){root.querySelectorAll('[data-a=install]').forEach(b=>{b.style.display=(!isStandalone()&&(INSTALL||isIOS()))?'':'none'})}
+const pushOk=()=>{try{return!!(navigator.serviceWorker&&window.PushManager&&window.Notification)}catch(e){return false}};
+const pushRol=()=>['mesero','cocina','barra','caja'].includes(S&&S.role)?S.role:'';
+const b64u=k=>{const p='='.repeat((4-k.length%4)%4),b=(k+p).replace(/-/g,'+').replace(/_/g,'/'),r=atob(b);return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
+async function pushToggle(){
+ const rol=pushRol();if(!rol){toast('Entra como Mesero, Cocina, Barra o Caja para activar avisos');return}
+ if(!pushOk()){toast(isIOS()?'En iPhone primero instala la app (Compartir → Añadir a pantalla de inicio) y ábrela desde el ícono':'Este navegador no permite avisos');return}
+ try{
+  const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();
+  if(sub&&lsGet(LK+'push')===rol){await fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'pushoff',endpoint:sub.endpoint})});await sub.unsubscribe();lsSet(LK+'push','');toast('Avisos desactivados en este dispositivo');softRender();return}
+  const perm=await Notification.requestPermission();if(perm!=='granted'){toast('Permiso de notificaciones denegado. Actívalo en los ajustes del navegador');return}
+  const kr=await fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'pushkey'})});const kj=await kr.json();if(!kj.key)throw new Error('sin llave');
+  if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(kj.key)});
+  const r=await fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'pushsub',rol,sub:sub.toJSON()})});const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.ok)throw new Error(j.error||'No se pudo activar');
+  lsSet(LK+'push',rol);toast('Avisos activados para '+rol);softRender();
+ }catch(e){toast('No se pudieron activar los avisos: '+(e&&e.message||'error'))}
+}
+function pushBtnUpd(){const b=root.querySelector('#pushBtn');if(!b)return;const rol=pushRol();b.style.display=(STAFF&&rol&&pushOk())?'':'none';b.textContent=lsGet(LK+'push')===rol?'Avisos: sí':'Activar avisos'}
 async function doInstall(){if(INSTALL){INSTALL.prompt();try{await INSTALL.userChoice}catch(e){}INSTALL=null;showInstall()}else toast(isIOS()?'En Safari toca Compartir y luego "Añadir a pantalla de inicio".':'Abre el menú del navegador y elige "Instalar app".')}
 /* ---------- utilidades ---------- */
 const $=(s)=>root.querySelector(s);
@@ -662,7 +680,7 @@ function render(){
  $('#modal').innerHTML=modalHtml()+(NUEVO?nvOverlays():'');
  root.classList.toggle('estilo-premium',!!(NUEVO&&estiloPrem()));root.classList.toggle('nv-cli',NUEVO&&S.role==='cliente');showInstall();
  const dn=root.querySelector('#demoNote');if(dn)dn.style.display=PROD?'none':'';
- $('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no')+' · '+(online?'en línea':'sin conexión');const rb=root.querySelector('[data-a=reset]');if(rb)rb.style.display=PROD?'none':'';
+ pushBtnUpd();$('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no')+' · '+(online?'en línea':'sin conexión');const rb=root.querySelector('[data-a=reset]');if(rb)rb.style.display=PROD?'none':'';
 }
 
 
@@ -1176,6 +1194,7 @@ root.addEventListener('click',e=>{
   case'movadd':{const mo=S.caja,mt=parseFloat(mo.mm);if(!(mt>0)||!mo.mo.trim()){toast('Escribe monto y motivo');return}mo.movs.push({tipo:mo.mt,monto:mt,motivo:mo.mo.trim(),ts:Date.now(),por:'Caja'});mo.mm='';mo.mo='';toast('Movimiento registrado');break}
   case'pinok':verifyPin();return;
   case'install':doInstall();return;
+  case'pushtoggle':pushToggle();return;
   case'nvid':if(S.me.tel.length===10){NV.guest=false;lsSet(LK+'guest','0');saveMe();S.loy.data=null;loadMe();toast('Listo')}else toast('Escribe tus 10 dígitos o sigue como invitado');break
   case'nvguest':NV.guest=true;lsSet(LK+'guest','1');break
   case'nvchg':S.me.tel='';S.loy.data=null;NV.guest=false;lsSet(LK+'guest','0');saveMe();break

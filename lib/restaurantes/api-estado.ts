@@ -17,6 +17,7 @@ import { getMongoDb } from '@/lib/mongodb';
 import { crearPins, ROLES_PIN, type Rol } from './pins';
 import { crearAuth, puede, ipDe, type Perfil } from './auth';
 import { colEstado, type ServidorConfig } from './servidor';
+import { crearPush, avisosDePedido, VISTAS_PUSH, type VistaPush } from './push';
 
 const ID = 'main';
 const COLS = ['orders', 'tickets', 'mermas', 'movs', 'reviews', 'gastos'] as const;
@@ -41,6 +42,7 @@ type Vista = { perfil: Perfil | null; cid: string | null };
 export function crearEstadoApi(cfg: ServidorConfig) {
 const COLL = colEstado(cfg);
 const pins = crearPins(cfg);
+const push = crearPush(cfg);
 const auth = crearAuth(cfg);
 const { pinOk, pinPorDefecto, cambiarPin, pinDebil } = pins;
 const { firmarToken, perfilDeRequest, tokenMesa, bloqueado, registrarFallo, limpiarFallos } = auth;
@@ -186,6 +188,21 @@ async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, defecto: await pinPorDefecto(rol), token: firmarToken(rol) });
     }
 
+    if (body.accion === 'pushkey' || body.accion === 'pushsub' || body.accion === 'pushoff') {
+      if (!perfil) return NextResponse.json({ error: 'Inicia sesión' }, { status: 401 });
+      if (body.accion === 'pushkey') return NextResponse.json({ ok: true, key: await push.clavePublica() });
+      if (body.accion === 'pushoff') {
+        if (typeof body.endpoint === 'string') await push.quitar(body.endpoint);
+        return NextResponse.json({ ok: true });
+      }
+      const rol = String(body.rol) as VistaPush;
+      if (!VISTAS_PUSH.includes(rol) || !puede(perfil, rol === 'barra' ? 'cocina' : (rol as Rol))) return NextResponse.json({ error: 'Ese perfil no corresponde a tu sesión' }, { status: 403 });
+      const ok = await push.suscribir(rol, body.sub, req.headers.get('user-agent') || '');
+      if (!ok) return NextResponse.json({ error: 'Suscripción inválida' }, { status: 400 });
+      void push.prueba(body.sub.endpoint, `/${cfg.slug}/equipo`);
+      return NextResponse.json({ ok: true });
+    }
+
     if (body.accion === 'mesatok') {
       if (!perfil) return NextResponse.json({ error: 'Inicia sesión' }, { status: 401 });
       const tokens: Record<string, string> = {};
@@ -295,7 +312,15 @@ async function POST(req: NextRequest) {
       if (!Object.keys(set).length) return NextResponse.json({ ...delta(doc, since, vista), ...(rech.length ? { rech } : {}) });
       set.rev = rev;
       const ok = await c.findOneAndUpdate({ _id: ID, rev: doc.rev }, { $set: set });
-      if (ok) return NextResponse.json({ ...delta(await load(), since, vista), ...(rech.length ? { rech } : {}) });
+      if (ok) {
+        // avisos push (sin esperar: no frenan la respuesta)
+        for (const [path, val] of Object.entries(set)) {
+          const m = /^cols\.orders\.(.+)$/.exec(path);
+          if (!m) continue;
+          for (const ev of avisosDePedido(doc.cols?.orders?.[m[1]]?.d, (val as any)?.d)) void push.avisar(ev.roles, ev.aviso, `/${cfg.slug}/equipo`);
+        }
+        return NextResponse.json({ ...delta(await load(), since, vista), ...(rech.length ? { rech } : {}) });
+      }
     }
     return NextResponse.json({ error: 'Reintenta' }, { status: 409 });
   } catch (e) {

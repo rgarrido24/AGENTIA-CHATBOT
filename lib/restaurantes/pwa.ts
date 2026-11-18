@@ -60,13 +60,34 @@ function iconos(cfg: RestauranteConfig) {
 export function swResponse(cfg: RestauranteConfig) {
   const r = cfg.ruta;
   const SW = `
-const V = '${cfg.slug}-v1';
+const V = '${cfg.slug}-v2';
 const SHELL = ['${r}', '${r}/equipo', '${cfg.marca.icono192}', '${cfg.marca.logo}'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL).catch(() => {})).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== V).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+});
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) {}
+  e.waitUntil(self.registration.showNotification(d.title || '${cfg.marca.nombre}', {
+    body: d.body || '',
+    icon: '${cfg.marca.icono192}',
+    badge: '${cfg.marca.icono192}',
+    tag: d.tag || undefined,
+    renotify: !!d.tag,
+    vibrate: [220, 100, 220],
+    data: { url: d.url || '${r}/equipo' },
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const u = (e.notification.data && e.notification.data.url) || '${r}/equipo';
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => {
+    for (const c of cs) { if (c.url.indexOf('${r}/equipo') !== -1 && 'focus' in c) return c.focus(); }
+    return clients.openWindow(u);
+  }));
 });
 self.addEventListener('fetch', (e) => {
   const req = e.request;
