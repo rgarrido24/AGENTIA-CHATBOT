@@ -642,6 +642,9 @@ if(CFG.salsas)h+=nvSalsas();
  h+='<div class="nv-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" data-in="nvq" value="'+esc(NV.q)+'" placeholder="'+esc(CFG.textos.buscar)+'" aria-label="Buscar en el menú" autocomplete="off"></div>';
  h+='<div class="chips scroll nv-cats">'+['Todo'].concat(CATS).map(x=>'<button class="chip" data-a="cat" data-v="'+x+'" aria-pressed="'+(c.cat===x)+'">'+esc(x)+'</button>').join('')+'<button class="chip fav" data-a="nvfav" aria-pressed="'+NV.fav+'">♥ Favoritos</button></div>';
  return h+'<div id="nvList">'+nvList()+'</div>'+nvWa()}
+function vElegir(){
+ const o=[['mesero','Mesero','Toma pedidos y lleva lo que sale de cocina'],['cocina','Cocina','Comandas por preparar'],['barra','Barra','Bebidas y cervezas'],['caja','Caja','Cobros y cuentas'],['dueno','Dueño','Ventas, menú y ajustes']];
+ return'<div class="stack" style="gap:12px;padding-top:6px"><h2>¿Quién eres?</h2><div class="small muted">Elige tu perfil. La próxima vez esta app abre directo en el último que usaste.</div>'+o.map(r=>'<button class="card" style="text-align:left;cursor:pointer" data-a="role" data-v="'+r[0]+'"><b style="font-size:18px">'+r[1]+'</b><div class="small muted">'+r[2]+'</div></button>').join('')+'<button class="btn ghost sm" data-a="vercli">Ver como cliente</button></div>'}
 function vClienteNuevo(){
  const c=S.cli,n=c.cart.reduce((a,l)=>a+l.qty,0),sub=sumLines(c.cart);
  let h='<div class="nv-wrap">'+(MARCA.logoHero?'<div class="nv-logo"><img src="'+MARCA.logoHero.src+'" alt="'+esc(MARCA.logoHero.alt)+'" width="'+MARCA.logoHero.w+'" height="'+MARCA.logoHero.h+'" fetchpriority="high"></div>':'<div class="nv-brand"><img src="'+MARCA.mark+'" alt="" width="46" height="'+Math.round(46*MARCA.markH/MARCA.markW)+'"><div class="grow"><b>'+NOMU+'</b><span>'+esc(MARCA.tagline)+'</span></div>'+(CON?'<a class="nv-wa" href="'+waLink('Hola '+NOM+', quiero hacer un pedido')+'" target="_blank" rel="noopener" aria-label="Pedir por WhatsApp">WhatsApp</a>':'')+'</div>')+nvTabs();
@@ -656,7 +659,7 @@ function vClienteNuevo(){
  return h}
 function nvOverlays(){
  let h='';
- if(NUEVO&&NV.splash&&S.role==='cliente')h+='<div class="nv-splash'+(MARCA.splash.efecto==='brasas'?' brasas':'')+'" data-par><div class="nv-sp-glow"></div>'+Array.from({length:14},(_,i)=>'<i class="nv-bub" style="--x:'+(6+i*7)+'%;--d:'+(5+(i*37)%6)+'s;--s:'+(10+(i*13)%22)+'px;--w:'+((i*0.7)%4).toFixed(1)+'s"></i>').join('')
+ if(NUEVO&&NV.splash&&S.role==='cliente'&&!STAFF)h+='<div class="nv-splash'+(MARCA.splash.efecto==='brasas'?' brasas':'')+'" data-par><div class="nv-sp-glow"></div>'+Array.from({length:14},(_,i)=>'<i class="nv-bub" style="--x:'+(6+i*7)+'%;--d:'+(5+(i*37)%6)+'s;--s:'+(10+(i*13)%22)+'px;--w:'+((i*0.7)%4).toFixed(1)+'s"></i>').join('')
   +'<div class="nv-sp-in"><img class="nv-sp-mark" src="'+SI.src+'" alt="'+esc(SI.alt)+'" width="'+SI.w+'" height="'+SI.h+'" fetchpriority="high"><h1 class="nv-sp-t">'+MARCA.splash.lineas.map(x=>'<span>'+esc(x)+'</span>').join('')+'</h1>'+(MARCA.splash.frase?'<p class="nv-sp-f">'+esc(MARCA.splash.frase)+'</p>':'')+'<p class="nv-sp-s">'+esc(MARCA.splash.sub)+'</p><button class="nv-go" data-a="nvgo">'+esc(MARCA.splash.boton)+'<i></i></button></div></div>';
  if(NUEVO&&NV.cele){const e=NV.cele;h+='<div class="nv-cele" data-a="celeclose"><div class="nv-confetti" aria-hidden="true">'+Array.from({length:44},(_,i)=>'<i style="--x:'+((i*23)%100)+'%;--d:'+(1.8+((i*7)%10)/6).toFixed(2)+'s;--w:'+(((i*13)%9)/10).toFixed(1)+'s;--r:'+((i*47)%360)+'deg;--k:'+(i%5)+'"></i>').join('')+'</div><div class="nv-cele-card"><div class="nv-check"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 15-17"/></svg></div><h2>¡Pedido #'+e.id+' enviado!</h2><p>'+(CONTRA&&e.canal!=='mesa'?'Recibimos tu pedido. '+NOM+' lo confirma contigo y pagas al recibirlo.':e.hold&&!e.aprobar?'Falta confirmar tu pago para que llegue a cocina.':e.aprobar?'Tu mesero lo aprueba en un momento y sale a cocina.':'Ya va para cocina y barra. Sigue el estado aquí mismo.')+'</p>'+(e.earn>0?'<div class="nv-cele-pts">Al pagar sumas <b>'+m(e.earn)+'</b> de saldo en tu tarjeta</div>':'')+'<button class="btn pri" data-a="celeclose">Ver seguimiento</button></div></div>'}
  return h}
@@ -675,10 +678,10 @@ function render(){
  if(!showNav&&S.role!=='cliente')S.role='cliente';
  $('#nav').innerHTML=ROLES.map(r=>'<button data-a="role" data-v="'+r[0]+'" aria-current="'+(S.role===r[0])+'">'+r[1]+(c[r[0]]?'<span class="cnt">'+c[r[0]]+'</span>':'')+'</button>').join('');
  $('#wrap').classList.toggle('wide',S.role==='dueno'||S.role==='caja'||S.role==='cocina'||S.role==='barra');
- const v={cliente:NUEVO?vClienteNuevo:vCliente,mesero:vMesero,cocina:()=>vKds('cocina'),barra:()=>vKds('barra'),caja:vCaja,dueno:vDueno}[S.role]();
+ const v={cliente:STAFF&&!S.verCli?vElegir:NUEVO?vClienteNuevo:vCliente,mesero:vMesero,cocina:()=>vKds('cocina'),barra:()=>vKds('barra'),caja:vCaja,dueno:vDueno}[S.role]();
  $('#app').innerHTML=v;
  $('#modal').innerHTML=modalHtml()+(NUEVO?nvOverlays():'');
- root.classList.toggle('estilo-premium',!!(NUEVO&&estiloPrem()));root.classList.toggle('nv-cli',NUEVO&&S.role==='cliente');showInstall();
+ root.classList.toggle('estilo-premium',!!(NUEVO&&estiloPrem()));root.classList.toggle('nv-cli',NUEVO&&S.role==='cliente'&&!STAFF);showInstall();
  const dn=root.querySelector('#demoNote');if(dn)dn.style.display=PROD?'none':'';
  pushBtnUpd();$('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no')+' · '+(online?'en línea':'sin conexión');const rb=root.querySelector('[data-a=reset]');if(rb)rb.style.display=PROD?'none':'';
 }
@@ -811,7 +814,7 @@ function snapNow(){
  const k=kvNow();Object.keys(k).forEach(x=>{kv[x]=JSON.stringify(k[x])});
  return{cols,kv};
 }
-function reseedKeep(){const k={role:S.role,auth:S.auth,dpin:S.dpin,me:S.me,mesaTok:S.mesaTok};if(S.modal&&S.modal.type==='pin')k.modal=S.modal;seed();Object.assign(S,k);if(QRMESA){S.cli.mesa=QRMESA;S.cli.mt=QRT}}
+function reseedKeep(){const k={role:S.role,verCli:S.verCli,auth:S.auth,dpin:S.dpin,me:S.me,mesaTok:S.mesaTok};if(S.modal&&S.modal.type==='pin')k.modal=S.modal;seed();Object.assign(S,k);if(QRMESA){S.cli.mesa=QRMESA;S.cli.mt=QRT}}
 function softRender(){const a=root.ownerDocument.activeElement;if(a&&root.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){dirty=true;return}dirty=false;render()}
 function applyResp(r){
  if(!r||r.error)return;
@@ -864,7 +867,7 @@ async function verifyPin(){
  try{
   const r=await fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'pin',rol:md.role,pin:md.pin})});
   const j=await r.json().catch(()=>({}));
-  if(j.ok&&j.token){TOKS[md.role]=j.token;saveToks();S.auth[md.role]=true;if(md.role==='dueno'){S.dpin=md.pin;S.pinDef=!!j.defecto}S.role=md.target||md.role;S.modal=null;loadMesaTok()}else toast(r.status===429?(j.error||'Demasiados intentos'):'PIN incorrecto');
+  if(j.ok&&j.token){TOKS[md.role]=j.token;saveToks();S.auth[md.role]=true;if(md.role==='dueno'){S.dpin=md.pin;S.pinDef=!!j.defecto}S.role=md.target||md.role;if(STAFF&&S.role!=='cliente')lsSet(LK+'rol',S.role);S.modal=null;loadMesaTok()}else toast(r.status===429?(j.error||'Demasiados intentos'):'PIN incorrecto');
  }catch(e){
   toast('Sin conexión para validar el PIN');
  }
@@ -1114,7 +1117,8 @@ root.addEventListener('click',e=>{
  const a=el.getAttribute('data-a'),g=n=>el.getAttribute('data-'+n);
  const c=S.cli;
  switch(a){
-  case'role':{const r=g('v');const k=authKey(r);if(r!=='cliente'&&!S.auth[k]){S.modal={type:'pin',role:k,target:r,pin:''}}else S.role=r;break}
+  case'role':{const r=g('v');const k=authKey(r);if(r!=='cliente'&&!S.auth[k]){S.modal={type:'pin',role:k,target:r,pin:''}}else{S.role=r;S.verCli=r==='cliente';if(STAFF&&r!=='cliente')lsSet(LK+'rol',r)}break}
+  case'vercli':S.verCli=true;S.role='cliente';break
   case'reset':{if(!S.dpin){toast('Solo el dueño puede reiniciar: entra a Dueño con tu PIN');break}resetServer('reset');return}
   case'sound':S.sound=!S.sound;if(S.sound)beep();break;
   case'tab':c.tab=g('v');if(c.tab==='puntos'&&S.me.tel.length===10&&!S.loy.data&&!S.loy.loading)loadMe();break;
@@ -1248,7 +1252,7 @@ const iv2=setInterval(kdsTick,3000);
 seed();Object.keys(TOKS).forEach(r=>{S.auth[r]=true});loadMesaTok();
 if(NUEVO){nvRestoreMe();if(S.me.tel.length===10)setTimeout(()=>{try{loadMe()}catch(e){}},400)}
 try{const qs=new URLSearchParams(root.ownerDocument.defaultView.location.search),mm=qs.get('mesa');if(mm&&MESAS.some(x=>x.k===mm)&&/^[\w]{4,20}$/.test(qs.get('t')||'')){QRMESA=mm;QRT=qs.get('t');S.cli.mt=QRT;S.cli.mesa=mm;S.cli.geo='dentro';S.cli.canal='mesa'}}catch(e){}
-try{if(STAFF){const rr=new URLSearchParams(root.ownerDocument.defaultView.location.search).get('rol');if(['mesero','cocina','barra','caja','dueno'].includes(rr)){const k=authKey(rr);if(S.auth[k])S.role=rr;else S.modal={type:'pin',role:k,target:rr,pin:''}}}}catch(e){}
+try{if(STAFF){const rr=new URLSearchParams(root.ownerDocument.defaultView.location.search).get('rol')||lsGet(LK+'rol');if(['mesero','cocina','barra','caja','dueno'].includes(rr)){const k=authKey(rr);if(S.auth[k])S.role=rr;else S.modal={type:'pin',role:k,target:rr,pin:''}}}}catch(e){}
 render();LAST=snapNow();tick();
 const iv3=setInterval(tick,2500);
 return()=>{ctl.abort();clearInterval(iv);clearInterval(iv2);clearInterval(iv3)};
