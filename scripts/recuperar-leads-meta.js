@@ -45,9 +45,13 @@ MongoClient.connect(process.env.MONGODB_URI).then(async client => {
   const cli = await col.findOne({ clientSlug: SLUG, _collection_type: 'reseller_client' });
   const fb = (cli && cli.fb_connection) || {};
   if (!cli) { console.log('ABORTO: no existe el cliente ' + SLUG); client.close(); return; }
-  if (!fb.page_access_token || !fb.page_id) { console.log('ABORTO: sin token/page'); client.close(); return; }
-  const PAGE = String(fb.page_id);
-  let metaLeads = await fetchAll(dec(fb.page_access_token));
+  // Si el formulario pertenece a una pagina EXTRA (cliente con 2 paginas), usa el token de esa pagina.
+  const frm = (cli.formularios || []).find(f => String(f.formId) === String(FORM));
+  const extra = (cli.fb_extra_pages || []).find(p => frm && frm.page_id && String(p.page_id) === String(frm.page_id));
+  const src = extra || fb;
+  if (!src.page_access_token || !src.page_id) { console.log('ABORTO: sin token/page para ese formulario (¿falta conectar la pagina extra?)'); client.close(); return; }
+  const PAGE = String(src.page_id);
+  let metaLeads = await fetchAll(dec(src.page_access_token));
   console.log('Leads en Meta para el formulario:', metaLeads.length);
   if (SINCE) { metaLeads = metaLeads.filter(L => new Date(L.created_time) >= SINCE); console.log('Desde ' + process.env.SINCE + ':', metaLeads.length); }
 
