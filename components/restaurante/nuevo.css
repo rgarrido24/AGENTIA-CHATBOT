@@ -199,5 +199,7 @@
 
 /* fotos reales: se ven completas (sin recortar) y el hero se ajusta a la foto */
 .nv-hero-art:has(img){position:absolute;inset:10px;width:auto;height:auto}
-.nv-hero-art img{border-radius:0;filter:drop-shadow(0 12px 10px rgba(60,30,5,.3))}
+.nv-hero-art:has(img){filter:none;animation:none}
+.nv-hero-art:has(img)::after{content:'';position:absolute;left:22%;right:22%;bottom:-3px;height:14px;border-radius:50%;background:radial-gradient(closest-side,rgba(60,30,5,.4),transparent)}
+.nv-hero-art img{border-radius:0;filter:none;background:transparent}
 .nv-mini:has(img){padding:2px}
