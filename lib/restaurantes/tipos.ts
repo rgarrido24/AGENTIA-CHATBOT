@@ -31,6 +31,8 @@ export type Producto = {
   salsas?: boolean;
   /** Ingredientes del platillo: de aquí salen los botones "Sin …". */
   ing?: string[];
+  /** Foto real del producto (ruta pública o data URL). */
+  img?: string;
 };
 /** [id, nombre, unidad, stock, mínimo, costo] */
 export type Insumo = [string, string, string, number, number, number];
