@@ -39,7 +39,7 @@ const MENU:Producto[]=[
  P({id:'pr',cat:'Snacks',name:'Papas fritas',desc:'Con Maggi, tajín, salsa inglesa y limón',ing:['Maggi','tajín','salsa inglesa','limón'],emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}})
 ];
 /* fotos reales: id del producto -> archivo en /public/tostichelas/p/ (webp, fondo transparente) */
-const FOTOS:Record<string,string>={};
+const FOTOS:Record<string,string>={cor:'/tostichelas/p/cor.webp?v=1',vic:'/tostichelas/p/vic.webp?v=1',pac:'/tostichelas/p/pac.webp?v=1',xx:'/tostichelas/p/xx.webp?v=1',mod:'/tostichelas/p/mod.webp?v=1',leo:'/tostichelas/p/leo.webp?v=1',coc:'/tostichelas/p/coc.webp?v=1',czr:'/tostichelas/p/czr.webp?v=1',boi:'/tostichelas/p/boi.webp?v=1',min:'/tostichelas/p/min.webp?v=1',cln:'/tostichelas/p/cln.webp?v=1'};
 MENU.forEach(q=>{if(FOTOS[q.id])q.img=FOTOS[q.id]});
 const CATS:string[]=['Tostadas','Tacos','Cervezas','Bebidas','Snacks'];
 const CATCOL:Record<string,string>={Tostadas:'#7DBB86',Tacos:'#F29A4A',Cervezas:'#F2C14E',Bebidas:'#7FB2E5',Snacks:'#E2573A'};
