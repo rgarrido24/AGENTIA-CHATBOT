@@ -95,3 +95,7 @@
 .tos-root.nuevo.estilo-premium .nv-feat .b1,.tos-root.nuevo.estilo-premium .nv-feat .b2{background:rgba(255,138,61,.25)}
 .tos-root.nuevo.estilo-premium h1,.tos-root.nuevo.estilo-premium h2{letter-spacing:-.01em}
 .tos-root.nuevo.estilo-premium .nv-pair{border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:20px}
+/* splash: el logo es una placa clara con brillo (antes se veía opaco sobre el fondo oscuro) */
+.tos-root.nuevo.estilo-premium .nv-sp-mark{border-radius:30px;filter:none;box-shadow:0 0 0 1px rgba(255,255,255,.14),0 30px 70px rgba(255,120,40,.35);opacity:1}
+.tos-root.nuevo.estilo-premium .nv-sp-t{display:none}
+.tos-root.nuevo.estilo-premium .nv-sp-s{margin-top:6px;color:#CDBFB1}
