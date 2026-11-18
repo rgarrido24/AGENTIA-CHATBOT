@@ -99,3 +99,27 @@
 .tos-root.nuevo.estilo-premium .nv-sp-mark{border-radius:30px;filter:none;box-shadow:0 0 0 1px rgba(255,255,255,.14),0 30px 70px rgba(255,120,40,.35);opacity:1}
 .tos-root.nuevo.estilo-premium .nv-sp-t{display:none}
 .tos-root.nuevo.estilo-premium .nv-sp-s{margin-top:6px;color:#CDBFB1}
+
+/* ===== paneles del equipo (dueño, caja, cocina, mesero) ===== */
+.tos-root.estilo-premium .pill-title{background:none;border:0;box-shadow:none;padding:0;margin:22px 0 10px;font-size:22px;letter-spacing:-.01em;color:var(--ink);display:flex;align-items:center;gap:10px}
+.tos-root.estilo-premium .pill-title::before{content:"";width:4px;height:20px;border-radius:4px;background:linear-gradient(#FFC46B,#FF6A1A)}
+.tos-root.estilo-premium .tbl td{color:var(--ink);border-bottom:1px solid rgba(255,255,255,.06)}
+.tos-root.estilo-premium .tbl th{color:var(--muted);letter-spacing:.06em}
+.tos-root.estilo-premium .tbl tr{transition:background .25s}
+.tos-root.estilo-premium .tbl tbody tr:hover{background:rgba(255,138,61,.07)}
+.tos-root.estilo-premium .bars{border-bottom:1px solid var(--line)}
+.tos-root.estilo-premium .bars>*{border-radius:8px 8px 0 0}
+.tos-root.estilo-premium .kpi{position:relative;overflow:hidden;padding:16px;border-radius:18px;background:radial-gradient(120% 140% at 100% 0,rgba(255,138,61,.16),transparent 60%),linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));animation:pmIn .7s var(--ease) both}
+.tos-root.estilo-premium .kpi:nth-child(2){animation-delay:.07s}.tos-root.estilo-premium .kpi:nth-child(3){animation-delay:.14s}.tos-root.estilo-premium .kpi:nth-child(4){animation-delay:.21s}
+.tos-root.estilo-premium .kpi .v{font-size:34px;letter-spacing:-.02em;background:linear-gradient(180deg,#fff,#FFD9B8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tos-root.estilo-premium .card{border-radius:18px;background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02));animation:pmIn .6s var(--ease) both}
+.tos-root.estilo-premium .card h3{letter-spacing:-.01em}
+.tos-root.estilo-premium .mesa{border-radius:18px;transition:transform .3s var(--ease),border-color .3s,box-shadow .3s}
+.tos-root.estilo-premium .mesa:active{transform:scale(.96)}
+.tos-root.estilo-premium .ticket{border-radius:18px;border-left:3px solid #FF8A3D}
+.tos-root.estilo-premium .banner{border-radius:14px;border:1px solid var(--line)}
+.tos-root.estilo-premium .status{border-radius:99px}
+.tos-root.estilo-premium .sep{background:var(--line)}
+.tos-root.estilo-premium .loy,.tos-root.estilo-premium .hero{border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px}
+.tos-root.estilo-premium #nav button,.tos-root.estilo-premium .nav button{border-radius:99px;transition:background .3s var(--ease),transform .2s}
+.tos-root.estilo-premium .nav .cnt{background:#FF8A3D;color:#140C06}
