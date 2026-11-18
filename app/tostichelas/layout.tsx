@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from 'next';
-import { Baloo_2, Nunito } from 'next/font/google';
+import { Baloo_2, Nunito, Space_Grotesk, Inter } from 'next/font/google';
 import '@/components/restaurante/restaurante.css';
 import '@/components/restaurante/nuevo.css';
+import '@/components/restaurante/premium.css';
 
 /** Fuentes variables: sin `weight` (bug del loader de next/font en Next 14). */
 const baloo = Baloo_2({ subsets: ['latin'], variable: '--font-baloo', display: 'swap' });
 const nunito = Nunito({ subsets: ['latin'], variable: '--font-nunito', display: 'swap' });
+const space = Space_Grotesk({ subsets: ['latin'], variable: '--font-space', display: 'swap' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Tostichelas | Restaurante digital',
@@ -19,5 +22,5 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: '#FBE3CB', width: 'device-width', initialScale: 1 };
 
 export default function TostichelasLayout({ children }: { children: React.ReactNode }) {
-  return <div className={`${baloo.variable} ${nunito.variable}`}>{children}</div>;
+  return <div className={`${baloo.variable} ${nunito.variable} ${space.variable} ${inter.variable}`}>{children}</div>;
 }

@@ -525,6 +525,7 @@ let TOP=[];
 const NV={guest:(()=>{try{return lsGet(LK+'guest')==='1'}catch(e){return false}})(),splash:(()=>{try{return Date.now()-Number(lsGet(LK+'splash_ts')||0)>30*60000}catch(e){return true}})(),q:'',cele:null,bump:0,fav:false};
 if(NUEVO)root.classList.add('nuevo');
 if(MARCA.tema)root.classList.add(MARCA.tema);
+const estiloPrem=()=>{try{const q=(root.ownerDocument.defaultView.location.search.match(/[?&]estilo=(clasico|premium)/)||[])[1];if(q)return q==='premium'}catch(e){}return CFG.estilos?S.settings.estiloMenu!=='clasico':false};
 const nvRestoreMe=()=>{try{const me=JSON.parse(lsGet(LK+'me')||'{}');if(me.tel)S.me.tel=String(me.tel).replace(/\D/g,'').slice(0,10);if(me.name)S.me.name=String(me.name).slice(0,60)}catch(e){}};
 const saveMe=()=>lsSet(LK+'me',JSON.stringify({name:S.me.name,tel:S.me.tel}));
 /* reglas de maridaje (configurables por producto con MCFG.pair[id]=[ids]) */
@@ -659,7 +660,7 @@ function render(){
  const v={cliente:NUEVO?vClienteNuevo:vCliente,mesero:vMesero,cocina:()=>vKds('cocina'),barra:()=>vKds('barra'),caja:vCaja,dueno:vDueno}[S.role]();
  $('#app').innerHTML=v;
  $('#modal').innerHTML=modalHtml()+(NUEVO?nvOverlays():'');
- root.classList.toggle('nv-cli',NUEVO&&S.role==='cliente');showInstall();
+ root.classList.toggle('estilo-premium',!!(NUEVO&&estiloPrem()));root.classList.toggle('nv-cli',NUEVO&&S.role==='cliente');showInstall();
  const dn=root.querySelector('#demoNote');if(dn)dn.style.display=PROD?'none':'';
  $('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no')+' · '+(online?'en línea':'sin conexión');const rb=root.querySelector('[data-a=reset]');if(rb)rb.style.display=PROD?'none':'';
 }
@@ -860,7 +861,7 @@ function dExtrasCfg(){
  EXT.forEach(e=>{const on=S.settings[e.k]>=0;h+='<div class="row between" style="gap:8px"><div class="grow"><b class="small">'+e.g+'</b><div class="xs muted">'+(e.donde||e.cats.join(', '))+'</div></div>'+(on&&!e.salsa?'<label class="f" style="width:96px;margin:0"><input type="number" min="0" max="500" data-in="xp_'+e.k+'" value="'+S.settings[e.k]+'" aria-label="Precio de '+e.g+'"></label>':'')+'<button class="btn sm'+(on?' pri':'')+'" data-a="xtog" data-k="'+e.k+'" aria-pressed="'+on+'">'+(on?'Ofrecido':'No ofrecido')+'</button></div>'});
  return h+'</div>'}
 function dAjustes(){
- let h=dPedidosCfg()+dExtrasCfg()+dQuickCfg()+dPwCfg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
+ let h=dEstiloCfg()+dPedidosCfg()+dExtrasCfg()+dQuickCfg()+dPwCfg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
  h+='<div class="card stack"><h3>Antes de abrir al público</h3><ul class="small" style="margin:0;padding-left:18px"><li>Carga tus fotos y precios en "Menú y márgenes".</li><li>Captura tus costos reales de insumos en "Inventario".</li><li>Haz un conteo físico para dejar el inventario inicial correcto.</li>'+(S.pinDef?'<li><b style="color:var(--bad)">Cambia las contraseñas:</b> todavía hay perfiles con la contraseña inicial. Cámbialas en "Contraseñas del equipo".</li>':'')+'</ul></div>';
  return h}
 
@@ -877,6 +878,9 @@ let QRMESA=null,QRT='',GEOOK=null;
 const canOrderAny=()=>!!(S.settings.pedMesa||S.settings.pedLlevar||S.settings.pedEntrega);
 const canalOk=e=>e==='mesa'?!!S.settings.pedMesa:e==='llevar'?!!S.settings.pedLlevar:!!S.settings.pedEntrega;
 const allowedCanales=dentro=>[].concat(dentro&&S.settings.pedMesa?['mesa']:[],S.settings.pedLlevar?['llevar']:[],S.settings.pedEntrega?['entrega']:[]);
+function dEstiloCfg(){
+ if(!CFG.estilos)return'';const p=S.settings.estiloMenu!=='clasico';
+ return'<div class="card stack"><h3>Estilo del menú del cliente</h3><div class="small muted">Cambia cómo se ve el menú en el celular de tus clientes. Puedes volver al otro cuando quieras.</div><div class="chips"><button class="chip" data-a="estilo" data-v="premium" aria-pressed="'+p+'">Premium (oscuro, moderno)</button><button class="chip" data-a="estilo" data-v="clasico" aria-pressed="'+!p+'">Sencillo (el de siempre)</button></div></div>'}
 function dPedidosCfg(){
  const s=S.settings,t=(k,l,d)=>'<div class="row between" style="align-items:flex-start;gap:10px"><div class="grow"><div class="b small">'+l+'</div><div class="xs muted">'+d+'</div></div><button class="chip" data-a="ped" data-k="'+k+'" aria-pressed="'+!!s[k]+'">'+(s[k]?'Activo':'Apagado')+'</button></div>';
  return'<div class="card stack"><h3>Pedidos desde el celular del cliente</h3><div class="small muted">Tú decides qué pueden pedir tus clientes solos. Puedes empezar con el menú de consulta y abrir poco a poco.</div><div class="chips"><button class="chip" data-a="pedpre" data-v="solover">Solo ver el menú</button><button class="chip" data-a="pedpre" data-v="inicio">Para empezar (mesa con aprobación)</button><button class="chip" data-a="pedpre" data-v="todo">Todo abierto</button></div>'
@@ -1137,6 +1141,7 @@ root.addEventListener('click',e=>{
   case'aprob':{const o=S.orders.find(x=>x.id===+g('o'));o.aprobar=false;o.porConfirmar=false;release(o);toast('Pedido enviado a cocina y barra');break}
   case'rechaz':{const o=S.orders.find(x=>x.id===+g('o'));o.cancel=true;o.aprobar=false;toast('Pedido rechazado');break}
   case'ped':S.settings[g('k')]=!S.settings[g('k')];break;
+  case'estilo':{S.settings.estiloMenu=g('v')==='clasico'?'clasico':'premium';break}
   case'pedpre':{const v=g('v');Object.assign(S.settings,v==='solover'?{pedMesa:false,pedLlevar:false,pedEntrega:false,aprobar:false}:v==='inicio'?{pedMesa:true,pedLlevar:false,pedEntrega:false,aprobar:true}:{pedMesa:true,pedLlevar:true,pedEntrega:true,aprobar:false});break}
   case'setloc':setLoc();return;
   case'geochk':geoChk();return;
