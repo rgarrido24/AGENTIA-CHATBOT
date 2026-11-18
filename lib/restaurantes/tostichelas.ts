@@ -39,7 +39,7 @@ const MENU:Producto[]=[
  P({id:'pr',cat:'Snacks',name:'Papas fritas',desc:'Con Maggi, tajín, salsa inglesa y limón',ing:['Maggi','tajín','salsa inglesa','limón'],emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}})
 ];
 /* fotos reales: id del producto -> archivo en /public/tostichelas/p/ (png, fondo transparente) */
-const FOTOS:Record<string,string>={cor:'/tostichelas/p/cor.png?v=3',vic:'/tostichelas/p/vic.png?v=2',pac:'/tostichelas/p/pac.png?v=2',xx:'/tostichelas/p/xx.png?v=2',mod:'/tostichelas/p/mod.png?v=2',leo:'/tostichelas/p/leo.png?v=2',ult:'/tostichelas/p/ult.png?v=2',czr:'/tostichelas/p/czr.png?v=2',boi:'/tostichelas/p/boi.png?v=2',min:'/tostichelas/p/min.png?v=2',cln:'/tostichelas/p/cln.png?v=2'};
+const FOTOS:Record<string,string>={tag:'/tostichelas/p/tag.png?v=3',tce:'/tostichelas/p/tce.png?v=3',cor:'/tostichelas/p/cor.png?v=3',vic:'/tostichelas/p/vic.png?v=3',pac:'/tostichelas/p/pac.png?v=3',xx:'/tostichelas/p/xx.png?v=3',mod:'/tostichelas/p/mod.png?v=3',leo:'/tostichelas/p/leo.png?v=3',ult:'/tostichelas/p/ult.png?v=3',czr:'/tostichelas/p/czr.png?v=3',boi:'/tostichelas/p/boi.png?v=3',min:'/tostichelas/p/min.png?v=3',cln:'/tostichelas/p/cln.png?v=3'};
 MENU.forEach(q=>{if(FOTOS[q.id])q.img=FOTOS[q.id]});
 const CATS:string[]=['Tostadas','Tacos','Cervezas','Bebidas','Snacks'];
 const CATCOL:Record<string,string>={Tostadas:'#7DBB86',Tacos:'#F29A4A',Cervezas:'#F2C14E',Bebidas:'#7FB2E5',Snacks:'#E2573A'};

@@ -123,3 +123,5 @@
 .tos-root.estilo-premium .loy,.tos-root.estilo-premium .hero{border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px}
 .tos-root.estilo-premium #nav button,.tos-root.estilo-premium .nav button{border-radius:99px;transition:background .3s var(--ease),transform .2s}
 .tos-root.estilo-premium .nav .cnt{background:#FF8A3D;color:#140C06}
+/* el logo del splash usaba multiply (pensado para fondo claro): sobre oscuro se veía apagado */
+.tos-root.nuevo.estilo-premium .nv-sp-mark{mix-blend-mode:normal;opacity:1}
