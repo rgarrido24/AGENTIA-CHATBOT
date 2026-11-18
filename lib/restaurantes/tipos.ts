@@ -29,6 +29,8 @@ export type Producto = {
   tag?: string;
   /** El producto se arma con el constructor de salsas (alitas / boneless). */
   salsas?: boolean;
+  /** Ingredientes del platillo: de aquí salen los botones "Sin …". */
+  ing?: string[];
 };
 /** [id, nombre, unidad, stock, mínimo, costo] */
 export type Insumo = [string, string, string, number, number, number];

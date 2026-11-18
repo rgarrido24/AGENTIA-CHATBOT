@@ -129,7 +129,7 @@ export type RestauranteConfig = {
   /** Ajustes iniciales (sobre los base del motor). */
   ajustes?: Record<string, number | boolean | string | null>;
   /** Extras que el dueño enciende o apaga (ajuste `k`: -1 = no se ofrece, >=0 = precio por pieza). */
-  extras?: { k: string; g: string; def: number; cats: string[]; mult?: number; salsa?: boolean; opciones?: string[] }[];
+  extras?: { k: string; g: string; def: number; cats: string[]; ids?: string[]; donde?: string; mult?: number; salsa?: boolean; opciones?: string[] }[];
   /** Ilustraciones SVG por categoría (viewBox 64x64). Si falta, el motor usa las de Tostichelas. */
   arte?: Record<string, string>;
   /** Portada del menú: producto destacado, mosaico de categorías y combos. Si falta, no se muestra. */

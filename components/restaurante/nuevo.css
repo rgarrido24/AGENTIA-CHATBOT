@@ -189,3 +189,10 @@
 .tos-root.nuevo .nv-logo{margin:2px -4px 8px;border-radius:24px;overflow:hidden;background:#F4DDB8;animation:nvIn .6s both}
 .tos-root.nuevo .nv-logo img{display:block;width:100%;height:auto;max-height:230px;object-fit:cover;object-position:50% 45%}
 .tos-root.nuevo .nv-sp-mark{mix-blend-mode:multiply;width:min(88vw,430px)}
+
+/* sugerencias "te podría gustar": todas las opciones, con scroll horizontal por categoría */
+.nv-pair-g{font-family:var(--display);font-weight:800;font-size:13px;opacity:.75;text-transform:uppercase;letter-spacing:.04em}
+.nv-pair-row{flex-direction:row;overflow-x:auto;gap:8px;padding:2px 2px 6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.nv-pair-c{flex:0 0 132px;flex-direction:column;align-items:flex-start;gap:4px;scroll-snap-align:start;position:relative}
+.nv-pair-c .nv-mini{width:100%}
+.nv-pair-c .nv-plus{align-self:flex-end}

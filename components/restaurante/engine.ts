@@ -66,7 +66,7 @@ const EXT=CFG.extras||[];
 let XSIG='';
 function applyExtras(){
  MENU.forEach(q=>{if(!q.bm)q.bm=(q.mods||[]).slice();const r=q.bm.slice();
-  EXT.forEach(e=>{const v=S.settings[e.k];if(!(v>=0)||!e.cats.includes(q.cat))return;
+  EXT.forEach(e=>{const v=S.settings[e.k];if(!(v>=0)||!e.cats.includes(q.cat)||(e.ids&&!e.ids.includes(q.id)))return;
    if(e.salsa)r.push({g:e.g,req:false,opts:(e.opciones||['Verde','Roja']).map(l=>({l,p:[0,0]}))});
    else r.push({g:e.g,req:false,opts:[{l:'Sí',p:[v,Math.round(v*(e.mult||1))]}]})});
   q.mods=r})}
@@ -114,7 +114,7 @@ function seed(){
   cli:{tab:'menu',geo:'dentro',mesa:CFG.mesaInicial||(MESAS[0]?MESAS[0].k:''),canal:'mesa',cat:'Todo',sort:'pop',cart:[],addr:'',open:{},purchased:{}},
   me:{name:'',tel:''},
   mw:{sel:null,adding:false,cart:[],tel:'',guest:false},
-  caja:{sel:null,tab:'cobro',split:1,tip:0,method:'Efectivo',recv:'',tel:'',canje:false,fondo:500,contado:'',lc:null,nom:'',nac:'',busy:false,movs:[],mt:'retiro',mm:'',mo:''},
+  caja:{sel:null,tab:'cobro',split:1,tip:0,tipx:'',method:'Efectivo',recv:'',tel:'',canje:false,fondo:500,contado:'',lc:null,nom:'',nac:'',busy:false,movs:[],mt:'retiro',mm:'',mo:''},
   auth:{},pins:Object.assign({},(CFG.demo&&CFG.demo.pins)||{}),
   loy:{tel:'',data:null,loading:false,nom:'',nac:''},real:null,kds:{screen:false},
   own:{tab:'resumen'}};
@@ -304,7 +304,7 @@ function modalHtml(){
    const pc=[sel,dosSab(p)?sel2:null].filter(Boolean).map(id=>(salsaBy(id)||{}).picor||0);
    if(pc.length){const mx=Math.max.apply(null,pc);h+='<div class="picor-m" style="--pc:'+mx+'"><div class="row between"><span class="b small">Tu nivel de picor</span><b>'+esc(NIV[mx-1]||'')+'</b></div><div class="picor-bar"><i style="width:'+(mx*20)+'%"></i></div></div>'}
   }
-  {const qs=quickOf(p.cat);if(qs.length)h+='<div><div class="b small">Personaliza tu pedido (opcional)</div><div class="chips">'+qs.map(x=>'<button class="chip" data-a="qk" data-l="'+esc(x)+'" aria-pressed="'+md.quick.includes(x)+'">'+esc(x)+'</button>').join('')+'</div></div>'}
+  {const qs=quickFor(p);if(qs.length)h+='<div><div class="b small">Personaliza tu pedido (opcional)</div><div class="chips">'+qs.map(x=>'<button class="chip" data-a="qk" data-l="'+esc(x)+'" aria-pressed="'+md.quick.includes(x)+'">'+esc(x)+'</button>').join('')+'</div></div>'}
   h+='<label class="f">Nota para cocina (opcional)<input type="text" data-in="mnote" value="'+esc(md.note)+'" placeholder="Sin cebolla, bien picoso..."></label>';
   const ready=p.mods.every(g=>!g.req||(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])||md.pick[g.g])&&(!(p.salsas&&ARM&&CFG.salsas)||!salsasOn().length||!!md.pick.Salsa);
   const ln=buildLine();
@@ -354,12 +354,28 @@ function domPorAprobar(){
 function domPorCobrar(){
  const ps=porCobrar();
  return'<span class="pill-title" style="margin:8px 0 0">Domicilio y para llevar por cobrar ('+ps.length+')</span>'+(ps.length?ps.map(o=>'<button class="card row between" style="text-align:left;'+(S.caja.sel==='o:'+o.id?'outline:3px solid var(--ink)':'')+'" data-a="csel" data-k="o:'+o.id+'"><span><b>#'+o.id+' · '+(o.canal==='llevar'?'Para llevar':'Domicilio')+'</b><span class="xs muted"> '+esc(o.cliente.name||'')+'</span></span><b class="num">'+m(orderSub(o)+o.envio)+'</b></button>').join(''):'<div class="card small muted">Aquí caen los pedidos aceptados. Cóbralos al entregar.</div>')}
+/* semáforo de mesas: el mesero no avanza estados, solo ve el color y entrega */
+function readyLines(k){const o=[];mesaOrders(k).forEach(x=>x.lines.forEach(l=>{if(l.status==='listo'||(S.kds.screen&&l.status==='preparando'))o.push(l)}));return o}
+function semaf(k){const s=mesaState(k);
+ if(!s.os.length&&!s.pc)return{c:'libre',t:'Libre'};
+ if(s.pc)return{c:'rojo',t:'Confirmar'};
+ const pend=[];s.os.forEach(o=>o.lines.forEach(l=>{if(l.status!=='entregado')pend.push({o,l})}));
+ if(s.listo)return{c:'rojo',t:'Llevar'};
+ if(pend.length){const tarde=pend.some(x=>mins(x.o.created)>=15);return{c:tarde?'rojo':'amarillo',t:tarde?'Tarda':'En cocina'}}
+ if(S.cuenta[k])return{c:'azul',t:'Cuenta'};
+ return{c:'verde',t:'Servido'}}
+const mesaTel=k=>{const o=mesaOrders(k).find(x=>x.cliente&&String(x.cliente.tel||'').length===10);return o?String(o.cliente.tel):''};
+function cuentaTxtOs(os,label){const sub=os.reduce((a,o)=>a+orderSub(o),0),env=os.reduce((a,o)=>a+(o.envio||0),0),p10=Math.round(sub*.1);const ls=[];os.forEach(o=>o.lines.forEach(l=>ls.push(l.qty+' x '+l.name+' '+l.v+(l.mods&&l.mods.length?' ('+l.mods.map(x=>x.l).join(', ')+')':'')+' · '+m(lineTot(l)))));return NOM+' · Cuenta '+label+'\n\n'+ls.join('\n')+'\n\nSubtotal '+m(sub)+(env?'\nEnvío '+m(env):'')+'\nPropina sugerida (10%): '+m(p10)+'\nTotal con propina: '+m(sub+env+p10)+'\n\nGracias por venir. ¡Te esperamos pronto!'}
+const waCuenta=(os,label,tel)=>tel&&tel.length===10?'<a class="btn sm" target="_blank" rel="noopener" href="'+waCli(tel,cuentaTxtOs(os,label))+'">Enviar cuenta por WhatsApp</a>':'<span class="xs muted">Pídele su WhatsApp para mandarle la cuenta</span>';
 function vMesero(){
  const w=S.mw;
  if(w.adding)return mAdd();
- let h='<div class="stack" style="margin-top:12px">'+(CONTRA?domPorAprobar():'')+'<span class="pill-title" style="margin:4px 0">Mis mesas</span><div class="mesas">';
- MESAS.forEach(x=>{const s=mesaState(x.k);const cls=s.pc?'alerta':s.os.length?'ocupada':'';
-  h+='<button class="mesa '+cls+'" data-a="msel" data-k="'+x.k+'" aria-pressed="'+(w.sel===x.k)+'"><span class="nm">'+x.label+'</span><span class="xs">'+(s.os.length?m(s.total):'Libre')+'</span><span class="row" style="gap:4px">'+(s.pc?'<span class="status s-bad">Confirmar</span>':'')+(s.cuenta?'<span class="status s-warn">Cuenta</span>':'')+(s.listo?'<span class="dot pulse" title="Hay algo listo"></span>':'')+'</span></button>'});
+ let h='<div class="stack" style="margin-top:12px">'+(CONTRA?domPorAprobar():'');
+ const lst=MESAS.map(x=>({x,ls:readyLines(x.k)})).filter(a=>a.ls.length);
+ if(lst.length){h+='<span class="pill-title" style="margin:4px 0">Listo para llevar ('+lst.length+')</span>';lst.forEach(a=>{h+='<div class="card stack sem-go" style="gap:6px"><div class="row between"><b>'+a.x.label+'</b><span class="xs muted">'+a.ls.length+' por llevar</span></div><div class="small">'+a.ls.map(l=>l.qty+' × '+esc(l.name)+' '+esc(l.v)).join(' · ')+'</div><button class="btn pri" data-a="servall" data-k="'+a.x.k+'">Ya lo entregué</button></div>'})}
+ h+='<span class="pill-title" style="margin:4px 0">Mis mesas</span><div class="sem-leg"><span><i class="sd rojo"></i>Atender</span><span><i class="sd amarillo"></i>En cocina</span><span><i class="sd verde"></i>Servido</span><span><i class="sd azul"></i>Cuenta</span></div><div class="mesas">';
+ MESAS.forEach(x=>{const s=mesaState(x.k);const sm=semaf(x.k);const mi=s.os.length?mins(s.os.reduce((a,o)=>Math.min(a,o.created),Date.now())):0;
+  h+='<button class="mesa sem-'+sm.c+'" data-a="msel" data-k="'+x.k+'" aria-pressed="'+(w.sel===x.k)+'"><span class="nm">'+x.label+'</span><span class="sem-lbl">'+sm.t+'</span><span class="xs">'+(s.os.length?m(s.total)+' · '+mi+' min':'')+'</span></button>'});
  h+='</div>';
  if(w.sel)h+=mDetail(w.sel);
  const take=S.orders.filter(o=>(o.canal==='llevar'||o.canal==='entrega')&&!o.cancel&&!o.hold&&!o.done);
@@ -373,9 +389,10 @@ function mDetail(k){
  if(!s.os.length&&!pend.length)h+='<div class="small muted">Mesa libre. Agrega un pedido o espera a que el cliente escanee el QR.</div>';
  pend.concat(s.os).forEach(o=>{h+='<div class="stack" style="gap:6px"><div class="row between"><span class="b small">Pedido #'+o.id+' · '+(o.src==='cliente'?'por QR del cliente':'tomado por mesero')+'</span><span class="xs muted">hace '+ago(o.created)+'</span></div>';
   if(o.aprobar)h+='<div class="banner bad"><b>Pedido por aprobar.</b> El cliente lo pidió desde su celular. Revisa que sea real y mándalo a cocina.<div class="row" style="margin-top:6px"><button class="btn sm pri" data-a="aprob" data-o="'+o.id+'">Aprobar y mandar a cocina</button><button class="btn sm" data-a="rechaz" data-o="'+o.id+'">Rechazar</button></div></div>';else if(o.porConfirmar)h+='<div class="banner bad"><b>Confirma que hay gente en la mesa.</b> Si no hay nadie, anula el pedido y regresa el inventario.<div class="row" style="margin-top:6px"><button class="btn sm pri" data-a="conf" data-o="'+o.id+'">Sí, hay clientes</button><button class="btn sm" data-a="anular" data-o="'+o.id+'">Anular pedido</button></div></div>';
-  o.lines.forEach(l=>{h+='<div class="row between" style="align-items:flex-start"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div>'+stPill(l.status)+((l.status==='listo'||(S.kds.screen&&l.status==='preparando'))?'<button class="btn sm pri" data-a="servir" data-o="'+o.id+'" data-u="'+l.uid+'">'+(l.status==='listo'?'Servir':'Recoger y servir')+'</button>':'')+'</div>'});
+  o.lines.forEach(l=>{h+='<div class="row between" style="align-items:flex-start"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div>'+stPill(l.status)+'</div>'});
   h+='</div><hr>'});
- h+='<div class="row"><button class="btn pri sm" data-a="madding" data-k="'+k+'">Agregar pedido</button>'+(s.os.length?'<button class="btn sm" data-a="mcuenta" data-k="'+k+'">'+(S.cuenta[k]?'Cuenta ya en caja':'Pasar cuenta a caja')+'</button>':'')+'</div></div>';
+ {const rl=readyLines(k);if(rl.length)h+='<button class="btn pri" data-a="servall" data-k="'+k+'">Ya lo entregué ('+rl.length+')</button>'}
+ h+='<div class="row"><button class="btn pri sm" data-a="madding" data-k="'+k+'">Agregar pedido</button>'+(s.os.length?'<button class="btn sm" data-a="mcuenta" data-k="'+k+'">'+(S.cuenta[k]?'Cuenta ya en caja':'Pasar cuenta a caja')+'</button>'+waCuenta(s.os,mLabel(k),mesaTel(k)):'')+'</div></div>';
  return h}
 function mAdd(){
  const w=S.mw;let h='<div class="stack" style="margin-top:12px"><div class="row between"><h2>Pedido para '+mLabel(w.sel)+'</h2><button class="btn ghost sm" data-a="mback">Volver</button></div>';
@@ -395,7 +412,7 @@ function vKds(st){
   h+='<div class="kcol"><h3>'+c[1]+' ('+arr.length+')</h3>';
   if(!arr.length)h+='<div class="small muted">Sin comandas</div>';
   arr.forEach(x=>{const mi=mins(x.o.created);const cls=c[0]==='listo'?'ok':mi>=15?'late':'';
-   h+='<div class="ticket '+cls+'"><div class="row between"><b>'+(x.o.canal==='mesa'?mLabel(x.o.mesa):x.o.canal==='llevar'?'Para llevar':'Entrega')+' · #'+x.o.id+'</b><span class="status '+(mi>=15&&c[0]!=='listo'?'s-bad':'s-neutral')+' num">'+mi+' min</span></div>'+(x.o.porConfirmar?'<div class="xs" style="color:var(--warn)">Mesero por confirmar mesa</div>':'')+'<ul>'+x.ls.map(l=>'<li>'+l.qty+' × '+lineHtml(l)+'</li>').join('')+'</ul>'+(sc?(c[0]==='nuevo'?'<span class="small muted">Entra a preparación en unos segundos</span>':c[0]==='preparando'?'<span class="small b">Pedal o tecla Espacio: marcar listo</span>':'<span class="small b" style="color:var(--good)">Listo. El mesero ya fue avisado</span>'):(c[0]==='nuevo'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Empezar a preparar</button>':c[0]==='preparando'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Marcar listo</button>':'<span class="small b" style="color:var(--good)">Esperando al mesero</span>'))+'</div>'});
+   h+='<div class="ticket '+cls+'"><div class="row between"><b>'+(x.o.canal==='mesa'?mLabel(x.o.mesa):x.o.canal==='llevar'?'Para llevar':'Entrega')+' · #'+x.o.id+'</b><span class="status '+(mi>=15&&c[0]!=='listo'?'s-bad':'s-neutral')+' num">'+mi+' min</span></div>'+(x.o.porConfirmar?'<div class="xs" style="color:var(--warn)">Mesero por confirmar mesa</div>':'')+'<ul>'+x.ls.map(l=>'<li>'+l.qty+' × '+lineHtml(l)+'</li>').join('')+'</ul>'+(sc?(c[0]==='nuevo'?'<span class="small muted">Entra a preparación en unos segundos</span>':c[0]==='preparando'?'<span class="small b">Pedal o tecla Espacio: marcar listo</span>':'<span class="small b" style="color:var(--good)">Listo. El mesero ya fue avisado</span>'):(c[0]==='nuevo'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Marcar listo</button>':c[0]==='preparando'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Marcar listo</button>':'<span class="small b" style="color:var(--good)">Esperando al mesero</span>'))+'</div>'});
   h+='</div>'});
  return h+'</div></div>'}
 
@@ -419,15 +436,15 @@ function vCaja(){
 function cobro(){
  const c=S.caja;if(!c.sel||(c.sel.indexOf('m:')!==0&&c.sel.indexOf('o:')!==0))return'<div class="card small muted">Elige una cuenta para cobrar.</div>';
  const k=c.sel.slice(2),os=cobroOrders(c.sel),isO=c.sel.indexOf('o:')===0,env=os.reduce((a,o)=>a+(o.envio||0),0);if(!os.length){c.sel=null;return'<div class="card small muted">Elige una cuenta para cobrar.</div>'}
- const sub=os.reduce((a,o)=>a+orderSub(o),0),tip=Math.round(sub*c.tip/100);
+ const sub=os.reduce((a,o)=>a+orderSub(o),0),tip=tipOf(c,sub);
  const lc=c.lc&&c.lc.found?c.lc:null;const saldo=lc?Math.floor(lc.cliente.puntos):0;const disc=(c.canje&&saldo>0&&lc.modelo==='cashback')?Math.min(saldo,sub):0;const tot=sub-disc+tip+env;
  let h='<div class="card stack"><h3>Cobrar '+(isO?'pedido #'+k+(os[0].canal==='llevar'?' · Para llevar':' · Domicilio'):mLabel(k))+'</h3>'+(isO&&os[0].addr?'<div class="small">Dirección: '+esc(os[0].addr)+'</div>':'');
  os.forEach(o=>o.lines.forEach(l=>{h+='<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>'}));
  h+='<div class="sep"></div><div class="row between"><span>Subtotal</span><b class="num">'+m(sub)+'</b></div>'+(env?'<div class="row between"><span>Envío</span><b class="num">'+m(env)+'</b></div>':'');
- h+='<div><div class="b small">Propina</div><div class="chips">'+[0,10,15,20].map(x=>'<button class="chip" data-a="tip" data-v="'+x+'" aria-pressed="'+(c.tip===x)+'">'+(x?x+'%':'Sin propina')+'</button>').join('')+'</div></div>';
+ h+='<div><div class="b small">Propina</div><div class="chips">'+[0,10,15,20].map(x=>'<button class="chip" data-a="tip" data-v="'+x+'" aria-pressed="'+(c.tip===x)+'">'+(x?x+'%':'Sin propina')+'</button>').join('')+'</div><label class="f">Propina en monto exacto (si el cliente ya la puso en la terminal)<input type="number" inputmode="decimal" data-in="tipx" value="'+esc(c.tipx)+'" placeholder="0"></label></div>';
  h+='<div><div class="b small">Método</div><div class="chips">'+['Efectivo','Tarjeta','Transferencia'].map(x=>'<button class="chip" data-a="method" data-v="'+x+'" aria-pressed="'+(c.method===x)+'">'+x+'</button>').join('')+'</div></div>';
  if(c.method==='Efectivo')h+='<label class="f">Recibido<input type="number" inputmode="decimal" data-in="recv" value="'+esc(c.recv)+'" placeholder="0"></label><div class="b" id="cambio">'+cambioTxt(tot)+'</div>';
- else if(c.method==='Tarjeta')h+='<div class="small muted">Cobra en la terminal bancaria del negocio y registra aquí el pago.</div>';
+ else if(c.method==='Tarjeta')h+='<div class="small muted">Cobra en la terminal (Mercado Pago). Si el cliente ya dejó propina en la terminal, escríbela arriba en "monto exacto" para que el ticket y el corte cuadren.</div>';
  h+='<div><div class="b small">Dividir cuenta</div><div class="chips">'+[1,2,3,4,5,6].map(x=>'<button class="chip" data-a="split" data-v="'+x+'" aria-pressed="'+(c.split===x)+'">'+x+'</button>').join('')+'</div>'+(c.split>1?'<div class="small">Cada quien paga <b class="num">'+m(tot/c.split)+'</b></div>':'')+'</div>';
 
  h+='<div class="stack" style="gap:6px"><label class="f">WhatsApp del cliente (tarjeta de lealtad y ticket)<input type="tel" data-in="ctel" value="'+esc(c.tel)+'" placeholder="10 dígitos"></label>';
@@ -441,8 +458,10 @@ function cobro(){
  }
  h+='</div>';
  if(disc)h+='<div class="row between small"><span>Saldo aplicado</span><b class="num">−'+m(disc)+'</b></div>';
- h+='<div class="row between"><span class="b">Total</span><b class="num" style="font-size:26px">'+m(tot)+'</b></div><button class="btn pri" data-a="cobrar"'+(c.busy?' disabled':'')+'>'+(c.busy?'Cobrando…':'Cobrar y enviar ticket')+'</button><button class="btn" disabled>Facturar (en integración)</button></div>';
+ h+='<div class="row between"><span class="b">Total</span><b class="num" id="ctot" style="font-size:26px">'+m(tot)+'</b></div>'+(!isO?waCuenta(os,mLabel(k),c.tel.length===10?c.tel:mesaTel(k)):'')+'<button class="btn pri" data-a="cobrar"'+(c.busy?' disabled':'')+'>'+(c.busy?'Cobrando…':'Cobrar y enviar ticket')+'</button><button class="btn" disabled>Facturar (en integración)</button></div>';
  return h}
+const tipOf=(c,sub)=>c.tipx!==''&&c.tipx!=null&&!isNaN(parseFloat(c.tipx))?Math.max(0,Math.round(parseFloat(c.tipx))):Math.round(sub*c.tip/100);
+function cobroTot(){const c=S.caja,os=cobroOrders(c.sel);const env=os.reduce((a,o)=>a+(o.envio||0),0),sub=os.reduce((a,o)=>a+orderSub(o),0),tip=tipOf(c,sub);const lc=c.lc&&c.lc.found?c.lc:null;const saldo=lc?Math.floor(lc.cliente.puntos):0;const disc=(c.canje&&saldo>0&&lc.modelo==='cashback')?Math.min(saldo,sub):0;return sub-disc+tip+env}
 const cambioTxt=tot=>{const r=parseFloat(S.caja.recv);if(!r)return'Cambio: escribe lo recibido';return r>=tot?'Cambio: '+m(r-tot):'Faltan '+m(tot-r)};
 function dayTickets(){const d=new Date();d.setHours(0,0,0,0);return S.tickets.filter(t=>t.ts>=d.getTime())}
 const movNet=()=>S.caja.movs.reduce((a,x)=>a+(x.tipo==='entrada'?x.monto:-x.monto),0);
@@ -510,15 +529,18 @@ const saveMe=()=>lsSet(LK+'me',JSON.stringify({name:S.me.name,tel:S.me.tel}));
 /* reglas de maridaje (configurables por producto con MCFG.pair[id]=[ids]) */
 const PAIR=CFG.maridaje,PAIR_TXT=CFG.maridajeTxt;
 const topN=id=>{const t=TOP.find(x=>x.pid===id);return t?t.n:0};
-function nvSuggest(p,exclude){
+function nvSuggest(p){
  const forced=(MCFG.pair&&MCFG.pair[p.id])||(CFG.pares&&CFG.pares[p.id]);
  const inCart=S.cli.cart.map(l=>l.pid);
- let c=forced?forced.map(PM).filter(Boolean):MENU.filter(x=>(PAIR[p.cat]||[]).includes(x.cat));
- c=c.filter(x=>x.id!==p.id&&!soldOut(x)&&!inCart.includes(x.id)).sort((a,b)=>(topN(b.id)-topN(a.id))||(scoreOf(b.id)-scoreOf(a.id)));
- return c.slice(0,exclude||2)}
+ const ok=x=>x&&x.id!==p.id&&!soldOut(x)&&!inCart.includes(x.id);
+ const rank=(a,b)=>(topN(b.id)-topN(a.id))||(scoreOf(b.id)-scoreOf(a.id));
+ if(forced)return[{cat:'',items:forced.map(PM).filter(ok).sort(rank)}].filter(g=>g.items.length);
+ /* todas las categorías que combinan, con TODOS sus productos (no solo 2) */
+ return(PAIR[p.cat]||[]).map(cat=>({cat,items:MENU.filter(x=>x.cat===cat&&ok(x)).sort(rank)})).filter(g=>g.items.length)}
 function nvPairHtml(p,title){
- const sg=nvSuggest(p,2);if(!sg.length)return'';
- return'<div class="nv-pair"><div class="nv-pair-t">'+esc(title||PAIR_TXT[p.cat]||'Completa tu pedido')+'</div><div class="nv-pair-row">'+sg.map(x=>'<div class="nv-pair-c" style="--c:'+CATCOL[x.cat]+'"><div class="nv-mini">'+artHtml(x)+'</div><div class="grow"><div class="b small">'+esc(x.name)+'</div><div class="xs muted num">'+fromPrice(x)+'</div></div><button class="nv-plus sm" data-a="qadd" data-p="'+x.id+'" aria-label="Agregar '+esc(x.name)+'">+</button></div>').join('')+'</div></div>'}
+ const gs=nvSuggest(p);if(!gs.length)return'';
+ const card=x=>'<div class="nv-pair-c" style="--c:'+CATCOL[x.cat]+'"><div class="nv-mini">'+artHtml(x)+'</div><div class="b small">'+esc(x.name)+'</div><div class="xs muted num">'+fromPrice(x)+'</div><button class="nv-plus sm" data-a="qadd" data-p="'+x.id+'" aria-label="Agregar '+esc(x.name)+'">+</button></div>';
+ return'<div class="nv-pair"><div class="nv-pair-t">'+esc(title||PAIR_TXT[p.cat]||'Completa tu pedido')+'</div>'+gs.map(g=>(g.cat?'<div class="nv-pair-g">'+esc(g.cat)+'</div>':'')+'<div class="nv-pair-row">'+g.items.map(card).join('')+'</div>').join('')+'</div>'}
 function nvHero(p){return'<div class="nv-hero" style="--c:'+CATCOL[p.cat]+'" data-tilt><div class="nv-hero-art">'+artHtml(p)+'</div><i class="nv-b b1"></i><i class="nv-b b2"></i><i class="nv-b b3"></i>'+(topN(p.id)?'<span class="nv-tag">'+topN(p.id)+' hoy</span>':'')+(p.img?'':'<span class="nv-ilus">Ilustración · foto próximamente</span>')+'</div>'+(p.desc?'<div class="nv-sheet-desc">'+esc(p.desc)+'</div>':'')}
 /* lealtad real: saldo del cliente + lo que gana con este pedido + meta configurada por el dueño */
 function nvLoy(sub){
@@ -658,7 +680,7 @@ function loadLista(){lget('lista=1').then(j=>{S.real=j;render()}).catch(()=>{S.r
 async function doCobro(){
  const c=S.caja;if(c.busy||!c.sel)return;
  const k=c.sel.slice(2),os=cobroOrders(c.sel);if(!os.length)return;
- const sub=os.reduce((a,o)=>a+orderSub(o),0),tip=Math.round(sub*c.tip/100),tel=c.tel;
+ const sub=os.reduce((a,o)=>a+orderSub(o),0),tip=tipOf(c,sub),tel=c.tel;
  const L=c.lc&&c.lc.found?c.lc:null;const saldo=L?Math.floor(L.cliente.puntos):0;
  const disc=(c.canje&&saldo>0&&L.modelo==='cashback')?Math.min(saldo,sub):0;
  let loy=null,nombre='';
@@ -674,7 +696,7 @@ async function doCobro(){
  const cl={name:nombre||(L?L.cliente.nombre:''),tel};
  const o2={method:c.method,tip,disc,cliente:cl,mesa:k,canal:'mesa'};if(c.sel.indexOf('o:')===0){o2.mesa=null;o2.canal=os[0].canal;o2.envio=os[0].envio||0}
  const t=closeTicket(os,o2);t.loy=loy;
- c.sel=null;c.tel='';c.canje=false;c.tip=0;c.recv='';c.split=1;c.lc=null;c.nom='';c.nac='';
+ c.sel=null;c.tel='';c.canje=false;c.tip=0;c.tipx='';c.recv='';c.split=1;c.lc=null;c.nom='';c.nac='';
  S.modal={type:'ticket',id:t.id};S.real=null;render();
 }
 
@@ -829,7 +851,7 @@ function dPwCfg(){
  return '<div class="card stack"><h3>Contraseñas del equipo</h3><div class="small muted">Cada perfil entra con su contraseña de 4 números. Escribe solo las que quieras cambiar; las demás se quedan igual.</div><div class="grid2" style="gap:8px">'+f('mesero','Mesero')+f('cocina','Cocina y barra')+f('caja','Caja')+f('dueno','Dueño (tú)')+'</div><button class="btn pri" data-a="savepw">Guardar contraseñas</button></div>'}
 function dExtrasCfg(){
  let h='<div class="card stack"><h3>Extras para el cliente</h3><div class="small muted">Tú decides qué extras ofreces. Apagados no aparecen en el menú. El precio es por pieza o porción; si el pedido es una orden de 3, se cobra por las 3.</div>';
- EXT.forEach(e=>{const on=S.settings[e.k]>=0;h+='<div class="row between" style="gap:8px"><div class="grow"><b class="small">'+e.g+'</b><div class="xs muted">'+e.cats.join(', ')+'</div></div>'+(on&&!e.salsa?'<label class="f" style="width:96px;margin:0"><input type="number" min="0" max="500" data-in="xp_'+e.k+'" value="'+S.settings[e.k]+'" aria-label="Precio de '+e.g+'"></label>':'')+'<button class="btn sm'+(on?' pri':'')+'" data-a="xtog" data-k="'+e.k+'" aria-pressed="'+on+'">'+(on?'Ofrecido':'No ofrecido')+'</button></div>'});
+ EXT.forEach(e=>{const on=S.settings[e.k]>=0;h+='<div class="row between" style="gap:8px"><div class="grow"><b class="small">'+e.g+'</b><div class="xs muted">'+(e.donde||e.cats.join(', '))+'</div></div>'+(on&&!e.salsa?'<label class="f" style="width:96px;margin:0"><input type="number" min="0" max="500" data-in="xp_'+e.k+'" value="'+S.settings[e.k]+'" aria-label="Precio de '+e.g+'"></label>':'')+'<button class="btn sm'+(on?' pri':'')+'" data-a="xtog" data-k="'+e.k+'" aria-pressed="'+on+'">'+(on?'Ofrecido':'No ofrecido')+'</button></div>'});
  return h+'</div>'}
 function dAjustes(){
  let h=dPedidosCfg()+dExtrasCfg()+dQuickCfg()+dPwCfg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
@@ -839,6 +861,7 @@ function dAjustes(){
 
 /* ---------- personalización rápida ---------- */
 const QDEF=CFG.rapidas;
+const quickFor=p=>{const base=quickOf(p.cat);if(!(p.ing&&p.ing.length))return base;return p.ing.map(x=>'Sin '+x.toLowerCase()).concat(base.filter(x=>!/^sin /i.test(x)))};
 const quickOf=cat=>String((MCFG.quick&&MCFG.quick[cat]!==undefined)?MCFG.quick[cat]:(QDEF[cat]||'')).split(',').map(x=>x.trim()).filter(Boolean);
 function dQuickCfg(){
  return'<div class="card stack"><h3>Opciones rápidas para personalizar</h3><div class="small muted">Son los botones que ve el cliente y el mesero al elegir un platillo ("Sin chile", "Sin cebolla"…). Separa con comas. Siempre pueden escribir una nota libre.</div>'+CATS.map(c=>'<label class="f">'+c+'<input type="text" data-in="qk" data-c="'+c+'" value="'+esc((MCFG.quick&&MCFG.quick[c]!==undefined)?MCFG.quick[c]:(QDEF[c]||''))+'"></label>').join('')+'</div>'}
@@ -1021,7 +1044,7 @@ function payMesaOnline(){
  closeTicket(os,{method:'Link de pago',cliente:{name:S.me.name,tel:S.me.tel},mesa:k,canal:'mesa'});
  os.forEach(o=>o.lines.forEach(l=>{S.cli.purchased[l.pid]=true}));
  S.modal={type:'rate',pids:Array.from(new Set(os.flatMap(o=>o.lines.map(l=>l.pid)))).slice(0,4),stars:{}};toast('Cuenta pagada: '+m(sub))}
-function advance(oid,st){const o=S.orders.find(x=>x.id===oid);const ls=o.lines.filter(l=>l.station===st&&l.status!=='entregado');ls.forEach(l=>{if(l.status==='nuevo')l.status='preparando';else if(l.status==='preparando')l.status='listo'})}
+function advance(oid,st){const o=S.orders.find(x=>x.id===oid);const ls=o.lines.filter(l=>l.station===st&&l.status!=='entregado');ls.forEach(l=>{if(l.status==='nuevo'||l.status==='preparando')l.status='listo'})}
 function setupInput(el){
  const k=el.getAttribute('data-in'),v=el.value;
  if(k==='nvq'){NV.q=v;const el2=$('#nvList');if(el2)el2.innerHTML=nvList();return}
@@ -1031,6 +1054,7 @@ function setupInput(el){
  else if(k.indexOf('pw_')===0){(S.pw||(S.pw={}))[k.slice(3)]=v.replace(/\D/g,'').slice(0,4)}
  else if(k==='addr')S.cli.addr=v;else if(k==='mtel'){S.mw.tel=v.replace(/\D/g,'').slice(0,10);if(S.mw.tel)S.mw.guest=false}else if(k==='mnote'){S.modal.note=v}
  else if(k==='rtext')S.modal.text=v;
+ else if(k==='tipx'){S.caja.tipx=v;const e=$('#ctot');if(e)e.textContent=m(cobroTot());const e2=$('#cambio');if(e2)e2.textContent=cambioTxt(cobroTot())}
  else if(k==='recv'){S.caja.recv=v;const e=$('#cambio');if(e){const os=cobroOrders(S.caja.sel);const sub=os.reduce((a,o)=>a+orderSub(o),0);const L=S.caja.lc&&S.caja.lc.found?S.caja.lc:null;const sd=L?Math.floor(L.cliente.puntos):0;const disc=(S.caja.canje&&sd>0&&L.modelo==='cashback')?Math.min(sd,sub):0;e.textContent=cambioTxt(sub-disc+Math.round(sub*S.caja.tip/100)+os.reduce((a,o)=>a+(o.envio||0),0))}}
  else if(k==='ctel'){const t=v.replace(/\D/g,'').slice(0,10);S.caja.canje=false;if(t!==S.caja.tel){S.caja.tel=t;S.caja.lc=null;if(t.length===10)loadCajaCliente(t)}}
  else if(k==='pe_uq')S.modal.f.use[+el.getAttribute('data-i')].q=v;else if(k==='qk'){MCFG.quick=MCFG.quick||{};MCFG.quick[el.getAttribute('data-c')]=v}else if(k==='f_con')S.fin.con=v;else if(k==='f_monto')S.fin.monto=v;else if(k==='lcb')S.lcb=v;else if(k==='in_name')S.invNew.name=v;else if(k==='in_stock')S.invNew.stock=v;else if(k==='in_min')S.invNew.min=v;else if(k==='in_cost')S.invNew.cost=v;else if(k==='pe_name')S.modal.f.name=v;else if(k==='pe_desc')S.modal.f.desc=v;else if(k==='pe_label')S.modal.f.label=v;else if(k==='pe_cost')S.modal.f.cost=v;else if(k==='pe_p')S.modal.f.price[+el.getAttribute('data-i')]=v;else if(k==='ptxt')S.modal.txt=v;else if(k==='icost'){const i=ins(el.getAttribute('data-i'));if(i)i.cost=Math.max(0,Number(v)||0)}
@@ -1112,6 +1136,7 @@ root.addEventListener('click',e=>{
   case'geochk':geoChk();return;
   case'conf':{S.orders.find(x=>x.id===+g('o')).porConfirmar=false;toast('Mesa confirmada');break}
   case'anular':{const o=S.orders.find(x=>x.id===+g('o'));restockCancel(o);S.cancelados++;toast('Pedido anulado e inventario regresado');break}
+  case'servall':{const k=g('k');let n=0;mesaOrders(k).forEach(o=>o.lines.forEach(l=>{if(l.status==='listo'||(S.kds.screen&&l.status==='preparando')){l.status='entregado';n++}}));if(n)toast('Entregado en '+mLabel(k));break}
   case'servir':{const o=S.orders.find(x=>x.id===+g('o'));o.lines.find(l=>l.uid===g('u')).status='entregado';break}
   case'mcuenta':S.cuenta[g('k')]=true;toast('La cuenta ya está en caja');break;
   case'stage':S.orders.find(x=>x.id===+g('o')).stage='camino';toast('Entrega en camino');break;
@@ -1158,7 +1183,7 @@ root.addEventListener('click',e=>{
   /* caja */
   case'ctab':S.caja.tab=g('v');break;
   case'csel':{S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;const oc=(CONTRA?cobroOrders(S.caja.sel):mesaOrders(S.caja.sel)).find(o=>o.cliente&&String(o.cliente.tel||'').length===10);if(oc){S.caja.tel=oc.cliente.tel;S.caja.lc=null;loadCajaCliente(oc.cliente.tel)}break}
-  case'tip':S.caja.tip=+g('v');break;
+  case'tip':S.caja.tip=+g('v');S.caja.tipx='';break;
   case'method':S.caja.method=g('v');break;
   case'split':S.caja.split=+g('v');break;
   case'canje':S.caja.canje=!S.caja.canje;break;

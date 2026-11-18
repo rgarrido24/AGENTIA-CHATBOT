@@ -12,31 +12,31 @@ const BMODS:any[]=[
  {g:'Sabor del escarchado',req:true,showIf:['Vaso','Escarchado'],opts:SAB.map(l=>({l,p:[0,0]}))}
 ];
 const P=(o:any):Producto=>Object.assign({avail:true,mods:[],desc:''},o);
-const T=(id:string,name:string,p1:number,p3:number,prot:Record<string,number>,desc?:string,torKey?:string)=>P({id,cat:'Tacos',name,desc:desc||'Servidos con papa y nopales',emoji:'🌮',station:'cocina',v:[{l:'Pza',p:p1,f:1,s:0},{l:'Orden (3 pzas)',p:p3,f:3,s:1}],use:Object.assign({[torKey||'tor']:1,nop:.03,pap:.05},prot)});
-const B=(id:string,name:string,ins:string,h:number,mg:number)=>{const v:any[]=[];if(h)v.push({l:'1/2',p:h,f:1,s:0});if(mg)v.push({l:'Mega',p:mg,f:2,s:1});return P({id,cat:'Cervezas',name,emoji:'🍺',station:'barra',v,use:{[ins]:1},mods:BMODS,desc:(h&&!mg)?'Solo en 1/2':(!h?'Solo en Mega':'')})};
+const T=(id:string,name:string,p1:number,p3:number,prot:Record<string,number>,desc?:string,torKey?:string,ing?:string[])=>P({id,cat:'Tacos',name,desc:desc||'Servidos con papas y nopales',ing:ing||['papas','nopales'],emoji:'🌮',station:'cocina',v:[{l:'Pza',p:p1,f:1,s:0},{l:'Orden (3 pzas)',p:p3,f:3,s:1}],use:Object.assign({[torKey||'tor']:1,nop:.03,pap:.05},prot)});
+const B=(id:string,name:string,ins:string,h:number,mg:number)=>{const v:any[]=[];if(h)v.push({l:'1/2',p:h,f:1,s:0});if(mg)v.push({l:'Mega',p:mg,f:2,s:1});return P({id,cat:'Cervezas',name,emoji:'🍺',station:'barra',v,use:{[ins]:1},mods:BMODS,desc:((h&&!mg)?'Solo en 1/2':(!h?'Solo en Mega':'Media o Mega'))+' · Escarchada en '+SAB.length+' sabores'})};
 const MENU:Producto[]=[
- P({id:'tag',cat:'Tostadas',name:'Tostada de Aguachile',desc:'Cebolla morada, pepino, mayonesa y aguacate',emoji:'🥒',station:'cocina',v:[{l:'Tostada',p:78,f:1,s:0}],use:{tos:1,cam:.07,agu:.25}}),
- P({id:'tce',cat:'Tostadas',name:'Tostada de Ceviche de camarón',desc:'Servido con mayonesa y aguacate',emoji:'🦐',station:'cocina',v:[{l:'Tostada',p:78,f:1,s:0}],use:{tos:1,cam:.07,agu:.25}}),
+ P({id:'tag',cat:'Tostadas',name:'Tostada de Aguachile',desc:'Cebolla morada, pepino, aguacate y mayonesa',ing:['cebolla morada','pepino','aguacate','mayonesa'],emoji:'🥒',station:'cocina',v:[{l:'Tostada',p:78,f:1,s:0}],use:{tos:1,cam:.07,agu:.25}}),
+ P({id:'tce',cat:'Tostadas',name:'Tostada de Ceviche de camarón',desc:'Servido con mayonesa y aguacate',ing:['mayonesa','aguacate'],emoji:'🦐',station:'cocina',v:[{l:'Tostada',p:78,f:1,s:0}],use:{tos:1,cam:.07,agu:.25}}),
  T('tbi','Taco de bistec',38,100,{bis:.07}),
  T('tpo','Taco de pollo',38,100,{pol:.07}),
  T('tlo','Taco de longaniza',38,100,{lon:.06}),
  T('tmi','Taco de milanesa de res',43,115,{mil:.08}),
  T('tca','Taco campechano',43,115,{bis:.04,lon:.03}),
  T('tar','Taco de arrachera',48,130,{arr:.07}),
- T('tcm','Taco de camarón',78,220,{cam:.08,agu:.1},'Camarón empanizado con mayonesa, cebolla, jitomate y aguacate en tortilla de harina','torh'),
- T('tcc','Camachera',80,230,{cam:.05,arr:.05},'Camarón, queso y arrachera en tortilla de harina','torh'),
- B('cor','Corona','cor',60,120),B('vic','Victoria','vic',60,120),B('pac','Pacífico','pac',60,120),B('xx','XX Lager','xx',60,120),
+ T('tcm','Taco de camarón',78,220,{cam:.08,agu:.1},'Camarón empanizado con mayonesa, cebolla morada, jitomate y aguacate en tortilla de harina','torh',['mayonesa','cebolla morada','jitomate','aguacate']),
+ T('tcc','Taco de camachera',80,230,{cam:.05,arr:.05},'Camarón y arrachera con queso, cebolla morada, jitomate y aguacate en tortilla de harina','torh',['queso','cebolla morada','jitomate','aguacate']),
+ B('cor','Corona','cor',60,120),B('vic','Victoria','vic',60,120),B('pac','Pacífico','pac',60,120),B('xx','XX Lager','xx',0,120),
  B('ult','Ultra','ult',60,0),B('mod','Modelo','mod',60,0),B('leo','León','leo',0,120),
+ P({id:'sue',cat:'Cervezas',name:'Suero',desc:'Para acompañar tu chela: chico o grande',emoji:'🥤',station:'barra',v:[{l:'Chico',p:50,f:1,s:0},{l:'Grande',p:70,f:2,s:1}],use:{sue:1}}),
  P({id:'boi',cat:'Bebidas',name:'Boing',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{boi:1}}),
- P({id:'coc',cat:'Bebidas',name:'Coca Cola',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{coc:1}}),
+ P({id:'coc',cat:'Bebidas',name:'Coca Cola regular',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{coc:1}}),
+ P({id:'czr',cat:'Bebidas',name:'Coca Cola Zero',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{czr:1}}),
  P({id:'min',cat:'Bebidas',name:'Agua mineral',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{min:1}}),
- P({id:'sue',cat:'Bebidas',name:'Suero',emoji:'🥤',station:'barra',v:[{l:'Botella',p:50,f:1,s:0}],use:{sue:1}}),
- P({id:'sug',cat:'Bebidas',name:'Suero grande',emoji:'🥤',station:'barra',v:[{l:'Grande',p:70,f:1,s:0}],use:{sue:2}}),
  P({id:'cln',cat:'Bebidas',name:'Clamato natural',emoji:'🍅',station:'barra',v:[{l:'Vaso',p:60,f:1,s:0}],use:{clm:.3}}),
- P({id:'ha',cat:'Snacks',name:'Hamburguesa',emoji:'🍔',station:'cocina',v:[{l:'Sola',p:90,f:1,s:0}],use:{pan:1,car:1}}),
- P({id:'hp',cat:'Snacks',name:'Hamburguesa con papas',desc:'Servida con papas a la francesa',emoji:'🍔',station:'cocina',v:[{l:'Con papas',p:110,f:1,s:0}],use:{pan:1,car:1,pap:.15}}),
- P({id:'pf',cat:'Snacks',name:'Papas a la francesa',desc:'Preparadas con salsas negras, limón y tajín',emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}}),
- P({id:'pr',cat:'Snacks',name:'Papas fritas',desc:'Preparadas con salsas negras, limón y tajín',emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}})
+ P({id:'ha',cat:'Snacks',name:'Hamburguesa',desc:'Con lechuga, jitomate, queso americano y mayonesa',ing:['lechuga','jitomate','queso americano','mayonesa'],emoji:'🍔',station:'cocina',v:[{l:'Sola',p:90,f:1,s:0}],use:{pan:1,car:1}}),
+ P({id:'hp',cat:'Snacks',name:'Hamburguesa con papas',desc:'Con lechuga, jitomate, queso americano y mayonesa, y papas a la francesa',ing:['lechuga','jitomate','queso americano','mayonesa'],emoji:'🍔',station:'cocina',v:[{l:'Con papas',p:110,f:1,s:0}],use:{pan:1,car:1,pap:.15}}),
+ P({id:'pf',cat:'Snacks',name:'Papas a la francesa',desc:'Con queso derretido',ing:['queso derretido'],emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}}),
+ P({id:'pr',cat:'Snacks',name:'Papas fritas',desc:'Con Maggi, tajín, salsa inglesa y limón',ing:['Maggi','tajín','salsa inglesa','limón'],emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}})
 ];
 const CATS:string[]=['Tostadas','Tacos','Cervezas','Bebidas','Snacks'];
 const CATCOL:Record<string,string>={Tostadas:'#7DBB86',Tacos:'#F29A4A',Cervezas:'#F2C14E',Bebidas:'#7FB2E5',Snacks:'#E2573A'};
@@ -46,16 +46,16 @@ const INS0:Insumo[]=[
  ['bis','Bistec','kg',8,2,190],['pol','Pollo','kg',8,2,110],['arr','Arrachera','kg',6,2,260],['lon','Longaniza','kg',5,1.5,120],['mil','Milanesa de res','kg',6,2,170],['cam','Camarón','kg',9,3,280],
  ['tor','Tortilla de maíz','pza',300,80,1.2],['torh','Tortilla de harina','pza',120,40,2.5],['pan','Pan de hamburguesa','pza',40,12,6],['car','Carne de hamburguesa','pza',40,12,22],
  ['pap','Papa','kg',20,6,35],['nop','Nopales','kg',6,2,30],['agu','Aguacate','pza',30,10,18],['tos','Tostada','pza',150,40,3],
- ['coc','Coca Cola','pza',48,12,14],['boi','Boing','pza',48,12,12],['min','Agua mineral','pza',48,12,13],['sue','Suero','pza',36,12,18],['clm','Clamato','l',12,4,45]
+ ['coc','Coca Cola regular','pza',48,12,14],['czr','Coca Cola Zero','pza',48,12,14],['boi','Boing','pza',48,12,12],['min','Agua mineral','pza',48,12,13],['sue','Suero','pza',36,12,18],['clm','Clamato','l',12,4,45]
 ];
 
 const MESAS:{ k: string; label: string; tipo: string }[]=[];
-for(let i=1;i<=9;i++)MESAS.push({k:'m'+i,label:'Mesa '+i,tipo:'mesa'});
+for(let i=1;i<=8;i++)MESAS.push({k:'m'+i,label:'Mesa '+i,tipo:'mesa'});
 for(let i=1;i<=3;i++)MESAS.push({k:'p'+i,label:'Periquito '+i,tipo:'periquito'});
 
 /* ilustración propia por producto (trazo grueso del logo; el motor pone el trazo) */
-const BEER:Record<string,string[]>={cor:['#F5B83D','#2F6FB5','#F7E27A'],vic:['#C98A2B','#C0392B','#F3D9A4'],pac:['#E7B04A','#1F9AD6','#FFFFFF'],xx:['#B8721E','#2E8B57','#F5B83D'],ult:['#F2C14E','#3FA9F5','#E8EEF2'],mod:['#E5A82F','#E5B73B','#241610'],leo:['#5B2A14','#8C3B1B','#F2D6A0']};
-const DRINK:Record<string,string[]>={boi:['#9BD34A','#F5D45E'],coc:['#3B1F18','#D0312D'],min:['#CFE9F7','#FFFFFF'],sue:['#EAF6FB','#3FA9F5'],sug:['#EAF6FB','#2E7DD1'],cln:['#C9473A','#8CC152']};
+const BEER:Record<string,string[]>={cor:['#F5B83D','#2F6FB5','#F7E27A'],vic:['#C98A2B','#C0392B','#F3D9A4'],pac:['#E7B04A','#1F9AD6','#FFFFFF'],xx:['#B8721E','#2E8B57','#F5B83D'],ult:['#F2C14E','#3FA9F5','#E8EEF2'],mod:['#E5A82F','#E5B73B','#241610'],leo:['#5B2A14','#8C3B1B','#F2D6A0'],sue:['#EAF6FB','#3FA9F5','#FFFFFF']};
+const DRINK:Record<string,string[]>={boi:['#9BD34A','#F5D45E'],coc:['#3B1F18','#D0312D'],min:['#CFE9F7','#FFFFFF'],sue:['#EAF6FB','#3FA9F5'],czr:['#1A1A1A','#8E8E93'],cln:['#C9473A','#8CC152']};
 const bottle=(c:string[],big?:boolean)=>'<path d="M26 4h12v4h-3v8c0 4 7 8 7 15v23a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V31c0-7 7-11 7-15V8h-3z" fill="'+c[0]+'"/><rect x="23" y="'+(big?30:34)+'" width="18" height="'+(big?22:16)+'" fill="'+c[1]+'" stroke-width="2"/><circle cx="32" cy="'+(big?41:42)+'" r="4" fill="'+c[2]+'" stroke-width="2"/><rect x="27" y="2" width="10" height="5" rx="2" fill="#241610"/>';
 const TACO:Record<string,[string,string]>={tbi:['#8B4A2B','<path d="M18 40l8-6M28 41l8-7M38 40l7-5" stroke="#4A2412" stroke-width="2.5" fill="none"/>'],tpo:['#EBCB9C','<path d="M17 40q5-4 10 0t10 0 8-1M20 35q5-3 10 0t8 0" stroke="#B88B54" stroke-width="2.2" fill="none"/>'],tlo:['#B0342B','<circle cx="22" cy="39" r="4" fill="#7E1F1A"/><circle cx="32" cy="35" r="4" fill="#7E1F1A"/><circle cx="42" cy="39" r="4" fill="#7E1F1A"/>'],tmi:['#DDA845','<path d="M14 42l36-6" stroke="#B9822A" stroke-width="7"/><circle cx="22" cy="40" r="1.4" fill="#fff"/><circle cx="36" cy="37" r="1.4" fill="#fff"/><circle cx="46" cy="35" r="1.4" fill="#fff"/>'],tca:['#9A4A2A','<path d="M14 42a18 18 0 0 1 18-16v17z" fill="#B0342B"/><path d="M32 43V26a18 18 0 0 1 18 16z" fill="#8B4A2B"/>'],tar:['#5E2F1E','<path d="M17 41l7-5M27 42l8-7M38 41l7-5" stroke="#241610" stroke-width="3" fill="none"/><path d="M45 28l10 6-9 6z" fill="#C5E063"/>'],tcm:['#F08A3E','<path d="M18 41q4-8 9-3M30 40q4-9 9-3M41 41q3-6 8-2" stroke="#B85A1C" stroke-width="3" fill="none"/>'],tcc:['#8B4A2B','<path d="M14 40q6 5 12 0t12 0 10 0v4H14z" fill="#F5D45E"/><path d="M20 37l6-5M33 36l6-5" stroke="#4A2412" stroke-width="3" fill="none"/><circle cx="46" cy="34" r="4" fill="#F08A3E"/>']};
 function arteDe(id:string,cat:string):string{
@@ -73,7 +73,7 @@ function arteDe(id:string,cat:string):string{
   const c=DRINK[id]||['#7FB2E5','#fff'];
   if(id==='cln')b='<path d="M16 12h32l-4 44a4 4 0 0 1-4 4H24a4 4 0 0 1-4-4z" fill="'+c[0]+'"/><path d="M42 4l-6 16" stroke="'+c[1]+'" stroke-width="4"/><circle cx="46" cy="14" r="6" fill="#C5E063"/>';
   else if(id==='boi')b='<path d="M20 8h24l3 10v36a4 4 0 0 1-4 4H21a4 4 0 0 1-4-4V18z" fill="'+c[0]+'"/><circle cx="32" cy="36" r="9" fill="'+c[1]+'"/><path d="M26 36h12" stroke-width="2.5"/>';
-  else b=bottle([c[0],c[1],id==='coc'?'#fff':c[0]],id==='sug');
+  else b=bottle([c[0],c[1],(id==='coc'||id==='czr')?'#fff':c[0]],false);
  }else if(id==='pf')b='<rect x="17" y="10" width="6" height="26" fill="#F5D45E"/><rect x="26" y="6" width="6" height="30" fill="#F5D45E"/><rect x="35" y="10" width="6" height="26" fill="#F5D45E"/><rect x="43" y="14" width="5" height="22" fill="#F5D45E"/><path d="M14 32h36l-4 26H18z" fill="#E2573A"/><path d="M20 38q6 4 12 0t12 0" stroke="#fff" stroke-width="3" fill="none"/>';
  else if(id==='pr')b='<path d="M12 28l4 28h32l4-28z" fill="#E8C27E"/><path d="M16 28l-3-16M26 28l-1-20M36 28l2-18M46 28l5-14" stroke="#F5D45E" stroke-width="6" fill="none"/>';
  else if(id==='hp')b='<path d="M6 26a20 16 0 0 1 40 0z" fill="#E8A24A"/><path d="M5 28h42l-3 4H8z" fill="#8CC152"/><rect x="7" y="33" width="38" height="7" rx="3" fill="#7A4A2B"/><path d="M8 42h36a4 4 0 0 1-4 7H12a4 4 0 0 1-4-7z" fill="#E8A24A"/><rect x="40" y="38" width="5" height="16" fill="#F5D45E"/><rect x="47" y="34" width="5" height="20" fill="#F5D45E"/><rect x="54" y="40" width="5" height="14" fill="#F5D45E"/><path d="M38 52h24l-3 8H41z" fill="#E2573A"/>';
@@ -126,36 +126,38 @@ export const TOSTICHELAS: RestauranteConfig = {
   menu: MENU,
   arte: ARTE,
   inicio: { destacado: 'tcm', combos: [['tag', 'vic', 'Aguachile + Victoria'], ['tcc', 'cor', 'Camachera + Corona'], ['tar', 'mod', 'Arrachera + Modelo']], tituloCombos: 'Va muy bien con una chela' },
-  ajustes: { pedMesa: true },
-  // Precios de ejemplo: el dueño enciende, apaga y ajusta los extras en Ajustes. Apagados por defecto.
+  ajustes: { pedMesa: true, xTQueso: 8, xTAguacate: 8, xTCebolla: 5, xPQueso: 8, xHQueso: 10, xHCarne: 40 },
+  // Extras que pidió el cliente. Vienen encendidos con sus precios; el dueño los apaga o cambia en Ajustes.
   extras: [
-    { k: 'xAguacate', g: 'Aguacate extra', def: 15, cats: ['Tostadas', 'Tacos'], mult: 3 },
-    { k: 'xDoble', g: 'Doble porción', def: 35, cats: ['Tostadas'], mult: 1 },
-    { k: 'xQueso', g: 'Queso extra', def: 15, cats: ['Tacos', 'Snacks'], mult: 3 },
-    { k: 'xSalsa', g: 'Salsa', def: 0, cats: ['Tostadas', 'Tacos', 'Snacks'], salsa: true, opciones: ['Verde', 'Roja', 'Habanero', 'Macha'] },
+    { k: 'xTQueso', g: 'Queso oaxaca extra', def: 8, cats: ['Tacos'], mult: 3, donde: 'Tacos' },
+    { k: 'xTAguacate', g: 'Aguacate extra', def: 8, cats: ['Tacos'], mult: 3, donde: 'Tacos' },
+    { k: 'xTCebolla', g: 'Cebolla extra', def: 5, cats: ['Tacos'], mult: 3, donde: 'Tacos' },
+    { k: 'xPQueso', g: 'Queso gratinado extra', def: 8, cats: ['Snacks'], ids: ['pf'], donde: 'Papas a la francesa' },
+    { k: 'xHQueso', g: 'Queso americano extra', def: 10, cats: ['Snacks'], ids: ['ha', 'hp'], donde: 'Hamburguesas' },
+    { k: 'xHCarne', g: 'Carne extra', def: 40, cats: ['Snacks'], ids: ['ha', 'hp'], donde: 'Hamburguesas' },
   ],
   insumos: INS0,
   mesas: MESAS,
   mesaInicial: 'm4',
-  maridaje: { Tostadas: ['Cervezas'], Tacos: ['Cervezas', 'Bebidas'], Cervezas: ['Tostadas', 'Snacks'], Bebidas: ['Tostadas', 'Tacos'], Snacks: ['Cervezas'] },
+  maridaje: { Tostadas: ['Cervezas', 'Bebidas'], Tacos: ['Cervezas', 'Bebidas'], Cervezas: ['Tostadas', 'Tacos', 'Snacks'], Bebidas: ['Tostadas', 'Tacos', 'Snacks'], Snacks: ['Cervezas', 'Bebidas'] },
   maridajeTxt: {
-    Tostadas: 'Va muy bien con una chela bien fría',
-    Tacos: 'Acompáñalo con algo bien frío',
-    Cervezas: 'Qué rica con una tostada',
-    Bebidas: 'Combínala con una tostada o un taco',
-    Snacks: 'Perfecto con una chela',
+    Tostadas: 'Te podría gustar… va muy bien con algo bien frío',
+    Tacos: 'Te podría gustar… acompáñalo con algo bien frío',
+    Cervezas: 'Te podría gustar… qué rica con algo de comer',
+    Bebidas: 'Te podría gustar… combínala con algo de comer',
+    Snacks: 'Te podría gustar… perfecto con algo bien frío',
   },
   rapidas: {
-    Tostadas: 'Sin chile, Sin cebolla, Sin cilantro, Sin jitomate, Sin aguacate, Sin mayonesa, Poco picante, Extra picante, Extra limón',
-    Tacos: 'Sin chile, Sin cebolla, Sin cilantro, Poco picante, Extra picante, Con limón',
-    Snacks: 'Sin chile, Sin cebolla, Sin jitomate, Sin mayonesa, Poco picante, Extra picante',
-    Cervezas: 'Bien helada, Con limón, Con sal, Sin popote',
+    Tostadas: 'Poco picante, Extra picante, Extra limón',
+    Tacos: 'Poco picante, Extra picante, Con limón',
+    Snacks: 'Poco picante, Extra picante',
+    Cervezas: 'Bien helada, Con limón, Con sal',
     Bebidas: 'Sin hielo, Poco hielo, Con limón',
   },
   demo: {
     pins: { caja: '1111', dueno: '2222', mesero: '3333', cocina: '4444' },
-    likes: {tag:128,tce:96,tcc:84,tcm:77,cor:71,vic:64,tar:58,pac:49,ha:44,hp:40,tca:39,tmi:37,tbi:33,xx:30,mod:31,leo:25,tlo:26,pf:22,tpo:21,ult:18,pr:19,sue:15,coc:14,cln:12,boi:9,sug:8,min:6},
-    rates: {tag:[4.8,64],tce:[4.7,52],tcc:[4.9,48],tcm:[4.8,41],cor:[4.5,39],vic:[4.6,35],tar:[4.7,30],pac:[4.4,22],ha:[4.3,25],hp:[4.4,21],tca:[4.5,19],tmi:[4.5,17],tbi:[4.3,15],xx:[4.4,16],mod:[4.4,15],leo:[4.5,13],tlo:[4.4,12],pf:[4.2,14],tpo:[4.2,10],ult:[4.3,9],pr:[4.1,9],sue:[4.6,8],coc:[4.5,7],cln:[4.2,6],boi:[4.3,5],sug:[4.5,4],min:[4.2,3]},
+    likes: {tag:128,tce:96,tcc:84,tcm:77,cor:71,vic:64,tar:58,pac:49,ha:44,hp:40,tca:39,tmi:37,tbi:33,xx:30,mod:31,leo:25,tlo:26,pf:22,tpo:21,ult:18,pr:19,sue:15,coc:14,cln:12,boi:9,czr:11,min:6},
+    rates: {tag:[4.8,64],tce:[4.7,52],tcc:[4.9,48],tcm:[4.8,41],cor:[4.5,39],vic:[4.6,35],tar:[4.7,30],pac:[4.4,22],ha:[4.3,25],hp:[4.4,21],tca:[4.5,19],tmi:[4.5,17],tbi:[4.3,15],xx:[4.4,16],mod:[4.4,15],leo:[4.5,13],tlo:[4.4,12],pf:[4.2,14],tpo:[4.2,10],ult:[4.3,9],pr:[4.1,9],sue:[4.6,8],coc:[4.5,7],cln:[4.2,6],boi:[4.3,5],czr:[4.4,5],min:[4.2,3]},
     reviews: [
    {pid:'tag',user:'Karla M.',stars:5,text:'El aguachile está en su punto y pica rico. Pídelo con una Victoria Mega.',v:true,ts:-95},
    {pid:'tag',user:'Dany R.',stars:5,text:'La mejor tostada de la zona, el aguacate no escatima.',v:true,ts:-1440},

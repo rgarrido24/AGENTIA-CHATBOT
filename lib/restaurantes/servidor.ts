@@ -70,7 +70,7 @@ export const SERVIDOR: Record<string, ServidorConfig> = {
       rewardMeta: 10,
       giro: 'restaurante',
     },
-    ajustesPublicos: ['xAguacate', 'xDoble', 'xQueso', 'xSalsa'],
+    ajustesPublicos: ['xTQueso', 'xTAguacate', 'xTCebolla', 'xPQueso', 'xHQueso', 'xHCarne'],
   },
   arwings: {
     slug: 'arwings',

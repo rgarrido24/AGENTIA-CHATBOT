@@ -170,3 +170,21 @@
 .tos-root .loy-b:active{transform:scale(.96)}
 .tos-root .loy-link{display:grid;gap:4px;background:rgba(0,0,0,.18);padding:10px;border-radius:14px}
 .tos-root .loy-link code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:.78rem}
+
+/* semáforo de mesas (mesero) */
+.tos-root .sem-leg{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;font-weight:700}
+.tos-root .sem-leg .sd,.tos-root .mesa .sem-lbl::before{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px;background:#9aa0a6;border:1.5px solid rgba(0,0,0,.35)}
+.tos-root .sd.rojo,.tos-root .mesa.sem-rojo .sem-lbl::before{background:#E04B3A}
+.tos-root .sd.amarillo,.tos-root .mesa.sem-amarillo .sem-lbl::before{background:#F2C14E}
+.tos-root .sd.verde,.tos-root .mesa.sem-verde .sem-lbl::before{background:#4FB26A}
+.tos-root .sd.azul,.tos-root .mesa.sem-azul .sem-lbl::before{background:#3E86D6}
+.tos-root .mesa .sem-lbl{font-weight:800;font-size:14px}
+.tos-root .mesa.sem-rojo{border-color:#E04B3A;border-width:3px}
+.tos-root .mesa.sem-rojo .sem-lbl{color:#E04B3A}
+.tos-root .mesa.sem-amarillo{border-color:#F2C14E;border-width:3px}
+.tos-root .mesa.sem-verde{border-color:#4FB26A;border-width:3px}
+.tos-root .mesa.sem-azul{border-color:#3E86D6;border-width:3px}
+@keyframes semPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,75,58,.55)}50%{box-shadow:0 0 0 7px rgba(224,75,58,0)}}
+.tos-root .mesa.sem-rojo{animation:semPulse 1.6s ease-in-out infinite}
+.tos-root .sem-go{border-color:#E04B3A}
+@media (prefers-reduced-motion:reduce){.tos-root .mesa.sem-rojo{animation:none}}
