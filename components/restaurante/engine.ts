@@ -723,7 +723,12 @@ async function uploadImg(file){
  const sc=Math.min(1,900/Math.max(bmp.width,bmp.height));
  const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(bmp.width*sc));cv.height=Math.max(1,Math.round(bmp.height*sc));
  cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
- let q=.82,data=cv.toDataURL('image/jpeg',q);while(data.length>900000&&q>.4){q-=.12;data=cv.toDataURL('image/jpeg',q)}
+ /* si la foto tiene fondo transparente (PNG de ChatGPT, etc.) se conserva; en JPEG se volvía negro */
+ let alpha=false;try{const px=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;for(let i=3;i<px.length;i+=16){if(px[i]<250){alpha=true;break}}}catch(e){}
+ const fmt=alpha?'image/webp':'image/jpeg';
+ let q=.82,data=cv.toDataURL(fmt,q);
+ if(alpha&&data.indexOf('data:image/webp')!==0)data=cv.toDataURL('image/png');
+ while(data.length>900000&&q>.4){q-=.12;data=cv.toDataURL(fmt,q);if(alpha&&data.indexOf('data:image/webp')!==0){const c2=document.createElement('canvas');c2.width=Math.round(cv.width*.8);c2.height=Math.round(cv.height*.8);c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);cv.width=c2.width;cv.height=c2.height;cv.getContext('2d').drawImage(c2,0,0);data=cv.toDataURL('image/png')}}
  const r=await fetch(IAPI,{method:'POST',headers:hdr(),body:JSON.stringify({data})});
  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo subir la foto');return j.url;
 }

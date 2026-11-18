@@ -157,7 +157,7 @@
 .tos-root .demo-note{margin-top:28px;font-size:12px;color:#241610cc}
 
 /* fotos del menú subidas por el dueño */
-.tos-root .art img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+.tos-root .art img{width:100%;height:100%;object-fit:contain;display:block;border-radius:inherit}
 .tos-root .art.mini{width:40px;height:40px;flex:none;border-radius:10px;overflow:hidden}
 .tos-root .art.pimg{width:96px;height:96px;flex:none;border-radius:14px;overflow:hidden;display:grid;place-items:center}
 

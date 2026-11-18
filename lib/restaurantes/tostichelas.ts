@@ -38,6 +38,9 @@ const MENU:Producto[]=[
  P({id:'pf',cat:'Snacks',name:'Papas a la francesa',desc:'Con queso derretido',ing:['queso derretido'],emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}}),
  P({id:'pr',cat:'Snacks',name:'Papas fritas',desc:'Con Maggi, tajín, salsa inglesa y limón',ing:['Maggi','tajín','salsa inglesa','limón'],emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}})
 ];
+/* fotos reales: id del producto -> archivo en /public/tostichelas/p/ (webp, fondo transparente) */
+const FOTOS:Record<string,string>={};
+MENU.forEach(q=>{if(FOTOS[q.id])q.img=FOTOS[q.id]});
 const CATS:string[]=['Tostadas','Tacos','Cervezas','Bebidas','Snacks'];
 const CATCOL:Record<string,string>={Tostadas:'#7DBB86',Tacos:'#F29A4A',Cervezas:'#F2C14E',Bebidas:'#7FB2E5',Snacks:'#E2573A'};
 
