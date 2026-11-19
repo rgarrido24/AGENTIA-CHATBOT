@@ -123,11 +123,12 @@ const cleanNom=v=>String(v||'').replace(/[<>|]/g,'').replace(/\s+/g,' ').trim().
 function addPoints(c,sub,disc){return;let cu=S.cust.find(x=>x.tel===c.tel);if(!cu){cu={tel:c.tel,name:c.name||'Cliente',pts:0,visits:0,last:0};S.cust.push(cu)}if(c.name&&cu.name==='Cliente')cu.name=c.name;cu.pts+=Math.floor((sub-disc)/10);cu.visits++;cu.last=0}
 function closeTicket(orders,o2){const lines=[];orders.forEach(o=>o.lines.forEach(l=>lines.push(Object.assign({},l,{cost:lineCost(l)}))));const sub=sumLines(lines);const t=Object.assign({id:(o2&&o2.method==='Link de pago'&&!anyTok())?custId():S.tseq++,ts:Date.now(),lines,sub,disc:0,tip:0,method:'Efectivo',cliente:{},canal:'mesa',mesa:null,orderIds:orders.map(o=>o.id)},o2);t.total=sub-t.disc+t.tip+(t.envio||0);S.tickets.push(t);orders.forEach(o=>{o.closed=true});if(t.mesa&&!mesaOrders(t.mesa).length)delete S.cuenta[t.mesa];addPoints(t.cliente,sub,t.disc);return t}
 function restockCancel(o){if(!o.hold)deduct(o,-1);o.cancel=true}
-function beep(){if(!S||!S.sound)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.4);o.start();o.stop(ac.currentTime+.4)}catch(e){}}
+function beep(){if(!S||!S.sound)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();[[880,0],[1175,.22]].forEach(x=>{const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime+x[1];o.type='triangle';o.frequency.value=x[0];o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.45,t);g.gain.exponentialRampToValueAtTime(.001,t+.4);o.start(t);o.stop(t+.42)})}catch(e){}}
+let audioUnlock=false;function unlockAudio(){if(audioUnlock)return;audioUnlock=true;const f=()=>{try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume()}catch(e){}};document.addEventListener('pointerdown',f,{once:true,capture:true});document.addEventListener('keydown',f,{once:true,capture:true})}
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;$('#toast').appendChild(d);setTimeout(()=>d.remove(),3200)}
 
 function seed(){
- S={seq:101,tseq:2001,role:'cliente',sound:S?S.sound:false,modal:null,
+ S={seq:101,tseq:2001,role:'cliente',sound:S?S.sound:(STAFF&&lsGet(LK+'snd')!=='0'),modal:null,
   settings:Object.assign({radio:50,cap:500,envio:25,pedMesa:false,pedLlevar:false,pedEntrega:false,aprobar:true,lat:null,lng:null,diasMes:26,costoPct:35,comisionPct:2,metaPuntos:0,premioTxt:''},EXT.reduce((o,e)=>(o[e.k]=-1,o),{}),CFG.ajustes||{}),
   inv:INS0.map(r=>({id:r[0],name:r[1],unit:r[2],stock:r[3],min:r[4],cost:r[5],count:''})),
   orders:[],tickets:[],cuenta:{},mermas:[],cust:[],cancelados:CFG.demo?1:0,gastos:[],fin:{cat:'Renta',con:'',monto:'',freq:'mensual'},invNew:{name:'',unit:'kg',stock:'',min:'',cost:''},
@@ -320,7 +321,7 @@ function modalHtml(){
    if(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])return;
    h+='<div><div class="b small">'+esc(g.g)+(g.req?' (obligatorio)':' (opcional)')+'</div><div class="chips">';
    if(!g.req)h+='<button class="chip" data-a="mo" data-g="'+esc(g.g)+'" data-l="" aria-pressed="'+(!md.pick[g.g])+'">Ninguno</button>';
-   h+=g.opts.map(o=>{const pr=o.p[v.s];return'<button class="chip" data-a="mo" data-g="'+esc(g.g)+'" data-l="'+esc(o.l)+'" aria-pressed="'+(md.pick[g.g]===o.l)+'">'+esc(o.l)+(pr?' +'+m(pr):'')+'</button>'}).join('')+'</div></div>'});
+   h+=g.opts.map(o=>{const pr=optP(o,v,md);return'<button class="chip" data-a="mo" data-g="'+esc(g.g)+'" data-l="'+esc(o.l)+'" aria-pressed="'+(md.pick[g.g]===o.l)+'">'+esc(o.l)+(pr?' +'+m(pr):'')+'</button>'}).join('')+'</div></div>'});
   if(p.salsas&&ARM&&CFG.salsas){
    const ss=salsasOn(),sel=md.pick.Salsa,sel2=md.pick.Salsa2;
    const sc=(x,key,cur)=>'<button class="sal'+(cur===x.id?' on':'')+'" data-a="msal" data-k="'+key+'" data-s="'+x.id+'" aria-pressed="'+(cur===x.id)+'">'+flames(x.picor)+'<b>'+esc(x.nombre)+'</b><span class="xs">'+esc(NIV[x.picor-1]||'')+(x.extra?' · +'+m(x.extra):'')+'</span>'+(x.desc?'<span class="xs muted">'+esc(x.desc)+'</span>':'')+'</button>';
@@ -376,7 +377,9 @@ function modalHtml(){
   h+='<div class="row between"><h2>Ticket digital</h2><span class="row" style="gap:6px"><button class="btn ghost sm" data-a="printt" data-t="'+t.id+'">Imprimir (opcional)</button><button class="btn ghost sm" data-a="mclose">Cerrar</button></span></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>'+NOMU+' · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa)+(t.nombre?' · '+esc(t.nombre):''):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div>'+(t.loy?'<hr><div class="small"><b>Tarjeta '+NOM+'</b><br>'+(t.loy.usado?'Usaste '+m(t.loy.usado)+' de saldo.<br>':'')+(t.loy.modelo==='cashback'?'Ganaste '+m2(t.loy.ganado)+' de saldo. Saldo ahora: <b>'+m2(t.loy.saldo)+'</b>':'Ganaste '+t.loy.ganado+' y llevas <b>'+t.loy.saldo+'</b>')+(t.loy.nuevo?'<br>Tu tarjeta ya está creada: guárdala en Google Wallet desde la pestaña Mis puntos.':'')+'</div>':'')+'</div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
  }
  return h+'</div></div>'}
-function buildLine(){const md=S.modal,p=PM(md.pid),v=p.v[md.vi];const mods=[];p.mods.forEach(g=>{if(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])return;const l=md.pick[g.g];if(!l)return;const o=g.opts.find(x=>x.l===l);mods.push({g:g.g,l:g.prefix?g.g+' '+l:l,p:o.p[v.s]})});if(p.salsas&&ARM&&CFG.salsas){[md.pick.Salsa,dosSab(p)?md.pick.Salsa2:null].forEach(id=>{const x=id&&salsaBy(id);if(x)mods.push({g:'Salsa',l:'Salsa '+x.nombre,p:Number(x.extra)||0})})}return lineFrom(p,md.vi,mods,md.qty,(md.quick||[]).concat(md.note&&md.note.trim()?[md.note.trim()]:[]).join(', '))}
+// Precio de una opción; `gratisSi:[grupo,[valores]]` la deja en $0 cuando otra elección del producto la incluye.
+function optP(o,v,md){if(o.gratisSi&&(o.gratisSi[1]||[]).indexOf(md.pick[o.gratisSi[0]])>=0)return 0;return o.p[v.s]}
+function buildLine(){const md=S.modal,p=PM(md.pid),v=p.v[md.vi];const mods=[];p.mods.forEach(g=>{if(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])return;const l=md.pick[g.g];if(!l)return;const o=g.opts.find(x=>x.l===l);mods.push({g:g.g,l:g.prefix?g.g+' '+l:l,p:optP(o,v,md)})});if(p.salsas&&ARM&&CFG.salsas){[md.pick.Salsa,dosSab(p)?md.pick.Salsa2:null].forEach(id=>{const x=id&&salsaBy(id);if(x)mods.push({g:'Salsa',l:'Salsa '+x.nombre,p:Number(x.extra)||0})})}return lineFrom(p,md.vi,mods,md.qty,(md.quick||[]).concat(md.note&&md.note.trim()?[md.note.trim()]:[]).join(', '))}
 
 /* ---------- mesero ---------- */
 function mesaState(k){const os=mesaOrders(k);return{os,pc:os.some(o=>o.porConfirmar)||S.orders.some(o=>o.mesa===k&&o.aprobar&&!o.cancel&&!o.closed),listo:os.some(o=>o.lines.some(l=>l.status==='listo')),cuenta:!!S.cuenta[k],total:os.reduce((a,o)=>a+orderSub(o),0)}}
@@ -864,15 +867,16 @@ function reseedKeep(){const k={role:S.role,verCli:S.verCli,auth:S.auth,dpin:S.dp
 function softRender(){const a=root.ownerDocument.activeElement;if(a&&root.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){dirty=true;return}dirty=false;render()}
 function applyResp(r){
  if(!r||r.error)return;
- let changed=false;
+ let changed=false;const primera=!SYNCED;
  PROD=!!r.prod;SYNCED=true;if(r.top)TOP=r.top;
  if(r.reset){const first=EPOCH===0;EPOCH=r.epoch;REV=0;UU={};if(!first||PROD){reseedKeep();changed=true}LAST=snapNow()}
- const inc={cols:[],kv:[]};
- Object.keys(r.cols||{}).forEach(name=>{const c=COLS[name];if(!c)return;r.cols[name].forEach(e=>{const key=name+'|'+e.k;if(UU[key]!==undefined&&UU[key]>=e.u)return;const arr=c.arr();const i=arr.findIndex(x=>c.key(x)===e.k);if(i>=0)arr[i]=e.d;else arr.push(e.d);UU[key]=e.u;inc.cols.push([name,e.k]);changed=true})});
+ const inc={cols:[],kv:[]};const antes={};S.orders.forEach(o=>{antes[o.id]=o.hold?1:2});let nuevoPedido=false;
+ Object.keys(r.cols||{}).forEach(name=>{const c=COLS[name];if(!c)return;r.cols[name].forEach(e=>{const key=name+'|'+e.k;if(UU[key]!==undefined&&UU[key]>=e.u)return;const arr=c.arr();const i=arr.findIndex(x=>c.key(x)===e.k);if(i>=0)arr[i]=e.d;else arr.push(e.d);UU[key]=e.u;inc.cols.push([name,e.k]);changed=true;if(name==='orders'&&e.d&&!e.d.cancel&&!e.d.closed){const pr=antes[e.d.id];if(pr===undefined||(pr===1&&!e.d.hold))nuevoPedido=true}})});
  Object.keys(r.kv||{}).sort((a,b)=>a==='menu'?-1:b==='menu'?1:0).forEach(k=>{const e=r.kv[k];if(UU['kv|'+k]!==undefined&&UU['kv|'+k]>=e.u)return;applyKv(k,e.v);UU['kv|'+k]=e.u;inc.kv.push(k);changed=true});
  if(inc.cols.length||inc.kv.length){const cur=snapNow();inc.cols.forEach(x=>{LAST.cols[x[0]]=LAST.cols[x[0]]||{};LAST.cols[x[0]][x[1]]=cur.cols[x[0]][x[1]]});inc.kv.forEach(k=>{LAST.kv[k]=cur.kv[k]})}
  REV=r.rev||REV;
  S.orders.forEach(o=>{if(o.id<100000&&o.id>=S.seq)S.seq=o.id+1});S.tickets.forEach(t=>{if(t.id<100000&&t.id>=S.tseq)S.tseq=t.id+1});
+ if(nuevoPedido&&!primera&&!r.reset&&STAFF&&S.role!=='cliente')beep();
  if(changed)softRender();
 }
 async function tick(){
@@ -1204,7 +1208,7 @@ root.addEventListener('click',e=>{
   case'role':{const r=g('v');const k=authKey(r);if(r!=='cliente'&&!S.auth[k]){S.modal={type:'pin',role:k,target:r,pin:''}}else{S.role=r;S.verCli=r==='cliente';if(STAFF&&r!=='cliente')lsSet(LK+'rol',r)}break}
   case'vercli':S.verCli=true;S.role='cliente';break
   case'reset':{if(!S.dpin){toast('Solo el dueño puede reiniciar: entra a Dueño con tu PIN');break}resetServer('reset');return}
-  case'sound':S.sound=!S.sound;if(S.sound)beep();break;
+  case'sound':S.sound=!S.sound;lsSet(LK+'snd',S.sound?'1':'0');if(S.sound)beep();break;
   case'tab':c.tab=g('v');if(c.tab==='puntos'&&S.me.tel.length===10&&!S.loy.data&&!S.loy.loading)loadMe();break;
   case'geo':c.geo=g('v');if(c.geo==='fuera'&&c.canal==='mesa')c.canal='llevar';if(c.geo==='dentro')c.canal='mesa';break;
   case'cat':c.cat=g('v');if(NUEVO)setTimeout(()=>{const e=root.querySelector('.nv-cats');if(e&&e.scrollIntoView)e.scrollIntoView({behavior:'smooth',block:'start'})},60);break;
@@ -1361,6 +1365,6 @@ if(NUEVO){nvRestoreMe();if(S.me.tel.length===10)setTimeout(()=>{try{loadMe()}cat
 try{const qs=new URLSearchParams(root.ownerDocument.defaultView.location.search),mm=qs.get('mesa');if(mm&&MESAS.some(x=>x.k===mm)&&/^[\w]{4,20}$/.test(qs.get('t')||'')){QRMESA=mm;QRT=qs.get('t');S.cli.mt=QRT;S.cli.mesa=mm;S.cli.geo='dentro';S.cli.canal='mesa'}}catch(e){}
 try{if(STAFF){const rr=new URLSearchParams(root.ownerDocument.defaultView.location.search).get('rol')||lsGet(LK+'rol');if(['mesero','cocina','barra','caja','dueno'].includes(rr)){const k=authKey(rr);if(S.auth[k])S.role=rr;else S.modal={type:'pin',role:k,target:rr,pin:''}}}}catch(e){}
 render();LAST=snapNow();tick();
-const iv3=setInterval(tick,2500);
+unlockAudio();const iv3=setInterval(tick,2500);
 return()=>{ctl.abort();clearInterval(iv);clearInterval(iv2);clearInterval(iv3)};
 }

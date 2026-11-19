@@ -6,9 +6,11 @@ import type { Insumo, Producto } from './tipos';
 import type { RestauranteConfig } from './config';
 
 const SAB:string[]=['Sandía','Fresa','Miguelito','Tajín','Piña Mango','Cereza','Mora Azul Truena Pop','Ajonjolí Caramelizado'];
+// Con michelada, cubana o clamato el escarchado va incluido; en cerveza sola se cobra.
+const PREP:string[]=['Michelada','Cubana','Clamato'];
 const BMODS:any[]=[
  {g:'Preparado',req:true,prefix:false,opts:[{l:'Sola',p:[0,0]},{l:'Michelada',p:[5,10]},{l:'Cubana',p:[15,20]},{l:'Clamato',p:[20,25]}]},
- {g:'Vaso',req:false,prefix:false,opts:[{l:'Escarchado sal y limón',p:[10,15]},{l:'Escarchado de sabor',p:[10,15]},{l:'Michelado',p:[20,25]},{l:'Cubano',p:[25,30]},{l:'Clamato',p:[35,50]}]},
+ {g:'Vaso',req:false,prefix:false,opts:[{l:'Escarchado sal y limón',p:[10,15],gratisSi:['Preparado',PREP]},{l:'Escarchado de sabor',p:[10,15],gratisSi:['Preparado',PREP]},{l:'Michelado',p:[20,25]},{l:'Cubano',p:[25,30]},{l:'Clamato',p:[35,50]}]},
  {g:'Sabor del escarchado',req:true,showIf:['Vaso','Escarchado de sabor'],prefix:false,opts:SAB.map(l=>({l,p:[0,0]}))}
 ];
 const P=(o:any):Producto=>Object.assign({avail:true,mods:[],desc:''},o);
@@ -27,8 +29,8 @@ const MENU:Producto[]=[
  T('tcc','Taco de camachera',80,230,{cam:.05,arr:.05},'Camarón y arrachera con queso, cebolla morada, jitomate y aguacate en tortilla de harina','torh',['queso','cebolla morada','jitomate','aguacate']),
  B('cor','Corona','cor',60,120),B('vic','Victoria','vic',60,120),B('pac','Pacífico','pac',60,120),B('xx','XX Lager','xx',0,120),
  B('ult','Ultra','ult',60,0),B('mod','Modelo','mod',60,0),B('leo','León','leo',0,120),
- P({id:'suc',cat:'Cervezas',name:'Suero chico',desc:'Para acompañar tu chela',emoji:'🥤',station:'barra',v:[{l:'Chico',p:50,f:1,s:0}],use:{sue:1}}),
- P({id:'sgr',cat:'Cervezas',name:'Suero grande',desc:'Para acompañar tu chela',emoji:'🥤',station:'barra',v:[{l:'Grande',p:70,f:1,s:0}],use:{sue:2}}),
+ P({id:'suc',cat:'Cervezas',name:'Suero chico',desc:'Escarchado de limón y sal, con limón y sal adentro y agua mineral',emoji:'🥤',station:'barra',v:[{l:'Chico',p:50,f:1,s:0}],use:{sue:1}}),
+ P({id:'sgr',cat:'Cervezas',name:'Suero grande',desc:'Escarchado de limón y sal, con limón y sal adentro y agua mineral',emoji:'🥤',station:'barra',v:[{l:'Grande',p:70,f:1,s:0}],use:{sue:2}}),
  P({id:'boi',cat:'Bebidas',name:'Boing',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{boi:1}}),
  P({id:'coc',cat:'Bebidas',name:'Coca Cola regular',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{coc:1}}),
  P({id:'czr',cat:'Bebidas',name:'Coca Cola Zero',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{czr:1}}),

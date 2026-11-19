@@ -60,7 +60,7 @@ function iconos(cfg: RestauranteConfig) {
 export function swResponse(cfg: RestauranteConfig) {
   const r = cfg.ruta;
   const SW = `
-const V = '${cfg.slug}-v3';
+const V = '${cfg.slug}-v4';
 const SHELL = ['${r}', '${r}/equipo', '${cfg.marca.icono192}', '${cfg.marca.logo}'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL).catch(() => {})).then(() => self.skipWaiting()));
@@ -78,6 +78,8 @@ self.addEventListener('push', (e) => {
     tag: d.tag || undefined,
     renotify: !!d.tag,
     vibrate: [220, 100, 220],
+    silent: false,
+    requireInteraction: true,
     data: { url: d.url || '${r}/equipo' },
   }));
 });
