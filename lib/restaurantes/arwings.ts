@@ -107,7 +107,7 @@ export const ARWINGS: RestauranteConfig = {
     nombreMayus: 'ARWINGS',
     tagline: 'El sabor tiene alas',
     descripcion: 'Pide alitas, boneless, hamburguesas y snacks de Arwings. Acumula saldo en cada pedido.',
-    logo: '/arwings/logo.jpg',
+    logo: '/arwings/logo.png',
     logoAlt: 'Arwings, el sabor tiene alas',
     logoW: 764,
     logoH: 701,
@@ -130,7 +130,7 @@ export const ARWINGS: RestauranteConfig = {
       sub: 'Alitas, boneless y más. Pide a domicilio o para llevar.',
       boton: 'ORDENAR AHORA',
       efecto: 'brasas',
-      img: { src: '/arwings/logo.jpg', w: 764, h: 701, alt: 'Arwings, el sabor tiene alas' },
+      img: { src: '/arwings/logo.png', w: 764, h: 701, alt: 'Arwings, el sabor tiene alas' },
     },
   },
   textos: {

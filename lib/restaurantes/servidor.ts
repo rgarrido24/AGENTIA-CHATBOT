@@ -88,7 +88,7 @@ export const SERVIDOR: Record<string, ServidorConfig> = {
     tenant: {
       key: 'arwings',
       nombre: 'ARWINGS',
-      logo: '/arwings/logo.jpg',
+      logo: '/arwings/logo.png',
       colorPrimario: '#FF7000',
       colorAcento: '#E32216',
       plan: 'produccion',

@@ -940,7 +940,7 @@ function dPwCfg(){
 function segCall(b){return fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'dospasos',...b})}).then(r=>r.json().then(j=>{if(!r.ok||!j.ok){toast(j.error||'No se pudo');return null}return j})).catch(()=>{toast('Sin conexión, intenta de nuevo');return null})}
 function dSeg(){
  const g=S.seg||(S.seg={});
- if(!g.loaded&&!g.loading&&S.auth.dueno){g.loading=true;segCall({op:'estado'}).then(j=>{g.loading=false;if(j){g.loaded=true;g.on=j.on;g.respaldo=j.respaldo;g.forzadoOff=j.forzadoOff}softRender()})}
+ if(!g.loaded&&!g.loading&&S.auth.dueno){g.loading=true;segCall({op:'estado'}).then(j=>{g.loading=false;g.loaded=true;if(j){g.on=j.on;g.respaldo=j.respaldo;g.forzadoOff=j.forzadoOff}softRender()})}
  let h='<div class="card stack"><h3>Seguridad del dueño · verificación en 2 pasos</h3>';
  if(g.codes){
   h+='<div class="small"><b style="color:var(--good)">Activada.</b> Guarda estos códigos de respaldo en un lugar seguro (foto en una carpeta privada o papel). Cada uno sirve <b>una sola vez</b> si pierdes el teléfono. No se vuelven a mostrar.</div><div class="grid2" style="gap:6px">'+g.codes.map(c=>'<code class="card" style="text-align:center;padding:8px;font-size:15px;letter-spacing:.06em">'+esc(c)+'</code>').join('')+'</div><button class="btn pri" data-a="segdone">Ya los guardé</button>';
