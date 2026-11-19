@@ -7,9 +7,9 @@ import type { RestauranteConfig } from './config';
 
 const SAB:string[]=['Sandía','Fresa','Miguelito','Tajín','Piña Mango','Cereza','Mora Azul Truena Pop','Ajonjolí Caramelizado'];
 const BMODS:any[]=[
- {g:'Preparado',req:false,prefix:true,opts:[{l:'Michelada',p:[5,10]},{l:'Cubana',p:[15,20]},{l:'Clamato',p:[20,25]}]},
- {g:'Vaso',req:false,prefix:true,opts:[{l:'Escarchado',p:[10,15]},{l:'Michelado',p:[20,25]},{l:'Cubano',p:[25,30]},{l:'Clamato',p:[35,50]}]},
- {g:'Sabor del escarchado',req:true,showIf:['Vaso','Escarchado'],opts:SAB.map(l=>({l,p:[0,0]}))}
+ {g:'Preparado',req:true,prefix:false,opts:[{l:'Sola',p:[0,0]},{l:'Michelada',p:[5,10]},{l:'Cubana',p:[15,20]},{l:'Clamato',p:[20,25]}]},
+ {g:'Vaso',req:false,prefix:false,opts:[{l:'Escarchado sal y limón',p:[10,15]},{l:'Escarchado de sabor',p:[10,15]},{l:'Michelado',p:[20,25]},{l:'Cubano',p:[25,30]},{l:'Clamato',p:[35,50]}]},
+ {g:'Sabor del escarchado',req:true,showIf:['Vaso','Escarchado de sabor'],prefix:false,opts:SAB.map(l=>({l,p:[0,0]}))}
 ];
 const P=(o:any):Producto=>Object.assign({avail:true,mods:[],desc:''},o);
 const T=(id:string,name:string,p1:number,p3:number,prot:Record<string,number>,desc?:string,torKey?:string,ing?:string[])=>P({id,cat:'Tacos',name,desc:desc||'Servidos con papas y nopales',ing:ing||['papas','nopales'],emoji:'🌮',station:'cocina',v:[{l:'Pza',p:p1,f:1,s:0},{l:'Orden (3 pzas)',p:p3,f:3,s:1}],use:Object.assign({[torKey||'tor']:1,nop:.03,pap:.05},prot)});
@@ -27,7 +27,8 @@ const MENU:Producto[]=[
  T('tcc','Taco de camachera',80,230,{cam:.05,arr:.05},'Camarón y arrachera con queso, cebolla morada, jitomate y aguacate en tortilla de harina','torh',['queso','cebolla morada','jitomate','aguacate']),
  B('cor','Corona','cor',60,120),B('vic','Victoria','vic',60,120),B('pac','Pacífico','pac',60,120),B('xx','XX Lager','xx',0,120),
  B('ult','Ultra','ult',60,0),B('mod','Modelo','mod',60,0),B('leo','León','leo',0,120),
- P({id:'sue',cat:'Cervezas',name:'Suero',desc:'Para acompañar tu chela: chico o grande',emoji:'🥤',station:'barra',v:[{l:'Chico',p:50,f:1,s:0},{l:'Grande',p:70,f:2,s:1}],use:{sue:1}}),
+ P({id:'suc',cat:'Cervezas',name:'Suero chico',desc:'Para acompañar tu chela',emoji:'🥤',station:'barra',v:[{l:'Chico',p:50,f:1,s:0}],use:{sue:1}}),
+ P({id:'sgr',cat:'Cervezas',name:'Suero grande',desc:'Para acompañar tu chela',emoji:'🥤',station:'barra',v:[{l:'Grande',p:70,f:1,s:0}],use:{sue:2}}),
  P({id:'boi',cat:'Bebidas',name:'Boing',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{boi:1}}),
  P({id:'coc',cat:'Bebidas',name:'Coca Cola regular',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{coc:1}}),
  P({id:'czr',cat:'Bebidas',name:'Coca Cola Zero',emoji:'🥤',station:'barra',v:[{l:'Botella',p:40,f:1,s:0}],use:{czr:1}}),
@@ -58,7 +59,7 @@ for(let i=1;i<=3;i++)MESAS.push({k:'p'+i,label:'Periquito '+i,tipo:'periquito'})
 
 /* ilustración propia por producto (trazo grueso del logo; el motor pone el trazo) */
 const BEER:Record<string,string[]>={cor:['#F5B83D','#2F6FB5','#F7E27A'],vic:['#C98A2B','#C0392B','#F3D9A4'],pac:['#E7B04A','#1F9AD6','#FFFFFF'],xx:['#B8721E','#2E8B57','#F5B83D'],ult:['#F2C14E','#3FA9F5','#E8EEF2'],mod:['#E5A82F','#E5B73B','#241610'],leo:['#5B2A14','#8C3B1B','#F2D6A0'],sue:['#EAF6FB','#3FA9F5','#FFFFFF']};
-const DRINK:Record<string,string[]>={boi:['#9BD34A','#F5D45E'],coc:['#3B1F18','#D0312D'],min:['#CFE9F7','#FFFFFF'],sue:['#EAF6FB','#3FA9F5'],czr:['#1A1A1A','#8E8E93'],cln:['#C9473A','#8CC152']};
+const DRINK:Record<string,string[]>={boi:['#9BD34A','#F5D45E'],coc:['#3B1F18','#D0312D'],min:['#CFE9F7','#FFFFFF'],suc:['#EAF6FB','#3FA9F5'],sgr:['#EAF6FB','#3FA9F5'],czr:['#1A1A1A','#8E8E93'],cln:['#C9473A','#8CC152']};
 const bottle=(c:string[],big?:boolean)=>'<path d="M26 4h12v4h-3v8c0 4 7 8 7 15v23a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V31c0-7 7-11 7-15V8h-3z" fill="'+c[0]+'"/><rect x="23" y="'+(big?30:34)+'" width="18" height="'+(big?22:16)+'" fill="'+c[1]+'" stroke-width="2"/><circle cx="32" cy="'+(big?41:42)+'" r="4" fill="'+c[2]+'" stroke-width="2"/><rect x="27" y="2" width="10" height="5" rx="2" fill="#241610"/>';
 const TACO:Record<string,[string,string]>={tbi:['#8B4A2B','<path d="M18 40l8-6M28 41l8-7M38 40l7-5" stroke="#4A2412" stroke-width="2.5" fill="none"/>'],tpo:['#EBCB9C','<path d="M17 40q5-4 10 0t10 0 8-1M20 35q5-3 10 0t8 0" stroke="#B88B54" stroke-width="2.2" fill="none"/>'],tlo:['#B0342B','<circle cx="22" cy="39" r="4" fill="#7E1F1A"/><circle cx="32" cy="35" r="4" fill="#7E1F1A"/><circle cx="42" cy="39" r="4" fill="#7E1F1A"/>'],tmi:['#DDA845','<path d="M14 42l36-6" stroke="#B9822A" stroke-width="7"/><circle cx="22" cy="40" r="1.4" fill="#fff"/><circle cx="36" cy="37" r="1.4" fill="#fff"/><circle cx="46" cy="35" r="1.4" fill="#fff"/>'],tca:['#9A4A2A','<path d="M14 42a18 18 0 0 1 18-16v17z" fill="#B0342B"/><path d="M32 43V26a18 18 0 0 1 18 16z" fill="#8B4A2B"/>'],tar:['#5E2F1E','<path d="M17 41l7-5M27 42l8-7M38 41l7-5" stroke="#241610" stroke-width="3" fill="none"/><path d="M45 28l10 6-9 6z" fill="#C5E063"/>'],tcm:['#F08A3E','<path d="M18 41q4-8 9-3M30 40q4-9 9-3M41 41q3-6 8-2" stroke="#B85A1C" stroke-width="3" fill="none"/>'],tcc:['#8B4A2B','<path d="M14 40q6 5 12 0t12 0 10 0v4H14z" fill="#F5D45E"/><path d="M20 37l6-5M33 36l6-5" stroke="#4A2412" stroke-width="3" fill="none"/><circle cx="46" cy="34" r="4" fill="#F08A3E"/>']};
 function arteDe(id:string,cat:string):string{
@@ -160,8 +161,8 @@ export const TOSTICHELAS: RestauranteConfig = {
   },
   demo: {
     pins: { caja: '1111', dueno: '2222', mesero: '3333', cocina: '4444' },
-    likes: {tag:128,tce:96,tcc:84,tcm:77,cor:71,vic:64,tar:58,pac:49,ha:44,hp:40,tca:39,tmi:37,tbi:33,xx:30,mod:31,leo:25,tlo:26,pf:22,tpo:21,ult:18,pr:19,sue:15,coc:14,cln:12,boi:9,czr:11,min:6},
-    rates: {tag:[4.8,64],tce:[4.7,52],tcc:[4.9,48],tcm:[4.8,41],cor:[4.5,39],vic:[4.6,35],tar:[4.7,30],pac:[4.4,22],ha:[4.3,25],hp:[4.4,21],tca:[4.5,19],tmi:[4.5,17],tbi:[4.3,15],xx:[4.4,16],mod:[4.4,15],leo:[4.5,13],tlo:[4.4,12],pf:[4.2,14],tpo:[4.2,10],ult:[4.3,9],pr:[4.1,9],sue:[4.6,8],coc:[4.5,7],cln:[4.2,6],boi:[4.3,5],czr:[4.4,5],min:[4.2,3]},
+    likes: {tag:128,tce:96,tcc:84,tcm:77,cor:71,vic:64,tar:58,pac:49,ha:44,hp:40,tca:39,tmi:37,tbi:33,xx:30,mod:31,leo:25,tlo:26,pf:22,tpo:21,ult:18,pr:19,suc:10,sgr:8,coc:14,cln:12,boi:9,czr:11,min:6},
+    rates: {tag:[4.8,64],tce:[4.7,52],tcc:[4.9,48],tcm:[4.8,41],cor:[4.5,39],vic:[4.6,35],tar:[4.7,30],pac:[4.4,22],ha:[4.3,25],hp:[4.4,21],tca:[4.5,19],tmi:[4.5,17],tbi:[4.3,15],xx:[4.4,16],mod:[4.4,15],leo:[4.5,13],tlo:[4.4,12],pf:[4.2,14],tpo:[4.2,10],ult:[4.3,9],pr:[4.1,9],suc:[4.6,8],sgr:[4.6,6],coc:[4.5,7],cln:[4.2,6],boi:[4.3,5],czr:[4.4,5],min:[4.2,3]},
     reviews: [
    {pid:'tag',user:'Karla M.',stars:5,text:'El aguachile está en su punto y pica rico. Pídelo con una Victoria Mega.',v:true,ts:-95},
    {pid:'tag',user:'Dany R.',stars:5,text:'La mejor tostada de la zona, el aguacate no escatima.',v:true,ts:-1440},

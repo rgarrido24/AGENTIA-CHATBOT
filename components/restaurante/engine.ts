@@ -467,7 +467,7 @@ function cobro(){
  h+='<div><div class="b small">Método</div><div class="chips">'+['Efectivo','Tarjeta','Transferencia'].map(x=>'<button class="chip" data-a="method" data-v="'+x+'" aria-pressed="'+(c.method===x)+'">'+x+'</button>').join('')+'</div></div>';
  if(c.method==='Efectivo')h+='<label class="f">Recibido<input type="number" inputmode="decimal" data-in="recv" value="'+esc(c.recv)+'" placeholder="0"></label><div class="b" id="cambio">'+cambioTxt(tot)+'</div>';
  else if(c.method==='Tarjeta')h+='<div class="small muted">Cobra en la terminal (Mercado Pago). Si el cliente ya dejó propina en la terminal, escríbela arriba en "monto exacto" para que el ticket y el corte cuadren.</div>';
- h+='<div><div class="b small">Dividir cuenta</div><div class="chips">'+[1,2,3,4,5,6].map(x=>'<button class="chip" data-a="split" data-v="'+x+'" aria-pressed="'+(c.split===x)+'">'+x+'</button>').join('')+'</div>'+(c.split>1?'<div class="small">Cada quien paga <b class="num">'+m(tot/c.split)+'</b></div>':'')+'</div>';
+ h+='<div><div class="b small">Dividir cuenta</div><div class="chips">'+[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(x=>'<button class="chip" data-a="split" data-v="'+x+'" aria-pressed="'+(c.split===x)+'">'+x+'</button>').join('')+'</div>'+(c.split>1?'<div class="small">Cada quien paga <b class="num">'+m(tot/c.split)+'</b></div>':'')+'</div>';
 
  h+='<div class="stack" style="gap:6px"><label class="f">WhatsApp del cliente (tarjeta de lealtad y ticket)<input type="tel" data-in="ctel" value="'+esc(c.tel)+'" placeholder="10 dígitos"></label>';
  const L=c.lc;
