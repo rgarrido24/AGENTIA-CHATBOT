@@ -782,7 +782,7 @@ function applyMenu(){
  const ids=new Set(MCFG.custom.map(c=>c.id));
  for(let i=MENU.length-1;i>=0;i--)if(MENU[i].custom&&!ids.has(MENU[i].id))MENU.splice(i,1);
  MCFG.custom.forEach(c=>{let q=PM(c.id);if(!q){q=P(Object.assign({custom:true},c));MENU.push(q)}else{const a=q.avail;Object.assign(q,c);q.avail=a}});
- Object.keys(MCFG.edits).forEach(id=>{const q=PM(id),e=MCFG.edits[id];if(!q||q.custom)return;['name','desc','cat','station','img','cost','tag'].forEach(k=>{if(e[k]===undefined)return;if(k==='img'&&q.img&&(!e.img||/^data:/.test(e.img)))return;q[k]=e[k]});if(e.price)e.price.forEach((x,i)=>{if(q.v[i]&&x>0)q.v[i].p=x});if(e.use)q.use=JSON.parse(JSON.stringify(e.use))});
+ Object.keys(MCFG.edits).forEach(id=>{const q=PM(id),e=MCFG.edits[id];if(!q||q.custom)return;['name','desc','cat','station','img','cost','tag'].forEach(k=>{if(e[k]===undefined)return;if(k==='img'&&q.img&&(!e.img||/^data:/.test(e.img)||(CFG.imgForzada||[]).indexOf(id)>=0))return;q[k]=e[k]});if(e.price)e.price.forEach((x,i)=>{if(q.v[i]&&x>0)q.v[i].p=x});if(e.use)q.use=JSON.parse(JSON.stringify(e.use))});
  if(S)MENU.forEach(q=>{if(S.soc.likes[q.id]==null)S.soc.likes[q.id]=0;if(!S.soc.rate[q.id])S.soc.rate[q.id]={n:0,sum:0}});
 }
 const IAPI=CFG.api+'/imagen';
