@@ -60,7 +60,7 @@ function iconos(cfg: RestauranteConfig) {
 export function swResponse(cfg: RestauranteConfig) {
   const r = cfg.ruta;
   const SW = `
-const V = '${cfg.slug}-v2';
+const V = '${cfg.slug}-v3';
 const SHELL = ['${r}', '${r}/equipo', '${cfg.marca.icono192}', '${cfg.marca.logo}'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(V).then((c) => c.addAll(SHELL).catch(() => {})).then(() => self.skipWaiting()));
@@ -101,7 +101,17 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-  if (url.pathname.startsWith('/_next/static/') || /\\.(woff2?|png|jpg|jpeg|webp|svg)$/.test(url.pathname)) {
+  if (/\\.(png|jpg|jpeg|webp|svg)$/.test(url.pathname)) {
+    // Imágenes del restaurante (logo, fotos): se muestran de la copia guardada y se refrescan en segundo plano.
+    e.respondWith(
+      caches.open(V).then((c) => c.match(req).then((m) => {
+        const red = fetch(req).then((r) => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => m);
+        return m || red;
+      }))
+    );
+    return;
+  }
+  if (url.pathname.startsWith('/_next/static/') || /\\.woff2?$/.test(url.pathname)) {
     e.respondWith(
       caches.match(req).then((m) => m || fetch(req).then((r) => { if (r.ok) { const cp = r.clone(); caches.open(V).then((c) => c.put(req, cp)); } return r; }))
     );
