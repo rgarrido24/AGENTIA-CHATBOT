@@ -354,7 +354,10 @@ function modalHtml(){
   h+='<div class="row between"><h2>Pasar a producción</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><p class="small">Se borran las ventas, reseñas, clientes y pedidos de ejemplo. Se conservan tu menú, tus fotos y tus precios. No se puede deshacer.</p><label class="f">Escribe EMPEZAR para confirmar<input type="text" data-in="ptxt" value="'+esc(md.txt||'')+'" autocomplete="off"></label><button class="btn pri" data-a="prodgo">Borrar ejemplos y empezar</button></div>';
  }
  if(md.type==='pin'){
-  h+='<div class="row between"><h2>Acceso de '+({caja:'Caja',dueno:'Dueño',mesero:'Mesero',cocina:'Cocina y barra'}[md.role]||'Equipo')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">Contraseña (números)<input type="password" inputmode="numeric" maxlength="8" autocomplete="off" data-in="pin" value="'+esc(md.pin)+'" placeholder="••••"></label><div class="xs muted">'+(PROD?'':'PIN de la demo: '+S.pins[md.role]+'. ')+'Cada perfil tiene el suyo, así nadie entra a la caja ni a las ganancias sin permiso.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
+  h+='<div class="row between"><h2>Acceso de '+({caja:'Caja',dueno:'Dueño',mesero:'Mesero',cocina:'Cocina y barra'}[md.role]||'Equipo')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">Contraseña<input type="password" maxlength="64" autocomplete="off" autocapitalize="none" spellcheck="false" data-in="pin" value="'+esc(md.pin)+'" placeholder="Tu contraseña"></label><div class="xs muted">'+(PROD?'':'PIN de la demo: '+S.pins[md.role]+'. ')+'Cada perfil tiene el suyo, así nadie entra a la caja ni a las ganancias sin permiso.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
+ }
+ if(md.type==='pin2'){
+  h+='<div class="row between"><h2>Verificación en 2 pasos</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><div class="small muted">Abre tu app de autenticación (Google Authenticator, Authy…) y escribe el código de 6 dígitos. Si perdiste el teléfono, usa uno de tus códigos de respaldo.</div><label class="f">Código<input type="text" inputmode="text" maxlength="12" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" data-in="code" value="'+esc(md.code||'')+'" placeholder="123456"></label><button class="btn pri" data-a="pin2ok">Verificar y entrar</button></div>';
  }
  if(md.type==='ticket'){
   const t=S.tickets.find(x=>x.id===md.id);
@@ -814,7 +817,7 @@ function snapNow(){
  const k=kvNow();Object.keys(k).forEach(x=>{kv[x]=JSON.stringify(k[x])});
  return{cols,kv};
 }
-function reseedKeep(){const k={role:S.role,verCli:S.verCli,auth:S.auth,dpin:S.dpin,me:S.me,mesaTok:S.mesaTok};if(S.modal&&S.modal.type==='pin')k.modal=S.modal;seed();Object.assign(S,k);if(QRMESA){S.cli.mesa=QRMESA;S.cli.mt=QRT}}
+function reseedKeep(){const k={role:S.role,verCli:S.verCli,auth:S.auth,dpin:S.dpin,me:S.me,mesaTok:S.mesaTok};if(S.modal&&(S.modal.type==='pin'||S.modal.type==='pin2'))k.modal=S.modal;seed();Object.assign(S,k);if(QRMESA){S.cli.mesa=QRMESA;S.cli.mt=QRT}}
 function softRender(){const a=root.ownerDocument.activeElement;if(a&&root.contains(a)&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){dirty=true;return}dirty=false;render()}
 function applyResp(r){
  if(!r||r.error)return;
@@ -862,27 +865,57 @@ async function resetServer(accion){
  }catch(e){toast('Sin conexión')}
  render();
 }
+function entrarEquipo(md,token,j,pin){
+ TOKS[md.role]=token;saveToks();S.auth[md.role]=true;
+ if(md.role==='dueno'){S.dpin=pin||S.dpin||'ok';S.pinDef=!!(j&&(j.defecto||j.debil))}
+ S.role=md.target||md.role;if(STAFF&&S.role!=='cliente')lsSet(LK+'rol',S.role);S.modal=null;loadMesaTok()}
 async function verifyPin(){
  const md=S.modal;
  try{
   const r=await fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'pin',rol:md.role,pin:md.pin})});
   const j=await r.json().catch(()=>({}));
-  if(j.ok&&j.token){TOKS[md.role]=j.token;saveToks();S.auth[md.role]=true;if(md.role==='dueno'){S.dpin=md.pin;S.pinDef=!!j.defecto}S.role=md.target||md.role;if(STAFF&&S.role!=='cliente')lsSet(LK+'rol',S.role);S.modal=null;loadMesaTok()}else toast(r.status===429?(j.error||'Demasiados intentos'):'PIN incorrecto');
+  if(j.ok&&j.paso2){S.modal={type:'pin2',role:md.role,target:md.target,t:j.t,code:'',defecto:j.defecto,debil:j.debil,pin:md.pin};render();return}
+  if(j.ok&&j.token)entrarEquipo(md,j.token,j,md.pin);else toast(r.status===429?(j.error||'Demasiados intentos'):'Contraseña incorrecta');
  }catch(e){
-  toast('Sin conexión para validar el PIN');
+  toast('Sin conexión para validar la contraseña');
  }
- render();
-}
+ render()}
+async function verifyPin2(){
+ const md=S.modal;
+ try{
+  const r=await fetch(SAPI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'pin2',t:md.t,code:md.code})});
+  const j=await r.json().catch(()=>({}));
+  if(j.ok&&j.token){entrarEquipo(md,j.token,md,md.pin);if(j.respaldo!==undefined&&j.respaldo<=2)toast('Te quedan pocos códigos de respaldo ('+j.respaldo+'). Genera unos nuevos desde Ajustes → Seguridad')}
+  else if(j.expirado){S.modal={type:'pin',role:md.role,target:md.target,pin:''};toast('Pasó mucho tiempo. Escribe tu contraseña otra vez')}
+  else toast(r.status===429?(j.error||'Demasiados intentos'):'Código incorrecto');
+ }catch(e){toast('Sin conexión para verificar el código')}
+ render()}
 function dPwCfg(){
  const pw=S.pw||(S.pw={dueno:'',caja:'',mesero:'',cocina:''});
- const f=(k,l)=>'<label class="f">'+l+'<input type="password" inputmode="numeric" maxlength="8" autocomplete="off" data-in="pw_'+k+'" value="'+esc(pw[k])+'" placeholder="Nueva (4 a 8 números)"></label>';
- return '<div class="card stack"><h3>Contraseñas del equipo</h3><div class="small muted">Cada perfil entra con su contraseña de 4 números. Escribe solo las que quieras cambiar; las demás se quedan igual.</div><div class="grid2" style="gap:8px">'+f('mesero','Mesero')+f('cocina','Cocina y barra')+f('caja','Caja')+f('dueno','Dueño (tú)')+'</div><button class="btn pri" data-a="savepw">Guardar contraseñas</button></div>'}
+ const f=(k,l,ph)=>'<label class="f">'+l+'<input type="password" maxlength="64" autocomplete="new-password" autocapitalize="none" spellcheck="false" data-in="pw_'+k+'" value="'+esc(pw[k])+'" placeholder="'+ph+'"></label>';
+ return '<div class="card stack"><h3>Contraseñas del equipo</h3><div class="small muted">Cada perfil entra con su contraseña. Deben llevar <b>letras y números</b>: mínimo 6 caracteres para el equipo y <b>10 para la del dueño</b>. Escribe solo las que quieras cambiar; las demás se quedan igual.</div><div class="grid2" style="gap:8px">'+f('mesero','Mesero','Nueva (mín. 6)')+f('cocina','Cocina y barra','Nueva (mín. 6)')+f('caja','Caja','Nueva (mín. 6)')+f('dueno','Dueño (tú)','Nueva (mín. 10)')+'</div><button class="btn pri" data-a="savepw">Guardar contraseñas</button></div>'}
+function segCall(b){return fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'dospasos',...b})}).then(r=>r.json().then(j=>{if(!r.ok||!j.ok){toast(j.error||'No se pudo');return null}return j})).catch(()=>{toast('Sin conexión, intenta de nuevo');return null})}
+function dSeg(){
+ const g=S.seg||(S.seg={});
+ if(!g.loaded&&!g.loading&&S.auth.dueno){g.loading=true;segCall({op:'estado'}).then(j=>{g.loading=false;if(j){g.loaded=true;g.on=j.on;g.respaldo=j.respaldo;g.forzadoOff=j.forzadoOff}softRender()})}
+ let h='<div class="card stack"><h3>Seguridad del dueño · verificación en 2 pasos</h3>';
+ if(g.codes){
+  h+='<div class="small"><b style="color:var(--good)">Activada.</b> Guarda estos códigos de respaldo en un lugar seguro (foto en una carpeta privada o papel). Cada uno sirve <b>una sola vez</b> si pierdes el teléfono. No se vuelven a mostrar.</div><div class="grid2" style="gap:6px">'+g.codes.map(c=>'<code class="card" style="text-align:center;padding:8px;font-size:15px;letter-spacing:.06em">'+esc(c)+'</code>').join('')+'</div><button class="btn pri" data-a="segdone">Ya los guardé</button>';
+ }else if(g.setup){
+  h+='<div class="small muted">1) Abre Google Authenticator (o Authy) → agregar cuenta → escanear código QR. 2) Escribe el código de 6 dígitos que te muestra.</div><div style="display:grid;place-items:center">'+qrImg(g.setup.uri,190)+'</div><div class="xs muted" style="text-align:center">¿No puedes escanear? Clave manual: <b style="letter-spacing:.08em">'+esc(g.setup.secret)+'</b></div><label class="f">Código de 6 dígitos<input type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" data-in="segcode" value="'+esc(g.setup.code||'')+'" placeholder="123456"></label><div class="row" style="gap:8px"><button class="btn pri" data-a="segact">Confirmar y activar</button><button class="btn ghost" data-a="segcancel">Cancelar</button></div>';
+ }else if(g.on){
+  h+='<div class="row between"><span class="status s-good">Activada</span><span class="xs muted">'+(g.respaldo||0)+' códigos de respaldo</span></div><div class="small muted">Al entrar como dueño se pide la contraseña y además el código de tu app.</div>';
+  h+=g.off?'<label class="f">Código actual (de tu app o de respaldo)<input type="text" maxlength="12" autocomplete="off" autocapitalize="characters" data-in="segoffcode" value="'+esc(g.offCode||'')+'"></label><div class="row" style="gap:8px"><button class="btn" data-a="segoff">Desactivar</button><button class="btn ghost" data-a="segoffno">Mejor no</button></div>':'<button class="btn ghost" data-a="segoffask">Desactivar…</button>';
+ }else{
+  h+='<div class="small muted">Con esto, aunque alguien adivine o vea tu contraseña, no puede entrar a tus ventas sin tu teléfono. Recomendado para el dueño.</div>'+(g.forzadoOff?'<div class="banner warn xs">El servidor tiene el apagado de emergencia activo.</div>':'')+'<button class="btn pri" data-a="segini"'+(g.loaded?'':' disabled')+'>Activar verificación en 2 pasos</button>';
+ }
+ return h+'</div>'}
 function dExtrasCfg(){
  let h='<div class="card stack"><h3>Extras para el cliente</h3><div class="small muted">Tú decides qué extras ofreces. Apagados no aparecen en el menú. El precio es por pieza o porción; si el pedido es una orden de 3, se cobra por las 3.</div>';
  EXT.forEach(e=>{const on=S.settings[e.k]>=0;h+='<div class="row between" style="gap:8px"><div class="grow"><b class="small">'+e.g+'</b><div class="xs muted">'+(e.donde||e.cats.join(', '))+'</div></div>'+(on&&!e.salsa?'<label class="f" style="width:96px;margin:0"><input type="number" min="0" max="500" data-in="xp_'+e.k+'" value="'+S.settings[e.k]+'" aria-label="Precio de '+e.g+'"></label>':'')+'<button class="btn sm'+(on?' pri':'')+'" data-a="xtog" data-k="'+e.k+'" aria-pressed="'+on+'">'+(on?'Ofrecido':'No ofrecido')+'</button></div>'});
  return h+'</div>'}
 function dAjustes(){
- let h=dEstiloCfg()+dPedidosCfg()+dExtrasCfg()+dQuickCfg()+dPwCfg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
+ let h=dEstiloCfg()+dPedidosCfg()+dExtrasCfg()+dQuickCfg()+dPwCfg()+dSeg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
  h+='<div class="card stack"><h3>Antes de abrir al público</h3><ul class="small" style="margin:0;padding-left:18px"><li>Carga tus fotos y precios en "Menú y márgenes".</li><li>Captura tus costos reales de insumos en "Inventario".</li><li>Haz un conteo físico para dejar el inventario inicial correcto.</li>'+(S.pinDef?'<li><b style="color:var(--bad)">Cambia las contraseñas:</b> todavía hay perfiles con la contraseña inicial. Cámbialas en "Contraseñas del equipo".</li>':'')+'</ul></div>';
  return h}
 
@@ -1082,7 +1115,7 @@ function setupInput(el){
  else if(k==='sal_desc'){salSet(el.getAttribute('data-s'),'desc',v.slice(0,80))}else if(k==='sal_extra'){salSet(el.getAttribute('data-s'),'extra',Math.max(0,Math.min(100,Number(v)||0)))}
  else if(k.startsWith('xp_')){const e=EXT.find(x=>x.k===k.slice(3));if(e)S.settings[e.k]=Math.max(0,Math.min(500,Number(v)||0))}else if(k==='cfg_metaPuntos'){S.settings.metaPuntos=Math.max(0,Math.min(100000,Number(v)||0))}else if(k==='cfg_premioTxt'){S.settings.premioTxt=v.slice(0,60)}
  else if(k==='name'){S.me.name=v;saveMe()}else if(k==='tel'){const t=v.replace(/\D/g,'').slice(0,10);if(t!==S.me.tel){S.me.tel=t;saveMe();S.loy.data=null;if(t.length===10&&S.cli.tab==='puntos')loadMe()}}
- else if(k.indexOf('pw_')===0){(S.pw||(S.pw={}))[k.slice(3)]=v.replace(/\D/g,'').slice(0,4)}
+ else if(k.indexOf('pw_')===0){(S.pw||(S.pw={}))[k.slice(3)]=v.slice(0,64)}else if(k==='code'){S.modal.code=v}else if(k==='segcode'){if(S.seg.setup)S.seg.setup.code=v}else if(k==='segoffcode'){S.seg.offCode=v}
  else if(k==='addr')S.cli.addr=v;else if(k==='mtel'){S.mw.tel=v.replace(/\D/g,'').slice(0,10);if(S.mw.tel)S.mw.guest=false}else if(k==='mnote'){S.modal.note=v}
  else if(k==='rtext')S.modal.text=v;
  else if(k==='tipx'){S.caja.tipx=v;const e=$('#ctot');if(e)e.textContent=m(cobroTot());const e2=$('#cambio');if(e2)e2.textContent=cambioTxt(cobroTot())}
@@ -1197,6 +1230,14 @@ root.addEventListener('click',e=>{
   case'mtipo':S.caja.mt=g('v');break;
   case'movadd':{const mo=S.caja,mt=parseFloat(mo.mm);if(!(mt>0)||!mo.mo.trim()){toast('Escribe monto y motivo');return}mo.movs.push({tipo:mo.mt,monto:mt,motivo:mo.mo.trim(),ts:Date.now(),por:'Caja'});mo.mm='';mo.mo='';toast('Movimiento registrado');break}
   case'pinok':verifyPin();return;
+  case'pin2ok':verifyPin2();return;
+  case'segini':segCall({op:'inicio'}).then(j=>{if(j&&j.ok){S.seg.setup={secret:j.secret,uri:j.uri,code:''};render()}});return;
+  case'segact':segCall({op:'activar',code:S.seg.setup&&S.seg.setup.code}).then(j=>{if(j&&j.ok){S.seg.on=true;S.seg.respaldo=j.codes.length;S.seg.codes=j.codes;S.seg.setup=null;render()}});return;
+  case'segcancel':S.seg.setup=null;break;
+  case'segoff':segCall({op:'apagar',code:S.seg.offCode}).then(j=>{if(j&&j.ok){S.seg={loaded:true,on:false,respaldo:0};toast('Verificación en 2 pasos desactivada');render()}});return;
+  case'segdone':S.seg.codes=null;break;
+  case'segoffask':S.seg.off=true;S.seg.offCode='';break;
+  case'segoffno':S.seg.off=false;break;
   case'install':doInstall();return;
   case'pushtoggle':pushToggle();return;
   case'nvid':if(S.me.tel.length===10){NV.guest=false;lsSet(LK+'guest','0');saveMe();S.loy.data=null;loadMe();toast('Listo')}else toast('Escribe tus 10 dígitos o sigue como invitado');break
@@ -1211,7 +1252,7 @@ root.addEventListener('click',e=>{
   case'rep':nvRepeat();break;
   case'nvfav':NV.fav=!NV.fav;break;
   case'noop':return;
-  case'savepw':{const n={};Object.entries(S.pw||{}).forEach(([r,v])=>{if(v)n[r]=v});if(Object.keys(n).some(r=>n[r].length<4||n[r].length>8)){toast('Cada contraseña debe ser de 4 a 8 números');return}if(!Object.keys(n).length){toast('Escribe al menos una contraseña nueva');return}
+  case'savepw':{const n={};Object.entries(S.pw||{}).forEach(([r,v])=>{if(v)n[r]=v});if(Object.keys(n).some(r=>n[r].length<(r==='dueno'?10:6))){toast('Mínimo 6 caracteres (10 en la del dueño), con letras y números');return}if(!Object.keys(n).length){toast('Escribe al menos una contraseña nueva');return}
    fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'setpin',nuevos:n})}).then(r=>r.json().then(j=>({r,j}))).then(({r,j})=>{if(r.ok&&j.ok){if(n.dueno)S.dpin=n.dueno;S.pinDef=!!j.defecto;S.pw={dueno:'',caja:'',mesero:'',cocina:''};toast('Contraseñas guardadas');}else toast(j.error||'No se pudo guardar');render()}).catch(()=>{toast('Sin conexión, intenta de nuevo');render()});return}
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
@@ -1245,6 +1286,7 @@ function kdsPedal(){
  if(!cand)return false;
  cand.lines.forEach(l=>{if(l.station===S.role&&l.status==='preparando')l.status='listo'});render();return true;
 }
+root.addEventListener('keydown',e=>{if(e.key!=='Enter')return;const el=e.target&&e.target.closest&&e.target.closest('[data-in=pin],[data-in=code]');if(el&&S.modal){e.preventDefault();if(S.modal.type==='pin')verifyPin();else if(S.modal.type==='pin2')verifyPin2()}},{signal:ctl.signal});
 (root.ownerDocument||document).addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter'||e.key==='PageDown')&&kdsPedal()){e.preventDefault()}},{signal:ctl.signal});
 if(NUEVO){root.addEventListener('pointermove',e=>{const t=e.target&&e.target.closest?e.target.closest('[data-tilt]'):null;if(t){const r=t.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;t.style.setProperty('--rx',(-y*14).toFixed(1)+'deg');t.style.setProperty('--ry',(x*14).toFixed(1)+'deg')}const sp=root.querySelector('[data-par]');if(sp){const w=root.ownerDocument.defaultView;sp.style.setProperty('--px',((e.clientX/w.innerWidth-.5)*2).toFixed(2));sp.style.setProperty('--py',((e.clientY/w.innerHeight-.5)*2).toFixed(2))}},{signal:ctl.signal,passive:true});root.addEventListener('pointerleave',()=>root.querySelectorAll('[data-tilt]').forEach(t=>{t.style.setProperty('--rx','0deg');t.style.setProperty('--ry','0deg')}),{signal:ctl.signal})}
 const iv=setInterval(()=>{if(!S.kds.screen&&(S.role==='cocina'||S.role==='barra'))render()},20000);

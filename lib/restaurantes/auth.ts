@@ -48,25 +48,38 @@ export function crearAuth(cfg: ServidorConfig) {
   /** Token de mesa para el QR: no se puede adivinar sin el secreto. */
   const tokenMesa = (k: string) => mac('mesa:' + k).slice(0, 10);
 
+  /** Boleto de 5 minutos entre la contraseña correcta y el código de 2 pasos. */
+  function firmarBoleto(rol: Perfil): string {
+    const exp = Date.now() + 5 * 60 * 1000;
+    return `2fa.${rol}.${exp}.${mac(`2fa.${rol}.${exp}`)}`;
+  }
+  function rolDeBoleto(t: unknown): Perfil | null {
+    if (typeof t !== 'string') return null;
+    const [k, rol, exp, firma] = t.split('.');
+    if (k !== '2fa' || !PERFILES.includes(rol) || !firma || !(Number(exp) > Date.now())) return null;
+    const a = Buffer.from(firma), b = Buffer.from(mac(`2fa.${rol}.${exp}`));
+    return a.length === b.length && timingSafeEqual(a, b) ? (rol as Perfil) : null;
+  }
+
   async function bloqueado(ip: string): Promise<boolean> {
     const db = await getMongoDb();
     const d = await db.collection<any>(colIntentos(cfg)).findOne({ _id: ip });
     return !!d && d.hasta > Date.now();
   }
-  async function registrarFallo(ip: string) {
+  async function registrarFallo(ip: string, max = MAX_FALLOS) {
     const db = await getMongoDb();
     const c = db.collection<any>(colIntentos(cfg));
     const d = await c.findOne({ _id: ip });
     const reciente = d && Date.now() - d.ts < BLOQUEO_MS;
     const n = (reciente ? d.n : 0) + 1;
-    await c.updateOne({ _id: ip }, { $set: { n, ts: Date.now(), hasta: n >= MAX_FALLOS ? Date.now() + BLOQUEO_MS : 0 } }, { upsert: true });
+    await c.updateOne({ _id: ip }, { $set: { n, ts: Date.now(), hasta: n >= max ? Date.now() + BLOQUEO_MS : 0 } }, { upsert: true });
   }
   async function limpiarFallos(ip: string) {
     const db = await getMongoDb();
     await db.collection<any>(colIntentos(cfg)).deleteOne({ _id: ip });
   }
 
-  return { firmarToken, perfilDeToken, perfilDeRequest, tokenMesa, bloqueado, registrarFallo, limpiarFallos };
+  return { firmarBoleto, rolDeBoleto, firmarToken, perfilDeToken, perfilDeRequest, tokenMesa, bloqueado, registrarFallo, limpiarFallos };
 }
 
 export type Auth = ReturnType<typeof crearAuth>;

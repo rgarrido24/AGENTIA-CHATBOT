@@ -44,8 +44,8 @@ const COLL = colEstado(cfg);
 const pins = crearPins(cfg);
 const push = crearPush(cfg);
 const auth = crearAuth(cfg);
-const { pinOk, pinPorDefecto, cambiarPin, pinDebil } = pins;
-const { firmarToken, perfilDeRequest, tokenMesa, bloqueado, registrarFallo, limpiarFallos } = auth;
+const { pinOk, pinPorDefecto, cambiarPin, claveDebil, debilLogin } = pins;
+const { firmarBoleto, rolDeBoleto, firmarToken, perfilDeRequest, tokenMesa, bloqueado, registrarFallo, limpiarFallos } = auth;
 const PUB_SETTINGS = new RegExp('^settings\\|(' + AJUSTES_PUBLICOS_BASE.concat(cfg.ajustesPublicos || []).join('|') + ')$');
 const pubKv = (k: string) => k === 'menu' || k.startsWith('avail|') || k.startsWith('likes|') || k.startsWith('rate|') || PUB_SETTINGS.test(k);
 
@@ -177,15 +177,58 @@ async function POST(req: NextRequest) {
 
     if (body.accion === 'pin') {
       const ip = ipDe(req);
-      if (await bloqueado(ip)) return NextResponse.json({ error: 'Demasiados intentos. Espera 15 minutos.' }, { status: 429 });
       const rol: Rol = (ROLES_PIN as string[]).includes(body.rol) ? body.rol : 'dueno';
+      const llaveRol = `rol:${rol}`;
+      if ((await bloqueado(ip)) || (await bloqueado(llaveRol))) return NextResponse.json({ error: 'Demasiados intentos. Espera 15 minutos.' }, { status: 429 });
       const ok = await pinOk(rol, body.pin);
       if (!ok) {
         await registrarFallo(ip);
+        await registrarFallo(llaveRol, 20); // freno global por perfil, aunque el atacante cambie de IP
         return NextResponse.json({ ok: false });
       }
       await limpiarFallos(ip);
-      return NextResponse.json({ ok: true, defecto: await pinPorDefecto(rol), token: firmarToken(rol) });
+      const defecto = await pinPorDefecto(rol);
+      const debil = debilLogin(rol, String(body.pin));
+      if (rol === 'dueno' && (await pins.dosActivo())) return NextResponse.json({ ok: true, paso2: true, t: firmarBoleto('dueno'), defecto, debil });
+      return NextResponse.json({ ok: true, defecto, debil, token: firmarToken(rol) });
+    }
+
+    if (body.accion === 'pin2') {
+      const ip = ipDe(req);
+      const llaveRol = 'rol:dueno-2fa';
+      if ((await bloqueado(ip)) || (await bloqueado(llaveRol))) return NextResponse.json({ error: 'Demasiados intentos. Espera 15 minutos.' }, { status: 429 });
+      const rol = rolDeBoleto(body.t);
+      if (rol !== 'dueno') return NextResponse.json({ ok: false, expirado: true });
+      if (!(await pins.dosVerificar(body.code))) {
+        await registrarFallo(ip);
+        await registrarFallo(llaveRol, 20);
+        return NextResponse.json({ ok: false });
+      }
+      await limpiarFallos(ip);
+      return NextResponse.json({ ok: true, token: firmarToken('dueno'), respaldo: (await pins.dosEstado()).respaldo });
+    }
+
+    if (body.accion === 'dospasos') {
+      if (!esDueno) return NextResponse.json({ error: 'Solo el dueño puede cambiar la seguridad' }, { status: 403 });
+      const op = String(body.op || '');
+      if (op === 'estado') return NextResponse.json({ ok: true, ...(await pins.dosEstado()) });
+      if (op === 'inicio') {
+        if ((await pins.dosEstado()).on) return NextResponse.json({ error: 'Ya está activada. Apágala primero si quieres cambiar de teléfono' }, { status: 400 });
+        return NextResponse.json({ ok: true, ...(await pins.dosIniciar()) });
+      }
+      const ip = ipDe(req);
+      if (await bloqueado(ip)) return NextResponse.json({ error: 'Demasiados intentos. Espera 15 minutos.' }, { status: 429 });
+      if (op === 'activar') {
+        const codes = await pins.dosActivar(body.code);
+        if (!codes) { await registrarFallo(ip); return NextResponse.json({ error: 'Ese código no coincide. Revisa que la hora del celular sea automática y vuelve a intentar' }, { status: 400 }); }
+        return NextResponse.json({ ok: true, codes });
+      }
+      if (op === 'apagar') {
+        if (!(await pins.dosVerificar(body.code))) { await registrarFallo(ip); return NextResponse.json({ error: 'Código incorrecto' }, { status: 400 }); }
+        await pins.dosApagar();
+        return NextResponse.json({ ok: true });
+      }
+      return NextResponse.json({ error: 'Operación no válida' }, { status: 400 });
     }
 
     if (body.accion === 'pushkey' || body.accion === 'pushsub' || body.accion === 'pushoff') {
@@ -216,14 +259,15 @@ async function POST(req: NextRequest) {
       for (const r of ROLES_PIN) {
         const v = nuevos[r];
         if (v === undefined || v === '') continue;
-        if (typeof v !== 'string' || !/^\d{4,8}$/.test(v)) return NextResponse.json({ error: 'Cada contraseña debe ser de 4 a 8 números' }, { status: 400 });
-        if (pinDebil(v)) return NextResponse.json({ error: 'Esa contraseña es muy fácil de adivinar (repetidos, secuencias o la inicial). Elige otra' }, { status: 400 });
+        if (typeof v !== 'string') return NextResponse.json({ error: 'Contraseña no válida' }, { status: 400 });
+        const motivo = claveDebil(r, v);
+        if (motivo) return NextResponse.json({ error: `${r === 'dueno' ? 'Dueño' : r === 'caja' ? 'Caja' : r === 'mesero' ? 'Mesero' : 'Cocina'}: ${motivo}` }, { status: 400 });
       }
       const nv = ROLES_PIN.map((r) => nuevos[r]).filter((x) => typeof x === 'string' && x);
       if (new Set(nv).size !== nv.length) return NextResponse.json({ error: 'Cada perfil debe tener una contraseña distinta' }, { status: 400 });
       for (const r of ROLES_PIN) {
         const v = nuevos[r];
-        if (typeof v === 'string' && /^\d{4,8}$/.test(v)) await cambiarPin(r, v);
+        if (typeof v === 'string' && v) await cambiarPin(r, v);
       }
       const defecto = await Promise.all(ROLES_PIN.map((r) => pinPorDefecto(r)));
       return NextResponse.json({ ok: true, defecto: defecto.some(Boolean) });
