@@ -322,6 +322,8 @@ async function POST(req: NextRequest) {
               const limpio = pedidoPublico(d, cid as string, doc);
               if (!limpio) { rech.push(k); continue; }
               d = limpio;
+              // Pedido de mesa del cliente: siempre espera al mesero (no llega a cocina hasta que lo apruebe)
+              if (!cur && cfg.aprobarSiempre && d.canal === 'mesa') d = { ...d, hold: true, aprobar: true, porConfirmar: true };
               // descuento de insumos del pedido liberado (una sola vez), calculado por el cliente con tope
               if (!d.hold && d.dedo && !cur?.d?.dedap) {
                 for (const [ins, q] of Object.entries<number>(d.dedo)) {

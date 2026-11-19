@@ -44,6 +44,8 @@ export type ServidorConfig = {
   tenant: TenantSeed;
   /** Ajustes públicos extra que cualquier cliente puede leer (además de los base). */
   ajustesPublicos?: string[];
+  /** true = todo pedido de mesa hecho por el cliente espera al mesero; nunca llega directo a cocina. */
+  aprobarSiempre?: boolean;
 };
 
 export const SERVIDOR: Record<string, ServidorConfig> = {
@@ -56,6 +58,7 @@ export const SERVIDOR: Record<string, ServidorConfig> = {
     salPin: 'tostichelas:',
     pinesIniciales: { dueno: '2222', caja: '1111', mesero: '3333', cocina: '4444' },
     envLegacyDueno: ['TOSTICHELAS_DUENO_PIN'],
+    aprobarSiempre: true,
     produccionPorDefecto: false,
     tenant: {
       key: 'tostichelas',

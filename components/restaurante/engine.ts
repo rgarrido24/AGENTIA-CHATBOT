@@ -422,16 +422,17 @@ function mDetail(k){
  if(!s.os.length&&!pend.length)h+='<div class="small muted">Mesa libre. Agrega un pedido o espera a que el cliente escanee el QR.</div>';
  pend.concat(s.os).forEach(o=>{h+='<div class="stack" style="gap:6px"><div class="row between"><span class="b small">Pedido #'+o.id+(o.nombre?' · '+esc(o.nombre):'')+' · '+(o.src==='cliente'?'por QR del cliente':'tomado por mesero')+'</span><span class="xs muted">hace '+ago(o.created)+'</span></div>';
   if(o.aprobar)h+='<div class="banner bad"><b>Pedido por aprobar.</b> El cliente lo pidió desde su celular. Revisa que sea real y mándalo a cocina.<div class="row" style="margin-top:6px"><button class="btn sm pri" data-a="aprob" data-o="'+o.id+'">Aprobar y mandar a cocina</button><button class="btn sm" data-a="rechaz" data-o="'+o.id+'">Rechazar</button></div></div>';else if(o.porConfirmar)h+='<div class="banner bad"><b>Confirma que hay gente en la mesa.</b> Si no hay nadie, anula el pedido y regresa el inventario.<div class="row" style="margin-top:6px"><button class="btn sm pri" data-a="conf" data-o="'+o.id+'">Sí, hay clientes</button><button class="btn sm" data-a="anular" data-o="'+o.id+'">Anular pedido</button></div></div>';
-  o.lines.forEach(l=>{h+='<div class="row between" style="align-items:flex-start"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div>'+stPill(l.status)+'</div>'});
+  o.lines.forEach((l,li)=>{h+='<div class="row between" style="align-items:flex-start"><div class="small grow">'+l.qty+' × '+lineHtml(l)+(l.extra?' <span class="xs muted">(agregado por el mesero)</span>':'')+'</div>'+(o.aprobar?'<span class="row" style="gap:4px"><button class="btn ghost sm" data-a="lqty" data-o="'+o.id+'" data-i="'+li+'" data-d="-1" aria-label="Quitar uno">−</button><button class="btn ghost sm" data-a="lqty" data-o="'+o.id+'" data-i="'+li+'" data-d="1" aria-label="Agregar uno">+</button><button class="btn ghost sm" data-a="lrm" data-o="'+o.id+'" data-i="'+li+'">Quitar</button></span>':stPill(l.status))+'</div>'});
+  if(o.aprobar)h+='<div class="row between"><span class="small b">Total '+m(orderSub(o))+'</span><button class="btn sm" data-a="oadd" data-o="'+o.id+'">Agregar o sugerir algo</button></div>';
   h+='</div><hr>'});
  {const rl=readyLines(k);if(rl.length)h+='<button class="btn pri" data-a="servall" data-k="'+k+'">Ya lo entregué ('+rl.length+')</button>'}
  h+='<div class="row"><button class="btn pri sm" data-a="madding" data-k="'+k+'">Agregar pedido</button>'+(s.os.length?'<button class="btn sm" data-a="mcuenta" data-k="'+k+'">'+(S.cuenta[k]?'Cuenta ya en caja':'Pasar cuenta a caja')+'</button>':'')+'</div></div>';
  return h}
 function mAdd(){
- const w=S.mw;let h='<div class="stack" style="margin-top:12px"><div class="row between"><h2>Pedido para '+mLabel(w.sel)+'</h2><button class="btn ghost sm" data-a="mback">Volver</button></div>';
- {const nm=nomsMesa(w.sel);(w.extra||[]).forEach(x=>{if(nm.indexOf(x)<0)nm.push(x)});h+='<div class="card stack" style="gap:8px"><h3>¿Para quién es?</h3><div class="chips"><button class="chip" data-a="mnom" data-v="" aria-pressed="'+(!w.nombre)+'">Toda la mesa</button>'+nm.map(x=>'<button class="chip" data-a="mnom" data-v="'+esc(x)+'" aria-pressed="'+(w.nombre===x)+'">'+esc(x)+'</button>').join('')+'</div><div class="row" style="gap:8px"><input type="text" maxlength="20" data-in="mnomin" value="'+esc(w.nin||'')+'" placeholder="Nombre (ej. Juan)"><button class="btn sm pri" data-a="mnomadd">+ Agregar</button></div><div class="xs muted">Cada nombre lleva su propia cuenta dentro de la mesa. En caja se cobra por persona o la mesa completa.</div></div>'}
+ const w=S.mw;let h='<div class="stack" style="margin-top:12px"><div class="row between"><h2>'+(w.addTo?'Agregar al pedido #'+w.addTo+' · ':'Pedido para ')+mLabel(w.sel)+'</h2><button class="btn ghost sm" data-a="mback">Volver</button></div>';
+ if(!w.addTo){const nm=nomsMesa(w.sel);(w.extra||[]).forEach(x=>{if(nm.indexOf(x)<0)nm.push(x)});h+='<div class="card stack" style="gap:8px"><h3>¿Para quién es?</h3><div class="chips"><button class="chip" data-a="mnom" data-v="" aria-pressed="'+(!w.nombre)+'">Toda la mesa</button>'+nm.map(x=>'<button class="chip" data-a="mnom" data-v="'+esc(x)+'" aria-pressed="'+(w.nombre===x)+'">'+esc(x)+'</button>').join('')+'</div><div class="row" style="gap:8px"><input type="text" maxlength="20" data-in="mnomin" value="'+esc(w.nin||'')+'" placeholder="Nombre (ej. Juan)"><button class="btn sm pri" data-a="mnomadd">+ Agregar</button></div><div class="xs muted">Cada nombre lleva su propia cuenta dentro de la mesa. En caja se cobra por persona o la mesa completa.</div></div>'}
  CATS.forEach(c=>{h+='<div class="card stack" style="gap:6px"><b>'+c+'</b>'+MENU.filter(p=>p.cat===c).map(p=>'<div class="row between"><div class="grow"><span class="b small">'+esc(p.name)+'</span> <span class="xs muted">'+fromPrice(p)+'</span></div>'+(soldOut(p)?'<span class="status s-bad">Agotado</span>':'<button class="btn sm" data-a="mpick" data-p="'+p.id+'">+</button>')+'</div>').join('')+'</div>'});
- h+='<div class="card stack"><h3>Cliente de la mesa</h3><div class="row" style="gap:8px"><input type="tel" inputmode="numeric" data-in="mtel" value="'+esc(w.tel)+'" placeholder="WhatsApp del cliente (opcional)"><button class="btn sm'+(w.guest?' pri':'')+'" data-a="mguest">Invitado</button></div><div class="xs muted">Con su número verá lo que ha pedido y junta saldo. Si no quiere darlo, deja Invitado.</div></div><div class="card stack"><h3>Por enviar'+(w.nombre?' · '+esc(w.nombre):'')+'</h3>'+(w.cart.length?w.cart.map((l,i)=>'<div class="row between"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div><b class="num small">'+m(lineTot(l))+'</b><button class="btn ghost sm" data-a="mrm" data-i="'+i+'">Quitar</button></div>').join(''):'<div class="small muted">Elige productos arriba.</div>')+'<button class="btn pri" data-a="msend"'+(w.cart.length?'':' disabled')+'>Enviar a cocina y barra</button></div></div>';
+ h+='<div class="card stack"><h3>Cliente de la mesa</h3><div class="row" style="gap:8px"><input type="tel" inputmode="numeric" data-in="mtel" value="'+esc(w.tel)+'" placeholder="WhatsApp del cliente (opcional)"><button class="btn sm'+(w.guest?' pri':'')+'" data-a="mguest">Invitado</button></div><div class="xs muted">Con su número verá lo que ha pedido y junta saldo. Si no quiere darlo, deja Invitado.</div></div><div class="card stack"><h3>Por enviar'+(w.nombre?' · '+esc(w.nombre):'')+'</h3>'+(w.cart.length?w.cart.map((l,i)=>'<div class="row between"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div><b class="num small">'+m(lineTot(l))+'</b><button class="btn ghost sm" data-a="mrm" data-i="'+i+'">Quitar</button></div>').join(''):'<div class="small muted">Elige productos arriba.</div>')+'<button class="btn pri" data-a="msend"'+(w.cart.length?'':' disabled')+'>'+(w.addTo?'Agregar al pedido':'Enviar a cocina y barra')+'</button></div></div>';
  return h}
 
 /* ---------- cocina y barra ---------- */
@@ -1134,8 +1135,8 @@ function sendClient0(){
  const cliente={name:S.me.name.trim(),tel:S.me.tel.trim()};
  const envio=eff==='entrega'?S.settings.envio:0;
  if(eff==='mesa'){
-  const need=mesaTotal(c.mesa)+sumLines(lines)>S.settings.cap;
-  const ap=!!S.settings.aprobar&&!need;
+  const need=!CFG.aprobarSiempre&&mesaTotal(c.mesa)+sumLines(lines)>S.settings.cap;
+  const ap=(!!S.settings.aprobar||!!CFG.aprobarSiempre)&&!need;
   const o=newOrder({mesa:c.mesa,canal:'mesa',lines,cliente,src:'cliente',hold:need||ap,aprobar:ap,porConfirmar:true});
   c.cart=[];
   if(need){S.modal={type:'pay',oid:o.id,total:orderSub(o),by:'order'}}else if(ap){toast('Tu pedido se mandó al mesero para aprobarlo')}else{beep();toast('Pedido enviado a cocina y barra')}
@@ -1241,15 +1242,19 @@ root.addEventListener('click',e=>{
   case'payok':{const md=S.modal;if(md.by==='order'){payOrderOnline(S.orders.find(x=>x.id===md.oid))}else{S.modal=null;payMesaOnline()}break}
   /* mesero */
   case'msel':S.mw.sel=S.mw.sel===g('k')?null:g('k');break;
-  case'madding':S.mw.adding=true;S.mw.sel=g('k');S.mw.cart=[];S.mw.nombre='';S.mw.extra=[];S.mw.nin='';break;
+  case'oadd':S.mw.adding=true;S.mw.addTo=g('o');S.mw.sel=S.orders.find(x=>String(x.id)===g('o')).mesa;S.mw.cart=[];break;
+  case'lqty':{const oo=S.orders.find(x=>String(x.id)===g('o'));if(oo&&oo.aprobar){const l=oo.lines[+g('i')];if(l){l.qty+=+g('d');if(l.qty<1)oo.lines.splice(+g('i'),1)}}break}
+  case'lrm':{const oo=S.orders.find(x=>String(x.id)===g('o'));if(oo&&oo.aprobar)oo.lines.splice(+g('i'),1);break}
+  case'madding':S.mw.addTo=null;S.mw.adding=true;S.mw.sel=g('k');S.mw.cart=[];S.mw.nombre='';S.mw.extra=[];S.mw.nin='';break;
   case'mnom':S.mw.nombre=g('v')||'';break;
   case'mnomadd':{const n=cleanNom(S.mw.nin);if(!n){toast('Escribe el nombre');break}const ex=nomsMesa(S.mw.sel).concat(S.mw.extra||[]).find(x=>x.toLowerCase()===n.toLowerCase());const nn=ex||n;if(!ex)(S.mw.extra=S.mw.extra||[]).push(nn);S.mw.nombre=nn;S.mw.nin='';break}
-  case'mback':S.mw.adding=false;break;
+  case'mback':S.mw.adding=false;S.mw.addTo=null;break;
   case'mpick':openProd(g('p'),'mes');break;
   case'mrm':S.mw.cart.splice(+g('i'),1);break;
   case'mguest':S.mw.guest=!S.mw.guest;if(S.mw.guest)S.mw.tel='';break
-  case'msend':{const ls=S.mw.cart.map(l=>Object.assign({},l,{uid:uid(),status:'nuevo'}));if(S.mw.tel&&S.mw.tel.length!==10){toast('El número debe tener 10 dígitos, o déjalo vacío');break}newOrder({mesa:S.mw.sel,lines:ls,src:'mesero',nombre:S.mw.nombre||'',cliente:S.mw.tel?{tel:S.mw.tel,name:S.mw.nombre||''}:{}});beep();S.mw.cart=[];S.mw.tel='';S.mw.guest=false;S.mw.adding=false;toast('Enviado a cocina y barra'+(S.mw.nombre?' ('+S.mw.nombre+')':''));break}
-  case'aprob':{const o=S.orders.find(x=>x.id===+g('o'));o.aprobar=false;o.porConfirmar=false;release(o);toast('Pedido enviado a cocina y barra');break}
+  case'msend':{if(S.mw.addTo){const oo=S.orders.find(x=>String(x.id)===String(S.mw.addTo));if(oo&&oo.aprobar){S.mw.cart.forEach(l=>oo.lines.push(Object.assign({},l,{uid:uid(),status:'nuevo',extra:true})));toast('Agregado al pedido. Apruébalo para mandarlo a cocina')}S.mw.cart=[];S.mw.adding=false;S.mw.addTo=null;break}
+   const ls=S.mw.cart.map(l=>Object.assign({},l,{uid:uid(),status:'nuevo'}));if(S.mw.tel&&S.mw.tel.length!==10){toast('El número debe tener 10 dígitos, o déjalo vacío');break}newOrder({mesa:S.mw.sel,lines:ls,src:'mesero',nombre:S.mw.nombre||'',cliente:S.mw.tel?{tel:S.mw.tel,name:S.mw.nombre||''}:{}});beep();S.mw.cart=[];S.mw.tel='';S.mw.guest=false;S.mw.adding=false;toast('Enviado a cocina y barra'+(S.mw.nombre?' ('+S.mw.nombre+')':''));break}
+  case'aprob':{const o=S.orders.find(x=>x.id===+g('o'));if(!o.lines.length){toast('El pedido quedó vacío. Recházalo o agrega algo.');break}o.aprobar=false;o.porConfirmar=false;release(o);toast('Pedido enviado a cocina y barra');break}
   case'rechaz':{const o=S.orders.find(x=>x.id===+g('o'));o.cancel=true;o.aprobar=false;toast('Pedido rechazado');break}
   case'ped':S.settings[g('k')]=!S.settings[g('k')];break;
   case'estilo':{S.settings.estiloMenu=g('v')==='clasico'?'clasico':'premium';break}
