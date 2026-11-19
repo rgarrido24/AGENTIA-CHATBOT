@@ -102,7 +102,8 @@ const waCli=(tel,txt)=>'https://wa.me/52'+tel+(txt?'?text='+encodeURIComponent(t
 const dosSab=p=>!!(S.settings.dosSabores)&&!!p.salsas&&!!S.modal&&!!p.v[S.modal.vi]&&p.v[S.modal.vi].f>=2;
 const porAprobar=()=>S.orders.filter(o=>o.hold&&o.aprobar&&!o.cancel&&o.canal!=='mesa');
 const porCobrar=()=>S.orders.filter(o=>o.canal!=='mesa'&&!o.hold&&!o.cancel&&!o.closed);
-function cobroOrders(sel){if(!sel)return[];if(sel.indexOf('m:')===0)return mesaOrders(sel.slice(2));const o=S.orders.find(x=>String(x.id)===sel.slice(2));return o&&!o.hold&&!o.cancel&&!o.closed?[o]:[]}
+const selN=sel=>{const r=String(sel).slice(2),i=r.indexOf('|');return{k:i<0?r:r.slice(0,i),n:i<0?'':r.slice(i+1)}};
+function cobroOrders(sel){if(!sel)return[];if(sel.indexOf('m:')===0)return mesaOrders(sel.slice(2));if(sel.indexOf('n:')===0){const x=selN(sel);return mesaOrders(x.k).filter(o=>(o.nombre||'')===x.n)}const o=S.orders.find(x=>String(x.id)===sel.slice(2));return o&&!o.hold&&!o.cancel&&!o.closed?[o]:[]}
 
 
 function lineFrom(p,vi,mods,qty,note){const v=p.v[vi];let unit=v.p;mods.forEach(x=>unit+=x.p);return{uid:uid(),pid:p.id,name:p.name,v:v.l,s:v.s,f:v.f,mods,unit,qty,note:note||'',station:p.station,status:'nuevo'}}
@@ -117,8 +118,10 @@ const live=()=>S.orders.filter(o=>!o.hold&&!o.cancel);
 const mesaOrders=k=>S.orders.filter(o=>o.mesa===k&&!o.closed&&!o.cancel&&!o.hold);
 const orderSub=o=>sumLines(o.lines);
 const mesaTotal=k=>mesaOrders(k).reduce((a,o)=>a+orderSub(o),0);
+const nomsMesa=k=>{const a=[];mesaOrders(k).forEach(o=>{if(o.nombre&&a.indexOf(o.nombre)<0)a.push(o.nombre)});return a};
+const cleanNom=v=>String(v||'').replace(/[<>|]/g,'').replace(/\s+/g,' ').trim().slice(0,20);
 function addPoints(c,sub,disc){return;let cu=S.cust.find(x=>x.tel===c.tel);if(!cu){cu={tel:c.tel,name:c.name||'Cliente',pts:0,visits:0,last:0};S.cust.push(cu)}if(c.name&&cu.name==='Cliente')cu.name=c.name;cu.pts+=Math.floor((sub-disc)/10);cu.visits++;cu.last=0}
-function closeTicket(orders,o2){const lines=[];orders.forEach(o=>o.lines.forEach(l=>lines.push(Object.assign({},l,{cost:lineCost(l)}))));const sub=sumLines(lines);const t=Object.assign({id:(o2&&o2.method==='Link de pago'&&!anyTok())?custId():S.tseq++,ts:Date.now(),lines,sub,disc:0,tip:0,method:'Efectivo',cliente:{},canal:'mesa',mesa:null,orderIds:orders.map(o=>o.id)},o2);t.total=sub-t.disc+t.tip+(t.envio||0);S.tickets.push(t);orders.forEach(o=>{o.closed=true});if(t.mesa)delete S.cuenta[t.mesa];addPoints(t.cliente,sub,t.disc);return t}
+function closeTicket(orders,o2){const lines=[];orders.forEach(o=>o.lines.forEach(l=>lines.push(Object.assign({},l,{cost:lineCost(l)}))));const sub=sumLines(lines);const t=Object.assign({id:(o2&&o2.method==='Link de pago'&&!anyTok())?custId():S.tseq++,ts:Date.now(),lines,sub,disc:0,tip:0,method:'Efectivo',cliente:{},canal:'mesa',mesa:null,orderIds:orders.map(o=>o.id)},o2);t.total=sub-t.disc+t.tip+(t.envio||0);S.tickets.push(t);orders.forEach(o=>{o.closed=true});if(t.mesa&&!mesaOrders(t.mesa).length)delete S.cuenta[t.mesa];addPoints(t.cliente,sub,t.disc);return t}
 function restockCancel(o){if(!o.hold)deduct(o,-1);o.cancel=true}
 function beep(){if(!S||!S.sound)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.4);o.start();o.stop(ac.currentTime+.4)}catch(e){}}
 function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;$('#toast').appendChild(d);setTimeout(()=>d.remove(),3200)}
@@ -131,7 +134,7 @@ function seed(){
   soc:{likes:{},liked:{},rate:{},reviews:[],mine:{}},
   cli:{tab:'menu',geo:'dentro',mesa:CFG.mesaInicial||(MESAS[0]?MESAS[0].k:''),canal:'mesa',cat:'Todo',sort:'pop',cart:[],addr:'',open:{},purchased:{}},
   me:{name:'',tel:''},
-  mw:{sel:null,adding:false,cart:[],tel:'',guest:false},
+  mw:{sel:null,adding:false,cart:[],tel:'',guest:false,nombre:'',extra:[],nin:''},
   caja:{sel:null,tab:'cobro',split:1,tip:0,tipx:'',method:'Efectivo',recv:'',tel:'',canje:false,fondo:500,contado:'',lc:null,nom:'',nac:'',busy:false,movs:[],mt:'retiro',mm:'',mo:''},
   auth:{},pins:Object.assign({},(CFG.demo&&CFG.demo.pins)||{}),
   loy:{tel:'',data:null,loading:false,nom:'',nac:''},real:null,kds:{screen:false},
@@ -362,7 +365,7 @@ function modalHtml(){
  if(md.type==='ticket'){
   const t=S.tickets.find(x=>x.id===md.id);
   const txt=ticketTxt(t);
-  h+='<div class="row between"><h2>Ticket digital</h2><span class="row" style="gap:6px"><button class="btn ghost sm" data-a="printt" data-t="'+t.id+'">Imprimir (opcional)</button><button class="btn ghost sm" data-a="mclose">Cerrar</button></span></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>'+NOMU+' · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div>'+(t.loy?'<hr><div class="small"><b>Tarjeta '+NOM+'</b><br>'+(t.loy.usado?'Usaste '+m(t.loy.usado)+' de saldo.<br>':'')+(t.loy.modelo==='cashback'?'Ganaste '+m2(t.loy.ganado)+' de saldo. Saldo ahora: <b>'+m2(t.loy.saldo)+'</b>':'Ganaste '+t.loy.ganado+' y llevas <b>'+t.loy.saldo+'</b>')+(t.loy.nuevo?'<br>Tu tarjeta ya está creada: guárdala en Google Wallet desde la pestaña Mis puntos.':'')+'</div>':'')+'</div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
+  h+='<div class="row between"><h2>Ticket digital</h2><span class="row" style="gap:6px"><button class="btn ghost sm" data-a="printt" data-t="'+t.id+'">Imprimir (opcional)</button><button class="btn ghost sm" data-a="mclose">Cerrar</button></span></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>'+NOMU+' · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa)+(t.nombre?' · '+esc(t.nombre):''):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div>'+(t.loy?'<hr><div class="small"><b>Tarjeta '+NOM+'</b><br>'+(t.loy.usado?'Usaste '+m(t.loy.usado)+' de saldo.<br>':'')+(t.loy.modelo==='cashback'?'Ganaste '+m2(t.loy.ganado)+' de saldo. Saldo ahora: <b>'+m2(t.loy.saldo)+'</b>':'Ganaste '+t.loy.ganado+' y llevas <b>'+t.loy.saldo+'</b>')+(t.loy.nuevo?'<br>Tu tarjeta ya está creada: guárdala en Google Wallet desde la pestaña Mis puntos.':'')+'</div>':'')+'</div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
  }
  return h+'</div></div>'}
 function buildLine(){const md=S.modal,p=PM(md.pid),v=p.v[md.vi];const mods=[];p.mods.forEach(g=>{if(g.showIf&&md.pick[g.showIf[0]]!==g.showIf[1])return;const l=md.pick[g.g];if(!l)return;const o=g.opts.find(x=>x.l===l);mods.push({g:g.g,l:g.prefix?g.g+' '+l:l,p:o.p[v.s]})});if(p.salsas&&ARM&&CFG.salsas){[md.pick.Salsa,dosSab(p)?md.pick.Salsa2:null].forEach(id=>{const x=id&&salsaBy(id);if(x)mods.push({g:'Salsa',l:'Salsa '+x.nombre,p:Number(x.extra)||0})})}return lineFrom(p,md.vi,mods,md.qty,(md.quick||[]).concat(md.note&&md.note.trim()?[md.note.trim()]:[]).join(', '))}
@@ -408,7 +411,7 @@ function qrHtml(k){let s='';let a=parseInt(tokenOf(k),10);for(let i=0;i<81;i++){
 function mDetail(k){
  const s=mesaState(k);const pend=S.orders.filter(o=>o.mesa===k&&o.aprobar&&!o.cancel&&!o.closed);let h='<div class="card stack"><div class="row between"><h3>'+mLabel(k)+'</h3><span class="b num">'+m(s.total)+'</span></div><div class="row" style="gap:12px">'+mesaQr(k)+'<div class="small muted">QR de la mesa (se imprime en Dueño, Lealtad y QR). El QR es propio de esta mesa. El cliente ve su cuenta y, si el dueño abre los pedidos, puede pedir desde su lugar.</div></div>';
  if(!s.os.length&&!pend.length)h+='<div class="small muted">Mesa libre. Agrega un pedido o espera a que el cliente escanee el QR.</div>';
- pend.concat(s.os).forEach(o=>{h+='<div class="stack" style="gap:6px"><div class="row between"><span class="b small">Pedido #'+o.id+' · '+(o.src==='cliente'?'por QR del cliente':'tomado por mesero')+'</span><span class="xs muted">hace '+ago(o.created)+'</span></div>';
+ pend.concat(s.os).forEach(o=>{h+='<div class="stack" style="gap:6px"><div class="row between"><span class="b small">Pedido #'+o.id+(o.nombre?' · '+esc(o.nombre):'')+' · '+(o.src==='cliente'?'por QR del cliente':'tomado por mesero')+'</span><span class="xs muted">hace '+ago(o.created)+'</span></div>';
   if(o.aprobar)h+='<div class="banner bad"><b>Pedido por aprobar.</b> El cliente lo pidió desde su celular. Revisa que sea real y mándalo a cocina.<div class="row" style="margin-top:6px"><button class="btn sm pri" data-a="aprob" data-o="'+o.id+'">Aprobar y mandar a cocina</button><button class="btn sm" data-a="rechaz" data-o="'+o.id+'">Rechazar</button></div></div>';else if(o.porConfirmar)h+='<div class="banner bad"><b>Confirma que hay gente en la mesa.</b> Si no hay nadie, anula el pedido y regresa el inventario.<div class="row" style="margin-top:6px"><button class="btn sm pri" data-a="conf" data-o="'+o.id+'">Sí, hay clientes</button><button class="btn sm" data-a="anular" data-o="'+o.id+'">Anular pedido</button></div></div>';
   o.lines.forEach(l=>{h+='<div class="row between" style="align-items:flex-start"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div>'+stPill(l.status)+'</div>'});
   h+='</div><hr>'});
@@ -417,8 +420,9 @@ function mDetail(k){
  return h}
 function mAdd(){
  const w=S.mw;let h='<div class="stack" style="margin-top:12px"><div class="row between"><h2>Pedido para '+mLabel(w.sel)+'</h2><button class="btn ghost sm" data-a="mback">Volver</button></div>';
+ {const nm=nomsMesa(w.sel);(w.extra||[]).forEach(x=>{if(nm.indexOf(x)<0)nm.push(x)});h+='<div class="card stack" style="gap:8px"><h3>¿Para quién es?</h3><div class="chips"><button class="chip" data-a="mnom" data-v="" aria-pressed="'+(!w.nombre)+'">Toda la mesa</button>'+nm.map(x=>'<button class="chip" data-a="mnom" data-v="'+esc(x)+'" aria-pressed="'+(w.nombre===x)+'">'+esc(x)+'</button>').join('')+'</div><div class="row" style="gap:8px"><input type="text" maxlength="20" data-in="mnomin" value="'+esc(w.nin||'')+'" placeholder="Nombre (ej. Juan)"><button class="btn sm pri" data-a="mnomadd">+ Agregar</button></div><div class="xs muted">Cada nombre lleva su propia cuenta dentro de la mesa. En caja se cobra por persona o la mesa completa.</div></div>'}
  CATS.forEach(c=>{h+='<div class="card stack" style="gap:6px"><b>'+c+'</b>'+MENU.filter(p=>p.cat===c).map(p=>'<div class="row between"><div class="grow"><span class="b small">'+esc(p.name)+'</span> <span class="xs muted">'+fromPrice(p)+'</span></div>'+(soldOut(p)?'<span class="status s-bad">Agotado</span>':'<button class="btn sm" data-a="mpick" data-p="'+p.id+'">+</button>')+'</div>').join('')+'</div>'});
- h+='<div class="card stack"><h3>Cliente de la mesa</h3><div class="row" style="gap:8px"><input type="tel" inputmode="numeric" data-in="mtel" value="'+esc(w.tel)+'" placeholder="WhatsApp del cliente (opcional)"><button class="btn sm'+(w.guest?' pri':'')+'" data-a="mguest">Invitado</button></div><div class="xs muted">Con su número verá lo que ha pedido y junta saldo. Si no quiere darlo, deja Invitado.</div></div><div class="card stack"><h3>Por enviar</h3>'+(w.cart.length?w.cart.map((l,i)=>'<div class="row between"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div><b class="num small">'+m(lineTot(l))+'</b><button class="btn ghost sm" data-a="mrm" data-i="'+i+'">Quitar</button></div>').join(''):'<div class="small muted">Elige productos arriba.</div>')+'<button class="btn pri" data-a="msend"'+(w.cart.length?'':' disabled')+'>Enviar a cocina y barra</button></div></div>';
+ h+='<div class="card stack"><h3>Cliente de la mesa</h3><div class="row" style="gap:8px"><input type="tel" inputmode="numeric" data-in="mtel" value="'+esc(w.tel)+'" placeholder="WhatsApp del cliente (opcional)"><button class="btn sm'+(w.guest?' pri':'')+'" data-a="mguest">Invitado</button></div><div class="xs muted">Con su número verá lo que ha pedido y junta saldo. Si no quiere darlo, deja Invitado.</div></div><div class="card stack"><h3>Por enviar'+(w.nombre?' · '+esc(w.nombre):'')+'</h3>'+(w.cart.length?w.cart.map((l,i)=>'<div class="row between"><div class="small grow">'+l.qty+' × '+lineHtml(l)+'</div><b class="num small">'+m(lineTot(l))+'</b><button class="btn ghost sm" data-a="mrm" data-i="'+i+'">Quitar</button></div>').join(''):'<div class="small muted">Elige productos arriba.</div>')+'<button class="btn pri" data-a="msend"'+(w.cart.length?'':' disabled')+'>Enviar a cocina y barra</button></div></div>';
  return h}
 
 /* ---------- cocina y barra ---------- */
@@ -433,7 +437,7 @@ function vKds(st){
   h+='<div class="kcol"><h3>'+c[1]+' ('+arr.length+')</h3>';
   if(!arr.length)h+='<div class="small muted">Sin comandas</div>';
   arr.forEach(x=>{const mi=mins(x.o.created);const cls=c[0]==='listo'?'ok':mi>=15?'late':'';
-   h+='<div class="ticket '+cls+'"><div class="row between"><b>'+(x.o.canal==='mesa'?mLabel(x.o.mesa):x.o.canal==='llevar'?'Para llevar':'Entrega')+' · #'+x.o.id+'</b><span class="status '+(mi>=15&&c[0]!=='listo'?'s-bad':'s-neutral')+' num">'+mi+' min</span></div>'+(x.o.porConfirmar?'<div class="xs" style="color:var(--warn)">Mesero por confirmar mesa</div>':'')+'<ul>'+x.ls.map(l=>'<li>'+l.qty+' × '+lineHtml(l)+'</li>').join('')+'</ul>'+(sc?(c[0]==='nuevo'?'<span class="small muted">Entra a preparación en unos segundos</span>':c[0]==='preparando'?'<span class="small b">Pedal o tecla Espacio: marcar listo</span>':'<span class="small b" style="color:var(--good)">Listo. El mesero ya fue avisado</span>'):(c[0]==='nuevo'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Marcar listo</button>':c[0]==='preparando'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Marcar listo</button>':'<span class="small b" style="color:var(--good)">Esperando al mesero</span>'))+'</div>'});
+   h+='<div class="ticket '+cls+'"><div class="row between"><b>'+(x.o.canal==='mesa'?mLabel(x.o.mesa)+(x.o.nombre?' · '+esc(x.o.nombre):''):x.o.canal==='llevar'?'Para llevar':'Entrega')+' · #'+x.o.id+'</b><span class="status '+(mi>=15&&c[0]!=='listo'?'s-bad':'s-neutral')+' num">'+mi+' min</span></div>'+(x.o.porConfirmar?'<div class="xs" style="color:var(--warn)">Mesero por confirmar mesa</div>':'')+'<ul>'+x.ls.map(l=>'<li>'+l.qty+' × '+lineHtml(l)+'</li>').join('')+'</ul>'+(sc?(c[0]==='nuevo'?'<span class="small muted">Entra a preparación en unos segundos</span>':c[0]==='preparando'?'<span class="small b">Pedal o tecla Espacio: marcar listo</span>':'<span class="small b" style="color:var(--good)">Listo. El mesero ya fue avisado</span>'):(c[0]==='nuevo'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Marcar listo</button>':c[0]==='preparando'?'<button class="btn pri sm" data-a="kadv" data-o="'+x.o.id+'" data-s="'+st+'">Marcar listo</button>':'<span class="small b" style="color:var(--good)">Esperando al mesero</span>'))+'</div>'});
   h+='</div>'});
  return h+'</div></div>'}
 
@@ -446,7 +450,7 @@ function vCaja(){
  h+='<div class="grid2"><div class="stack"><span class="pill-title" style="margin:0">Cuentas abiertas</span>';
  const abiertas=MESAS.filter(x=>mesaOrders(x.k).length);
  if(!abiertas.length)h+='<div class="card small muted">No hay cuentas abiertas.</div>';
- abiertas.forEach(x=>{const s=mesaState(x.k);h+='<button class="card row between" style="text-align:left;'+(c.sel==='m:'+x.k?'outline:3px solid var(--ink)':'')+'" data-a="csel" data-k="m:'+x.k+'"><span class="b">'+x.label+'</span><span class="row" style="gap:6px">'+(s.cuenta?'<span class="status s-warn">Pidió cuenta</span>':'')+'<b class="num">'+m(s.total)+'</b></span></button>'});
+ abiertas.forEach(x=>{const s=mesaState(x.k);h+='<button class="card row between" style="text-align:left;'+(c.sel==='m:'+x.k?'outline:3px solid var(--ink)':'')+'" data-a="csel" data-k="m:'+x.k+'"><span class="b">'+x.label+'</span><span class="row" style="gap:6px">'+(s.cuenta?'<span class="status s-warn">Pidió cuenta</span>':'')+'<b class="num">'+m(s.total)+'</b></span></button>';{const nm=nomsMesa(x.k);if(nm.length){const grp=nm.concat(s.os.some(o=>!o.nombre)?['']:[]);h+='<div class="stack" style="gap:4px;margin:-4px 0 4px 14px">'+grp.map(n=>{const t=s.os.filter(o=>(o.nombre||'')===n).reduce((a,o)=>a+orderSub(o),0);return'<button class="card row between" style="text-align:left;padding:8px 12px;'+(c.sel==='n:'+x.k+'|'+n?'outline:3px solid var(--ink)':'')+'" data-a="csel" data-k="n:'+esc(x.k)+'|'+esc(n)+'"><span class="small b">'+(n?esc(n):'Sin nombre')+'</span><b class="num small">'+m(t)+'</b></button>'}).join('')+'</div>'}}});
  {const env=abiertas.filter(x=>S.cuenta[x.k]&&mesaTel(x.k));if(env.length)h+='<span class="pill-title" style="margin:8px 0 0">Enviar cuenta por WhatsApp ('+env.length+')</span>'+env.map(x=>'<div class="card row between"><b>'+x.label+'</b>'+waCuenta(mesaOrders(x.k),x.label,mesaTel(x.k))+'</div>').join('')}
  if(CONTRA)h+=domPorAprobar()+domPorCobrar();
  const hs=holds();
@@ -456,11 +460,11 @@ function vCaja(){
  h+='</div><div>'+cobro()+'</div></div></div>';
  return h}
 function cobro(){
- const c=S.caja;if(!c.sel||(c.sel.indexOf('m:')!==0&&c.sel.indexOf('o:')!==0))return'<div class="card small muted">Elige una cuenta para cobrar.</div>';
- const k=c.sel.slice(2),os=cobroOrders(c.sel),isO=c.sel.indexOf('o:')===0,env=os.reduce((a,o)=>a+(o.envio||0),0);if(!os.length){c.sel=null;return'<div class="card small muted">Elige una cuenta para cobrar.</div>'}
+ const c=S.caja;if(!c.sel||(c.sel.indexOf('m:')!==0&&c.sel.indexOf('o:')!==0&&c.sel.indexOf('n:')!==0))return'<div class="card small muted">Elige una cuenta para cobrar.</div>';
+ const sn=c.sel.indexOf('n:')===0?selN(c.sel):null,k=sn?sn.k:c.sel.slice(2),os=cobroOrders(c.sel),isO=c.sel.indexOf('o:')===0,env=os.reduce((a,o)=>a+(o.envio||0),0);if(!os.length){c.sel=null;return'<div class="card small muted">Elige una cuenta para cobrar.</div>'}
  const sub=os.reduce((a,o)=>a+orderSub(o),0),tip=tipOf(c,sub);
  const lc=c.lc&&c.lc.found?c.lc:null;const saldo=lc?Math.floor(lc.cliente.puntos):0;const disc=(c.canje&&saldo>0&&lc.modelo==='cashback')?Math.min(saldo,sub):0;const tot=sub-disc+tip+env;
- let h='<div class="card stack"><h3>Cobrar '+(isO?'pedido #'+k+(os[0].canal==='llevar'?' · Para llevar':' · Domicilio'):mLabel(k))+'</h3>'+(isO&&os[0].addr?'<div class="small">Dirección: '+esc(os[0].addr)+'</div>':'');
+ let h='<div class="card stack"><h3>Cobrar '+(isO?'pedido #'+k+(os[0].canal==='llevar'?' · Para llevar':' · Domicilio'):mLabel(k)+(sn?' · '+(sn.n?esc(sn.n):'Sin nombre'):''))+'</h3>'+(isO&&os[0].addr?'<div class="small">Dirección: '+esc(os[0].addr)+'</div>':'');
  os.forEach(o=>o.lines.forEach(l=>{h+='<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>'}));
  h+='<div class="sep"></div><div class="row between"><span>Subtotal</span><b class="num">'+m(sub)+'</b></div>'+(env?'<div class="row between"><span>Envío</span><b class="num">'+m(env)+'</b></div>':'');
  h+='<div><div class="b small">Propina</div><div class="chips">'+[0,10,15,20].map(x=>'<button class="chip" data-a="tip" data-v="'+x+'" aria-pressed="'+(c.tip===x)+'">'+(x?x+'%':'Sin propina')+'</button>').join('')+'</div><label class="f">Propina en monto exacto (si el cliente ya la puso en la terminal)<input type="number" inputmode="decimal" data-in="tipx" value="'+esc(c.tipx)+'" placeholder="0"></label></div>';
@@ -705,7 +709,7 @@ function loadLista(){lget('lista=1').then(j=>{S.real=j;render()}).catch(()=>{S.r
 
 async function doCobro(){
  const c=S.caja;if(c.busy||!c.sel)return;
- const k=c.sel.slice(2),os=cobroOrders(c.sel);if(!os.length)return;
+ const sn=c.sel.indexOf('n:')===0?selN(c.sel):null,k=sn?sn.k:c.sel.slice(2),os=cobroOrders(c.sel);if(!os.length)return;
  const sub=os.reduce((a,o)=>a+orderSub(o),0),tip=tipOf(c,sub),tel=c.tel;
  const L=c.lc&&c.lc.found?c.lc:null;const saldo=L?Math.floor(L.cliente.puntos):0;
  const disc=(c.canje&&saldo>0&&L.modelo==='cashback')?Math.min(saldo,sub):0;
@@ -720,7 +724,7 @@ async function doCobro(){
   c.busy=false;
  }
  const cl={name:nombre||(L?L.cliente.nombre:''),tel};
- const o2={method:c.method,tip,disc,cliente:cl,mesa:k,canal:'mesa'};if(c.sel.indexOf('o:')===0){o2.mesa=null;o2.canal=os[0].canal;o2.envio=os[0].envio||0}
+ const o2={method:c.method,tip,disc,cliente:cl,mesa:k,canal:'mesa'};if(sn)o2.nombre=sn.n;if(c.sel.indexOf('o:')===0){o2.mesa=null;o2.canal=os[0].canal;o2.envio=os[0].envio||0}
  const t=closeTicket(os,o2);t.loy=loy;
  c.sel=null;c.tel='';c.canje=false;c.tip=0;c.tipx='';c.recv='';c.split=1;c.lc=null;c.nom='';c.nac='';
  S.modal={type:'ticket',id:t.id};S.real=null;render();
@@ -1116,7 +1120,7 @@ function setupInput(el){
  else if(k.startsWith('xp_')){const e=EXT.find(x=>x.k===k.slice(3));if(e)S.settings[e.k]=Math.max(0,Math.min(500,Number(v)||0))}else if(k==='cfg_metaPuntos'){S.settings.metaPuntos=Math.max(0,Math.min(100000,Number(v)||0))}else if(k==='cfg_premioTxt'){S.settings.premioTxt=v.slice(0,60)}
  else if(k==='name'){S.me.name=v;saveMe()}else if(k==='tel'){const t=v.replace(/\D/g,'').slice(0,10);if(t!==S.me.tel){S.me.tel=t;saveMe();S.loy.data=null;if(t.length===10&&S.cli.tab==='puntos')loadMe()}}
  else if(k.indexOf('pw_')===0){(S.pw||(S.pw={}))[k.slice(3)]=v.slice(0,64)}else if(k==='code'){S.modal.code=v}else if(k==='segcode'){if(S.seg.setup)S.seg.setup.code=v}else if(k==='segoffcode'){S.seg.offCode=v}
- else if(k==='addr')S.cli.addr=v;else if(k==='mtel'){S.mw.tel=v.replace(/\D/g,'').slice(0,10);if(S.mw.tel)S.mw.guest=false}else if(k==='mnote'){S.modal.note=v}
+ else if(k==='addr')S.cli.addr=v;else if(k==='mnomin'){S.mw.nin=v.slice(0,20)}else if(k==='mtel'){S.mw.tel=v.replace(/\D/g,'').slice(0,10);if(S.mw.tel)S.mw.guest=false}else if(k==='mnote'){S.modal.note=v}
  else if(k==='rtext')S.modal.text=v;
  else if(k==='tipx'){S.caja.tipx=v;const e=$('#ctot');if(e)e.textContent=m(cobroTot());const e2=$('#cambio');if(e2)e2.textContent=cambioTxt(cobroTot())}
  else if(k==='recv'){S.caja.recv=v;const e=$('#cambio');if(e){const os=cobroOrders(S.caja.sel);const sub=os.reduce((a,o)=>a+orderSub(o),0);const L=S.caja.lc&&S.caja.lc.found?S.caja.lc:null;const sd=L?Math.floor(L.cliente.puntos):0;const disc=(S.caja.canje&&sd>0&&L.modelo==='cashback')?Math.min(sd,sub):0;e.textContent=cambioTxt(sub-disc+Math.round(sub*S.caja.tip/100)+os.reduce((a,o)=>a+(o.envio||0),0))}}
@@ -1187,12 +1191,14 @@ root.addEventListener('click',e=>{
   case'payok':{const md=S.modal;if(md.by==='order'){payOrderOnline(S.orders.find(x=>x.id===md.oid))}else{S.modal=null;payMesaOnline()}break}
   /* mesero */
   case'msel':S.mw.sel=S.mw.sel===g('k')?null:g('k');break;
-  case'madding':S.mw.adding=true;S.mw.sel=g('k');S.mw.cart=[];break;
+  case'madding':S.mw.adding=true;S.mw.sel=g('k');S.mw.cart=[];S.mw.nombre='';S.mw.extra=[];S.mw.nin='';break;
+  case'mnom':S.mw.nombre=g('v')||'';break;
+  case'mnomadd':{const n=cleanNom(S.mw.nin);if(!n){toast('Escribe el nombre');break}const ex=nomsMesa(S.mw.sel).concat(S.mw.extra||[]).find(x=>x.toLowerCase()===n.toLowerCase());const nn=ex||n;if(!ex)(S.mw.extra=S.mw.extra||[]).push(nn);S.mw.nombre=nn;S.mw.nin='';break}
   case'mback':S.mw.adding=false;break;
   case'mpick':openProd(g('p'),'mes');break;
   case'mrm':S.mw.cart.splice(+g('i'),1);break;
   case'mguest':S.mw.guest=!S.mw.guest;if(S.mw.guest)S.mw.tel='';break
-  case'msend':{const ls=S.mw.cart.map(l=>Object.assign({},l,{uid:uid(),status:'nuevo'}));if(S.mw.tel&&S.mw.tel.length!==10){toast('El número debe tener 10 dígitos, o déjalo vacío');break}newOrder({mesa:S.mw.sel,lines:ls,src:'mesero',cliente:S.mw.tel?{tel:S.mw.tel,name:''}:{}});beep();S.mw.cart=[];S.mw.tel='';S.mw.guest=false;S.mw.adding=false;toast('Enviado a cocina y barra');break}
+  case'msend':{const ls=S.mw.cart.map(l=>Object.assign({},l,{uid:uid(),status:'nuevo'}));if(S.mw.tel&&S.mw.tel.length!==10){toast('El número debe tener 10 dígitos, o déjalo vacío');break}newOrder({mesa:S.mw.sel,lines:ls,src:'mesero',nombre:S.mw.nombre||'',cliente:S.mw.tel?{tel:S.mw.tel,name:S.mw.nombre||''}:{}});beep();S.mw.cart=[];S.mw.tel='';S.mw.guest=false;S.mw.adding=false;toast('Enviado a cocina y barra'+(S.mw.nombre?' ('+S.mw.nombre+')':''));break}
   case'aprob':{const o=S.orders.find(x=>x.id===+g('o'));o.aprobar=false;o.porConfirmar=false;release(o);toast('Pedido enviado a cocina y barra');break}
   case'rechaz':{const o=S.orders.find(x=>x.id===+g('o'));o.cancel=true;o.aprobar=false;toast('Pedido rechazado');break}
   case'ped':S.settings[g('k')]=!S.settings[g('k')];break;
@@ -1257,7 +1263,7 @@ root.addEventListener('click',e=>{
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
   case'ctab':S.caja.tab=g('v');break;
-  case'csel':{S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;const oc=(CONTRA?cobroOrders(S.caja.sel):mesaOrders(S.caja.sel)).find(o=>o.cliente&&String(o.cliente.tel||'').length===10);if(oc){S.caja.tel=oc.cliente.tel;S.caja.lc=null;loadCajaCliente(oc.cliente.tel)}break}
+  case'csel':{S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;const oc=(CONTRA||S.caja.sel.indexOf('n:')===0?cobroOrders(S.caja.sel):mesaOrders(S.caja.sel)).find(o=>o.cliente&&String(o.cliente.tel||'').length===10);if(oc){S.caja.tel=oc.cliente.tel;S.caja.lc=null;loadCajaCliente(oc.cliente.tel)}break}
   case'tip':S.caja.tip=+g('v');S.caja.tipx='';break;
   case'method':S.caja.method=g('v');break;
   case'split':S.caja.split=+g('v');break;
