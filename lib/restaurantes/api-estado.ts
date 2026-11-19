@@ -311,6 +311,9 @@ async function POST(req: NextRequest) {
             const ok =
               name === 'gastos' || name === 'reviews' ? esDueno : name === 'tickets' || name === 'movs' ? puede(perfil, 'caja') : true;
             if (!ok) continue;
+            // Cancelar con motivo y regalar (cortesía) son solo del dueño
+            if (!esDueno && name === 'orders' && d?.cancelInfo && !cur?.d?.cancelInfo) continue;
+            if (!esDueno && name === 'tickets' && d?.method === 'Cortesía') continue;
             if (name === 'orders' && cur?.d?.dedap && d && !d.dedap) d = { ...d, dedap: true };
           } else {
             // Cliente sin sesión: solo pedidos propios, reseñas y pagos en línea nuevos

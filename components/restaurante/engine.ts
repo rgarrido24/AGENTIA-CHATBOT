@@ -336,6 +336,7 @@ function modalHtml(){
   if(NUEVO&&md.target==='cli')h+=nvPairHtml(p);
   h+='<div class="row between"><div class="qty"><button data-a="mq" data-d="-1" aria-label="Quitar uno">−</button><b class="num">'+md.qty+'</b><button data-a="mq" data-d="1" aria-label="Agregar uno">+</button></div><button class="btn pri" data-a="madd"'+(ready?'':' disabled')+'>Agregar '+m(ln.unit*md.qty)+'</button></div></div>';
  }
+ if(md.type==='ocan'){h+=ocanHtml(md)}
  if(md.type==='revs'){const p=PM(md.pid),a=avgOf(md.pid),r=S.soc.rate[md.pid];const revs=S.soc.reviews.filter(x=>x.pid===md.pid&&!x.hide).sort((x,y)=>relv(y)-relv(x));
   h+='<div class="row between"><h2>Opiniones · '+esc(p?p.name:'')+'</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="soc">'+starsHtml(a)+'<span class="num">'+(r.n?a.toFixed(1)+' ('+r.n+')':'Sin calificaciones')+'</span></div>'+(revs.length?revItems(revs,30):'<div class="small muted">Aún no hay opiniones. Sé el primero.</div>')+'<div class="xs muted">Mostramos primero las más útiles: con foto y buena calificación.</div><button class="btn pri" data-a="review" data-p="'+md.pid+'">Calificar y opinar</button></div>';
  }
@@ -521,8 +522,36 @@ function vDueno(){
  const o=S.own;const tabs=[['resumen','Resumen'],['inventario','Inventario'],['menu','Menú y márgenes'],['finanzas','Finanzas'],['lealtad','Lealtad y QR'],['clientes','Clientes'],['ajustes','Ajustes'],['seguridad','Seguridad']].filter(t=>t[0]!=='salsas');
  if(CFG.salsas)tabs.splice(3,0,['salsas','Salsas']);
  let h='<div class="stack" style="margin-top:12px"><div class="chips scroll">'+tabs.map(t=>'<button class="chip" data-a="otab" data-v="'+t[0]+'" aria-pressed="'+(o.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div>';
- if(o.tab==='resumen')h+=dResumen();else if(o.tab==='inventario')h+=dInv();else if(o.tab==='menu')h+=dMenu();else if(o.tab==='salsas'&&CFG.salsas)h+=dSalsas();else if(o.tab==='clientes')h+=dClientes();else if(o.tab==='ajustes')h+=dAjustes();else if(o.tab==='finanzas')h+=dFin();else if(o.tab==='lealtad')h+=dLealtad();else h+=dSeg();
+ if(o.tab==='resumen')h+=dAbiertos()+dResumen();else if(o.tab==='inventario')h+=dInv();else if(o.tab==='menu')h+=dMenu();else if(o.tab==='salsas'&&CFG.salsas)h+=dSalsas();else if(o.tab==='clientes')h+=dClientes();else if(o.tab==='ajustes')h+=dAjustes();else if(o.tab==='finanzas')h+=dFin();else if(o.tab==='lealtad')h+=dLealtad();else h+=dSeg();
  return h+'</div>'}
+/* ---------- cancelar o regalar pedidos (solo dueño) ---------- */
+const ordAbiertas=()=>S.orders.filter(o=>!o.closed&&!o.cancel&&!o.aprobar);
+const ordEtq=o=>(o.canal==='mesa'?mLabel(o.mesa)+(o.nombre?' · '+o.nombre:''):o.canal==='llevar'?'Para llevar':'Entrega')+' · #'+o.id;
+const ordEstado=o=>{if(o.hold)return'Esperando pago o aprobación';const c={nuevo:0,preparando:0,listo:0,entregado:0};o.lines.forEach(l=>c[l.status]=(c[l.status]||0)+1);const t=[];if(c.nuevo)t.push('en cola '+c.nuevo);if(c.preparando)t.push('preparando '+c.preparando);if(c.listo)t.push('listo '+c.listo);if(c.entregado)t.push('entregado '+c.entregado);return t.join(' · ')};
+function dAbiertos(){
+ const os=ordAbiertas().slice().sort((a,b)=>b.created-a.created);
+ let h='<div class="card stack"><h3>Pedidos abiertos</h3><div class="small muted">Solo tú puedes cancelar un pedido o regalarlo como cortesía. Lo que aún no se prepara regresa al inventario.</div>';
+ if(!os.length)return h+'<div class="small muted">No hay pedidos abiertos.</div></div>';
+ os.slice(0,30).forEach(o=>{h+='<div class="row between" style="align-items:flex-start;gap:8px"><div class="small grow"><b>'+esc(ordEtq(o))+'</b> · <span class="num">'+m(orderSub(o))+'</span><div class="xs muted">'+esc(ordEstado(o))+' · hace '+ago(o.created)+'</div></div><button class="btn sm" data-a="ocan" data-o="'+o.id+'">Cancelar o regalar</button></div>'});
+ return h+'</div>'}
+function ocanHtml(md){
+ const o=S.orders.find(x=>String(x.id)===String(md.oid));if(!o)return'<div class="row between"><h2>Pedido</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div>';
+ const hechas=o.lines.filter(l=>l.status!=='nuevo'),costo=o.hold?0:hechas.reduce((a,l)=>a+lineCost(l),0);
+ let h='<div class="row between"><h2>'+esc(ordEtq(o))+'</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px">';
+ h+=o.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span>'+stPill(l.status)+'</div>').join('');
+ h+='<div class="banner '+(hechas.length?'warn':'good')+'">'+(o.hold?'Aún no llega a cocina: no hay nada que regresar.':hechas.length?'Ya se empezó a preparar. Lo que sigue en cola regresa al inventario; lo ya preparado se pierde (costo aprox. '+m(costo)+').':'Todavía no se prepara nada: el inventario regresa completo.')+'</div>';
+ h+='<div class="b small">Motivo</div><div class="chips">'+['Error al capturar','El cliente se fue o no llegó','Problema con el producto','Prueba o demostración','Cortesía de la casa'].map(x=>'<button class="chip" data-a="ocmot" data-v="'+x+'" aria-pressed="'+(md.motivo===x)+'">'+x+'</button>').join('')+'</div>';
+ h+='<label class="f">Nota (opcional)<input type="text" maxlength="80" data-in="ocnota" value="'+esc(md.nota||'')+'" placeholder="Qué pasó"></label>';
+ h+='<button class="btn pri" data-a="ocgo" data-m="cancel"'+(md.motivo?'':' disabled')+'>Cancelar pedido</button>';
+ if(!o.hold&&o.canal==='mesa')h+='<button class="btn" data-a="ocgo" data-m="regalo"'+(md.motivo?'':' disabled')+'>Regalar la cuenta (cortesía, total $0)</button><div class="xs muted">Cortesía: se cierra con total $0 y queda en el reporte como costo para ti.</div>';
+ return h+'</div>'}
+function ocanDo(modo){
+ const md=S.modal,o=S.orders.find(x=>String(x.id)===String(md.oid));if(!o||!md.motivo)return;
+ const info={por:'dueno',motivo:md.motivo,nota:(md.nota||'').slice(0,80),ts:Date.now()};
+ if(modo==='regalo'){const os=o.mesa?mesaOrders(o.mesa).filter(x=>(x.nombre||'')===(o.nombre||'')):[o];const sub=os.reduce((a,x)=>a+orderSub(x),0);const t=closeTicket(os,{method:'Cortesía',disc:sub,tip:0,mesa:o.mesa,canal:o.canal,nombre:o.nombre||'',cliente:{},cortesia:info});os.forEach(x=>{x.cancelInfo=info});toast('Cuenta regalada · total $0');S.modal=null;return}
+ if(!o.hold){const q=Object.assign({},o,{lines:o.lines.filter(l=>l.status==='nuevo')});if(q.lines.length)deduct(q,-1);info.costo=o.lines.filter(l=>l.status!=='nuevo').reduce((a,l)=>a+lineCost(l),0)}
+ o.cancel=true;o.cancelInfo=info;S.cancelados++;S.modal=null;toast('Pedido cancelado');
+}
 function dResumen(){
  const s=stats(),n=s.ts.length,avg=n?s.rev/n:0,prof=s.rev-s.cost;
  let h='<div class="kpis cols3"><div class="kpi"><div class="xs muted">Ventas de hoy</div><div class="v num">'+m(s.rev)+'</div></div><div class="kpi"><div class="xs muted">Tickets</div><div class="v num">'+n+'</div></div><div class="kpi"><div class="xs muted">Ticket promedio</div><div class="v num">'+m(avg)+'</div></div><div class="kpi"><div class="xs muted">Ganancia estimada</div><div class="v num">'+m(prof)+'</div><div class="xs muted">'+(s.rev?Math.round(prof/s.rev*100):0)+'% de margen sobre insumos</div></div></div>';
@@ -1135,7 +1164,7 @@ function setupInput(el){
  else if(k.startsWith('xp_')){const e=EXT.find(x=>x.k===k.slice(3));if(e)S.settings[e.k]=Math.max(0,Math.min(500,Number(v)||0))}else if(k==='cfg_metaPuntos'){S.settings.metaPuntos=Math.max(0,Math.min(100000,Number(v)||0))}else if(k==='cfg_premioTxt'){S.settings.premioTxt=v.slice(0,60)}
  else if(k==='name'){S.me.name=v;saveMe()}else if(k==='tel'){const t=v.replace(/\D/g,'').slice(0,10);if(t!==S.me.tel){S.me.tel=t;saveMe();S.loy.data=null;if(t.length===10&&S.cli.tab==='puntos')loadMe()}}
  else if(k.indexOf('pw_')===0){(S.pw||(S.pw={}))[k.slice(3)]=v.slice(0,64)}else if(k==='code'){S.modal.code=v}else if(k==='segcode'){if(S.seg.setup)S.seg.setup.code=v}else if(k==='segoffcode'){S.seg.offCode=v}
- else if(k==='addr')S.cli.addr=v;else if(k==='mnomin'){S.mw.nin=v.slice(0,20)}else if(k==='mtel'){S.mw.tel=v.replace(/\D/g,'').slice(0,10);if(S.mw.tel)S.mw.guest=false}else if(k==='mnote'){S.modal.note=v}
+ else if(k==='addr')S.cli.addr=v;else if(k==='ocnota'){S.modal.nota=v}else if(k==='mnomin'){S.mw.nin=v.slice(0,20)}else if(k==='mtel'){S.mw.tel=v.replace(/\D/g,'').slice(0,10);if(S.mw.tel)S.mw.guest=false}else if(k==='mnote'){S.modal.note=v}
  else if(k==='rtext')S.modal.text=v;
  else if(k==='tipx'){S.caja.tipx=v;const e=$('#ctot');if(e)e.textContent=m(cobroTot());const e2=$('#cambio');if(e2)e2.textContent=cambioTxt(cobroTot())}
  else if(k==='recv'){S.caja.recv=v;const e=$('#cambio');if(e){const os=cobroOrders(S.caja.sel);const sub=os.reduce((a,o)=>a+orderSub(o),0);const L=S.caja.lc&&S.caja.lc.found?S.caja.lc:null;const sd=L?Math.floor(L.cliente.puntos):0;const disc=(S.caja.canje&&sd>0&&L.modelo==='cashback')?Math.min(sd,sub):0;e.textContent=cambioTxt(sub-disc+Math.round(sub*S.caja.tip/100)+os.reduce((a,o)=>a+(o.envio||0),0))}}
@@ -1228,6 +1257,9 @@ root.addEventListener('click',e=>{
   case'setloc':setLoc();return;
   case'geochk':geoChk();return;
   case'conf':{S.orders.find(x=>x.id===+g('o')).porConfirmar=false;toast('Mesa confirmada');break}
+  case'ocan':if(!S.auth.dueno){toast('Solo el dueño puede cancelar');break}S.modal={type:'ocan',oid:g('o'),motivo:'',nota:''};break;
+  case'ocmot':S.modal.motivo=g('v');break;
+  case'ocgo':if(S.auth.dueno)ocanDo(g('m'));break;
   case'anular':{const o=S.orders.find(x=>x.id===+g('o'));restockCancel(o);S.cancelados++;toast('Pedido anulado e inventario regresado');break}
   case'servall':{const k=g('k');let n=0;mesaOrders(k).forEach(o=>o.lines.forEach(l=>{if(l.status==='listo'||(S.kds.screen&&l.status==='preparando')){l.status='entregado';n++}}));if(n)toast('Entregado en '+mLabel(k));break}
   case'servir':{const o=S.orders.find(x=>x.id===+g('o'));o.lines.find(l=>l.uid===g('u')).status='entregado';break}

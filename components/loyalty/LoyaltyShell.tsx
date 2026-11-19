@@ -24,7 +24,8 @@ export function LoyaltyShell({ tenantId, tenant: tenantProp, children }: Props) 
 
   const { nombre, logoUrl, colorPrimario, colorAcento, basePath } = tenant;
   const initial = nombre.trim().charAt(0).toUpperCase() || '?';
-  const isCarnitas = tenantId === 'carnitas_granada';
+  // Logos sin caja blanca (PNG con fondo transparente)
+  const isCarnitas = tenantId === 'carnitas_granada' || tenantId === 'tostichelas';
 
   const nav = [
     { href: `${basePath}/caja`, label: 'Caja', icon: ShoppingCart },

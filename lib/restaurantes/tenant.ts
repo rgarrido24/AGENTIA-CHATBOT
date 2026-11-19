@@ -62,6 +62,12 @@ export async function ensureTenant(cfg: ServidorConfig): Promise<TenantConfig | 
     invalidateLoyaltyTenantCache(key);
   }
 
+  // Logo por defecto actualizado (p. ej. de JPG con fondo a PNG transparente); respeta logos subidos por el cliente.
+  if (doc && typeof doc.logoUrl === 'string' && /\/logo\.jpg$/.test(doc.logoUrl) && !/\/logo\.jpg$/.test(cfg.tenant.logo)) {
+    await col.updateOne({ key }, { $set: { logoUrl: `${publicBase()}${cfg.tenant.logo}` } });
+    invalidateLoyaltyTenantCache(key);
+  }
+
   if (doc && !doc.walletClase) {
     try {
       const r = await asegurarClaseWallet(loyaltyDocToConfig(doc as Record<string, unknown>));

@@ -60,7 +60,7 @@ export const SERVIDOR: Record<string, ServidorConfig> = {
     tenant: {
       key: 'tostichelas',
       nombre: 'Tostichelas',
-      logo: '/tostichelas/logo.jpg',
+      logo: '/tostichelas/logo-panel.png',
       colorPrimario: '#E2573A',
       colorAcento: '#F2C14E',
       plan: 'restaurante',
