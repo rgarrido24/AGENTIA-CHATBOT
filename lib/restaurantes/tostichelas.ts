@@ -131,6 +131,7 @@ export const TOSTICHELAS: RestauranteConfig = {
   arte: ARTE,
   inicio: { destacado: 'tcm', combos: [['tag', 'vic', 'Aguachile + Victoria'], ['tcc', 'cor', 'Camachera + Corona'], ['tar', 'mod', 'Arrachera + Modelo']], tituloCombos: 'Va muy bien con una chela' },
   estilos: true,
+  googleUrl: 'https://maps.app.goo.gl/YdGvYmt1BQdLBU8U9',
   ajustes: { estiloMenu: 'premium', pedMesa: true, xTQueso: 8, xTAguacate: 8, xTCebolla: 5, xPQueso: 8, xHQueso: 10, xHCarne: 40 },
   // Extras que pidió el cliente. Vienen encendidos con sus precios; el dueño los apaga o cambia en Ajustes.
   extras: [

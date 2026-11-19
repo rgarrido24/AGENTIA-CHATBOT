@@ -130,6 +130,8 @@ export type RestauranteConfig = {
   ajustes?: Record<string, number | boolean | string | null>;
   /** Permite elegir entre estilo Premium y Sencillo (ajuste `estiloMenu`). */
   estilos?: boolean;
+  /** Liga para calificar en Google Maps (se manda con la cuenta y activa puntos dobles una vez por cliente). */
+  googleUrl?: string;
   /** Extras que el dueño enciende o apaga (ajuste `k`: -1 = no se ofrece, >=0 = precio por pieza). */
   extras?: { k: string; g: string; def: number; cats: string[]; ids?: string[]; donde?: string; mult?: number; salsa?: boolean; opciones?: string[] }[];
   /** Ilustraciones SVG por categoría (viewBox 64x64). Si falta, el motor usa las de Tostichelas. */

@@ -304,7 +304,7 @@ async function altaMe(){
 
 /* ---------- modales ---------- */
 function openProd(pid,target){const p=PM(pid);S.modal={type:'prod',pid,target,vi:0,pick:{},qty:1,note:'',quick:[]}}
-function ticketTxt(t){return NOM+' · Ticket '+t.id+'\n'+t.lines.map(l=>l.qty+' x '+l.name+' '+l.v+' '+m(lineTot(l))).join('\n')+'\nTotal '+m(t.total)+(t.loy&&t.loy.modelo==='cashback'?'\nSaldo en tu tarjeta: '+m2(t.loy.saldo):'')}
+function ticketTxt(t){return NOM+' · Ticket '+t.id+'\n'+t.lines.map(l=>l.qty+' x '+l.name+' '+l.v+' '+m(lineTot(l))).join('\n')+'\nTotal '+m(t.total)+(t.loy&&t.loy.modelo==='cashback'?'\nSaldo en tu tarjeta: '+m2(t.loy.saldo):'')+(t.loy&&t.loy.google?'\n⭐ Puntos dobles por tu reseña en Google aplicados':googleTxt())}
 function modalHtml(){
  const md=S.modal;if(!md)return'';
  let h='<div class="scrim" data-a="mclose" data-scrim="1"><div class="sheet" role="dialog" aria-modal="true">';
@@ -389,7 +389,8 @@ function semaf(k){const s=mesaState(k);
  if(S.cuenta[k])return{c:'azul',t:'Cuenta'};
  return{c:'verde',t:'Servido'}}
 const mesaTel=k=>{const o=mesaOrders(k).find(x=>x.cliente&&String(x.cliente.tel||'').length===10);return o?String(o.cliente.tel):''};
-function cuentaTxtOs(os,label){const sub=os.reduce((a,o)=>a+orderSub(o),0),env=os.reduce((a,o)=>a+(o.envio||0),0),p10=Math.round(sub*.1);const ls=[];os.forEach(o=>o.lines.forEach(l=>ls.push(l.qty+' x '+l.name+' '+l.v+(l.mods&&l.mods.length?' ('+l.mods.map(x=>x.l).join(', ')+')':'')+' · '+m(lineTot(l)))));return NOM+' · Cuenta '+label+'\n\n'+ls.join('\n')+'\n\nSubtotal '+m(sub)+(env?'\nEnvío '+m(env):'')+'\nPropina sugerida (10%): '+m(p10)+'\nTotal con propina: '+m(sub+env+p10)+'\n\nGracias por venir. ¡Te esperamos pronto!'}
+const googleTxt=()=>CFG.googleUrl?'\n\n⭐ ¿Te gustó? Califícanos en Google y en tu próxima compra ganas PUNTOS DOBLES (muéstrale tu reseña al cajero, una vez por cliente):\n'+CFG.googleUrl:'';
+function cuentaTxtOs(os,label){const sub=os.reduce((a,o)=>a+orderSub(o),0),env=os.reduce((a,o)=>a+(o.envio||0),0),p10=Math.round(sub*.1);const ls=[];os.forEach(o=>o.lines.forEach(l=>ls.push(l.qty+' x '+l.name+' '+l.v+(l.mods&&l.mods.length?' ('+l.mods.map(x=>x.l).join(', ')+')':'')+' · '+m(lineTot(l)))));return NOM+' · Cuenta '+label+'\n\n'+ls.join('\n')+'\n\nSubtotal '+m(sub)+(env?'\nEnvío '+m(env):'')+'\nPropina sugerida (10%): '+m(p10)+'\nTotal con propina: '+m(sub+env+p10)+'\n\nGracias por venir. ¡Te esperamos pronto!'+googleTxt()}
 const waCuenta=(os,label,tel)=>tel&&tel.length===10?'<a class="btn sm" target="_blank" rel="noopener" href="'+waCli(tel,cuentaTxtOs(os,label))+'">Enviar cuenta por WhatsApp</a>':'<span class="xs muted">Pídele su WhatsApp para mandarle la cuenta</span>';
 function vMesero(){
  const w=S.mw;
@@ -482,6 +483,7 @@ function cobro(){
   else h+='<div class="banner warn">Cliente nuevo. Pide su nombre y fecha de nacimiento para crear su tarjeta.</div><div class="grid2" style="gap:8px"><label class="f">Nombre<input type="text" data-in="cnom" value="'+esc(c.nom)+'"></label><label class="f">Fecha de nacimiento<input type="date" data-in="cnac" value="'+esc(c.nac)+'"></label></div>';
   if(L&&!L.error&&!L.loading&&L.modelo==='cashback')h+='<div class="xs muted">Esta venta le suma aprox. '+m2((sub-disc)*L.parametro/100)+' de saldo ('+L.parametro+'% de cashback).</div>';
  }
+ if(c.tel.length===10&&CFG.googleUrl&&c.lc&&!c.lc.loading&&!c.lc.error&&!c.lc.googleUsado)h+='<div class="row between small"><span>⭐ ¿Mostró su reseña de Google? <a href="'+CFG.googleUrl+'" target="_blank" rel="noopener">Ver liga</a></span><button class="chip" data-a="gdob" aria-pressed="'+(!!c.gdob)+'">Puntos dobles</button></div>';
  h+='</div>';
  if(disc)h+='<div class="row between small"><span>Saldo aplicado</span><b class="num">−'+m(disc)+'</b></div>';
  h+='<div class="row between"><span class="b">Total</span><b class="num" id="ctot" style="font-size:26px">'+m(tot)+'</b></div>'+(!isO?waCuenta(os,mLabel(k),c.tel.length===10?c.tel:mesaTel(k)):'')+'<button class="btn pri" data-a="cobrar"'+(c.busy?' disabled':'')+'>'+(c.busy?'Cobrando…':'Cobrar y enviar ticket')+'</button><button class="btn" disabled>Facturar (en integración)</button></div>';
@@ -719,14 +721,14 @@ async function doCobro(){
   c.busy=true;render();
   try{
    if(disc>0)await lpost({accion:'canje',telefono:tel,puntos:disc});
-   if(sub-disc>0){const r=await lpost({accion:'venta',telefono:tel,monto:sub-disc,nombre:c.nom,fechaNacimiento:c.nac});loy={ganado:r.puntosGanados,saldo:r.cliente.puntos,nuevo:r.esNuevo,modelo:r.modelo,usado:disc};nombre=r.cliente.nombre}
+   if(sub-disc>0){const r=await lpost({accion:'venta',telefono:tel,monto:sub-disc,nombre:c.nom,fechaNacimiento:c.nac,googleDobles:!!c.gdob});loy={ganado:r.puntosGanados,saldo:r.cliente.puntos,nuevo:r.esNuevo,modelo:r.modelo,usado:disc,google:!!c.gdob};nombre=r.cliente.nombre}
   }catch(e){toast('Lealtad: '+e.message+'. Se cobró sin puntos.')}
   c.busy=false;
  }
  const cl={name:nombre||(L?L.cliente.nombre:''),tel};
  const o2={method:c.method,tip,disc,cliente:cl,mesa:k,canal:'mesa'};if(sn)o2.nombre=sn.n;if(c.sel.indexOf('o:')===0){o2.mesa=null;o2.canal=os[0].canal;o2.envio=os[0].envio||0}
  const t=closeTicket(os,o2);t.loy=loy;
- c.sel=null;c.tel='';c.canje=false;c.tip=0;c.tipx='';c.recv='';c.split=1;c.lc=null;c.nom='';c.nac='';
+ c.sel=null;c.tel='';c.canje=false;c.tip=0;c.tipx='';c.recv='';c.split=1;c.lc=null;c.nom='';c.nac='';c.gdob=false;
  S.modal={type:'ticket',id:t.id};S.real=null;render();
 }
 
@@ -1263,7 +1265,8 @@ root.addEventListener('click',e=>{
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
   case'ctab':S.caja.tab=g('v');break;
-  case'csel':{S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;const oc=(CONTRA||S.caja.sel.indexOf('n:')===0?cobroOrders(S.caja.sel):mesaOrders(S.caja.sel)).find(o=>o.cliente&&String(o.cliente.tel||'').length===10);if(oc){S.caja.tel=oc.cliente.tel;S.caja.lc=null;loadCajaCliente(oc.cliente.tel)}break}
+  case'gdob':S.caja.gdob=!S.caja.gdob;break;
+  case'csel':{S.caja.gdob=false;S.caja.sel=g('k');S.caja.recv='';S.caja.canje=false;S.caja.split=1;const oc=(CONTRA||S.caja.sel.indexOf('n:')===0?cobroOrders(S.caja.sel):mesaOrders(S.caja.sel)).find(o=>o.cliente&&String(o.cliente.tel||'').length===10);if(oc){S.caja.tel=oc.cliente.tel;S.caja.lc=null;loadCajaCliente(oc.cliente.tel)}break}
   case'tip':S.caja.tip=+g('v');S.caja.tipx='';break;
   case'method':S.caja.method=g('v');break;
   case'split':S.caja.split=+g('v');break;

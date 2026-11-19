@@ -8,6 +8,7 @@
  *   POST { accion: "alta" | "venta" | "canje", ... }
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { getMongoDb } from '@/lib/mongodb';
 import {
   altaCliente,
   canjearPuntos,
@@ -26,6 +27,7 @@ import type { ServidorConfig } from './servidor';
 
 const MONTO_MAX = 50_000;
 
+
 function info(cfg: TenantConfig) {
   const rec = tenantRecompensa(cfg);
   return { nombre: cfg.nombre, modelo: rec.modelo, parametro: rec.parametro };
@@ -33,6 +35,8 @@ function info(cfg: TenantConfig) {
 
 export function crearLealtadApi(cfgS: ServidorConfig) {
 const KEY = cfgS.tenant.key;
+/** Puntos dobles por reseña en Google: una sola vez por teléfono (el _id único lo garantiza). */
+const colGoogle = async () => (await getMongoDb()).collection<{ _id: string; ts: number }>(`${cfgS.prefijo}_google`);
 const { perfilDeRequest } = crearAuth(cfgS);
 
 async function syncWallet(cfg: TenantConfig, clienteId: string, puntos: number) {
@@ -69,7 +73,11 @@ async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Teléfono inválido (10 dígitos)' }, { status: 400 });
     }
     const cliente = await findClienteByTelefono(KEY, telefono);
-    return NextResponse.json({ ...info(cfg), found: Boolean(cliente), telefono, cliente });
+    let googleUsado = false;
+    try {
+      googleUsado = Boolean(await (await colGoogle()).findOne({ _id: telefono }));
+    } catch {}
+    return NextResponse.json({ ...info(cfg), found: Boolean(cliente), telefono, cliente, googleUsado });
   } catch (e) {
     console.error(`[restaurante:${KEY}/lealtad GET]`, e);
     return NextResponse.json({ error: 'No se pudo consultar la lealtad' }, { status: 500 });
@@ -127,12 +135,28 @@ async function POST(req: NextRequest) {
       if (!Number.isFinite(monto) || monto <= 0 || monto > MONTO_MAX) {
         return NextResponse.json({ error: 'Monto inválido' }, { status: 400 });
       }
-      const r = await registrarVenta(KEY, {
+      // Puntos dobles por calificar en Google: caja confirma que vio la reseña; solo una vez por cliente.
+      const dobles = (body as any).googleDobles === true;
+      if (dobles) {
+        if (monto * 2 > MONTO_MAX) return NextResponse.json({ error: 'Monto inválido' }, { status: 400 });
+        try {
+          await (await colGoogle()).insertOne({ _id: telefono, ts: Date.now() });
+        } catch {
+          return NextResponse.json({ error: 'Este cliente ya usó sus puntos dobles por Google' }, { status: 409 });
+        }
+      }
+      let r;
+      try {
+        r = await registrarVenta(KEY, {
         telefono,
-        monto,
+        monto: dobles ? monto * 2 : monto,
         nombre: body.nombre,
         fechaNacimiento: body.fechaNacimiento,
-      });
+        });
+      } catch (e) {
+        if (dobles) await (await colGoogle()).deleteOne({ _id: telefono }).catch(() => {});
+        throw e;
+      }
       await syncWallet(cfg, r.cliente.id, r.cliente.puntos);
       return NextResponse.json({ ...info(cfg), ok: true, ...r });
     }
