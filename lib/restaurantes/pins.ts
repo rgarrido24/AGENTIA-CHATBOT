@@ -2,6 +2,7 @@ import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { getMongoDb } from '@/lib/mongodb';
 import { colEstado, type ServidorConfig } from './servidor';
 import { ROLES_PIN, type Rol } from './tipos';
+import { setVerSesion } from './auth';
 import { nuevoSecreto, uriOtp, verificar, codigosRespaldo } from './totp';
 
 /**
@@ -31,7 +32,17 @@ export function crearPins(cfg: ServidorConfig) {
   async function guardados(): Promise<Record<string, string>> {
     const db = await getMongoDb();
     const d = await db.collection<any>(colEstado(cfg)).findOne({ _id: 'main' }, { projection: { pins: 1 } });
-    return (d && d.pins) || {};
+    const p = (d && d.pins) || {};
+    setVerSesion(cfg.slug, createHash('sha1').update(JSON.stringify(p)).digest('hex').slice(0, 8));
+    return p;
+  }
+
+  let ultimaVer = 0;
+  /** Mantiene al día (con 5 s de caché) la versión de contraseñas que usan los tokens de sesión. */
+  async function refrescarVer(forzar?: boolean): Promise<void> {
+    if (!forzar && Date.now() - ultimaVer < 5000) return;
+    ultimaVer = Date.now();
+    await guardados();
   }
 
   async function pinOk(rol: Rol, pin: unknown): Promise<boolean> {
@@ -52,6 +63,7 @@ export function crearPins(cfg: ServidorConfig) {
   async function cambiarPin(rol: Rol, nuevo: string): Promise<void> {
     const db = await getMongoDb();
     await db.collection<any>(colEstado(cfg)).updateOne({ _id: 'main' }, { $set: { ['pins.' + rol]: hash(nuevo) } }, { upsert: true });
+    await guardados();
   }
 
   /**
@@ -120,5 +132,5 @@ export function crearPins(cfg: ServidorConfig) {
   }
   async function dosApagar() { await dosGuardar({}); }
 
-  return { pinOk, pinPorDefecto, cambiarPin, claveDebil, debilLogin, dosActivo, dosEstado, dosIniciar, dosActivar, dosVerificar, dosApagar };
+  return { refrescarVer, pinOk, pinPorDefecto, cambiarPin, claveDebil, debilLogin, dosActivo, dosEstado, dosIniciar, dosActivar, dosVerificar, dosApagar };
 }

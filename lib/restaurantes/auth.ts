@@ -11,6 +11,9 @@ import type { Rol } from './tipos';
  */
 export type Perfil = Rol;
 const TTL_MS = 14 * 60 * 60 * 1000;
+/** Versión de contraseñas por restaurante (en memoria): si el dueño cambia una contraseña, las sesiones abiertas dejan de valer. */
+const VER: Record<string, string> = {};
+export const setVerSesion = (slug: string, v: string) => { VER[slug] = v; };
 const MAX_FALLOS = 6;
 const BLOQUEO_MS = 15 * 60 * 1000;
 const PERFILES = ['dueno', 'caja', 'mesero', 'cocina'];
@@ -29,15 +32,17 @@ export function crearAuth(cfg: ServidorConfig) {
 
   function firmarToken(rol: Perfil): string {
     const exp = Date.now() + TTL_MS;
-    return `${rol}.${exp}.${mac(`${rol}.${exp}`)}`;
+    const sv = VER[cfg.slug] || '0';
+    return `${rol}.${exp}.${sv}.${mac(`${rol}.${exp}.${sv}`)}`;
   }
 
   function perfilDeToken(tok: unknown): Perfil | null {
     if (typeof tok !== 'string') return null;
-    const [rol, exp, firma] = tok.split('.');
+    const [rol, exp, sv, firma] = tok.split('.');
     if (!PERFILES.includes(rol) || !firma) return null;
     if (!(Number(exp) > Date.now())) return null;
-    const esperado = mac(`${rol}.${exp}`);
+    if (VER[cfg.slug] && sv !== VER[cfg.slug]) return null;
+    const esperado = mac(`${rol}.${exp}.${sv}`);
     const a = Buffer.from(firma), b = Buffer.from(esperado);
     if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
     return rol as Perfil;

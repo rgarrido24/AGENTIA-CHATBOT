@@ -115,6 +115,7 @@ const vistaDe = (req: NextRequest): Vista => {
 async function GET(req: NextRequest) {
   try {
     const doc = await load();
+    await pins.refrescarVer();
     const v = vistaDe(req);
     const qm = req.nextUrl.searchParams.get('cuenta');
     if (qm) {
@@ -170,6 +171,7 @@ async function POST(req: NextRequest) {
     const raw = await req.text();
     if (raw.length > MAX_BYTES) return NextResponse.json({ error: 'Solicitud muy grande' }, { status: 413 });
     const body = JSON.parse(raw || '{}');
+    await pins.refrescarVer();
     const perfil = perfilDeRequest(req);
     const esDueno = perfil === 'dueno';
     const db = await getMongoDb();
@@ -270,7 +272,7 @@ async function POST(req: NextRequest) {
         if (typeof v === 'string' && v) await cambiarPin(r, v);
       }
       const defecto = await Promise.all(ROLES_PIN.map((r) => pinPorDefecto(r)));
-      return NextResponse.json({ ok: true, defecto: defecto.some(Boolean) });
+      return NextResponse.json({ ok: true, defecto: defecto.some(Boolean), token: firmarToken('dueno') });
     }
 
     if (body.accion === 'reset' || body.accion === 'produccion') {

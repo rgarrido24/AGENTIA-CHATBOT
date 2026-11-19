@@ -442,7 +442,7 @@ function mAdd(){
 /* ---------- cocina y barra ---------- */
 function vKds(st){
  const title=st==='cocina'?'Cocina':'Barra';
- const tks=live().map(o=>({o,ls:o.lines.filter(l=>l.station===st&&l.status!=='entregado')})).filter(x=>x.ls.length);
+ const tks=live().map(o=>({o,ls:o.lines.filter(l=>l.station===st&&l.status!=='entregado')})).filter(x=>x.ls.length).filter(x=>!(x.ls.every(l=>l.status==='listo')&&mins(x.o.created)>180));
  const stOf=x=>x.ls.every(l=>l.status==='listo')?'listo':x.ls.some(l=>l.status==='preparando')?'preparando':'nuevo';
  const cols=[['nuevo','Nuevos'],['preparando','Preparando'],['listo','Listos']];
  const sc=S.kds.screen;
@@ -1322,7 +1322,7 @@ root.addEventListener('click',e=>{
   case'nvfav':NV.fav=!NV.fav;break;
   case'noop':return;
   case'savepw':{const n={};Object.entries(S.pw||{}).forEach(([r,v])=>{if(v)n[r]=v});if(Object.keys(n).some(r=>n[r].length<(r==='dueno'?10:6))){toast('Mínimo 6 caracteres (10 en la del dueño), con letras y números');return}if(!Object.keys(n).length){toast('Escribe al menos una contraseña nueva');return}
-   fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'setpin',nuevos:n})}).then(r=>r.json().then(j=>({r,j}))).then(({r,j})=>{if(r.ok&&j.ok){if(n.dueno)S.dpin=n.dueno;S.pinDef=!!j.defecto;S.pw={dueno:'',caja:'',mesero:'',cocina:''};toast('Contraseñas guardadas');}else toast(j.error||'No se pudo guardar');render()}).catch(()=>{toast('Sin conexión, intenta de nuevo');render()});return}
+   fetch(SAPI,{method:'POST',headers:hdr(),body:JSON.stringify({accion:'setpin',nuevos:n})}).then(r=>r.json().then(j=>({r,j}))).then(({r,j})=>{if(r.ok&&j.ok){if(j.token){TOKS.dueno=j.token;saveToks()}if(n.dueno)S.dpin=n.dueno;S.pinDef=!!j.defecto;S.pw={dueno:'',caja:'',mesero:'',cocina:''};toast('Contraseñas guardadas');}else toast(j.error||'No se pudo guardar');render()}).catch(()=>{toast('Sin conexión, intenta de nuevo');render()});return}
   case'printt':{const t=S.tickets.find(x=>x.id===+g('t'));const w=window.open('','_blank','width=320,height=600');if(w){w.document.write('<pre style="font:14px monospace">'+esc(ticketTxt(t))+'</pre>');w.document.close();w.print()}return}
   /* caja */
   case'ctab':S.caja.tab=g('v');break;
