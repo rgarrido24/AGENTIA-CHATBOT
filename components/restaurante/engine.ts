@@ -186,9 +186,12 @@ const avgOf=id=>{const r=S.soc.rate[id];return r.n?r.sum/r.n:0};
 const scoreOf=id=>S.soc.likes[id]+S.soc.rate[id].n*avgOf(id);
 function lineHtml(l){return esc(l.name)+' <span class="muted">'+esc(l.v)+'</span>'+(l.mods.length?'<div class="mods">'+l.mods.map(x=>esc(x.l)).join(' · ')+'</div>':'')+(l.note?'<div class="xs muted">Nota: '+esc(l.note)+'</div>':'')}
 function fromPrice(p){const min=Math.min.apply(null,p.v.map(v=>v.p));return(p.v.length>1?'desde ':'')+m(min)}
+/* relevancia: con foto, buenas calificaciones, comentario con contenido y consumo verificado suben; las viejas bajan poco a poco */
+const relv=x=>(x.foto?3:0)+(x.stars>=4?2:x.stars<=2?-2:0)+((x.text||'').length>40?1:0)+(x.v?1:0)-(Date.now()-x.ts)/864e5*.05;
+function revItems(revs,n){return revs.slice(0,n).map(x=>'<div class="rev"><div class="row between"><span class="b small">'+esc(x.user)+'</span>'+starsHtml(x.stars)+'</div>'+(x.foto?'<img src="'+esc(x.foto)+'" loading="lazy" alt="Foto de '+esc(x.user)+'" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin:6px 0">':'')+'<div class="small">'+esc(x.text)+'</div><div class="xs muted">'+(x.v?'<span class="status s-good" style="padding:1px 8px">Consumo verificado</span> ':'')+ago(x.ts)+'</div></div>').join('')}
 function prodCard(p){
  const a=avgOf(p.id),r=S.soc.rate[p.id],out=soldOut(p),open=S.cli.open[p.id],liked=S.soc.liked[p.id];
- const revs=S.soc.reviews.filter(x=>x.pid===p.id).sort((x,y)=>y.ts-x.ts);
+ const revs=S.soc.reviews.filter(x=>x.pid===p.id&&!x.hide).sort((x,y)=>relv(y)-relv(x));
  let h='<article class="prod'+(out?' out':'')+'"><div class="art" style="--c:'+CATCOL[p.cat]+'" aria-hidden="true">'+artHtml(p)+'</div><div class="stack" style="gap:6px">';
  h+='<div><h3>'+esc(p.name)+'</h3>'+(p.desc?'<div class="small muted">'+esc(p.desc)+'</div>':'')+'</div>';
  h+='<div class="soc">'+starsHtml(a)+'<span class="num">'+a.toFixed(1)+' ('+r.n+')</span><span class="num" style="color:var(--accent)">'+ICON.heart+' '+S.soc.likes[p.id]+'</span></div>';
@@ -198,8 +201,9 @@ function prodCard(p){
  h+='<a class="chip" style="text-decoration:none;color:inherit" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent('Prueba '+p.name+' en '+NOM+', '+a.toFixed(1)+' de 5 con '+r.n+' opiniones')+'">'+ICON.share+' Recomendar</a>';
  h+=''+(canOrderAny()?'<button class="btn pri sm" data-a="add" data-p="'+p.id+'"'+(out?' disabled':'')+'>Agregar</button>':'')+'</div></div>';
  if(open){h+='<div class="reviews">';
-  revs.slice(0,4).forEach(x=>{h+='<div class="rev"><div class="row between"><span class="b small">'+esc(x.user)+'</span>'+starsHtml(x.stars)+'</div><div class="small">'+esc(x.text)+'</div><div class="xs muted">'+(x.v?'<span class="status s-good" style="padding:1px 8px">Consumo verificado</span> ':'')+ago(x.ts)+'</div></div>'});
+  const more=S.cli.allrev&&S.cli.allrev[p.id];revs.slice(0,more?30:3).forEach(x=>{h+='<div class="rev"><div class="row between"><span class="b small">'+esc(x.user)+'</span>'+starsHtml(x.stars)+'</div>'+(x.foto?'<img src="'+esc(x.foto)+'" loading="lazy" alt="Foto de '+esc(x.user)+'" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin:6px 0">':'')+'<div class="small">'+esc(x.text)+'</div><div class="xs muted">'+(x.v?'<span class="status s-good" style="padding:1px 8px">Consumo verificado</span> ':'')+ago(x.ts)+'</div></div>'});
   if(!revs.length)h+='<div class="small muted">Aún no hay reseñas. Sé el primero.</div>';
+  if(revs.length>3)h+='<button class="btn ghost sm" data-a="allrev" data-p="'+p.id+'">'+(more?'Ver menos':'Ver las '+revs.length+' opiniones')+'</button>';
   h+='<button class="btn sm" data-a="review" data-p="'+p.id+'">Calificar y opinar</button></div>'}
  return h+'</article>'}
 function vCliente(){
@@ -332,9 +336,12 @@ function modalHtml(){
   if(NUEVO&&md.target==='cli')h+=nvPairHtml(p);
   h+='<div class="row between"><div class="qty"><button data-a="mq" data-d="-1" aria-label="Quitar uno">−</button><b class="num">'+md.qty+'</b><button data-a="mq" data-d="1" aria-label="Agregar uno">+</button></div><button class="btn pri" data-a="madd"'+(ready?'':' disabled')+'>Agregar '+m(ln.unit*md.qty)+'</button></div></div>';
  }
+ if(md.type==='revs'){const p=PM(md.pid),a=avgOf(md.pid),r=S.soc.rate[md.pid];const revs=S.soc.reviews.filter(x=>x.pid===md.pid&&!x.hide).sort((x,y)=>relv(y)-relv(x));
+  h+='<div class="row between"><h2>Opiniones · '+esc(p?p.name:'')+'</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="soc">'+starsHtml(a)+'<span class="num">'+(r.n?a.toFixed(1)+' ('+r.n+')':'Sin calificaciones')+'</span></div>'+(revs.length?revItems(revs,30):'<div class="small muted">Aún no hay opiniones. Sé el primero.</div>')+'<div class="xs muted">Mostramos primero las más útiles: con foto y buena calificación.</div><button class="btn pri" data-a="review" data-p="'+md.pid+'">Calificar y opinar</button></div>';
+ }
  if(md.type==='rev'){
   const p=PM(md.pid);
-  h+='<div class="row between"><h2>Califica '+esc(p.name)+'</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="chips">'+[1,2,3,4,5].map(n=>'<button class="chip" data-a="rstar" data-n="'+n+'" aria-pressed="'+(md.stars===n)+'">'+n+' ★</button>').join('')+'</div><label class="f">Tu opinión para los demás<textarea rows="3" data-in="rtext" placeholder="¿Qué pedirías de nuevo?">'+esc(md.text)+'</textarea></label><div class="xs muted">'+(S.cli.purchased[md.pid]?'Tu reseña llevará la marca de consumo verificado.':'Las reseñas de quienes ya pagaron este producto llevan marca de consumo verificado.')+'</div><button class="btn pri" data-a="rsend"'+(md.stars?'':' disabled')+'>Publicar reseña</button></div>';
+  h+='<div class="row between"><h2>Califica '+esc(p.name)+'</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px"><div class="chips">'+[1,2,3,4,5].map(n=>'<button class="chip" data-a="rstar" data-n="'+n+'" aria-pressed="'+(md.stars===n)+'">'+n+' ★</button>').join('')+'</div><label class="f">Tu opinión para los demás<textarea rows="3" maxlength="300" data-in="rtext" placeholder="¿Qué pedirías de nuevo?">'+esc(md.text)+'</textarea></label>'+(S.me.tel.length===10?(md.foto?'<div class="stack" style="gap:6px"><img src="'+esc(md.foto)+'" alt="Tu foto" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px"><button class="btn ghost sm" data-a="rfotoquita">Quitar foto</button></div>':'<label class="f">Foto de tu plato (opcional, tu reseña vale más con foto)<input type="file" accept="image/*" data-file="res"'+(md.up?' disabled':'')+'></label>'+(md.up?'<div class="xs muted">Subiendo foto…</div>':'')):'<div class="xs muted">Para subir foto registra tu WhatsApp en <b>Mis puntos</b>.</div>')+'<div class="xs muted">'+(S.cli.purchased[md.pid]?'Tu reseña llevará la marca de consumo verificado.':'Las reseñas de quienes ya pagaron este producto llevan marca de consumo verificado.')+'</div><button class="btn pri" data-a="rsend"'+(md.stars&&!md.up?'':' disabled')+'>Publicar reseña</button></div>';
  }
  if(md.type==='rate'){
   h+='<div class="row between"><h2>¿Cómo estuvo todo?</h2><button class="btn ghost sm" data-a="mclose">Después</button></div><p class="small muted">Tu calificación ayuda a que otros pidan lo mejor.</p><div class="stack">'+md.pids.map(id=>{const p=PM(id);return'<div class="row between"><span class="b">'+esc(p.name)+'</span><span class="chips">'+[1,2,3,4,5].map(n=>'<button class="chip" data-a="rrate" data-p="'+id+'" data-n="'+n+'" aria-pressed="'+(md.stars[id]===n)+'">'+n+'</button>').join('')+'</span></div>'}).join('')+'<button class="btn pri" data-a="rratesend">Enviar calificaciones</button></div>';
@@ -606,7 +613,7 @@ function nvCard(p,i){
  +'<div class="nv-art" data-tilt>'+artHtml(p)+(t?'<span class="nv-tag">'+t+' hoy</span>':p.tag?'<span class="nv-tag etq">'+esc(p.tag)+'</span>':'')+(out?'<span class="nv-tag off">Agotado</span>':'')+'</div>'
  +'<button class="nv-heart'+(liked?' on':'')+'" data-a="like" data-p="'+p.id+'" aria-label="Me gusta" aria-pressed="'+(!!liked)+'">'+ICON.heart+'</button>'
  +'<div class="nv-info"><h3>'+esc(p.name)+'</h3>'+(p.desc?'<div class="nv-desc">'+esc(p.desc)+'</div>':'')
- +(p.salsas&&CFG.salsas?'<div class="nv-flm"><span class="xs">'+salsasOn().length+' salsas, de suave a extra fuego</span></div>':'')+'<div class="nv-meta">'+(r.n?'<span class="nv-star">★ '+a.toFixed(1)+'</span>':CFG.etiquetas?'':'<span class="nv-star new">Nuevo</span>')+'</div>'
+ +(p.salsas&&CFG.salsas?'<div class="nv-flm"><span class="xs">'+salsasOn().length+' salsas, de suave a extra fuego</span></div>':'')+'<div class="nv-meta">'+(r.n?'<span class="nv-star">★ '+a.toFixed(1)+'</span>':CFG.etiquetas?'':'<span class="nv-star new">Nuevo</span>')+'<button class="nv-opi" data-a="revs" data-p="'+p.id+'" aria-label="Ver opiniones de '+esc(p.name)+'">💬 '+S.soc.reviews.filter(x=>x.pid===p.id&&!x.hide).length+'</button></div>'
  +'<div class="nv-foot"><span class="nv-price num">'+fromPrice(p)+'</span>'+(can?'<button class="nv-plus" data-a="qadd" data-p="'+p.id+'" aria-label="Agregar '+esc(p.name)+'">+</button>':'')+'</div></div></article>'}
 function nvList(){
  const c=S.cli,q=NV.q.trim().toLowerCase();
@@ -749,18 +756,18 @@ function applyMenu(){
  if(S)MENU.forEach(q=>{if(S.soc.likes[q.id]==null)S.soc.likes[q.id]=0;if(!S.soc.rate[q.id])S.soc.rate[q.id]={n:0,sum:0}});
 }
 const IAPI=CFG.api+'/imagen';
-async function uploadImg(file){
+async function uploadImg(file,rx){
  const bmp=await createImageBitmap(file);
- const sc=Math.min(1,900/Math.max(bmp.width,bmp.height));
+ const sc=Math.min(1,(rx?800:900)/Math.max(bmp.width,bmp.height));
  const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(bmp.width*sc));cv.height=Math.max(1,Math.round(bmp.height*sc));
  cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
  /* si la foto tiene fondo transparente (PNG de ChatGPT, etc.) se conserva; en JPEG se volvía negro */
  let alpha=false;try{const px=cv.getContext('2d').getImageData(0,0,cv.width,cv.height).data;for(let i=3;i<px.length;i+=16){if(px[i]<250){alpha=true;break}}}catch(e){}
- const fmt=alpha?'image/webp':'image/jpeg';
- let q=.82,data=cv.toDataURL(fmt,q);
+ const fmt=alpha&&!rx?'image/webp':'image/jpeg';
+ let q=rx?.7:.82,data=cv.toDataURL(fmt,q);
  if(alpha&&data.indexOf('data:image/webp')!==0)data=cv.toDataURL('image/png');
- while(data.length>900000&&q>.4){q-=.12;data=cv.toDataURL(fmt,q);if(alpha&&data.indexOf('data:image/webp')!==0){const c2=document.createElement('canvas');c2.width=Math.round(cv.width*.8);c2.height=Math.round(cv.height*.8);c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);cv.width=c2.width;cv.height=c2.height;cv.getContext('2d').drawImage(c2,0,0);data=cv.toDataURL('image/png')}}
- const r=await fetch(IAPI,{method:'POST',headers:hdr(),body:JSON.stringify({data})});
+ while(data.length>(rx?150000:900000)&&q>.25){q-=.12;data=cv.toDataURL(fmt,q);if(alpha&&data.indexOf('data:image/webp')!==0){const c2=document.createElement('canvas');c2.width=Math.round(cv.width*.8);c2.height=Math.round(cv.height*.8);c2.getContext('2d').drawImage(cv,0,0,c2.width,c2.height);cv.width=c2.width;cv.height=c2.height;cv.getContext('2d').drawImage(c2,0,0);data=cv.toDataURL('image/png')}}
+ const r=await fetch(IAPI,{method:'POST',headers:hdr(),body:JSON.stringify(rx?{resena:true,tel:S.me.tel,data}:{data})});
  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo subir la foto');return j.url;
 }
 function openPedit(pid){
@@ -921,7 +928,7 @@ function dExtrasCfg(){
  EXT.forEach(e=>{const on=S.settings[e.k]>=0;h+='<div class="row between" style="gap:8px"><div class="grow"><b class="small">'+e.g+'</b><div class="xs muted">'+(e.donde||e.cats.join(', '))+'</div></div>'+(on&&!e.salsa?'<label class="f" style="width:96px;margin:0"><input type="number" min="0" max="500" data-in="xp_'+e.k+'" value="'+S.settings[e.k]+'" aria-label="Precio de '+e.g+'"></label>':'')+'<button class="btn sm'+(on?' pri':'')+'" data-a="xtog" data-k="'+e.k+'" aria-pressed="'+on+'">'+(on?'Ofrecido':'No ofrecido')+'</button></div>'});
  return h+'</div>'}
 function dAjustes(){
- let h=dEstiloCfg()+dPedidosCfg()+dExtrasCfg()+dQuickCfg()+dPwCfg()+dSeg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
+ let h=dEstiloCfg()+dResenas()+dPedidosCfg()+dExtrasCfg()+dQuickCfg()+dPwCfg()+dSeg()+'<div class="card stack"><h3>Estado del sistema</h3><div class="row between"><span>Modo actual</span><span class="status '+(PROD?'s-good':'s-warn')+'">'+(PROD?'Producción':'Demo con datos de ejemplo')+'</span></div><div class="small muted">'+(PROD?'Todo lo que se registra es real. Menú, fotos y precios que editaste se conservan.':'Ahora se ven ventas, reseñas y clientes de ejemplo. Cuando termines de cargar tu menú y tus fotos, pasa a producción para empezar en limpio.')+'</div>'+(PROD?'':'<button class="btn pri" data-a="prodask">Pasar a producción</button>')+'</div>';
  h+='<div class="card stack"><h3>Antes de abrir al público</h3><ul class="small" style="margin:0;padding-left:18px"><li>Carga tus fotos y precios en "Menú y márgenes".</li><li>Captura tus costos reales de insumos en "Inventario".</li><li>Haz un conteo físico para dejar el inventario inicial correcto.</li>'+(S.pinDef?'<li><b style="color:var(--bad)">Cambia las contraseñas:</b> todavía hay perfiles con la contraseña inicial. Cámbialas en "Contraseñas del equipo".</li>':'')+'</ul></div>';
  return h}
 
@@ -938,6 +945,12 @@ let QRMESA=null,QRT='',GEOOK=null;
 const canOrderAny=()=>!!(S.settings.pedMesa||S.settings.pedLlevar||S.settings.pedEntrega);
 const canalOk=e=>e==='mesa'?!!S.settings.pedMesa:e==='llevar'?!!S.settings.pedLlevar:!!S.settings.pedEntrega;
 const allowedCanales=dentro=>[].concat(dentro&&S.settings.pedMesa?['mesa']:[],S.settings.pedLlevar?['llevar']:[],S.settings.pedEntrega?['entrega']:[]);
+function dResenas(){
+ const rs=S.soc.reviews.slice().sort((a,b)=>b.ts-a.ts).slice(0,40);
+ let h='<div class="card stack"><h3>Reseñas de clientes</h3><div class="small muted">Los clientes ven primero las más relevantes (con foto y buena calificación). Aquí puedes ocultar las que no convengan; al ocultar, su calificación deja de contar.</div>';
+ if(!rs.length)return h+'<div class="small muted">Aún no hay reseñas.</div></div>';
+ rs.forEach(x=>{const p=PM(x.pid);h+='<div class="stack" style="gap:4px;'+(x.hide?'opacity:.5':'')+'"><div class="row between"><span class="b small">'+esc(x.user)+(x.u4?' <span class="xs muted">· WhatsApp ···'+esc(x.u4)+'</span>':'')+' · '+esc(p?p.name:x.pid)+'</span>'+starsHtml(x.stars)+'</div>'+(x.foto?'<img src="'+esc(x.foto)+'" loading="lazy" alt="" style="width:100%;max-height:120px;object-fit:cover;border-radius:10px">':'')+'<div class="small">'+esc(x.text)+'</div><div class="row between"><span class="xs muted">'+ago(x.ts)+(x.hide?' · oculta':'')+'</span><button class="btn sm" data-a="rhide" data-k="'+x.ts+'_'+esc(x.pid)+'">'+(x.hide?'Mostrar':'Ocultar')+'</button></div></div><hr>'});
+ return h+'</div>'}
 function dEstiloCfg(){
  if(!CFG.estilos)return'';const p=S.settings.estiloMenu!=='clasico';
  return'<div class="card stack"><h3>Estilo del menú del cliente</h3><div class="small muted">Cambia cómo se ve el menú en el celular de tus clientes. Puedes volver al otro cuando quieras.</div><div class="chips"><button class="chip" data-a="estilo" data-v="premium" aria-pressed="'+p+'">Premium (oscuro, moderno)</button><button class="chip" data-a="estilo" data-v="clasico" aria-pressed="'+!p+'">Sencillo (el de siempre)</button></div></div>'}
@@ -1138,6 +1151,8 @@ function setupInput(el){
 root.addEventListener('input',e=>{const el=e.target.closest('[data-in]');if(el&&el.tagName!=='SELECT')setupInput(el)},{signal:ctl.signal});
 root.addEventListener('change',e=>{
  const fi=e.target.closest('input[data-file]');
+ if(fi&&fi.getAttribute('data-file')==='res'){const file=fi.files&&fi.files[0];if(!file||!S.modal||S.modal.type!=='rev')return;S.modal.up=true;render();
+  uploadImg(file,true).then(u=>{if(S.modal&&S.modal.type==='rev')S.modal.foto=u}).catch(er=>toast(er.message||'No se pudo subir la foto')).finally(()=>{if(S.modal)S.modal.up=false;render()});return}
  if(fi&&fi.getAttribute('data-file')==='sal'){const file=fi.files&&fi.files[0],sid=fi.getAttribute('data-s');if(!file)return;S.salUp=sid;render();
   uploadImg(file).then(u=>{salSet(sid,'foto',u)}).catch(er=>toast(er.message||'No se pudo subir la foto')).finally(()=>{S.salUp=null;render()});return}
  if(fi){const file=fi.files&&fi.files[0];if(!file||!S.modal||S.modal.type!=='pedit')return;S.modal.up=true;render();
@@ -1187,7 +1202,11 @@ root.addEventListener('click',e=>{
   case'mq':S.modal.qty=Math.max(1,S.modal.qty+ +g('d'));break;
   case'madd':{const ln=buildLine();const tgt=S.modal.target;S.modal=null;if(tgt==='cli'){c.cart.push(ln);toast('Agregado a tu pedido')}else{S.mw.cart.push(ln);toast('Agregado')}break}
   case'rstar':S.modal.stars=+g('n');break;
-  case'rsend':{const md=S.modal;const r=S.soc.rate[md.pid];r.n++;r.sum+=md.stars;S.soc.reviews.push({pid:md.pid,user:S.me.name.trim()||'Tú',stars:md.stars,text:md.text||'Sin comentario',v:!!c.purchased[md.pid],ts:Date.now()});c.open[md.pid]=true;S.modal=null;toast('Gracias por tu reseña');break}
+  case'revs':S.modal={type:'revs',pid:g('p')};break;
+  case'rfotoquita':S.modal.foto='';break;
+  case'allrev':{const q=S.cli.allrev=S.cli.allrev||{};q[g('p')]=!q[g('p')];break}
+  case'rhide':{const r=S.soc.reviews.find(x=>x.ts+'_'+x.pid===g('k'));if(r){const q=S.soc.rate[r.pid];r.hide=!r.hide;if(q){if(r.hide){q.n=Math.max(0,q.n-1);q.sum=Math.max(0,Math.round((q.sum-r.stars)*10)/10)}else{q.n++;q.sum=Math.round((q.sum+r.stars)*10)/10}}toast(r.hide?'Reseña oculta':'Reseña visible otra vez')}break}
+  case'rsend':{const md=S.modal;const r=S.soc.rate[md.pid];r.n++;r.sum+=md.stars;S.soc.reviews.push(Object.assign({pid:md.pid,user:S.me.name.trim()||'Tú',stars:md.stars,text:md.text||'Sin comentario',v:!!c.purchased[md.pid],ts:Date.now()},md.foto&&S.me.tel.length===10?{foto:md.foto,u4:S.me.tel.slice(-4)}:{}));c.open[md.pid]=true;S.modal=null;toast('Gracias por tu reseña');break}
   case'rrate':S.modal.stars[g('p')]=+g('n');break;
   case'rratesend':{Object.keys(S.modal.stars).forEach(id=>{const r=S.soc.rate[id];r.n++;r.sum+=S.modal.stars[id]});S.modal=null;toast('Gracias, tu calificación ya se ve en el menú');c.tab='menu';break}
   case'payok':{const md=S.modal;if(md.by==='order'){payOrderOnline(S.orders.find(x=>x.id===md.oid))}else{S.modal=null;payMesaOnline()}break}

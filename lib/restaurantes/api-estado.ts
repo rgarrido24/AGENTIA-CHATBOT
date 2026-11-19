@@ -309,7 +309,7 @@ async function POST(req: NextRequest) {
           let d = row.d;
           if (perfil) {
             const ok =
-              name === 'gastos' ? esDueno : name === 'tickets' || name === 'movs' ? puede(perfil, 'caja') : true;
+              name === 'gastos' || name === 'reviews' ? esDueno : name === 'tickets' || name === 'movs' ? puede(perfil, 'caja') : true;
             if (!ok) continue;
             if (name === 'orders' && cur?.d?.dedap && d && !d.dedap) d = { ...d, dedap: true };
           } else {
@@ -333,6 +333,9 @@ async function POST(req: NextRequest) {
               delete d.dedo;
             } else if (name === 'reviews') {
               if (cur || !d || !Number.isInteger(d.stars) || d.stars < 1 || d.stars > 5 || String(d.text || '').length > 300 || !/^[\w-]{1,40}$/.test(String(d.pid || ''))) continue;
+              // Solo campos públicos: sin ocultar (eso lo hace el dueño), foto solo de nuestro propio almacén y de quien dio su WhatsApp
+              const foto = /^\/api\/demo\/[\w-]+\/imagen\?id=[a-f0-9]{24}$/.test(String(d.foto || '')) && /^\d{4}$/.test(String(d.u4 || '')) ? d.foto : undefined;
+              d = { pid: d.pid, user: String(d.user || 'Cliente').slice(0, 30), stars: d.stars, text: String(d.text || '').slice(0, 300), v: !!d.v, ts: d.ts, ...(foto ? { foto, u4: String(d.u4) } : {}) };
             } else if (name === 'tickets') {
               if (cur || !d || d.method !== 'Link de pago' || !Number.isInteger(d.id) || d.id < 100000 || !Number.isFinite(d.total) || d.total > 8000) continue;
             } else continue;

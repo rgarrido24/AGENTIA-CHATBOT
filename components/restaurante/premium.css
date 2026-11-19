@@ -125,3 +125,7 @@
 .tos-root.estilo-premium .nav .cnt{background:#FF8A3D;color:#140C06}
 /* el logo del splash usaba multiply (pensado para fondo claro): sobre oscuro se veía apagado */
 .tos-root.nuevo.estilo-premium .nv-sp-mark{mix-blend-mode:normal;opacity:1}
+
+/* botón de opiniones en la tarjeta */
+.tos-root .nv-opi{margin-left:auto;border:0;background:transparent;font:inherit;font-size:12px;font-weight:600;color:inherit;opacity:.75;padding:4px 6px;border-radius:999px;cursor:pointer}
+.tos-root .nv-opi:hover{opacity:1;background:rgba(0,0,0,.06)}
