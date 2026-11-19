@@ -9,15 +9,16 @@ const H = 336;
 
 export function tarroSvg({ etapa, total, color, acento = '#F5B83D' }: TarroOpts): string {
   const t = Math.max(1, Math.round(total));
-  const e = Math.max(0, Math.min(t, Math.round(etapa)));
-  const f = e / t;
-  const lleno = e >= t;
+  const ef = Math.max(0, Math.min(t, etapa)); // admite fracciones (animación del video)
+  const e = Math.floor(ef + 1e-6);
+  const f = ef / t;
+  const lleno = ef >= t - 1e-6;
   // Interior del vaso
   const x0 = 190, x1 = 350, yTop = 62, yBot = 296;
   const alto = yBot - yTop;
   const yLiq = yBot - f * (alto - 34); // deja lugar para la espuma
   const espuma: string[] = [];
-  if (e > 0) {
+  if (ef > 0.02) {
     const yE = yLiq;
     const r = 24;
     for (let i = 0; i < 5; i++) {
@@ -32,7 +33,7 @@ export function tarroSvg({ etapa, total, color, acento = '#F5B83D' }: TarroOpts)
       );
     }
   }
-  const burbujas = e > 0
+  const burbujas = ef > 0.02
     ? [0, 1, 2, 3, 4, 5]
         .map((i) => {
           const by = yBot - 14 - ((i * 53) % Math.max(20, yBot - yLiq - 30));
@@ -61,7 +62,7 @@ export function tarroSvg({ etapa, total, color, acento = '#F5B83D' }: TarroOpts)
 <ellipse cx="270" cy="312" rx="130" ry="12" fill="rgba(0,0,0,.18)"/>
 <path d="M${x1 + 6} 110h38q34 0 34 38v40q0 38-34 38h-38" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="16" stroke-linecap="round"/>
 <rect x="${x0 - 8}" y="${yTop - 8}" width="${x1 - x0 + 16}" height="${alto + 16}" rx="22" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.9)" stroke-width="7"/>
-<g clip-path="url(#vaso)">${e > 0 ? `<rect x="${x0}" y="${yLiq}" width="${x1 - x0}" height="${yBot - yLiq + 4}" fill="url(#cer)"/>${burbujas}` : ''}</g>
+<g clip-path="url(#vaso)">${ef > 0.02 ? `<rect x="${x0}" y="${yLiq}" width="${x1 - x0}" height="${yBot - yLiq + 4}" fill="url(#cer)"/>${burbujas}` : ''}</g>
 ${espuma.join('')}
 <rect x="${x0 + 12}" y="${yTop + 10}" width="10" height="${alto - 40}" rx="5" fill="#fff" opacity=".28"/>
 ${marcas.join('')}
