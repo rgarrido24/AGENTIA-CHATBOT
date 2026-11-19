@@ -1,6 +1,6 @@
 /** Crea la Loyalty Class de Google Wallet de un negocio nuevo (idempotente). Solo servidor. */
 import { getWalletAccessToken, getWalletIssuerId } from '@/lib/wallet-sabucan';
-import { comoAcumularCopy, tenantClassId, type TenantConfig } from '@/lib/wallet-tenant';
+import { tenantClassId, type TenantConfig } from '@/lib/wallet-tenant';
 
 const CLASS_URL = 'https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass';
 
@@ -37,21 +37,11 @@ export async function asegurarClaseWallet(
     id: classId,
     issuerName: cfg.nombre,
     programName: `Lealtad ${cfg.nombre}`,
-    programLogo: img(cfg.logoUrl, `Logo ${cfg.nombre}`),
+    programLogo: img(cfg.walletLogoUrl || cfg.logoUrl, `Logo ${cfg.nombre}`),
     hexBackgroundColor: cfg.colorPrimario,
     accountNameLabel: 'Cliente',
     accountIdLabel: 'Teléfono',
     reviewStatus: 'UNDER_REVIEW',
-    textModulesData: [
-      { header: 'Cómo acumular', body: comoAcumularCopy(cfg) },
-      {
-        header: 'Cómo usarlo',
-        body:
-          rec?.modelo === 'sellos'
-            ? 'Muestra este código en la caja. Cada visita suma 1 sello.'
-            : 'Muestra este código en la caja. Puedes usar tu saldo como pago en cualquier visita.',
-      },
-    ],
     ...(hero ? { heroImage: img(hero, `${cfg.nombre} — bienvenida`) } : {}),
     ...(cfg.direccion || cfg.horario
       ? {
@@ -76,4 +66,25 @@ export async function asegurarClaseWallet(
     return { ok: false, classId, creada: false, detalle: `HTTP ${res.status} ${t.slice(0, 200)}` };
   }
   return { ok: true, classId, creada: true };
+}
+
+
+/**
+ * Pase ya creado: pone el logo cuadrado sobre el color de marca (sin círculo blanco) y quita los
+ * textos de la clase, que se repetían con los del pase. Idempotente.
+ */
+export async function actualizarClaseWallet(
+  cfg: TenantConfig,
+): Promise<{ ok: boolean; detalle?: string }> {
+  const token = await getWalletAccessToken();
+  if (!token) return { ok: false, detalle: 'Wallet no configurado' };
+  const patch: Record<string, unknown> = { textModulesData: [] };
+  if (cfg.walletLogoUrl) patch.programLogo = img(cfg.walletLogoUrl, `Logo ${cfg.nombre}`);
+  const res = await fetch(`${CLASS_URL}/${encodeURIComponent(tenantClassId(cfg))}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) return { ok: false, detalle: `HTTP ${res.status} ${(await res.text().catch(() => '')).slice(0, 200)}` };
+  return { ok: true };
 }

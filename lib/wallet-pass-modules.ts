@@ -34,16 +34,21 @@ export function buildLoyaltyObjectTextModules(
   const meta = tenantRewardMeta(cfg);
   const esSellos = rec.modelo === 'sellos';
   return [
-    {
-      id: 'progreso',
-      header: 'Tu progreso',
-      body: rewardProgressMessage(
-        puntos,
-        meta,
-        esSellos ? 'sellos para tu recompensa' : 'para tu próxima recompensa',
-        esSellos,
-      ),
-    },
+    // Cashback: el saldo ya es dinero a favor; el "te faltan X" solo aplica a sellos/puntos.
+    ...(rec.modelo === 'cashback'
+      ? []
+      : [
+          {
+            id: 'progreso',
+            header: 'Tu progreso',
+            body: rewardProgressMessage(
+              puntos,
+              meta,
+              esSellos ? 'sellos para tu recompensa' : 'para tu próxima recompensa',
+              esSellos,
+            ),
+          },
+        ]),
     {
       header: 'Cómo acumular',
       body: comoAcumularCopy(cfg),

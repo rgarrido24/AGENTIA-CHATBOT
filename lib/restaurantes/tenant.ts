@@ -5,7 +5,7 @@
  */
 import { getMongoDb } from '@/lib/mongodb';
 import { getLoyaltyTenant, invalidateLoyaltyTenantCache, loyaltyDocToConfig } from '@/lib/loyalty-tenants';
-import { asegurarClaseWallet } from '@/lib/wallet-class-admin';
+import { actualizarClaseWallet, asegurarClaseWallet } from '@/lib/wallet-class-admin';
 import type { TenantConfig } from '@/lib/wallet-tenant';
 import type { ServidorConfig } from './servidor';
 
@@ -75,6 +75,21 @@ export async function ensureTenant(cfg: ServidorConfig): Promise<TenantConfig | 
       else console.warn(`[restaurante:${key}] wallet:`, r.detalle);
     } catch (e) {
       console.warn(`[restaurante:${key}] wallet`, e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Logo de Wallet cuadrado sobre el color de marca + sin textos duplicados (una sola vez).
+  if (doc && cfg.tenant.walletLogo && doc.walletClaseV2 !== cfg.tenant.walletLogo) {
+    try {
+      const url = `${publicBase()}${cfg.tenant.walletLogo}`;
+      await col.updateOne({ key }, { $set: { walletLogoUrl: url } });
+      invalidateLoyaltyTenantCache(key);
+      const conf = loyaltyDocToConfig({ ...(doc as Record<string, unknown>), walletLogoUrl: url });
+      const r = await actualizarClaseWallet(conf);
+      if (r.ok) await col.updateOne({ key }, { $set: { walletClaseV2: cfg.tenant.walletLogo } });
+      else console.warn(`[restaurante:${key}] wallet v2:`, r.detalle);
+    } catch (e) {
+      console.warn(`[restaurante:${key}] wallet v2`, e instanceof Error ? e.message : e);
     }
   }
 

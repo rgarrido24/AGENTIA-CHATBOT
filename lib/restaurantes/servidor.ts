@@ -13,6 +13,7 @@ export type TenantSeed = {
   nombre: string;
   /** Ruta pública del logo (se completa con NEXT_PUBLIC_SITE_URL). */
   logo: string;
+  walletLogo?: string;
   colorPrimario: string;
   colorAcento: string;
   plan: string;
@@ -64,6 +65,7 @@ export const SERVIDOR: Record<string, ServidorConfig> = {
       key: 'tostichelas',
       nombre: 'Tostichelas',
       logo: '/tostichelas/logo-panel.png',
+      walletLogo: '/tostichelas/wallet-logo.png?v=1',
       colorPrimario: '#E2573A',
       colorAcento: '#F2C14E',
       plan: 'restaurante',
