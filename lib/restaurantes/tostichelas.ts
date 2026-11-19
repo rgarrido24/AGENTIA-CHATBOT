@@ -15,7 +15,7 @@ const BMODS:any[]=[
 ];
 const P=(o:any):Producto=>Object.assign({avail:true,mods:[],desc:''},o);
 const T=(id:string,name:string,p1:number,p3:number,prot:Record<string,number>,desc?:string,torKey?:string,ing?:string[])=>P({id,cat:'Tacos',name,desc:desc||'Servidos con papas y nopales',ing:ing||['papas','nopales'],emoji:'🌮',station:'cocina',v:[{l:'Pza',p:p1,f:1,s:0},{l:'Orden (3 pzas)',p:p3,f:3,s:1}],use:Object.assign({[torKey||'tor']:1,nop:.03,pap:.05},prot)});
-const B=(id:string,name:string,ins:string,h:number,mg:number)=>{const v:any[]=[];if(h)v.push({l:'1/2',p:h,f:1,s:0});if(mg)v.push({l:'Mega',p:mg,f:2,s:1});return P({id,cat:'Cervezas',name,emoji:'🍺',station:'barra',v,use:{[ins]:1},mods:BMODS,desc:((h&&!mg)?'Solo en 1/2':(!h?'Solo en Mega':'Media o Mega'))+' · Escarchada en '+SAB.length+' sabores'})};
+const B=(id:string,name:string,im:string,h:number,mg:number,imm?:string)=>{const v:any[]=[];if(h)v.push({l:'1/2',p:h,f:1,s:0,u:{[im]:1}});if(mg)v.push({l:'Mega',p:mg,f:2,s:1,u:{[imm||im]:1}});return P({id,cat:'Cervezas',name,emoji:'🍺',station:'barra',v,use:{[h?im:(imm||im)]:1},mods:BMODS,desc:((h&&!mg)?'Solo en 1/2':(!h?'Solo en Mega':'Media o Mega'))+' · Escarchada en '+SAB.length+' sabores'})};
 const MENU:Producto[]=[
  P({id:'tag',cat:'Tostadas',name:'Tostada de Aguachile',desc:'Cebolla morada, pepino, aguacate y mayonesa',ing:['cebolla morada','pepino','aguacate','mayonesa'],emoji:'🥒',station:'cocina',v:[{l:'Tostada',p:78,f:1,s:0}],use:{tos:1,cam:.07,agu:.25}}),
  P({id:'tce',cat:'Tostadas',name:'Tostada de Ceviche de camarón',desc:'Servido con mayonesa y aguacate',ing:['mayonesa','aguacate'],emoji:'🦐',station:'cocina',v:[{l:'Tostada',p:78,f:1,s:0}],use:{tos:1,cam:.07,agu:.25}}),
@@ -27,7 +27,7 @@ const MENU:Producto[]=[
  T('tar','Taco de arrachera',48,130,{arr:.07}),
  T('tcm','Taco de camarón',78,220,{cam:.08,agu:.1},'Camarón empanizado con mayonesa, cebolla morada, jitomate y aguacate en tortilla de harina','torh',['mayonesa','cebolla morada','jitomate','aguacate']),
  T('tcc','Taco de camachera',80,230,{cam:.05,arr:.05},'Camarón y arrachera con queso, cebolla morada, jitomate y aguacate en tortilla de harina','torh',['queso','cebolla morada','jitomate','aguacate']),
- B('cor','Corona','cor',60,120),B('vic','Victoria','vic',60,120),B('pac','Pacífico','pac',60,120),B('xx','XX Lager','xx',0,120),
+ B('cor','Corona','cor',60,120,'corm'),B('vic','Victoria','vic',60,120,'vicm'),B('pac','Pacífico','pac',60,120,'pacm'),B('xx','XX Lager','xx',0,120),
  B('ult','Ultra','ult',60,0),B('mod','Modelo','mod',60,0),B('leo','León','leo',0,120),
  P({id:'suc',cat:'Cervezas',name:'Suero chico',desc:'Escarchado de limón y sal, con limón y sal adentro y agua mineral',emoji:'🥤',station:'barra',v:[{l:'Chico',p:50,f:1,s:0}],use:{sue:1}}),
  P({id:'sgr',cat:'Cervezas',name:'Suero grande',desc:'Escarchado de limón y sal, con limón y sal adentro y agua mineral',emoji:'🥤',station:'barra',v:[{l:'Grande',p:70,f:1,s:0}],use:{sue:2}}),
@@ -48,7 +48,7 @@ const CATS:string[]=['Tostadas','Tacos','Cervezas','Bebidas','Snacks'];
 const CATCOL:Record<string,string>={Tostadas:'#7DBB86',Tacos:'#F29A4A',Cervezas:'#F2C14E',Bebidas:'#7FB2E5',Snacks:'#E2573A'};
 
 const INS0:Insumo[]=[
- ['cor','Corona','bot',96,24,17],['vic','Victoria','bot',96,24,16],['pac','Pacífico','bot',72,24,16],['ult','Ultra','bot',48,12,18],['xx','XX Lager','bot',72,24,16],['mod','Modelo','bot',48,12,17],['leo','León','bot',48,12,16],
+ ['cor','Corona 1/2','pza',96,24,17],['corm','Corona Mega','pza',48,12,34],['vic','Victoria 1/2','pza',96,24,16],['vicm','Victoria Mega','pza',48,12,32],['pac','Pacífico 1/2','pza',72,24,16],['pacm','Pacífico Mega','pza',36,12,32],['ult','Ultra 1/2','pza',48,12,18],['xx','XX Lager Mega','pza',36,12,32],['mod','Modelo 1/2','pza',48,12,17],['leo','León Mega','pza',24,6,32],
  ['bis','Bistec','kg',8,2,190],['pol','Pollo','kg',8,2,110],['arr','Arrachera','kg',6,2,260],['lon','Longaniza','kg',5,1.5,120],['mil','Milanesa de res','kg',6,2,170],['cam','Camarón','kg',9,3,280],
  ['tor','Tortilla de maíz','pza',300,80,1.2],['torh','Tortilla de harina','pza',120,40,2.5],['pan','Pan de hamburguesa','pza',40,12,6],['car','Carne de hamburguesa','pza',40,12,22],
  ['pap','Papa','kg',20,6,35],['nop','Nopales','kg',6,2,30],['agu','Aguacate','pza',30,10,18],['tos','Tostada','pza',150,40,3],
@@ -135,6 +135,7 @@ export const TOSTICHELAS: RestauranteConfig = {
   estilos: true,
   googleUrl: 'https://maps.app.goo.gl/YdGvYmt1BQdLBU8U9',
   aprobarSiempre: true,
+  insRen: {cor:'Corona 1/2',vic:'Victoria 1/2',pac:'Pacífico 1/2',ult:'Ultra 1/2',xx:'XX Lager Mega',mod:'Modelo 1/2',leo:'León Mega'},
   imgForzada: ['coc','min','suc','sgr'],
   ajustes: { estiloMenu: 'premium', pedMesa: true, aprobar: true, xTQueso: 8, xTAguacate: 8, xTCebolla: 5, xPQueso: 8, xHQueso: 10, xHCarne: 40 },
   // Extras que pidió el cliente. Vienen encendidos con sus precios; el dueño los apaga o cambia en Ajustes.

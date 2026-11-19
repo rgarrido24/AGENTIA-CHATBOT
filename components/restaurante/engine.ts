@@ -107,11 +107,12 @@ function cobroOrders(sel){if(!sel)return[];if(sel.indexOf('m:')===0)return mesaO
 
 
 function lineFrom(p,vi,mods,qty,note){const v=p.v[vi];let unit=v.p;mods.forEach(x=>unit+=x.p);return{uid:uid(),pid:p.id,name:p.name,v:v.l,s:v.s,f:v.f,mods,unit,qty,note:note||'',station:p.station,status:'nuevo'}}
-function lineCost(l){const p=PM(l.pid);let c=0;Object.keys(p.use).forEach(k=>{const it=ins(k);if(it)c+=p.use[k]*l.f*l.qty*it.cost});if(p.cost)c+=p.cost*l.f*l.qty;return c}
+function lUse(p,l){const v=p.v.find(x=>x.l===l.v);if(v&&v.u)return v.u;const r={};Object.keys(p.use).forEach(k=>r[k]=p.use[k]*l.f);return r}
+function lineCost(l){const p=PM(l.pid);let c=0;const u=lUse(p,l);Object.keys(u).forEach(k=>{const it=ins(k);if(it)c+=u[k]*l.qty*it.cost});if(p.cost)c+=p.cost*l.f*l.qty;return c}
 const lineTot=l=>l.unit*l.qty;
 const sumLines=ls=>ls.reduce((a,l)=>a+lineTot(l),0);
-const soldOut=p=>!p.avail||Object.keys(p.use).some(k=>{const it=ins(k);return it&&it.stock<p.use[k]*p.v[0].f});
-function deduct(o,sign){const use={};o.lines.forEach(l=>{const p=PM(l.pid);Object.keys(p.use).forEach(k=>{const i=ins(k);if(!i)return;const q=p.use[k]*l.f*l.qty;use[k]=Math.round(((use[k]||0)+q)*100)/100;i.stock=Math.round((i.stock-(sign||1)*q)*100)/100})});if(!sign&&o.src==='cliente'&&!anyTok())o.dedo=use}
+const soldOut=p=>!p.avail||p.v.every(v=>{const u=v.u||(()=>{const r={};Object.keys(p.use).forEach(k=>r[k]=p.use[k]*v.f);return r})();return Object.keys(u).some(k=>{const it=ins(k);return it&&it.stock<u[k]})});
+function deduct(o,sign){const use={};o.lines.forEach(l=>{const p=PM(l.pid);const lu=lUse(p,l);Object.keys(lu).forEach(k=>{const i=ins(k);if(!i)return;const q=lu[k]*l.qty;use[k]=Math.round(((use[k]||0)+q)*100)/100;i.stock=Math.round((i.stock-(sign||1)*q)*100)/100})});if(!sign&&o.src==='cliente'&&!anyTok())o.dedo=use}
 function newOrder(x){const cl=x&&x.src==='cliente';const o=Object.assign({id:cl?custId():S.seq++,mesa:null,canal:'mesa',lines:[],cliente:{},hold:false,porConfirmar:false,src:'mesero',addr:'',envio:0,created:Date.now(),closed:false,cancel:false,stage:'cocina',done:false},x,cl?{cid:CID,mt:(S.cli&&S.cli.mt)||''}:{});S.orders.push(o);if(!o.hold)deduct(o);return o}
 function release(o){o.hold=false;o.created=Date.now();deduct(o);beep()}
 const live=()=>S.orders.filter(o=>!o.hold&&!o.cancel);
@@ -850,7 +851,7 @@ function applyKv(k,v){
  const a=k.split('|')[0],b=k.split('|')[1];
  if(a==='settings'&&b in S.settings)S.settings[b]=v;
  else if(a==='cuenta'){if(v)S.cuenta[b]=true;else delete S.cuenta[b]}
- else if(a==='inv'){if(!v)return;let i=ins(b);if(!i){if(!v.name)return;i={id:b,name:v.name,unit:v.unit,stock:0,min:0,cost:0,count:''};S.inv.push(i)}Object.assign(i,v)}
+ else if(a==='inv'){if(!v)return;let i=ins(b);if(!i){if(!v.name)return;i={id:b,name:v.name,unit:v.unit,stock:0,min:0,cost:0,count:''};S.inv.push(i)}Object.assign(i,v);const d0=INS0.find(r=>r[0]===b);if(d0&&CFG.insRen&&CFG.insRen[b]){i.name=CFG.insRen[b];if(i.unit==='bot')i.unit='pza'}}
  else if(a==='avail'){const q=PM(b);if(q)q.avail=!!v}
  else if(a==='likes')S.soc.likes[b]=v;
  else if(a==='rate'&&v)S.soc.rate[b]={n:v.n,sum:v.sum};
