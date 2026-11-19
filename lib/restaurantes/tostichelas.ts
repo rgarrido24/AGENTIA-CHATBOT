@@ -42,7 +42,7 @@ const MENU:Producto[]=[
  P({id:'pr',cat:'Snacks',name:'Papas fritas',desc:'Con Maggi, tajín, salsa inglesa y limón',ing:['Maggi','tajín','salsa inglesa','limón'],emoji:'🍟',station:'cocina',v:[{l:'Orden',p:60,f:1,s:0}],use:{pap:.25}})
 ];
 /* fotos reales: id del producto -> archivo en /public/tostichelas/p/ (png, fondo transparente) */
-const FOTOS:Record<string,string>={tcm:'/tostichelas/p/tcm.png?v=3',ha:'/tostichelas/p/ha.png?v=3',hp:'/tostichelas/p/hp.png?v=4',pf:'/tostichelas/p/pf.png?v=4',pr:'/tostichelas/p/pr.png?v=4',tar:'/tostichelas/p/tar.png?v=3',tcc:'/tostichelas/p/tcc.png?v=3',tca:'/tostichelas/p/tca.png?v=3',tpo:'/tostichelas/p/tpo.png?v=3',tmi:'/tostichelas/p/tmi.png?v=3',tlo:'/tostichelas/p/tlo.png?v=3',tbi:'/tostichelas/p/tbi.png?v=3',tag:'/tostichelas/p/tag.png?v=3',tce:'/tostichelas/p/tce.png?v=3',cor:'/tostichelas/p/cor.png?v=3',vic:'/tostichelas/p/vic.png?v=3',pac:'/tostichelas/p/pac.png?v=3',xx:'/tostichelas/p/xx.png?v=3',mod:'/tostichelas/p/mod.png?v=3',leo:'/tostichelas/p/leo.png?v=3',ult:'/tostichelas/p/ult.png?v=3',czr:'/tostichelas/p/czr.png?v=3',boi:'/tostichelas/p/boi.png?v=3',min:'/tostichelas/p/min.png?v=4',coc:'/tostichelas/p/coc.png?v=4',cln:'/tostichelas/p/cln.png?v=3'};
+const FOTOS:Record<string,string>={tcm:'/tostichelas/p/tcm.png?v=3',ha:'/tostichelas/p/ha.png?v=3',hp:'/tostichelas/p/hp.png?v=4',pf:'/tostichelas/p/pf.png?v=4',pr:'/tostichelas/p/pr.png?v=4',tar:'/tostichelas/p/tar.png?v=3',tcc:'/tostichelas/p/tcc.png?v=3',tca:'/tostichelas/p/tca.png?v=3',tpo:'/tostichelas/p/tpo.png?v=3',tmi:'/tostichelas/p/tmi.png?v=3',tlo:'/tostichelas/p/tlo.png?v=3',tbi:'/tostichelas/p/tbi.png?v=3',tag:'/tostichelas/p/tag.png?v=3',tce:'/tostichelas/p/tce.png?v=3',cor:'/tostichelas/p/cor.png?v=3',vic:'/tostichelas/p/vic.png?v=3',pac:'/tostichelas/p/pac.png?v=3',xx:'/tostichelas/p/xx.png?v=3',mod:'/tostichelas/p/mod.png?v=3',leo:'/tostichelas/p/leo.png?v=3',ult:'/tostichelas/p/ult.png?v=3',czr:'/tostichelas/p/czr.png?v=3',boi:'/tostichelas/p/boi.png?v=3',min:'/tostichelas/p/min.png?v=4',coc:'/tostichelas/p/coc.png?v=5',suc:'/tostichelas/p/suc.png?v=1',sgr:'/tostichelas/p/sgr.png?v=1',cln:'/tostichelas/p/cln.png?v=3'};
 MENU.forEach(q=>{if(FOTOS[q.id])q.img=FOTOS[q.id]});
 const CATS:string[]=['Tostadas','Tacos','Cervezas','Bebidas','Snacks'];
 const CATCOL:Record<string,string>={Tostadas:'#7DBB86',Tacos:'#F29A4A',Cervezas:'#F2C14E',Bebidas:'#7FB2E5',Snacks:'#E2573A'};
@@ -135,7 +135,7 @@ export const TOSTICHELAS: RestauranteConfig = {
   estilos: true,
   googleUrl: 'https://maps.app.goo.gl/YdGvYmt1BQdLBU8U9',
   aprobarSiempre: true,
-  imgForzada: ['coc','min'],
+  imgForzada: ['coc','min','suc','sgr'],
   ajustes: { estiloMenu: 'premium', pedMesa: true, aprobar: true, xTQueso: 8, xTAguacate: 8, xTCebolla: 5, xPQueso: 8, xHQueso: 10, xHCarne: 40 },
   // Extras que pidió el cliente. Vienen encendidos con sus precios; el dueño los apaga o cambia en Ajustes.
   extras: [
