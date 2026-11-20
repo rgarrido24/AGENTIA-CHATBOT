@@ -345,6 +345,13 @@ export default function AgentiaConversacionesPage() {
           >
             Respuestas automáticas
           </a>
+          <a
+            href="/agentia-panel/facturacion"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-slate-200 hover:bg-white/5 transition"
+            style={{ borderColor: BRAND.border }}
+          >
+            Facturación
+          </a>
         </div>
 
         <div className="flex flex-wrap gap-2">
