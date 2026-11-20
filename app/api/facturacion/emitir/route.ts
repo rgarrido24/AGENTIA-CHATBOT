@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { csplugEmitir } from '@/src/lib/facturacion/csplug-client';
 import { buildCFDIPayload } from '@/src/lib/facturacion/cfdi-builder';
 import { EmitirCFDIRequest, FacturaRecord } from '@/src/lib/facturacion/types';
-import clientPromise from '@/lib/mongodb';
+import { getMongoClient } from '@/lib/mongodb';
 
 // Protección básica: solo desde admin/panel autenticado
 function isAuthorized(req: NextRequest): boolean {
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Guardar registro en MongoDB
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db(process.env.MONGODB_DB);
 
     const subtotal = payload.subtotal;
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date(),
     };
 
-    await db.collection('facturas').insertOne(record);
+    await db.collection('facturas').insertOne(record as any);
 
     return NextResponse.json({
       success: true,

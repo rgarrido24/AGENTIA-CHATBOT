@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { csplugCancelar } from '@/src/lib/facturacion/csplug-client';
-import clientPromise from '@/lib/mongodb';
+import { getMongoClient } from '@/lib/mongodb';
 
 export async function POST(req: NextRequest) {
   const adminPass = process.env.ADMIN_PASSWORD;
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     if (result.status === 'success') {
       // Actualizar estado en MongoDB
-      const client = await clientPromise;
+      const client = await getMongoClient();
       const db = client.db(process.env.MONGODB_DB);
       await db.collection('facturas').updateOne(
         { uuid },

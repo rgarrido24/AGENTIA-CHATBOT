@@ -2,7 +2,7 @@
 // Lista facturas emitidas guardadas en MongoDB
 
 import { NextRequest, NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import { getMongoClient } from '@/lib/mongodb';
 
 export async function GET(req: NextRequest) {
   const adminPass = process.env.ADMIN_PASSWORD;
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   if (clientId) filter.clientId = clientId;
 
   try {
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db(process.env.MONGODB_DB);
     const col = db.collection('facturas');
 

@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { csplugConsultar } from '@/src/lib/facturacion/csplug-client';
-import clientPromise from '@/lib/mongodb';
+import { getMongoClient } from '@/lib/mongodb';
 
 export async function GET(
   req: NextRequest,
@@ -19,7 +19,7 @@ export async function GET(
     const result = await csplugConsultar(uuid);
 
     // También traer el registro local si existe
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db(process.env.MONGODB_DB);
     const local = await db.collection('facturas').findOne({ uuid });
 

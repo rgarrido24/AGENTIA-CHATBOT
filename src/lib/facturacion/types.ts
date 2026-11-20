@@ -55,6 +55,7 @@ export interface EmitirCFDIRequest {
   moneda?: string;            // MXN (default)
   condicionesDePago?: string;
   observaciones?: string;
+  clientId?: string;
 }
 
 // ─── Response de CSPlug ───────────────────────────────────────────────────────
