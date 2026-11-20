@@ -16,6 +16,8 @@ export type TenantSeed = {
   walletLogo?: string;
   /** Ruta pública (sin extensión de etapa) de las imágenes del tarro: `<ruta><n>-<meta>.png`. */
   tarroHero?: string;
+  /** Recompensa al llenar el tarro (texto corto). */
+  premio?: string;
   colorPrimario: string;
   colorAcento: string;
   plan: string;
@@ -69,6 +71,7 @@ export const SERVIDOR: Record<string, ServidorConfig> = {
       logo: '/tostichelas/logo-panel.png',
       walletLogo: '/tostichelas/wallet-logo.png?v=1',
       tarroHero: '/tostichelas/hero/tarro-',
+      premio: 'una cerveza Mega gratis',
       colorPrimario: '#E2573A',
       colorAcento: '#F2C14E',
       plan: 'restaurante',

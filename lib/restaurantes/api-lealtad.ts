@@ -30,7 +30,7 @@ const MONTO_MAX = 50_000;
 
 function info(cfg: TenantConfig) {
   const rec = tenantRecompensa(cfg);
-  return { nombre: cfg.nombre, modelo: rec.modelo, parametro: rec.parametro, tarro: !!cfg.tarroHero && rec.modelo === 'sellos', meta: tenantRewardMeta(cfg) };
+  return { nombre: cfg.nombre, modelo: rec.modelo, parametro: rec.parametro, tarro: !!cfg.tarroHero && rec.modelo === 'sellos', premio: cfg.premio, meta: tenantRewardMeta(cfg) };
 }
 
 export function crearLealtadApi(cfgS: ServidorConfig) {
