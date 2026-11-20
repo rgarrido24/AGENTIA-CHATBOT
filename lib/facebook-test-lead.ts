@@ -11,7 +11,7 @@ export function isMetaTestLeadFields(fields: Record<string, string>): boolean {
 export type CreateTestLeadResult = { ok: true } | { ok: false; error: string };
 
 /** Crea un lead de prueba en un formulario (Meta lo entrega por el webhook como uno real). */
-export async function createMetaTestLead(formId: string, pageToken: string): Promise<CreateTestLeadResult> {
+async function createOnce(formId: string, pageToken: string): Promise<CreateTestLeadResult> {
   try {
     const res = await fetch(
       `https://graph.facebook.com/${FB_GRAPH_VERSION}/${encodeURIComponent(formId)}/test_leads`,
@@ -34,4 +34,41 @@ export async function createMetaTestLead(formId: string, pageToken: string): Pro
   } catch (err) {
     return { ok: false, error: (err as Error).message || 'Error de red al llamar a Meta' };
   }
+}
+
+/** Borra los leads de prueba (solo los creados por la API de pruebas) que Meta tenga en ese formulario. */
+async function deleteExistingTestLeads(formId: string, pageToken: string): Promise<number> {
+  const base = `https://graph.facebook.com/${FB_GRAPH_VERSION}`;
+  let borrados = 0;
+  try {
+    const r = await fetch(
+      `${base}/${encodeURIComponent(formId)}/test_leads?access_token=${encodeURIComponent(pageToken)}`,
+      { cache: 'no-store' },
+    );
+    const j = (await r.json().catch(() => ({}))) as { data?: Array<{ id?: string }> };
+    for (const t of j.data || []) {
+      if (!t.id) continue;
+      const d = await fetch(`${base}/${encodeURIComponent(t.id)}?access_token=${encodeURIComponent(pageToken)}`, {
+        method: 'DELETE',
+        cache: 'no-store',
+      });
+      if (d.ok) borrados += 1;
+    }
+  } catch {
+    /* si no se puede borrar, el reintento devolverá el error original */
+  }
+  return borrados;
+}
+
+/**
+ * Crea un lead de prueba. Si Meta dice que ya existe uno para ese formulario (solo permite uno a la vez),
+ * borra el anterior y vuelve a intentar una vez.
+ */
+export async function createMetaTestLead(formId: string, pageToken: string): Promise<CreateTestLeadResult> {
+  const first = await createOnce(formId, pageToken);
+  if (first.ok) return first;
+  if (!/ya se cre|already (been )?created|test lead/i.test(first.error)) return first;
+  const n = await deleteExistingTestLeads(formId, pageToken);
+  if (!n) return first;
+  return createOnce(formId, pageToken);
 }
