@@ -91,7 +91,7 @@ export async function POST(req: Request, ctx: Ctx) {
         alternateText: telefono,
       },
       loyaltyPoints: {
-        label: esSellos ? 'Sellos' : 'Puntos',
+        label: esSellos ? (cfg.tarroHero ? 'Visitas' : 'Sellos') : 'Puntos',
         balance: {
           string: esSellos ? String(Math.round(saldo)) : formatPuntos(saldo),
         },

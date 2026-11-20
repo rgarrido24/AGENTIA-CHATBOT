@@ -37,6 +37,7 @@ export async function ensureTenant(cfg: ServidorConfig): Promise<TenantConfig | 
       basePath: `/n/${key}`,
       recompensa: t.recompensa,
       rewardMeta: t.rewardMeta,
+      ...(t.tarroHero ? { tarroHero: `${publicBase()}${t.tarroHero}`, visitasV1: 1 } : {}),
       giro: t.giro,
       createdAt: new Date(),
     };
@@ -66,6 +67,16 @@ export async function ensureTenant(cfg: ServidorConfig): Promise<TenantConfig | 
   if (doc && typeof doc.logoUrl === 'string' && /\/logo\.jpg$/.test(doc.logoUrl) && !/\/logo\.jpg$/.test(cfg.tenant.logo)) {
     await col.updateOne({ key }, { $set: { logoUrl: `${publicBase()}${cfg.tenant.logo}` } });
     invalidateLoyaltyTenantCache(key);
+  }
+
+  // Tarjeta por visitas con tarro (una sola vez): pasa de cashback a 10 visitas y activa las imágenes del tarro.
+  if (doc && cfg.tenant.tarroHero && doc.visitasV1 !== 1) {
+    await col.updateOne(
+      { key },
+      { $set: { recompensa: cfg.tenant.recompensa, rewardMeta: cfg.tenant.rewardMeta, tarroHero: `${publicBase()}${cfg.tenant.tarroHero}`, visitasV1: 1 } },
+    );
+    invalidateLoyaltyTenantCache(key);
+    doc = await col.findOne({ key });
   }
 
   if (doc && !doc.walletClase) {

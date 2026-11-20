@@ -14,6 +14,8 @@ export type TenantSeed = {
   /** Ruta pública del logo (se completa con NEXT_PUBLIC_SITE_URL). */
   logo: string;
   walletLogo?: string;
+  /** Ruta pública (sin extensión de etapa) de las imágenes del tarro: `<ruta><n>-<meta>.png`. */
+  tarroHero?: string;
   colorPrimario: string;
   colorAcento: string;
   plan: string;
@@ -66,12 +68,13 @@ export const SERVIDOR: Record<string, ServidorConfig> = {
       nombre: 'Tostichelas',
       logo: '/tostichelas/logo-panel.png',
       walletLogo: '/tostichelas/wallet-logo.png?v=1',
+      tarroHero: '/tostichelas/hero/tarro-',
       colorPrimario: '#E2573A',
       colorAcento: '#F2C14E',
       plan: 'restaurante',
       isDemo: false,
       origen: 'demo-restaurante',
-      recompensa: { modelo: 'cashback', parametro: 5 },
+      recompensa: { modelo: 'sellos', parametro: 10 },
       rewardMeta: 10,
       giro: 'restaurante',
     },

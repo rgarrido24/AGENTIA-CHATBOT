@@ -69,6 +69,7 @@ export function loyaltyDocToConfig(doc: Record<string, unknown>): TenantConfig {
     direccion: doc.direccion ? String(doc.direccion) : undefined,
     horario: doc.horario ? String(doc.horario) : undefined,
     ubicacion: Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : undefined,
+    tarroHero: doc.tarroHero ? String(doc.tarroHero) : undefined,
     rewardMeta:
       modelo === 'sellos'
         ? parametro

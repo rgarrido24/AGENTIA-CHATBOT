@@ -276,22 +276,31 @@ function cPedido(){
  if(dentro){const cu=c.cuenta&&c.cuenta.mesa===c.mesa?c.cuenta:null;const mo=mesaOrders(c.mesa).filter(o=>o.src==='cliente');if(mo.length||(cu&&cu.items.length)){const tot=cu?cu.total:mesaTotal(c.mesa);h+='<div class="card stack"><h3>Cuenta de '+mLabel(c.mesa)+'</h3>'+(cu?cu.items.map(i=>'<div class="row between small"><span>'+i.q+' × '+esc(i.n)+'</span><b class="num">'+m(i.t)+'</b></div>').join(''):'')+'<div class="row between"><span>Total acumulado</span><b class="num">'+m(tot)+'</b></div><div class="row"><button class="btn sm" data-a="ctaCuenta">'+(S.cuenta[c.mesa]?'Cuenta solicitada':'Pedir la cuenta al mesero')+'</button><button class="btn pri sm" data-a="paymesa">Pagar desde mi celular</button></div></div>'}}
  return h}
 function stPill(s){return s==='nuevo'?'<span class="status s-neutral">En cola</span>':s==='preparando'?'<span class="status s-warn">Preparando</span>':s==='listo'?'<span class="status s-good">Listo</span>':'<span class="status s-neutral">Servido</span>'}
+function tarroSvg(n,meta,uid){
+ const f=Math.max(0,Math.min(1,n/meta)),H=150,top=26,fh=Math.round((H-top-8)*f),fy=top+(H-top-8)-fh;
+ let prev=Number(lsGet(LK+'tarro')||0);if(!(prev>=0&&prev<=meta))prev=0;lsSet(LK+'tarro',String(n));
+ const pf=Math.max(0,Math.min(1,prev/meta)),ph=Math.round((H-top-8)*pf);
+ const id='tc'+uid;
+ return'<svg class="tarro" viewBox="0 0 150 170" width="170" height="193" role="img" aria-label="Tu tarro: '+n+' de '+meta+' visitas"><defs><clipPath id="'+id+'"><path d="M30 26h66l-5 126a8 8 0 0 1-8 8H43a8 8 0 0 1-8-8z"/></clipPath><linearGradient id="'+id+'g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD76A"/><stop offset="1" stop-color="#E08A1E"/></linearGradient></defs><g clip-path="url(#'+id+')"><g style="--p0:'+ph+'px;--p1:'+fh+'px;animation:tarrofill 1.6s cubic-bezier(.2,.7,.2,1) both"><rect x="28" width="72" y="'+fy+'" height="'+(fh+4)+'" fill="url(#'+id+'g)"/>'+(f>0?'<ellipse cx="63" cy="'+fy+'" rx="36" ry="'+(f>=1?9:5)+'" fill="#FFF6DD" class="tfoam"/>':'')+'</g>'+'<g class="tbub" fill="#fff" opacity=".6"><circle cx="48" cy="140" r="2"/><circle cx="70" cy="130" r="1.6"/><circle cx="82" cy="142" r="2.2"/></g></g><path d="M30 26h66l-5 126a8 8 0 0 1-8 8H43a8 8 0 0 1-8-8z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M96 48h14a12 12 0 0 1 12 12v40a12 12 0 0 1-12 12H93" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg>'}
 function cPuntos(){
  const L=S.loy,d=L.data,tel=S.me.tel;
  const modelo=d?d.modelo:'cashback';
  let h='';
  if(d&&d.found){
   const cl=d.cliente;
+  if(d.tarro){const meta=d.meta||10,pt=Math.round(cl.puntos),pos=pt>0&&pt%meta===0?meta:pt%meta,lleno=pt>=meta;
+   h+='<div class="loy" style="text-align:center"><div class="row between"><b style="font-family:var(--display);font-size:22px">'+NOMU+'</b><span class="xs">Tarjeta de lealtad</span></div>'+tarroSvg(lleno?meta:pos,meta,'c')+'<div class="big num">'+(lleno?meta:pos)+' / '+meta+'</div><div class="small">'+(lleno?'¡Tu tarro está lleno! Pide tu recompensa en caja':'visitas · te faltan '+(meta-pos)+' para llenar tu tarro')+'</div><div class="xs">'+esc(cl.nombre)+'</div></div>'}
+  else
   h+='<div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">'+NOMU+'</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">'+fmtSaldo(d,cl.puntos)+'</div><div class="small">'+(modelo==='cashback'?'de saldo para tu próxima cuenta':unidad(d))+' · '+d.parametro+'% de cashback en cada visita</div></div><div class="xs">'+esc(cl.nombre)+' · '+cl.visitas+' visitas</div></div>';
  }else{
-  h+='<div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">'+NOMU+'</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">$0</div><div class="small">Regístrate y gana '+(d&&d.parametro?d.parametro:5)+'% de saldo en cada cuenta</div></div></div>';
+  h+='<div class="loy"><div class="row between"><b style="font-family:var(--display);font-size:22px">'+NOMU+'</b><span class="xs">Tarjeta de lealtad</span></div><div><div class="big num">$0</div><div class="small">'+(d&&d.tarro?'Regístrate y llena tu tarro con cada visita':'Regístrate y gana '+(d&&d.parametro?d.parametro:5)+'% de saldo en cada cuenta')+'</div></div></div>';
  }
  h+='<div class="card stack"><label class="f">Tu WhatsApp<input type="tel" data-in="tel" value="'+esc(tel)+'" placeholder="10 dígitos"></label>';
  if(tel.length===10){
   if(L.loading||!d)h+='<div class="small muted">Buscando tu tarjeta…</div>';
   else if(d.error)h+='<div class="banner warn">No pudimos consultar tu tarjeta ahora. Intenta de nuevo.</div>';
   else if(d.found){
-   h+='<div class="small muted">Tu saldo se aplica en caja al pagar. Tu tarjeta vive en tu celular.</div><button class="btn pri" data-a="wallet"'+(L.wbusy?' disabled':'')+'>'+(L.wbusy?'Preparando…':'Agregar a Google Wallet')+'</button>'+(L.wmsg?'<div class="xs muted">'+esc(L.wmsg)+'</div>':'');
+   h+='<div class="small muted">'+(d.tarro?'Cada día que nos visitas se llena un poco más tu tarro. Tu tarjeta vive en tu celular.':'Tu saldo se aplica en caja al pagar. Tu tarjeta vive en tu celular.')+'</div><button class="btn pri" data-a="wallet"'+(L.wbusy?' disabled':'')+'>'+(L.wbusy?'Preparando…':'Agregar a Google Wallet')+'</button>'+(L.wmsg?'<div class="xs muted">'+esc(L.wmsg)+'</div>':'');
   }else{
    h+='<div class="small muted">Aún no tienes tarjeta. Créala en 10 segundos.</div><div class="grid2" style="gap:8px"><label class="f">Nombre<input type="text" data-in="lnom" value="'+esc(L.nom)+'"></label><label class="f">Fecha de nacimiento<input type="date" data-in="lnac" value="'+esc(L.nac)+'"></label></div><button class="btn pri" data-a="lalta"'+(L.wbusy?' disabled':'')+'>Crear mi tarjeta</button>';
   }
@@ -322,7 +331,7 @@ async function altaMe(){
 
 /* ---------- modales ---------- */
 function openProd(pid,target){const p=PM(pid);S.modal={type:'prod',pid,target,vi:0,pick:{},qty:1,note:'',quick:[]}}
-function ticketTxt(t){return NOM+' · Ticket '+t.id+'\n'+t.lines.map(l=>l.qty+' x '+l.name+' '+l.v+' '+m(lineTot(l))).join('\n')+'\nTotal '+m(t.total)+(t.loy&&t.loy.modelo==='cashback'?'\nSaldo en tu tarjeta: '+m2(t.loy.saldo):'')+(t.loy&&t.loy.google?'\n⭐ Puntos dobles por tu reseña en Google aplicados':googleTxt())}
+function ticketTxt(t){return NOM+' · Ticket '+t.id+'\n'+t.lines.map(l=>l.qty+' x '+l.name+' '+l.v+' '+m(lineTot(l))).join('\n')+'\nTotal '+m(t.total)+(t.loy&&t.loy.tarro?'\nTu tarro: '+(t.loy.saldo%(t.loy.meta||10)||t.loy.meta||10)+' de '+(t.loy.meta||10)+' visitas':'')+(t.loy&&t.loy.modelo==='cashback'?'\nSaldo en tu tarjeta: '+m2(t.loy.saldo):'')+(t.loy&&t.loy.google?'\n⭐ Puntos dobles por tu reseña en Google aplicados':googleTxt())}
 function modalHtml(){
  const md=S.modal;if(!md)return'';
  let h='<div class="scrim" data-a="mclose" data-scrim="1"><div class="sheet" role="dialog" aria-modal="true">';
@@ -391,7 +400,7 @@ function modalHtml(){
  if(md.type==='ticket'){
   const t=S.tickets.find(x=>x.id===md.id);
   const txt=ticketTxt(t);
-  h+='<div class="row between"><h2>Ticket digital</h2><span class="row" style="gap:6px"><button class="btn ghost sm" data-a="printt" data-t="'+t.id+'">Imprimir (opcional)</button><button class="btn ghost sm" data-a="mclose">Cerrar</button></span></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>'+NOMU+' · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa)+(t.nombre?' · '+esc(t.nombre):''):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div>'+(t.loy?'<hr><div class="small"><b>Tarjeta '+NOM+'</b><br>'+(t.loy.usado?'Usaste '+m(t.loy.usado)+' de saldo.<br>':'')+(t.loy.modelo==='cashback'?'Ganaste '+m2(t.loy.ganado)+' de saldo. Saldo ahora: <b>'+m2(t.loy.saldo)+'</b>':'Ganaste '+t.loy.ganado+' y llevas <b>'+t.loy.saldo+'</b>')+(t.loy.nuevo?'<br>Tu tarjeta ya está creada: guárdala en Google Wallet desde la pestaña Mis puntos.':'')+'</div>':'')+'</div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
+  h+='<div class="row between"><h2>Ticket digital</h2><span class="row" style="gap:6px"><button class="btn ghost sm" data-a="printt" data-t="'+t.id+'">Imprimir (opcional)</button><button class="btn ghost sm" data-a="mclose">Cerrar</button></span></div><div class="stack" style="margin-top:10px"><div class="card stack" style="gap:6px"><b>'+NOMU+' · #'+t.id+'</b><span class="xs muted">'+new Date(t.ts).toLocaleString('es-MX')+' · '+(t.mesa?mLabel(t.mesa)+(t.nombre?' · '+esc(t.nombre):''):t.canal==='llevar'?'Para llevar':'Entrega')+'</span>'+t.lines.map(l=>'<div class="row between small"><span>'+l.qty+' × '+lineHtml(l)+'</span><span class="num">'+m(lineTot(l))+'</span></div>').join('')+(t.disc?'<div class="row between small"><span>Descuento por puntos</span><span class="num">−'+m(t.disc)+'</span></div>':'')+(t.tip?'<div class="row between small"><span>Propina</span><span class="num">'+m(t.tip)+'</span></div>':'')+(t.envio?'<div class="row between small"><span>Envío</span><span class="num">'+m(t.envio)+'</span></div>':'')+'<div class="row between b"><span>Total · '+esc(t.method)+'</span><span class="num">'+m(t.total)+'</span></div>'+(t.loy?'<hr><div class="small"><b>Tarjeta '+NOM+'</b><br>'+(t.loy.usado?'Usaste '+m(t.loy.usado)+' de saldo.<br>':'')+(t.loy.tarro?(t.loy.ganado?'Tu tarro se llenó un poco más: <b>'+(t.loy.saldo%(t.loy.meta||10)||t.loy.meta||10)+' de '+(t.loy.meta||10)+'</b> visitas.':t.loy.lleno?'Tu tarro está lleno: pide tu recompensa.':'Hoy ya habías sumado tu visita.'):t.loy.modelo==='cashback'?'Ganaste '+m2(t.loy.ganado)+' de saldo. Saldo ahora: <b>'+m2(t.loy.saldo)+'</b>':'Ganaste '+t.loy.ganado+' y llevas <b>'+t.loy.saldo+'</b>')+(t.loy.nuevo?'<br>Tu tarjeta ya está creada: guárdala en Google Wallet desde la pestaña Mis puntos.':'')+'</div>':'')+'</div><a class="btn pri" style="text-decoration:none;text-align:center" target="_blank" rel="noopener" href="https://wa.me/'+(t.cliente&&t.cliente.tel?'52'+esc(t.cliente.tel):'')+'?text='+encodeURIComponent(txt)+'">Enviar ticket por WhatsApp</a><button class="btn" disabled>Facturar (en integración)</button><div class="xs muted">Sin impresora: el cliente recibe este ticket en su WhatsApp, junto con el link para guardar su tarjeta y calificar.</div></div>';
  }
  return h+'</div></div>'}
 // Precio de una opción; `gratisSi:[grupo,[valores]]` la deja en $0 cuando otra elección del producto la incluye.
@@ -508,6 +517,7 @@ function cobro(){
  if(c.tel.length===10){
   if(!L||L.loading)h+='<div class="small muted">Buscando tarjeta…</div>';
   else if(L.error)h+='<div class="banner warn">No se pudo consultar lealtad ('+esc(L.error)+'). Puedes cobrar sin puntos.</div>';
+  else if(L.found&&L.tarro){const mt=L.meta||10,pt=Math.round(L.cliente.puntos),dia=x=>x?new Date(x).toLocaleDateString('en-CA',{timeZone:'America/Merida'}):'',hoy=dia(L.cliente.ultimaVisita)===dia(new Date().toISOString());h+='<div class="row between small"><span><b>'+esc(L.cliente.nombre)+'</b> · tarro '+(pt>=mt?mt:pt%mt)+' de '+mt+'</span>'+(pt>=mt?'<button class="chip" data-a="premio">Entregar recompensa</button>':'')+'</div>'+(pt>=mt?'<div class="banner warn">🍺 ¡Tarro lleno! Entrega su recompensa para que empiece otro.</div>':hoy?'<div class="xs muted">Hoy ya sumó su visita.</div>':'<div class="xs muted">Al cobrar se llena un poco su tarro (1 visita por día).</div>')}
   else if(L.found){h+='<div class="row between small"><span><b>'+esc(L.cliente.nombre)+'</b> · saldo '+fmtSaldo(L,L.cliente.puntos)+' '+(L.modelo==='cashback'?'':unidad(L))+'</span>'+(L.modelo==='cashback'&&saldo>0?'<button class="chip" data-a="canje" aria-pressed="'+c.canje+'">Usar '+m(Math.min(saldo,sub))+' de saldo</button>':'')+'</div>'}
   else h+='<div class="banner warn">Cliente nuevo. Pide su nombre y fecha de nacimiento para crear su tarjeta.</div><div class="grid2" style="gap:8px"><label class="f">Nombre<input type="text" data-in="cnom" value="'+esc(c.nom)+'"></label><label class="f">Fecha de nacimiento<input type="date" data-in="cnac" value="'+esc(c.nac)+'"></label></div>';
   if(L&&!L.error&&!L.loading&&L.modelo==='cashback')h+='<div class="xs muted">Esta venta le suma aprox. '+m2((sub-disc)*L.parametro/100)+' de saldo ('+L.parametro+'% de cashback).</div>';
@@ -637,6 +647,7 @@ function nvLoy(sub){
 function nvLoyHtml(sub,compact){
  const L=nvLoy(sub);if(!sub)return'';
  let t,bar='';
+ if(S.loy.data&&S.loy.data.tarro){const d=S.loy.data,mt=d.meta||10,pt=d.found?Math.round(d.cliente.puntos):0;t=d.found?(pt>=mt?'¡Tu tarro está lleno! Pide tu recompensa en caja':'Llevas <b>'+(pt%mt)+' de '+mt+'</b> visitas en tu tarro'):'Crea tu tarjeta y llena tu tarro con cada visita. <a href="#" data-a="tab" data-v="puntos">Crear tarjeta</a>';return'<div class="nv-loy'+(compact?' compact':'')+'"><div class="nv-loy-t">'+t+'</div></div>'}
  if(!L.found)t=S.me.tel.length===10?'Con este pedido ganas <b>'+m(L.earn)+'</b> de saldo. <a href="#" data-a="tab" data-v="puntos">Crea tu tarjeta</a>':'Escribe tu WhatsApp y ganas <b>'+m(L.earn)+'</b> de saldo con este pedido.';
  else if(L.meta){t=L.falta>0?'Te faltan <b>'+m(L.falta)+'</b> para '+esc(L.premio):'¡Ya alcanzas '+esc(L.premio)+'! Pídelo en caja';bar='<div class="nv-bar"><i style="width:'+Math.round(L.frac*100)+'%"></i></div>'}
  else t='Tu saldo <b>'+m(L.saldo)+'</b> · con este pedido sumas <b>'+m(L.earn)+'</b>';
@@ -778,7 +789,7 @@ async function doCobro(){
   c.busy=true;render();
   try{
    if(disc>0)await lpost({accion:'canje',telefono:tel,puntos:disc});
-   if(sub-disc>0){const r=await lpost({accion:'venta',telefono:tel,monto:sub-disc,nombre:c.nom,fechaNacimiento:c.nac,googleDobles:!!c.gdob});loy={ganado:r.puntosGanados,saldo:r.cliente.puntos,nuevo:r.esNuevo,modelo:r.modelo,usado:disc,google:!!c.gdob};nombre=r.cliente.nombre}
+   if(sub-disc>0){const r=await lpost({accion:'venta',telefono:tel,monto:sub-disc,nombre:c.nom,fechaNacimiento:c.nac,googleDobles:!!c.gdob});loy={ganado:r.puntosGanados,saldo:r.cliente.puntos,nuevo:r.esNuevo,modelo:r.modelo,usado:disc,google:!!c.gdob,tarro:!!r.tarro,meta:r.meta,lleno:!!r.lleno};nombre=r.cliente.nombre}
   }catch(e){toast('Lealtad: '+e.message+'. Se cobró sin puntos.')}
   c.busy=false;
  }
@@ -1242,6 +1253,7 @@ root.addEventListener('click',e=>{
   case'ctaCuenta':S.cuenta[c.mesa]=true;toast('Avisamos al mesero que pediste la cuenta');break;
   /* modal */
   case'bell':NREAD=Date.now();lsSet(LK+'ntr',String(NREAD));S.modal={type:'bell'};break;
+  case'premio':{const c=S.caja,L=c.lc;if(!(L&&L.found&&L.tarro))return;lpost({accion:'canje',telefono:c.tel,puntos:L.meta||10}).then(()=>{toast('Recompensa entregada. Su tarro empieza de nuevo');loadCajaCliente(c.tel)}).catch(er=>toast(er.message));return}
   case'mclose':S.modal=null;break;
   case'mv':{S.modal.vi=+g('i');break}
   case'mo':{const gr=g('g'),l=g('l');if(l)S.modal.pick[gr]=l;else delete S.modal.pick[gr];if(gr==='Vaso'&&l!=='Escarchado')delete S.modal.pick['Sabor del escarchado'];break}

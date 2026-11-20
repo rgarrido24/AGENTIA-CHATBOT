@@ -19,7 +19,7 @@ import {
   registrarVenta,
 } from '@/lib/sabucan-clientes';
 import { syncWalletPuntosByObjectId } from '@/lib/wallet-sabucan';
-import { tenantObjectId, tenantRecompensa, type TenantConfig } from '@/lib/wallet-tenant';
+import { tenantObjectId, tenantRecompensa, tenantRewardMeta, type TenantConfig } from '@/lib/wallet-tenant';
 import { actualizarCashback, ensureTenant } from './tenant';
 import { crearAuth, puede } from './auth';
 import { setSessionCookie } from '@/lib/loyalty-session';
@@ -30,7 +30,7 @@ const MONTO_MAX = 50_000;
 
 function info(cfg: TenantConfig) {
   const rec = tenantRecompensa(cfg);
-  return { nombre: cfg.nombre, modelo: rec.modelo, parametro: rec.parametro };
+  return { nombre: cfg.nombre, modelo: rec.modelo, parametro: rec.parametro, tarro: !!cfg.tarroHero && rec.modelo === 'sellos', meta: tenantRewardMeta(cfg) };
 }
 
 export function crearLealtadApi(cfgS: ServidorConfig) {
@@ -111,6 +111,7 @@ async function POST(req: NextRequest) {
 
     if (body.accion === 'config') {
       if (perfilDeRequest(req) !== 'dueno') return NextResponse.json({ error: 'Solo el dueño' }, { status: 403 });
+      if (cfg.tarroHero) return NextResponse.json({ error: 'Esta tarjeta funciona por visitas, no por porcentaje' }, { status: 400 });
       const pct = Number(body.parametro);
       if (!Number.isFinite(pct) || pct <= 0) return NextResponse.json({ error: 'Porcentaje inválido' }, { status: 400 });
       const nuevo = await actualizarCashback(cfgS, pct);
@@ -134,6 +135,20 @@ async function POST(req: NextRequest) {
       const monto = Number(body.monto);
       if (!Number.isFinite(monto) || monto <= 0 || monto > MONTO_MAX) {
         return NextResponse.json({ error: 'Monto inválido' }, { status: 400 });
+      }
+      // Tarjeta por visitas: una visita por día y el tarro lleno espera a que se entregue la recompensa.
+      if (tenantRecompensa(cfg).modelo === 'sellos') {
+        const tel = normalizeSabucanTelefono(telefono);
+        const ex = tel.length >= 10 ? await findClienteByTelefono(KEY, tel) : null;
+        if (ex) {
+          const dia = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Merida' }) : '');
+          const meta = tenantRewardMeta(cfg);
+          const lleno = ex.puntos >= meta;
+          const yaHoy = dia(ex.ultimaVisita) === dia(new Date().toISOString());
+          if (lleno || yaHoy) {
+            return NextResponse.json({ ...info(cfg), ok: true, cliente: ex, puntosGanados: 0, esNuevo: false, yaHoy: !lleno && yaHoy, lleno });
+          }
+        }
       }
       // Puntos dobles por calificar en Google: caja confirma que vio la reseña; solo una vez por cliente.
       const dobles = (body as any).googleDobles === true;

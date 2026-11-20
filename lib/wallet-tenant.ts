@@ -51,6 +51,8 @@ export type TenantConfig = {
   linkModuleData?: { uri: string; description: string };
   /** Puntos/sellos para la próxima recompensa. Default 10. */
   rewardMeta?: number;
+  /** URL base de las imágenes del tarro (visitas con animación): `<base><n>-<meta>.png`. */
+  tarroHero?: string;
 };
 
 /**
@@ -386,6 +388,7 @@ export function tenantRewardMeta(tenant: TenantConfig): number {
 export function comoAcumularCopy(tenant: TenantConfig): string {
   const rec = tenantRecompensa(tenant);
   if (rec.modelo === 'sellos') {
+    if (tenant.tarroHero) return `Cada visita llena tu tarro. Con ${rec.parametro} visitas tienes tu recompensa · ${tenant.nombre}`;
     return `1 sello por cada visita. Junta ${rec.parametro} y el siguiente es gratis · ${tenant.nombre}`;
   }
   if (rec.modelo === 'puntos') {

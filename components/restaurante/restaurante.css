@@ -190,3 +190,6 @@
 @media (prefers-reduced-motion:reduce){.tos-root .mesa.sem-rojo{animation:none}}
 
 .tos-root .bellb{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#e5484d;color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
+
+@keyframes tarrofill{from{transform:translateY(calc(var(--p1) - var(--p0)))}to{transform:translateY(0)}}
+.tos-root .tarro{color:var(--ink,#fff);margin:6px auto;display:block}.tos-root .tfoam{animation:tfoam 2.4s ease-in-out infinite alternate}@keyframes tfoam{from{transform:translateY(0)}to{transform:translateY(-1.5px)}}.tos-root .tbub circle{animation:tbub 3s ease-in infinite}@keyframes tbub{from{transform:translateY(0);opacity:.6}to{transform:translateY(-60px);opacity:0}}

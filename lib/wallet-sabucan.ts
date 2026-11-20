@@ -90,10 +90,18 @@ export async function actualizarPaseWallet(
 
   const patch: Record<string, unknown> = {
     loyaltyPoints: {
-      label: esSellos ? 'Sellos' : 'Puntos',
+      label: esSellos ? (tenant?.tarroHero ? 'Visitas' : 'Sellos') : 'Puntos',
       balance: { string: balanceStr },
     },
   };
+  if (esSellos && tenant?.tarroHero && rec) {
+    const meta = rec.parametro;
+    const pos = balance > 0 && balance % meta === 0 ? meta : balance % meta;
+    patch.heroImage = {
+      sourceUri: { uri: `${tenant.tarroHero}${pos}-${meta}.png?v=1` },
+      contentDescription: { defaultValue: { language: 'es', value: `Tu tarro: ${pos} de ${meta} visitas` } },
+    };
+  }
   if (tenant) {
     patch.textModulesData = buildLoyaltyObjectTextModules(tenant, balance);
   }

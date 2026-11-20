@@ -44,7 +44,7 @@ export function buildLoyaltyObjectTextModules(
             body: rewardProgressMessage(
               puntos,
               meta,
-              esSellos ? 'sellos para tu recompensa' : 'para tu próxima recompensa',
+              esSellos ? (cfg.tarroHero ? 'visitas para llenar tu tarro' : 'sellos para tu recompensa') : 'para tu próxima recompensa',
               esSellos,
             ),
           },
@@ -56,7 +56,7 @@ export function buildLoyaltyObjectTextModules(
     {
       header: 'Cómo usarlo',
       body: esSellos
-        ? 'Muestra este código en la caja. Cada visita suma 1 sello.'
+        ? (cfg.tarroHero ? 'Muestra este código en la caja. Cada día que nos visitas se llena un poco más tu tarro.' : 'Muestra este código en la caja. Cada visita suma 1 sello.')
         : 'Muestra este código en la caja. Puedes usar tu saldo como pago en cualquier visita.',
     },
     ...(cfg.direccion ? [{ header: 'Dónde estamos', body: cfg.direccion }] : []),
