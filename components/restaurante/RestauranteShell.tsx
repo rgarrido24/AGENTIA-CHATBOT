@@ -28,6 +28,11 @@ export default function RestauranteShell({ cfg, staff }: { cfg: RestauranteConfi
             <div className="row">
               <button className="btn ghost sm" data-a="sound" id="soundBtn">Sonido: no</button>
               {staff ? (
+                <button className="btn ghost sm" data-a="bell" id="bellBtn" style={{ display: 'none', position: 'relative' }} aria-label="Avisos">
+                  🔔
+                </button>
+              ) : null}
+              {staff ? (
                 <button className="btn ghost sm" data-a="pushtoggle" id="pushBtn" style={{ display: 'none' }}>
                   Avisos
                 </button>

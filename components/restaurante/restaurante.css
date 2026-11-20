@@ -188,3 +188,5 @@
 .tos-root .mesa.sem-rojo{animation:semPulse 1.6s ease-in-out infinite}
 .tos-root .sem-go{border-color:#E04B3A}
 @media (prefers-reduced-motion:reduce){.tos-root .mesa.sem-rojo{animation:none}}
+
+.tos-root .bellb{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#e5484d;color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}

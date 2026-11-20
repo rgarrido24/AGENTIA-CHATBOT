@@ -15,7 +15,8 @@ const tokExp=t=>Number(String(t||'').split('.')[1])||0;
 let TOKS={};try{TOKS=JSON.parse(lsGet(LK+'toks')||'{}')}catch(e){TOKS={}}
 Object.keys(TOKS).forEach(r=>{if(tokExp(TOKS[r])<Date.now()+60000)delete TOKS[r]});
 const anyTok=()=>TOKS.dueno||TOKS.caja||TOKS.mesero||TOKS.cocina||'';
-const hdr=()=>{const t=anyTok();return t?{'Content-Type':'application/json','x-tos-token':t}:{'Content-Type':'application/json'}};
+const tokFor=()=>TOKS.dueno||TOKS[authKey(S&&S.role)]||anyTok();
+const hdr=()=>{const t=tokFor();return t?{'Content-Type':'application/json','x-tos-token':t}:{'Content-Type':'application/json'}};
 const saveToks=()=>lsSet(LK+'toks',JSON.stringify(TOKS));
 /* PWA: service worker + botón Instalar app */
 let INSTALL=null;
@@ -27,6 +28,9 @@ function isStandalone(){try{const w=root.ownerDocument.defaultView;return (w.mat
 function isIOS(){try{return /iphone|ipad|ipod/i.test(root.ownerDocument.defaultView.navigator.userAgent)}catch(e){return false}}
 function showInstall(){root.querySelectorAll('[data-a=install]').forEach(b=>{b.style.display=(!isStandalone()&&(INSTALL||isIOS()))?'':'none'})}
 const pushOk=()=>{try{return!!(navigator.serviceWorker&&window.PushManager&&window.Notification)}catch(e){return false}};
+let NOTIF=[];try{NOTIF=JSON.parse(lsGet(LK+'nt')||'[]')}catch(e){NOTIF=[]}let NREAD=Number(lsGet(LK+'ntr')||0);
+const nUnread=()=>NOTIF.filter(n=>n.ts>NREAD).length;
+function notif(ico,title,body,roles){NOTIF.unshift({ts:Date.now(),i:ico,t:title,b:body,r:roles});NOTIF=NOTIF.slice(0,40);lsSet(LK+'nt',JSON.stringify(NOTIF))}
 const pushRol=()=>['mesero','cocina','barra','caja'].includes(S&&S.role)?S.role:'';
 const b64u=k=>{const p='='.repeat((4-k.length%4)%4),b=(k+p).replace(/-/g,'+').replace(/_/g,'/'),r=atob(b);return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
 async function pushToggle(){
@@ -42,6 +46,14 @@ async function pushToggle(){
   if(!r.ok||!j.ok)throw new Error(j.error||'No se pudo activar');
   lsSet(LK+'push',rol);toast('Avisos activados para '+rol);softRender();
  }catch(e){toast('No se pudieron activar los avisos: '+(e&&e.message||'error'))}
+}
+function dondeO(o){const m=/^m(\d{1,2})$/.exec(String(o.mesa||''));return o.canal==='mesa'?(m?'Mesa '+Number(m[1]):'Mesa'):o.canal==='llevar'?'Para llevar':'Entrega'}
+function evNotif(d,pr,pl){
+ if(!d||d.cancel||d.closed||!Array.isArray(d.lines))return;const lib=!d.hold&&!d.aprobar;
+ if(d.aprobar&&!d.hold&&pr===undefined)notif('\uD83D\uDCDD','Pedido por confirmar',dondeO(d)+' · #'+d.id,['mesero','caja']);
+ if(lib&&(pr===undefined||pr===1)){['cocina','barra'].forEach(st=>{const ls=d.lines.filter(l=>(l.station||'cocina')===st);if(!ls.length)return;const n=ls.reduce((a,l)=>a+(l.qty||0),0);notif(st==='cocina'?'\uD83C\uDF74':'\uD83C\uDF7A',st==='cocina'?'Nueva comanda':'Nuevo pedido en barra',dondeO(d)+' · '+n+(n===1?' pieza':' piezas'),[st,'caja'])})}
+ const pl2=pl||{};const li=d.lines.filter(l=>l.status==='listo'&&pl2[l.uid]!==undefined&&pl2[l.uid]!=='listo');
+ if(li.length)notif('\u2705','Listo para llevar',dondeO(d)+' · '+li.slice(0,2).map(l=>l.qty+'× '+l.name).join(', '),['mesero']);
 }
 function pushBtnUpd(){const b=root.querySelector('#pushBtn');if(!b)return;const rol=pushRol();b.style.display=(STAFF&&rol&&pushOk())?'':'none';b.textContent=lsGet(LK+'push')===rol?'Avisos: sí':'Activar avisos'}
 async function doInstall(){if(INSTALL){INSTALL.prompt();try{await INSTALL.userChoice}catch(e){}INSTALL=null;showInstall()}else toast(isIOS()?'En Safari toca Compartir y luego "Añadir a pantalla de inicio".':'Abre el menú del navegador y elige "Instalar app".')}
@@ -369,6 +381,10 @@ function modalHtml(){
  if(md.type==='pin'){
   h+='<div class="row between"><h2>Acceso de '+({caja:'Caja',dueno:'Dueño',mesero:'Mesero',cocina:'Cocina y barra'}[md.role]||'Equipo')+'</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><label class="f">Contraseña<input type="password" maxlength="64" autocomplete="off" autocapitalize="none" spellcheck="false" data-in="pin" value="'+esc(md.pin)+'" placeholder="Tu contraseña"></label><div class="xs muted">'+(PROD?'':'PIN de la demo: '+S.pins[md.role]+'. ')+'Cada perfil tiene el suyo, así nadie entra a la caja ni a las ganancias sin permiso.</div><button class="btn pri" data-a="pinok">Entrar</button></div>';
  }
+ if(md.type==='bell'){
+  const rl=S.role,ls=NOTIF.filter(x=>!x.r||x.r.indexOf(rl)>=0||rl==='dueno').slice(0,25);
+  h+='<div class="row between"><h2>Avisos</h2><button class="btn ghost sm" data-a="mclose">Cerrar</button></div><div class="stack" style="margin-top:10px">'+(ls.length?ls.map(x=>'<div class="card" style="padding:10px"><div class="row between"><b>'+x.i+' '+esc(x.t)+'</b><span class="xs muted">'+(function(){const m=Math.round((Date.now()-x.ts)/60000);return m<1?'ahora':m<60?'hace '+m+' min':'hace '+Math.round(m/60)+' h'})()+'</span></div><div class="small">'+esc(x.b)+'</div></div>').join(''):'<div class="small muted">Aún no hay avisos. Aquí verás los pedidos nuevos y lo que va saliendo.</div>')+'</div>';
+ }
  if(md.type==='pin2'){
   h+='<div class="row between"><h2>Verificación en 2 pasos</h2><button class="btn ghost sm" data-a="mclose">Cancelar</button></div><div class="stack" style="margin-top:10px"><div class="small muted">Abre tu app de autenticación (Google Authenticator, Authy…) y escribe el código de 6 dígitos. Si perdiste el teléfono, usa uno de tus códigos de respaldo.</div><label class="f">Código<input type="text" inputmode="text" maxlength="12" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" data-in="code" value="'+esc(md.code||'')+'" placeholder="123456"></label><button class="btn pri" data-a="pin2ok">Verificar y entrar</button></div>';
  }
@@ -487,7 +503,7 @@ function cobro(){
  else if(c.method==='Tarjeta')h+='<div class="small muted">Cobra en la terminal (Mercado Pago). Si el cliente ya dejó propina en la terminal, escríbela arriba en "monto exacto" para que el ticket y el corte cuadren.</div>';
  h+='<div><div class="b small">Dividir cuenta</div><div class="chips">'+[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(x=>'<button class="chip" data-a="split" data-v="'+x+'" aria-pressed="'+(c.split===x)+'">'+x+'</button>').join('')+'</div>'+(c.split>1?'<div class="small">Cada quien paga <b class="num">'+m(tot/c.split)+'</b></div>':'')+'</div>';
 
- h+='<div class="stack" style="gap:6px"><label class="f">WhatsApp del cliente (tarjeta de lealtad y ticket)<input type="tel" data-in="ctel" value="'+esc(c.tel)+'" placeholder="10 dígitos"></label>';
+ h+='<div class="stack" style="gap:6px"><label class="f">WhatsApp del cliente (tarjeta de lealtad y ticket)<input type="tel" data-in="ctel" value="'+esc(c.tel)+'" placeholder="10 dígitos"></label>'+(c.tel.length===10?'':'<div class="xs" style="color:var(--warn)">Sin su WhatsApp no se le suman puntos. Al cobrar, se cargan solos a su tarjeta.</div>');
  const L=c.lc;
  if(c.tel.length===10){
   if(!L||L.loading)h+='<div class="small muted">Buscando tarjeta…</div>';
@@ -733,7 +749,7 @@ function render(){
  $('#modal').innerHTML=modalHtml()+(NUEVO?nvOverlays():'');
  root.classList.toggle('estilo-premium',!!(NUEVO&&estiloPrem()));root.classList.toggle('nv-cli',NUEVO&&S.role==='cliente'&&!STAFF);showInstall();
  const dn=root.querySelector('#demoNote');if(dn)dn.style.display=PROD?'none':'';
- pushBtnUpd();$('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no')+' · '+(online?'en línea':'sin conexión');const rb=root.querySelector('[data-a=reset]');if(rb)rb.style.display=PROD?'none':'';
+ pushBtnUpd();{const bb=root.querySelector('#bellBtn');if(bb){const rl=S.role,show=STAFF&&rl&&rl!=='cliente';bb.style.display=show?'':'none';const n=NOTIF.filter(x=>x.ts>NREAD&&(!x.r||x.r.indexOf(rl)>=0||rl==='dueno')).length;bb.innerHTML='\uD83D\uDD14'+(n?'<span class="bellb">'+(n>9?'9+':n)+'</span>':'')}}$('#soundBtn').textContent='Sonido: '+(S.sound?'sí':'no')+' · '+(online?'en línea':'sin conexión');const rb=root.querySelector('[data-a=reset]');if(rb)rb.style.display=PROD?'none':'';
 }
 
 
@@ -871,8 +887,8 @@ function applyResp(r){
  let changed=false;const primera=!SYNCED;
  PROD=!!r.prod;SYNCED=true;if(r.top)TOP=r.top;
  if(r.reset){const first=EPOCH===0;EPOCH=r.epoch;REV=0;UU={};if(!first||PROD){reseedKeep();changed=true}LAST=snapNow()}
- const inc={cols:[],kv:[]};const antes={};S.orders.forEach(o=>{antes[o.id]=o.hold?1:2});let nuevoPedido=false;
- Object.keys(r.cols||{}).forEach(name=>{const c=COLS[name];if(!c)return;r.cols[name].forEach(e=>{const key=name+'|'+e.k;if(UU[key]!==undefined&&UU[key]>=e.u)return;const arr=c.arr();const i=arr.findIndex(x=>c.key(x)===e.k);if(i>=0)arr[i]=e.d;else arr.push(e.d);UU[key]=e.u;inc.cols.push([name,e.k]);changed=true;if(name==='orders'&&e.d&&!e.d.cancel&&!e.d.closed){const pr=antes[e.d.id];if(pr===undefined||(pr===1&&!e.d.hold))nuevoPedido=true}})});
+ const inc={cols:[],kv:[]};const antes={},antesL={};S.orders.forEach(o=>{antes[o.id]=o.hold?1:2;antesL[o.id]=Object.fromEntries((o.lines||[]).map(l=>[l.uid,l.status]))});let nuevoPedido=false;const primera0=!SYNCED;
+ Object.keys(r.cols||{}).forEach(name=>{const c=COLS[name];if(!c)return;r.cols[name].forEach(e=>{const key=name+'|'+e.k;if(UU[key]!==undefined&&UU[key]>=e.u)return;const arr=c.arr();const i=arr.findIndex(x=>c.key(x)===e.k);if(i>=0)arr[i]=e.d;else arr.push(e.d);UU[key]=e.u;inc.cols.push([name,e.k]);changed=true;if(name==='orders'&&e.d&&!e.d.cancel&&!e.d.closed){const pr=antes[e.d.id];if(pr===undefined||(pr===1&&!e.d.hold))nuevoPedido=true;if(!primera0){try{evNotif(e.d,pr,antesL[e.d.id])}catch(x){}}}})});
  Object.keys(r.kv||{}).sort((a,b)=>a==='menu'?-1:b==='menu'?1:0).forEach(k=>{const e=r.kv[k];if(UU['kv|'+k]!==undefined&&UU['kv|'+k]>=e.u)return;applyKv(k,e.v);UU['kv|'+k]=e.u;inc.kv.push(k);changed=true});
  if(inc.cols.length||inc.kv.length){const cur=snapNow();inc.cols.forEach(x=>{LAST.cols[x[0]]=LAST.cols[x[0]]||{};LAST.cols[x[0]][x[1]]=cur.cols[x[0]][x[1]]});inc.kv.forEach(k=>{LAST.kv[k]=cur.kv[k]})}
  REV=r.rev||REV;
@@ -1225,6 +1241,7 @@ root.addEventListener('click',e=>{
   case'paymesa':S.modal={type:'pay',total:mesaTotal(c.mesa),by:'mesa'};break;
   case'ctaCuenta':S.cuenta[c.mesa]=true;toast('Avisamos al mesero que pediste la cuenta');break;
   /* modal */
+  case'bell':NREAD=Date.now();lsSet(LK+'ntr',String(NREAD));S.modal={type:'bell'};break;
   case'mclose':S.modal=null;break;
   case'mv':{S.modal.vi=+g('i');break}
   case'mo':{const gr=g('g'),l=g('l');if(l)S.modal.pick[gr]=l;else delete S.modal.pick[gr];if(gr==='Vaso'&&l!=='Escarchado')delete S.modal.pick['Sabor del escarchado'];break}

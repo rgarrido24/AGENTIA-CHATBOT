@@ -109,7 +109,7 @@ export function avisosDePedido(antes: any, ahora: any): { roles: VistaPush[]; av
       const ls = ahora.lines.filter((l: any) => (l.station || 'cocina') === st);
       if (!ls.length) continue;
       const piezas = ls.reduce((a: number, l: any) => a + (Number(l.qty) || 0), 0);
-      out.push({ roles: [st], aviso: { title: st === 'cocina' ? 'Nueva comanda' : 'Nuevo pedido en barra', body: `${donde} · ${piezas} ${piezas === 1 ? 'pieza' : 'piezas'}`, tag: `ord-${ahora.id}-${st}` } });
+      out.push({ roles: [st, 'caja'], aviso: { title: st === 'cocina' ? 'Nueva comanda' : 'Nuevo pedido en barra', body: `${donde} · ${piezas} ${piezas === 1 ? 'pieza' : 'piezas'}`, tag: `ord-${ahora.id}-${st}` } });
     }
   }
   // 3) Algo quedó listo para llevar
