@@ -6,8 +6,6 @@ import {
   Receipt, Search, RefreshCw, AlertCircle, CheckCircle2,
   Loader2, Pencil, Trash2, ExternalLink
 } from 'lucide-react';
-import AgentiaAuthGuard from '../AgentiaAuthGuard';
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Marca = 'agentia' | 'cwf';
@@ -957,9 +955,5 @@ function FacturacionPage() {
 }
 
 export default function FacturacionPageWrapper() {
-  return (
-    <AgentiaAuthGuard>
-      <FacturacionPage />
-    </AgentiaAuthGuard>
-  );
+  return <FacturacionPage />;
 }
