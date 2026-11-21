@@ -86,7 +86,7 @@ export async function procesarVencimientos(): Promise<Record<string, number>> {
   const db = await getMongoDb();
   const tenants = db.collection('loyalty_tenants');
   const lista = (await tenants
-    .find({ isDemo: { $ne: true }, vigenteHasta: { $exists: true } })
+    .find({ isDemo: { $ne: true }, desactivadoTotal: { $ne: true }, vigenteHasta: { $exists: true } })
     .toArray()) as Array<Record<string, any>>;
   const res = { revisados: lista.length, avisosPrevios: 0, avisosGracia: 0, suspendidos: 0 };
   const now = new Date();

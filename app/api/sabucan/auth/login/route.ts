@@ -10,6 +10,7 @@ import {
 import { getEffectiveSabucanPassword } from '../password/route';
 import {
   clearFailedLogins,
+  isTenantDesactivado,
   isTenantPanelActive,
   lockMinutesLeft,
   recordFailedLogin,
@@ -20,6 +21,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  if (await isTenantDesactivado()) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (!isSabucanAuthConfigured()) {
     return NextResponse.json(
       { error: 'Auth no configurado (SABUCAN_ADMIN_USER / SABUCAN_ADMIN_PASSWORD)' },

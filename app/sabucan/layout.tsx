@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { notFound } from 'next/navigation';
+import { isTenantDesactivado } from '@/lib/sabucan-security';
 import { SABUCAN_NAVY } from '@/lib/sabucan-brand';
 import { SabucanHeader } from './SabucanHeader';
 
@@ -9,7 +11,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function SabucanLayout({ children }: { children: ReactNode }) {
+export const dynamic = 'force-dynamic';
+
+export default async function SabucanLayout({ children }: { children: ReactNode }) {
+  if (await isTenantDesactivado()) notFound();
   return (
     <div
       className="min-h-screen text-white font-[family-name:var(--font-inter)]"

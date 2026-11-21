@@ -15,6 +15,7 @@ export default function AdminLealtad() {
   const [tens, setTens] = useState<Ten[]>([]);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState('');
+  const [tkey, setTkey] = useState('sabucan');
 
   const cargar = useCallback(async () => {
     const r = await fetch('/api/admin/lealtad');
@@ -35,11 +36,29 @@ export default function AdminLealtad() {
     setBusy(''); cargar();
   }
 
+  async function accionNegocio(accion: 'ocultar' | 'mostrar' | 'activar') {
+    const txt = accion === 'ocultar' ? 'DESACTIVAR TOTAL (404 en todo)' : accion === 'mostrar' ? 'dejar visible (suspendido)' : 'ACTIVAR';
+    if (!confirm(`¿${txt} el negocio "${tkey}"?`)) return;
+    setBusy('t'); setMsg('');
+    const r = await fetch('/api/admin/lealtad/tenant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: tkey, accion }) });
+    const d = await r.json().catch(() => ({}));
+    setMsg(r.ok ? `✅ ${tkey}: ${accion}` : `❌ ${d.error || 'Error'}`);
+    setBusy('');
+  }
+
   const f = (d?: string) => (d ? new Date(d).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }) : '—');
   return (
     <div className="mx-auto max-w-5xl p-6 text-sm">
       <h1 className="text-2xl font-bold">Agentia Lealtad — solicitudes y negocios</h1>
       {msg && <p className="mt-3 font-semibold">{msg}</p>}
+
+      <h2 className="mt-8 text-lg font-semibold">Activar / desactivar un negocio (cualquiera, incluso los anteriores)</h2>
+      <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-white/15 p-3">
+        <input value={tkey} onChange={(e) => setTkey(e.target.value)} className="rounded-lg border border-white/20 bg-transparent px-3 py-2" placeholder="key (ej. sabucan)" />
+        <button disabled={busy === 't'} onClick={() => accionNegocio('ocultar')} className="rounded-lg bg-red-600 px-3 py-2 font-semibold text-white disabled:opacity-50">Desactivar total (404)</button>
+        <button disabled={busy === 't'} onClick={() => accionNegocio('mostrar')} className="rounded-lg border border-white/30 px-3 py-2 font-semibold disabled:opacity-50">Dejar visible (suspendido)</button>
+        <button disabled={busy === 't'} onClick={() => accionNegocio('activar')} className="rounded-lg bg-white px-3 py-2 font-semibold text-black disabled:opacity-50">Activar</button>
+      </div>
 
       <h2 className="mt-8 text-lg font-semibold">Pendientes de pago o con error</h2>
       <div className="mt-2 space-y-2">

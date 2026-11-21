@@ -9,6 +9,8 @@
  *   node scripts/tenant-admin.js add
  *   node scripts/tenant-admin.js activar <key>
  *   node scripts/tenant-admin.js suspender <key>
+ *   node scripts/tenant-admin.js ocultar <key>   (404 total, conserva datos)
+ *   node scripts/tenant-admin.js mostrar <key>
  *   node scripts/tenant-admin.js recompensa <key> sellos 10
  *
  * Requiere MONGODB_URI (Render Shell o .env.local).
@@ -257,11 +259,24 @@ async function cmdInfo(col, key) {
   console.log(JSON.stringify(rest, null, 2));
 }
 
+/** Desactivado total: 404 en panel, registro público, link y APIs. Los datos se conservan. */
+async function setOculto(col, key, oculto) {
+  const res = await col.updateOne(
+    { key },
+    { $set: { desactivadoTotal: oculto, ...(oculto ? { panelActivo: false } : {}), updatedAt: new Date() } },
+  );
+  if (res.matchedCount === 0) {
+    console.error(`No existe el tenant "${key}".`);
+    process.exit(1);
+  }
+  console.log(`${key} → ${oculto ? 'DESACTIVADO TOTAL (404)' : 'visible otra vez (sigue suspendido; usa "activar" para abrirlo)'}`);
+}
+
 async function setPanel(col, key, panelActivo) {
   const now = new Date();
   const res = await col.updateOne(
     { key },
-    { $set: { panelActivo, updatedAt: now } },
+    { $set: { panelActivo, updatedAt: now, ...(panelActivo ? { desactivadoTotal: false } : {}) } },
   );
   if (res.matchedCount === 0) {
     console.error(`No existe el tenant "${key}".`);
@@ -443,6 +458,8 @@ function usage() {
   node scripts/tenant-admin.js add
   node scripts/tenant-admin.js activar <key>
   node scripts/tenant-admin.js suspender <key>
+  node scripts/tenant-admin.js ocultar <key>
+  node scripts/tenant-admin.js mostrar <key>
   node scripts/tenant-admin.js recompensa <key> <sellos|puntos|cashback> <parametro>
   node scripts/tenant-admin.js migrate`);
 }
@@ -484,6 +501,14 @@ async function main() {
           process.exit(1);
         }
         await setPanel(col, arg, false);
+        break;
+      case 'ocultar':
+      case 'mostrar':
+        if (!arg) {
+          console.error(`Uso: node scripts/tenant-admin.js ${cmd} <key>`);
+          process.exit(1);
+        }
+        await setOculto(col, arg, cmd === 'ocultar');
         break;
       case 'migrate':
         await cmdMigrate(col);

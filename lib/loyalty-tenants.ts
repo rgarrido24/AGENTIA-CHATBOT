@@ -111,6 +111,11 @@ export async function getLoyaltyTenant(raw: string): Promise<TenantConfig | null
   let fromMongo: TenantConfig | null = null;
   try {
     const doc = await findDoc(key);
+    // Desactivado total: el negocio "no existe" para páginas y APIs (404). Los datos se conservan.
+    if (doc?.desactivadoTotal === true) {
+      cache.set(key, { at: Date.now(), value: null });
+      return null;
+    }
     if (doc?.key) fromMongo = loyaltyDocToConfig(doc);
   } catch (e) {
     console.warn('[loyalty-tenants]', e instanceof Error ? e.message : e);

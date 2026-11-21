@@ -34,6 +34,16 @@ export async function isTenantPanelActive(key: string = SABUCAN_TENANT_KEY): Pro
   }
 }
 
+/** true = desactivado total (404 en todo). Sin caché; error de Mongo → no oculta. */
+export async function isTenantDesactivado(key: string = SABUCAN_TENANT_KEY): Promise<boolean> {
+  try {
+    const doc = await (await getMongoDb()).collection('loyalty_tenants').findOne({ key }, { projection: { desactivadoTotal: 1 } });
+    return doc?.desactivadoTotal === true;
+  } catch {
+    return false;
+  }
+}
+
 /** ¿La cookie actual es una sesión válida? (no revisa suspensión) */
 export async function hasValidSabucanSession(): Promise<boolean> {
   if (!isSabucanAuthConfigured()) return false;
@@ -44,6 +54,7 @@ export async function hasValidSabucanSession(): Promise<boolean> {
 
 /** Para API routes: devuelve una respuesta de error, o null si todo está bien. */
 export async function requireSabucanApi(): Promise<NextResponse | null> {
+  if (await isTenantDesactivado()) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (!(await isTenantPanelActive())) {
     return NextResponse.json(
       { error: 'Servicio suspendido. Contacta a Agentia para reactivarlo.', suspendido: true },
